@@ -73,10 +73,6 @@ sudo install -m 0755 -d /etc/apt/keyrings
 echo -e "Types: deb deb-src\nURIs: http://deb.debian.org/debian\nSuites: trixie-backports\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg" | sudo tee /etc/apt/sources.list.d/backports.sources > /dev/null
 sudo apt-get update -qq
 
-# Fasttrack
-#sudo apt-get install -y fasttrack-archive-keyring
-#echo -e "Types: deb\nURIs: https://fasttrack.debian.net/debian\nSuites: trixie-fasttrack trixie-backports-fasttrack\nComponents: main contrib non-free non-free-firmware\nSigned-By: /usr/share/keyrings/fasttrack-archive-keyring.gpg" | sudo tee /etc/apt/sources.list.d/fasttrack.sources > /dev/null
-
 # Docker
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --yes --dearmor -o /etc/apt/keyrings/docker.gpg
 echo -e "Types: deb\nURIs: https://download.docker.com/linux/debian\nSuites: trixie\nComponents: stable\nArchitectures: $ARCH\nSigned-By: /etc/apt/keyrings/docker.gpg" | sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null
