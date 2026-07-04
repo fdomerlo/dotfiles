@@ -49,7 +49,7 @@ _log "Iniciando aprovisionamiento del entorno..."
 # ------------------------------------------------------------------------------
 _log "Configurando zRam y Swapfile fallback..."
 sudo apt-get update -qq
-sudo apt-get install -y zram-tools curl wget git zip unzip stow gnupg fonts-noto gnome-terminal
+sudo apt-get install -y zram-tools curl wget git zip unzip stow gnupg fonts-noto gnome-console
 
 echo -e "ALGO=zstd\nPERCENT=50\nPRIORITY=100" | sudo tee /etc/default/zramswap > /dev/null
 sudo systemctl restart zramswap.service
