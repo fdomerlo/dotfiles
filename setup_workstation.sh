@@ -1,7 +1,10 @@
 #!/bin/bash
 # ==============================================================================
 # setup_workstation.sh
-# Ejecución: bash -c "$(curl -fsSL https://raw.githubusercontent.com/fdomerlo/dotfiles/main/setup_workstation.sh)"
+# Ejecución básica: 
+# curl -fsSL https://raw.githubusercontent.com/.../setup_workstation.sh | bash
+# Ejecución con flags de GNOME:
+# curl -fsSL <URL> | bash -s -- --gnome-core --gnome-dev --gnome-circle
 # ==============================================================================
 
 set -euo pipefail
@@ -11,9 +14,30 @@ _log() { echo -e "\n${BLUE}==> $1${NC}"; }
 _success() { echo -e "${GREEN}✅ $1${NC}"; }
 
 if [ "$EUID" -eq 0 ]; then
-    echo -e "\n\033[0;31m[ERROR]\033[0m No ejecutes este script como root. Ejecútalo con tu usuario normal. El script pedirá sudo automáticamente."
+    echo -e "\n\033[0;31m[ERROR]\033[0m No ejecutes este script como root. Ejecútalo con tu usuario normal."
     exit 1
 fi
+
+# ==============================================================================
+# PARSEO DE ARGUMENTOS (FLAGS)
+# ==============================================================================
+INSTALL_GNOME_CORE=false
+INSTALL_GNOME_DEV=false
+INSTALL_GNOME_CIRCLE=false
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --gnome-core) INSTALL_GNOME_CORE=true ;;
+        --gnome-dev) INSTALL_GNOME_DEV=true ;;
+        --gnome-circle) INSTALL_GNOME_CIRCLE=true ;;
+        --all-gnome) INSTALL_GNOME_CORE=true; INSTALL_GNOME_DEV=true; INSTALL_GNOME_CIRCLE=true ;;
+        *) echo -e "\033[0;31m[ERROR]\033[0m Opción desconocida: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+# Variable crítica para repositorios DEB822
+ARCH=$(dpkg --print-architecture)
 
 _log "Solicitando privilegios de administrador para la instalación..."
 sudo -v
@@ -81,7 +105,7 @@ echo -e "Types: deb\nURIs: http://dl.google.com/linux/chrome/deb/\nSuites: stabl
 _success "Repositorios inyectados."
 
 # ------------------------------------------------------------------------------
-# 3. INSTALACIÓN DE HERRAMIENTAS
+# 3. INSTALACIÓN DE HERRAMIENTAS BASE Y FLATHUB
 # ------------------------------------------------------------------------------
 _log "Instalando paquetes base..."
 sudo apt-get update -qq
@@ -93,9 +117,40 @@ DEV_PKGS=(
 )
 sudo apt-get install -y "${DEV_PKGS[@]}"
 
+_log "Inyectando repositorio Flathub de manera incondicional..."
+sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
 sudo usermod -aG docker "$USER"
 sudo systemctl enable --now docker.service
 sudo chsh -s "$(which zsh)" "$USER"
+
+# ------------------------------------------------------------------------------
+# 3.5. APLICACIONES DEL ECOSISTEMA GNOME (Condicionales)
+# ------------------------------------------------------------------------------
+if [ "$INSTALL_GNOME_CORE" = true ]; then
+    _log "[GNOME NÚCLEO] Instalando aplicaciones oficiales (deb)..."
+    sudo apt-get install -y gnome-text-editor gnome-calculator gnome-calendar \
+                            gnome-system-monitor evince loupe gnome-disk-utility \
+                            gnome-weather gnome-clocks gnome-maps baobab
+    _success "Apps del Núcleo instaladas."
+fi
+
+if [ "$INSTALL_GNOME_DEV" = true ]; then
+    _log "[GNOME DESARROLLO] Instalando herramientas de ingeniería (deb)..."
+    sudo apt-get install -y gnome-builder dconf-editor devhelp sysprof
+    _success "Apps de Desarrollo instaladas."
+fi
+
+if [ "$INSTALL_GNOME_CIRCLE" = true ]; then
+    _log "[GNOME CÍRCULO] Instalando aplicaciones del Círculo (Flatpak)..."
+    # Autenticador (2FA), Dialect (Traducción), Fragments (Torrents), Flatseal (Permisos)
+    sudo flatpak install -y --noninteractive flathub \
+        com.belmoussaoui.Authenticator \
+        app.drey.Dialect \
+        de.haeckerfelix.Fragments \
+        com.github.tchx84.Flatseal
+    _success "Apps del Círculo instaladas."
+fi
 
 # ------------------------------------------------------------------------------
 # 4. OH MY ZSH, GITOPS & DOTFILES
@@ -134,9 +189,6 @@ env ZDOTDIR="/tmp" curl -LsSf https://astral.sh/uv/install.sh | sh
 curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.local/bin" --skip-shell
 curl -s "https://get.sdkman.io?rcupdate=false" | bash
 
-if [ -f "$HOME/.dotfiles/scripts/install_antigravity.sh" ]; then
-    bash "$HOME/.dotfiles/scripts/install_antigravity.sh"
-fi
 _success "Runtimes listos."
 
 # ------------------------------------------------------------------------------
