@@ -27,11 +27,10 @@ source "$ZSH/oh-my-zsh.sh"
 
 # --- PATH (Variable de Entorno Crítica) ---
 # Asegura que las rutas básicas del sistema y las locales del usuario siempre estén presentes.
-# Esta línea es fundamental para que la terminal encuentre todos los comandos.
-#export PATH="/usr/local/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+export PATH="/usr/local/bin:$HOME/.local/bin:$HOME/bin:$PATH"
 
 # --- UV (Python) ---
-#export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # --- FNM (Node.js) ---
 export PATH="$HOME/.local/share/fnm:$PATH"
@@ -49,7 +48,7 @@ if [ -f ~/.functions.sh ]; then
     source ~/.functions.sh
 fi
 
-# Cargamos el prompt personalizado
+# --- Prompt personalizado ---
 setopt prompt_subst
 
 autoload -Uz vcs_info
