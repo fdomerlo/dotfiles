@@ -2,7 +2,7 @@
 # ==============================================================================
 # setup_workstation.sh
 # Ejecución básica: 
-# curl -fsSL https://raw.githubusercontent.com/.../setup_workstation.sh | bash
+# curl -fsSL https://raw.githubusercontent.com/fdomerlo/dotfiles/main/setup_workstation.sh | bash
 # Ejecución con flags de GNOME:
 # curl -fsSL <URL> | bash -s -- --gnome-core --gnome-dev --gnome-circle
 # ==============================================================================
