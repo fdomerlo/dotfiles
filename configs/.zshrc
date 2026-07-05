@@ -58,4 +58,6 @@ zstyle ':vcs_info:git:*' formats ' (%b)' # Limpiamos el espacio inicial aquí
 precmd() {
     vcs_info
 }
-PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f $ '
+PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
+
+. "$HOME/.local/bin/env"
