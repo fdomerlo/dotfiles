@@ -30,7 +30,7 @@ source "$ZSH/oh-my-zsh.sh"
 export PATH="/usr/local/bin:$HOME/.local/bin:$HOME/bin:$PATH"
 
 # --- UV (Python) ---
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # --- FNM (Node.js) ---
 export PATH="$HOME/.local/share/fnm:$PATH"
