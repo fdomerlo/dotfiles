@@ -34,6 +34,10 @@ done
 # Variable crítica para repositorios DEB822
 ARCH=$(dpkg --print-architecture)
 
+# Usuario de GitHub para el clone de dotfiles (independiente del $USER local,
+# por si algún día provisionás con un username de sistema distinto)
+GITHUB_USER="fdomerlo"
+
 _log "Solicitando privilegios de administrador para la instalación..."
 sudo -v
 
@@ -62,7 +66,12 @@ _log "Configurando zRam y Swapfile fallback..."
 echo -e "ALGO=zstd\nPERCENT=50\nPRIORITY=100" | sudo tee /etc/default/zramswap > /dev/null
 sudo systemctl restart zramswap.service
 
-SWAPFILE="/swapfile"
+# El swapfile va en /home (Ext4), NO en / (Btrfs). Un swapfile sobre Btrfs
+# necesita NOCOW (chattr +C) aplicado antes de escribir cualquier byte, sin
+# compresión y sin cruzar subvolúmenes — si no, swapon falla o el archivo
+# queda corrupto por el copy-on-write. Ext4 no tiene ninguna de estas
+# restricciones, así que el método clásico funciona sin tocar nada más.
+SWAPFILE="/home/.swapfile"
 if [ ! -f "$SWAPFILE" ]; then
     sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=4096 status=progress
     sudo chmod 600 "$SWAPFILE"
@@ -124,6 +133,44 @@ sudo apt-get update -qq
 sudo apt-get install -y "${REPO_PKGS[@]}"
 _success "Paquetes de terceros instalados."
 
+# ------------------------------------------------------------------------------
+# 4.1. RELOCACIÓN DE DOCKER DATA-ROOT (Btrfs / -> Ext4 /home)
+# ------------------------------------------------------------------------------
+# El paquete docker-ce arranca el servicio automáticamente al instalarse
+# (systemd preset de Debian), así que primero lo frenamos para que no
+# alcance a crear /var/lib/docker sobre Btrfs con la config default.
+_log "Reubicando docker data-root fuera de Btrfs (evitar penalización CoW)..."
+sudo systemctl stop docker.service docker.socket 2>/dev/null || true
+
+DOCKER_DATA_ROOT="/home/docker-data"
+sudo mkdir -p "$DOCKER_DATA_ROOT"
+sudo chown root:root "$DOCKER_DATA_ROOT"
+sudo chmod 711 "$DOCKER_DATA_ROOT"
+
+sudo install -d /etc/docker
+if [ -f /etc/docker/daemon.json ]; then
+    sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.bak
+fi
+echo "{\"data-root\": \"$DOCKER_DATA_ROOT\"}" | sudo tee /etc/docker/daemon.json > /dev/null
+
+# Si el postinst del paquete ya escribió algo en la ubicación default
+# (fresco, no debería tener imágenes, pero puede tener metadata de init),
+# lo migramos en vez de perderlo silenciosamente.
+if [ -d /var/lib/docker ] && [ -n "$(sudo ls -A /var/lib/docker 2>/dev/null)" ]; then
+    sudo cp -a /var/lib/docker/. "$DOCKER_DATA_ROOT/"
+    sudo rm -rf /var/lib/docker
+fi
+_success "docker data-root -> $DOCKER_DATA_ROOT"
+
+_log "Inyectando repositorio Flathub de manera incondicional..."
+sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+sudo usermod -aG docker "$USER"
+sudo systemctl enable --now docker.service
+sudo chsh -s "$(which zsh)" "$USER"
+
+_log "Verificando docker data-root efectivo..."
+sudo docker info --format '{{.DockerRootDir}}' 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
 # 4.5. APLICACIONES DEL ECOSISTEMA GNOME (Condicionales)
@@ -159,7 +206,7 @@ fi
 # 4. Desplegar configuraciones propias
 if [ ! -d "$HOME/.dotfiles" ]; then
     mkdir -p "$HOME/.local/share"
-    git clone "https://github.com/fdomerlo/dotfiles.git" "$HOME/.dotfiles"
+    git clone "https://github.com/${GITHUB_USER}/dotfiles.git" "$HOME/.dotfiles"
 fi
 # Restow siempre (no solo en el primer clone): si una corrida anterior falló
 # entre el clone y el stow, esto re-simboliza sin dejar el estado a medias.
@@ -173,13 +220,8 @@ _success "Oh My Zsh y Dotfiles instalados y enlazados."
 _log "Instalando runtimes (uv, fnm, sdkman)..."
 mkdir -p "$HOME/.local/bin"
 
-# Docker sin sudo
-usermod -aG docker "$TARGET_USER"
-# Instalar uv (Python)
 env ZDOTDIR="/tmp" curl -LsSf https://astral.sh/uv/install.sh | sh
-# Instalar fnm (Node.js)
 curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.local/bin" --skip-shell
-# SDKMAN (Java/Scala/Kotlin)
 curl -s "https://get.sdkman.io?rcupdate=false" | bash
 
 _success "Runtimes listos."
@@ -189,6 +231,9 @@ _success "Runtimes listos."
 # ------------------------------------------------------------------------------
 _log "Configurando GNOME..."
 fc-cache -f -v > /dev/null
+
+gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'BOTTOM'
+gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
 
 gsettings set org.gnome.desktop.interface font-name 'Google Sans 11'
 gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 11'
