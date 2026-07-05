@@ -174,7 +174,8 @@ _log "Instalando runtimes (uv, fnm, sdkman)..."
 mkdir -p "$HOME/.local/bin"
 
 # Docker sin sudo
-sudo usermod -aG docker $USER
+#sudo usermod -aG docker $USER
+sudo /usr/sbin/usermod -aG docker $USER
 # Instalar uv (Python)
 env ZDOTDIR="/tmp" curl -LsSf https://astral.sh/uv/install.sh | sh
 # Instalar fnm (Node.js)
