@@ -195,10 +195,4 @@ gsettings set org.gnome.desktop.interface font-name 'Google Sans 11'
 gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 11'
 gsettings set org.gnome.desktop.interface monospace-font-name 'Fira Mono 11'
 
-PROFILE=$(gsettings get org.gnome.Terminal.ProfilesList default | tr -d \')
-if [ -n "$PROFILE" ]; then
-    gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles/${PROFILE}/ use-system-font false
-    gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles/${PROFILE}/ font 'Fira Mono 11'
-fi
-
 _success "Instalación completada. Por favor, cierra sesión o reinicia el equipo para aplicar todos los cambios de Docker y Zsh."
