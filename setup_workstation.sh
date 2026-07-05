@@ -48,7 +48,7 @@ _log "Iniciando aprovisionamiento del entorno..."
 _log "Instalando paquetes base..."
 BASE_PKGS=(
     zram-tools curl wget git zip unzip stow gnupg htop zsh 
-    gnome-boxes dconf-editor devhelp sysprof flatpak
+    gnome-boxes dconf-editor devhelp sysprof flatpak fonts-noto
 )
 sudo apt-get update -qq
 sudo apt-get install -y "${BASE_PKGS[@]}"
@@ -124,6 +124,9 @@ sudo apt-get update -qq
 sudo apt-get install -y "${REPO_PKGS[@]}"
 _success "Paquetes de terceros instalados."
 
+sudo usermod -aG docker "$USER"
+sudo systemctl enable --now docker.service
+sudo chsh -s "$(which zsh)" "$USER"
 
 # ------------------------------------------------------------------------------
 # 4.5. APLICACIONES DEL ECOSISTEMA GNOME (Condicionales)
@@ -173,9 +176,6 @@ _success "Oh My Zsh y Dotfiles instalados y enlazados."
 _log "Instalando runtimes (uv, fnm, sdkman)..."
 mkdir -p "$HOME/.local/bin"
 
-# Docker sin sudo
-#sudo usermod -aG docker $USER
-sudo /usr/sbin/usermod -aG docker $USER
 # Instalar uv (Python)
 env ZDOTDIR="/tmp" curl -LsSf https://astral.sh/uv/install.sh | sh
 # Instalar fnm (Node.js)
@@ -194,5 +194,11 @@ fc-cache -f -v > /dev/null
 gsettings set org.gnome.desktop.interface font-name 'Google Sans 11'
 gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 11'
 gsettings set org.gnome.desktop.interface monospace-font-name 'Fira Mono 11'
+
+PROFILE=$(gsettings get org.gnome.Terminal.ProfilesList default | tr -d \')
+if [ -n "$PROFILE" ]; then
+    gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles/${PROFILE}/ use-system-font false
+    gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles/${PROFILE}/ font 'Fira Mono 11'
+fi
 
 _success "Instalación completada. Por favor, cierra sesión o reinicia el equipo para aplicar todos los cambios de Docker y Zsh."
