@@ -48,7 +48,7 @@ _log "Iniciando aprovisionamiento del entorno..."
 _log "Instalando paquetes base..."
 BASE_PKGS=(
     zram-tools curl wget git zip unzip stow gnupg htop zsh 
-    gnome-boxes dconf-editor devhelp sysprof flatpak fonts-noto
+    gnome-boxes dconf-editor devhelp sysprof flatpak
 )
 sudo apt-get update -qq
 sudo apt-get install -y "${BASE_PKGS[@]}"
@@ -127,6 +127,10 @@ _success "Paquetes de terceros instalados."
 sudo usermod -aG docker "$USER"
 sudo systemctl enable --now docker.service
 sudo chsh -s "$(which zsh)" "$USER"
+
+_log "Inyectando repositorio Flathub de manera incondicional..."
+sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
 
 # ------------------------------------------------------------------------------
 # 4.5. APLICACIONES DEL ECOSISTEMA GNOME (Condicionales)
