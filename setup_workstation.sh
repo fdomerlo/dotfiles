@@ -47,7 +47,7 @@ _log "Iniciando aprovisionamiento del entorno..."
 # el resto simplemente viaja gratis en la misma llamada.
 _log "Instalando paquetes base..."
 BASE_PKGS=(
-    zram-tools curl wget git zip unzip stow gnupg htop zsh 
+    zram-tools curl wget git zip unzip stow gnupg build-essential htop zsh 
     gnome-boxes dconf-editor devhelp sysprof flatpak gnome-software-plugin-flatpak
 )
 sudo apt-get update -qq
