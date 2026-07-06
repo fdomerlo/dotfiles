@@ -48,7 +48,8 @@ _log "Iniciando aprovisionamiento del entorno..."
 _log "Instalando paquetes base..."
 BASE_PKGS=(
     zram-tools curl wget git zip unzip stow gnupg build-essential htop zsh 
-    gnome-boxes dconf-editor devhelp sysprof flatpak gnome-software-plugin-flatpak
+    nautilus-extension-gnome-terminal gnome-boxes dconf-editor devhelp sysprof 
+    flatpak gnome-software-plugin-flatpak
 )
 sudo apt-get update -qq
 sudo apt-get install -y "${BASE_PKGS[@]}"
