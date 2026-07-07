@@ -47,8 +47,8 @@ _log "Iniciando aprovisionamiento del entorno..."
 # el resto simplemente viaja gratis en la misma llamada.
 _log "Instalando paquetes base..."
 BASE_PKGS=(
-    zram-tools curl wget git zip unzip stow gnupg build-essential htop zsh 
-    nautilus-extension-gnome-terminal gnome-boxes dconf-editor devhelp sysprof 
+    zram-tools curl wget git zip unzip stow gnupg build-essential zsh 
+    gnome-tweaks gnome-boxes dconf-editor devhelp sysprof 
     flatpak gnome-software-plugin-flatpak
 )
 sudo apt-get update -qq
@@ -142,6 +142,9 @@ if [ "$INSTALL_FULL_DESKTOP" = true ]; then
         org.gimp.GIMP \
         org.inkscape.Inkscape \
         net.nokyan.Resources \
+        org.onlyoffice.desktopeditors \
+        md.obsidian.Obsidian \
+        com.mattjakeman.ExtensionManager \
         de.haeckerfelix.Fragments
     _success "Apps del Círculo instaladas."
 fi

@@ -61,3 +61,10 @@ precmd() {
 PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
 
 . "$HOME/.local/bin/env"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/fdomerlo/.local/bin:$PATH"
+
+# opencode
+export PATH=/home/fdomerlo/.opencode/bin:$PATH
