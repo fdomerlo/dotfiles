@@ -6,11 +6,13 @@ No es un script genérico "para cualquier Debian" — está atado a decisiones d
 
 ## Uso
 
-```bash
 # Instalación estándar
+```bash
 curl -fsSL https://raw.githubusercontent.com/fdomerlo/dotfiles/main/setup_workstation.sh | bash
+```
 
 # Con apps adicionales de escritorio (Flatpak)
+```bash
 curl -fsSL <URL> | bash -s -- --full
 ```
 
