@@ -24,19 +24,6 @@ log_error() { echo -e "${RED}[ERROR] $1${NC}"; }
 # FUNCIONES DE NAVEGACIÓN Y GESTIÓN DE DIRECTORIOS
 # =============================================================================
 
-# Función para actualizar la workstation
-update-workstation() {
-    printf "Ingrese el usuario de GitHub del repositorio (ej. mi_usuario): "
-    read gh_user
-    if [ -z "$gh_user" ]; then
-        log_error "Error: Usuario de GitHub requerido."
-        return 1
-    fi
-    log_info "Actualizando la workstation..."
-    rm -rf "$DEV_BASE_DIR/setup-dev-env"
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/${gh_user}/setup-dev-env/main/bootstrap.sh)" _ --dev-only
-}
-
 # Función para ir al directorio de desarrollo
 devdir() {
     cd "$DEV_BASE_DIR" || {
@@ -814,7 +801,6 @@ alias djcreate='create_django_project'
 alias clone='clone_repo'
 alias clones='clone_short'
 alias projects='lsdev'
-alias updws='update-workstation'
 
 # =============================================================================
 # FUNCIÓN DE AYUDA
@@ -844,9 +830,6 @@ dev_help() {
     echo "  djcreate ecommerce --with-docker"
     echo "  clone_short django/django"
     echo "  cdp mi-blog"
-    echo ""
-    echo -e "${GREEN}Actualizar el stack:${NC}"
-    echo "  updws"
 }
 
 # Mostrar ayuda al cargar
