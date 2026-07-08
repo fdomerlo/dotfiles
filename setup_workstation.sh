@@ -40,6 +40,21 @@ sudo -v
 _log "Iniciando aprovisionamiento del entorno..."
 
 # ------------------------------------------------------------------------------
+# 0. REPOSITORIOS DEBIAN (Formato DEB822 con todos los componentes)
+# ------------------------------------------------------------------------------
+_log "Reconfigurando repositorios Debian a formato DEB822..."
+sudo tee /etc/apt/sources.list.d/debian.sources > /dev/null <<'EOF'
+Types: deb
+URIs: https://deb.debian.org/debian
+Suites: testing
+Components: main contrib non-free non-free-firmware
+EOF
+
+# Eliminar sources.list antiguo si existe
+sudo rm -f /etc/apt/sources.list /etc/apt/sources.list.d/*.list
+_success "Repositorios Debian reconfigurados."
+
+# ------------------------------------------------------------------------------
 # 1. PAQUETES BASE (todo lo que vive en los repos oficiales de Debian)
 # ------------------------------------------------------------------------------
 # Se instala todo esto en una sola pasada. curl/gnupg/wget quedan disponibles
@@ -50,6 +65,7 @@ BASE_PKGS=(
     zram-tools curl wget git zip unzip stow gnupg build-essential zsh 
     gnome-tweaks gnome-boxes dconf-editor devhelp sysprof 
     flatpak gnome-software-plugin-flatpak
+    linux-firmware wireless-tools wpasupplicant
 )
 sudo apt-get update -qq
 sudo apt-get install -y "${BASE_PKGS[@]}"
