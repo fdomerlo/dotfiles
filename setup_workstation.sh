@@ -65,7 +65,6 @@ BASE_PKGS=(
     zram-tools curl wget git zip unzip stow gnupg build-essential zsh 
     gnome-tweaks gnome-boxes dconf-editor devhelp sysprof 
     flatpak gnome-software-plugin-flatpak
-    linux-firmware wireless-tools wpasupplicant
 )
 sudo apt-get update -qq
 sudo apt-get install -y "${BASE_PKGS[@]}"
