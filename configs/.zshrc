@@ -63,3 +63,12 @@ PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
 # --- Antigravity CLI y opencode (si existen) ---
 [ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
 [ -d "$HOME/.opencode/bin" ] && export PATH="$HOME/.opencode/bin:$PATH"
+
+. "$HOME/.local/bin/env"
+
+# opencode
+export PATH=/home/fdomerlo/.opencode/bin:$PATH
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/fdomerlo/.local/bin:$PATH"
