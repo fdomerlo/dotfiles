@@ -62,7 +62,8 @@ _success "Repositorios Debian reconfigurados."
 # el resto simplemente viaja gratis en la misma llamada.
 _log "Instalando paquetes base..."
 BASE_PKGS=(
-    zram-tools curl wget git zip unzip stow gnupg build-essential zsh 
+    zram-tools curl wget git zip unzip stow gnupg zsh 
+    build-essential linux-headers-amd64
     gnome-tweaks gnome-boxes dconf-editor devhelp sysprof 
     flatpak gnome-software-plugin-flatpak
 )
@@ -71,22 +72,27 @@ sudo apt-get install -y "${BASE_PKGS[@]}"
 _success "Paquetes base instalados."
 
 # ------------------------------------------------------------------------------
-# 2. MEMORIA VIRTUAL (zRam + Swapfile fallback)
+# 2. OPTIMIZACIÓN DE ALMACENAMIENTO Y MEMORIA VIRTUAL
 # ------------------------------------------------------------------------------
-_log "Configurando zRam y Swapfile fallback..."
+_log "Optimizando almacenamiento (noatime), zRam y Swapfile..."
 
+# Optimizar opciones de montaje para mitigar escrituras de lecturas (Idempotente)
+sudo sed -i '/noatime/!s/errors=remount-ro/errors=remount-ro,noatime/g' /etc/fstab
+
+# Configurar zRam
 echo -e "ALGO=zstd\nPERCENT=50\nPRIORITY=100" | sudo tee /etc/default/zramswap > /dev/null
 sudo systemctl restart zramswap.service
 
+# Configurar Swapfile fallback de manera instantánea
 SWAPFILE="/swapfile"
 if [ ! -f "$SWAPFILE" ]; then
-    sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=4096 status=progress
+    sudo fallocate -l 4G "$SWAPFILE"
     sudo chmod 600 "$SWAPFILE"
     sudo mkswap "$SWAPFILE"
     sudo swapon "$SWAPFILE"
     echo "$SWAPFILE none swap sw,pri=10 0 0" | sudo tee -a /etc/fstab > /dev/null
 fi
-_success "Memoria virtual optimizada."
+_success "Almacenamiento y memoria virtual optimizados."
 
 # ------------------------------------------------------------------------------
 # 3. REPOSITORIOS DE TERCEROS (Orden estricto)
@@ -140,7 +146,7 @@ sudo apt-get update -qq
 sudo apt-get install -y "${REPO_PKGS[@]}"
 _success "Paquetes de terceros instalados."
 
-sudo usermod -aG docker "$USER"
+sudo usermod -aG docker,libvirt,kvm "$USER"
 sudo systemctl enable --now docker.service
 sudo chsh -s "$(which zsh)" "$USER"
 
@@ -201,8 +207,16 @@ mkdir -p "$HOME/.local/bin"
 
 # Instalar uv (Python)
 env ZDOTDIR="/tmp" curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # Instalar fnm (Node.js)
 curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.local/bin" --skip-shell
+# Exportar temporalmente FNM al script para habilitar corepack de inmediato
+export PATH="$HOME/.local/bin:$PATH"
+eval "$(fnm env)"
+# Instalar una versión LTS por defecto y activar corepack
+fnm install --lts
+corepack enable
+
 # SDKMAN (Java/Scala/Kotlin)
 curl -s "https://get.sdkman.io?rcupdate=false" | bash
 

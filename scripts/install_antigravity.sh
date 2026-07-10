@@ -50,7 +50,7 @@ sudo bash -c "cat <<EOF > /usr/share/applications/antigravity.desktop
 Name=Antigravity 2.0
 Comment=Orquestación asíncrona de agentes autónomos
 Exec=/usr/local/bin/antigravity
-Icon=$HOME/.local/share/application/antigravity.png
+Icon=$HOME/.local/share/applications/antigravity.png
 Type=Application
 Terminal=false
 Categories=Development;IDE;
