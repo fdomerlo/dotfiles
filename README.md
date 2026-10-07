@@ -1,122 +1,134 @@
-# setup_workstation.sh
+![status](https://img.shields.io/badge/status-active-success)
+![platform](https://img.shields.io/badge/platform-Debian%20Trixie-red)
+![shell](https://img.shields.io/badge/shell-zsh-green)
+![docker](https://img.shields.io/badge/docker-rootless-blue)
 
-Script de aprovisionamiento post-instalación para workstations de desarrollo sobre **Debian Testing**. Asume un particionado específico (detallado abajo) y deja el equipo listo para trabajar: Docker, VS Code, runtimes de lenguaje, shell y dotfiles, sin intervención manual salvo la contraseña de `sudo`.
+# Dotfiles - Debian Workstation
 
-No es un script genérico "para cualquier Debian" — está atado a decisiones de infraestructura concretas que se explican en este documento. Si vas a adaptarlo a tu propia máquina, leé la sección de **Prerrequisitos** antes de correrlo.
+Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian Stable (Trixie)**, optimizado para hardware con gráficos AMD, almacenamiento EXT4, contenedores **Docker Rootless**, gestores de paquetes modernos en espacio de usuario (`uv`, `fnm`, `sdkman`) y herramientas de Inteligencia Artificial.
 
-## Uso
+---
 
-# Instalación estándar
-```bash
-curl -fsSL https://raw.githubusercontent.com/fdomerlo/dotfiles/main/setup_workstation.sh | bash
-```
+## 🎯 Arquitectura y Rationale
 
-# Con apps adicionales de escritorio (Flatpak)
-```bash
-curl -fsSL <URL> | bash -s -- --full
-```
+* **Host Nativo (Sin Distrobox):** El sistema operativo anfitrión ya es Debian, por lo que todo el tooling se ejecuta directamente sobre el host, maximizando el rendimiento y eliminando capas de emulación innecesarias.
+* **Docker Engine Rootless:** Despliegue de Docker CE con el demonio ejecutándose en el espacio del usuario bajo `systemd --user`. Toda la CLI de `docker` y `docker compose` opera sin permisos de superusuario (`sudo`) ni sockets expuestos a nivel de root.
+* **Runtimes Aislados en User-Space:**
+  * **Python:** Administrado exclusivamente con [uv](https://astral.sh/uv) (rápido, compatible con PEP 668 de Debian y sin riesgo de corromper paquetes del sistema).
+  * **Node.js:** Administrado con [fnm](https://github.com/Schniz/fnm) (Fast Node Manager escrito en Rust).
+  * **Java/JVM:** Administrado con [sdkman](https://sdkman.io).
+* **Tooling Nativo sin Sandboxes:** Editores (VS Code con repositorio oficial APT de Microsoft, Zed editor) y navegadores (Google Chrome oficial) instalados como binarios nativos para evitar los problemas de integración y permisos típicos de Flatpak.
+* **Sinergia con `preseed.cfg`:** Diseñado para montarse sobre una instalación limpia realizada con el preseed del proyecto, aprovechando zRAM (`zstd`) como swap primario en memoria y el swapfile de respaldo en EXT4.
+* **Escritorio GNOME:** Tipografías tipográficas Google Sans y extensiones automáticas (Dash to Dock, Vitals, Alphabetical App Grid, Tiling Shell).
 
-No correr como root. El script pide `sudo` puntualmente para cada operación que lo necesita.
+---
 
-## Prerrequisitos
+## 🚀 Instalación Rápida (One-Command)
 
-El script asume que el disco ya fue particionado así (ver `preseed.cfg` en este mismo repo):
-
-| Punto de montaje | Filesystem | Por qué |
-|---|---|---|
-| `/boot/efi` | FAT32 | Requisito de la spec UEFI, no hay alternativa |
-| `/` | **Btrfs** + Snapper | Snapshots automáticos y rollback si una actualización rompe el sistema |
-| `/home` | **Ext4** | Evita el overhead de copy-on-write de Btrfs en cargas con muchos archivos chicos (`node_modules`, `venv`, `__pycache__`) |
-
-Esta combinación es intencional, no arbitraria, y **el script depende de ella** en dos puntos concretos (swapfile y Docker data-root, ver abajo). Si tu partición raíz no es Btrfs, esas dos secciones siguen funcionando igual, pero pierden su razón de ser — no hace daño, simplemente sobra la relocación.
-
-## Decisiones de diseño
-
-### 1. Paquetes base antes que repos de terceros
-
-El script instala primero todo lo que ya está en los repos oficiales de Debian (`BASE_PKGS`), y recién después agrega repos de terceros (Docker, VS Code, etc.) e instala lo que depende de ellos (`REPO_PKGS`). El orden no es cosmético: `curl` y `gnupg` tienen que existir en el sistema *antes* de poder descargar y verificar las claves GPG de esos repos externos. Es el límite real que impide bajar todo a una sola llamada de `apt-get install`.
+Tras finalizar la instalación limpia con `preseed.cfg`:
 
 ```bash
-BASE_PKGS=( zram-tools curl wget git zip unzip stow gnupg fonts-noto ... )
-sudo apt-get install -y "${BASE_PKGS[@]}"
-
-# ... se agregan los repos de terceros acá ...
-
-REPO_PKGS=( gh code dbeaver-ce docker-ce ... )
-sudo apt-get install -y "${REPO_PKGS[@]}"
+sudo apt-get update && sudo apt-get install -y git make && \
+rm -rf ~/.dotfiles && \
+git clone https://github.com/fdomerlo/debian-dotfiles.git ~/.dotfiles && \
+cd ~/.dotfiles && \
+make help
 ```
 
-Con esto quedan **2 `apt-get update` + 2 `apt-get install`** en total — el mínimo posible dada la dependencia. Cualquier versión con 3 o más de cualquiera de los dos está gastando tiempo de red sin necesidad.
-
-### 2. Swapfile en `/home`, nunca en `/`
+Para aprovisionar el equipo por completo:
 
 ```bash
-SWAPFILE="/home/.swapfile"
+make install
 ```
 
-Un swapfile sobre Btrfs no funciona con el método clásico (`dd` + `mkswap` + `swapon`) sin pasos adicionales: necesita el atributo NOCOW (`chattr +C`) aplicado *antes* de escribir cualquier dato, sin compresión, y sin que el archivo cruce subvolúmenes o quede atrapado en un snapshot. Saltarse esto puede hacer que `swapon` falle directamente, o peor, corromper el archivo por el copy-on-write.
+---
 
-En vez de lidiar con esas excepciones, el swapfile vive en `/home` (Ext4), donde el método tradicional funciona sin ninguna configuración especial. Mismo principio que aplicamos a `node_modules`: todo lo que implica escritura constante o no tolera CoW, fuera de Btrfs.
+## 📁 Estructura del Repositorio
 
-zRAM sigue siendo la primera línea de memoria virtual (prioridad de swap 100); el swapfile es solo el colchón de caída si zRAM se satura (prioridad 10).
+```text
+debian/
+├── Makefile                       # Orquestador con targets modulares
+├── README.md                      # Documentación y referencia
+├── LICENSE                        # Licencia del proyecto
+├── .gitignore                     # Filtros de exclusión de git
+├── .envrc.template                # Plantilla para direnv en proyectos
+│
+├── host/                          # Scripts a nivel de sistema
+│   ├── setup.sh                   #   Actualización APT, paquetes base y repos de Docker CE (sudo)
+│   └── docker_rootless.sh         #   Instalación de Docker Rootless bajo systemd --user
+│
+├── scripts/                       # Instaladores y configuración de usuario
+│   ├── antigravity.png            #   Icono oficial para el lanzador .desktop
+│   ├── desktop.sh                 #   Tipografías del sistema y extensiones de GNOME Shell
+│   ├── devai.sh                   #   Instalador de OpenCode CLI y Antigravity 2.0
+│   ├── devtools.sh                #   Instalador de gh (APT), uv, fnm y sdkman
+│   ├── fonts.sh                   #   Despliegue de tipografías locales Google Sans
+│   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
+│   ├── setup_agy.sh               #   Despliegue de Antigravity Core/IDE en /opt y CLI
+│   ├── setup_gh.sh                #   Configuración desatendida de clave SSH con GitHub
+│   ├── tooling.sh                 #   Instalación de VS Code (APT), Chrome (.deb) y Zed
+│   └── verify.sh                  #   Diagnóstico y validación post-instalación
+│
+├── shell/                         # Dotfiles y utilitarios de línea de comandos
+│   ├── devctl                     #   CLI para scaffolding de proyectos y diagnósticos
+│   ├── gitconfig                  #   Configuración global de Git
+│   └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman y Docker Rootless
+│
+├── templates/                     # Plantillas de inicio rápido
+│   └── django/
+│       └── manage.sh              #   Script de inicialización de Django con uv venv
+│
+└── fonts/                         # Colección tipográfica de alta legibilidad
+    └── .local/share/fonts/        #   Google Sans, Google Sans Code, Space Grotesk
+```
 
-### 3. Docker data-root relocado a `/home/docker-data`
+---
+
+## 🛠️ Makefile Targets
+
+| Target | Descripción |
+| :--- | :--- |
+| `make install` | Aprovisionamiento completo (host + docker + shell + devtools + tooling + devai + desktop + fonts) |
+| `make host` | Actualiza APT, instala paquetes base, dependencias y repositorios (requiere `sudo`) |
+| `make docker` | Configura e inicia Docker Engine Rootless en el usuario actual (`systemd --user`) |
+| `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig` y `devctl` |
+| `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman` y sincroniza credenciales SSH con GitHub |
+| `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed) |
+| `make devai` | Instala OpenCode CLI, Antigravity CLI y despliega Antigravity Core/IDE |
+| `make fonts` | Enlaza tipografías Google Sans en `~/.local/share/fonts` y actualiza la caché |
+| `make desktop` | Aplica configuración de tipografías del sistema y activa extensiones GNOME |
+| `make verify` | Ejecuta el test integral de salud del sistema |
+| `make clean` | Limpia paquetes residuales de APT y directorios temporales |
+
+---
+
+## 🧰 CLI `devctl`
+
+`devctl` se instala automáticamente en `~/.local/bin/devctl` como enlace simbólico al repositorio.
 
 ```bash
-sudo systemctl stop docker.service docker.socket 2>/dev/null || true
-echo "{\"data-root\": \"/home/docker-data\"}" | sudo tee /etc/docker/daemon.json
+# Diagnóstico integral del sistema, Docker rootless, zram y swap
+devctl doctor
+
+# Inicializa un proyecto Django moderno con uv, venv y .envrc
+devctl project init django
 ```
 
-Por defecto, Docker guarda imágenes, capas y volúmenes en `/var/lib/docker` — que en nuestro esquema cae dentro de `/`, es decir, dentro de Btrfs. Las capas de contenedores son exactamente el patrón de I/O que peor le sienta a Btrfs (muchísimos archivos chicos creándose y destruyéndose todo el tiempo), y además inflan cada snapshot de Snapper con basura de contenedores efímeros que no tiene sentido poder "revertir".
+---
 
-El detalle no obvio: **`docker-ce` arranca el servicio automáticamente al instalarse** (systemd preset de Debian). Si escribís la config nueva después de instalar sin parar el servicio primero, Docker ya alcanzó a inicializar `/var/lib/docker` con la ruta vieja. Por eso el script para el servicio, escribe `daemon.json`, migra cualquier dato residual si lo hubiera, y recién ahí lo habilita.
+## 🧪 Verificación y Diagnóstico
 
-### 4. Fallback de repo de Docker: `trixie` → `bookworm`
+Para validar la integridad de la estación de trabajo en cualquier momento:
 
 ```bash
-DOCKER_CODENAME="trixie"
-if ! curl -fsSL ".../dists/$DOCKER_CODENAME/" | grep -q "stable"; then
-    DOCKER_CODENAME="bookworm"
-fi
+make verify
 ```
 
-Docker solo publica repos apt para codenames de Debian **ya liberados como Stable** — nunca para el nombre de Testing en curso (hoy "forky"). Este chequeo no es un manejo de errores genérico: es la forma correcta de anticipar que, en algún momento de transición entre releases de Debian, el repo de Docker para el codename más reciente puede no estar listo todavía, y hay que caer a la versión anterior sin que el script se rompa.
-
-### 5. `stow -R` corre siempre, no solo en el primer clone
-
-```bash
-if [ ! -d "$HOME/.dotfiles" ]; then
-    git clone "https://github.com/${GITHUB_USER}/dotfiles.git" "$HOME/.dotfiles"
-fi
-cd "$HOME/.dotfiles"
-stow -R configs fonts
-```
-
-Si una corrida anterior del script falló entre el `git clone` y el `stow` (red caída, Ctrl+C, lo que sea), volver a correr el script no debía dejar el repo clonado pero sin symlinkear. Separar el `clone` (condicional) del `stow -R` (incondicional, siempre re-simboliza) hace que el script sea seguro de re-ejecutar en cualquier punto en el que haya fallado antes.
-
-### 6. `GITHUB_USER` como variable explícita
-
-```bash
-GITHUB_USER="fdomerlo"
-```
-
-El username del sistema (`$USER`) y el handle de GitHub coinciden hoy, pero son cosas conceptualmente distintas. Si alguien del equipo adapta este script con un usuario de sistema diferente al de su cuenta de GitHub, que dependa de una variable explícita en vez de `$USER` evita un `git clone` a una URL que no existe.
-
-## Estructura del script
-
-| Sección | Qué hace |
-|---|---|
-| 1. Paquetes base | Todo lo que no depende de repos de terceros |
-| 2. Memoria virtual | zRAM (primaria) + swapfile en `/home` (fallback) |
-| 3. Repositorios de terceros | Docker, VS Code, Mozilla, GitHub CLI, DBeaver, Chrome |
-| 4. Paquetes de terceros + Docker data-root | Instala lo que depende de los repos de arriba, y relocaliza Docker |
-| 4.5. Apps de escritorio (`--full`) | Flatpaks opcionales, solo si se pasa el flag |
-| 5. Oh My Zsh + dotfiles | Shell, plugins, symlinks vía Stow |
-| 6. Runtimes | `uv` (Python), `fnm` (Node), `sdkman` (JVM) |
-| 7. GNOME | Fuentes, dock, terminal |
-
-## Qué NO hace este script
-
-- No particiona el disco — eso es responsabilidad de `preseed.cfg`, corrido antes durante la instalación.
-- No configura Snapper — también se resuelve en el `late_command` del preseed, antes del primer arranque.
-- No es idempotente al 100%: los pasos de instalación de paquetes y configuración de repos son seguros de re-correr, pero no hay manejo de rollback si `apt-get install` falla a mitad de camino por un corte de red. Si el script aborta, revisar en qué sección quedó (`set -euo pipefail` corta la ejecución en el primer error) antes de re-correrlo.
+El script comprueba de forma automática:
+1. Módulo del kernel para aceleración gráfica (`amdgpu`).
+2. Activación de `zRAM` como swap primario de alta velocidad.
+3. Existencia y montaje del `swapfile` secundario en EXT4.
+4. Respuesta activa del demonio **Docker Rootless** en el socket de usuario.
+5. Disponibilidad de tipografías *Google Sans* y *Fira Code* en Fontconfig.
+6. Integridad de los enlaces simbólicos de dotfiles (`~/.zshrc`, `~/.gitconfig`, `devctl`).
+7. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `antigravity`).
