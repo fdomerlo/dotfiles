@@ -72,3 +72,4 @@ export PATH=/home/fdomerlo/.opencode/bin:$PATH
 
 # Added by Antigravity CLI installer
 export PATH="/home/fdomerlo/.local/bin:$PATH"
+eval "$(mise activate zsh)"
