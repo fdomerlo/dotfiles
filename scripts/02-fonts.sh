@@ -16,12 +16,8 @@ for font_dir in "$FONTS_SRC_DIR"/*; do
         font_name=$(basename "$font_dir")
         target_path="$TARGET_DIR/$font_name"
 
-        if [ ! -L "$target_path" ] && [ ! -d "$target_path" ]; then
-            ln -sf "$font_dir" "$target_path"
-            echo "Symlinked $font_name"
-        else
-            echo "Skipping $font_name (already exists)"
-        fi
+        ln -snf "$font_dir" "$target_path"
+        echo "Symlinked $font_name"
     fi
 done
 

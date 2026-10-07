@@ -4,6 +4,25 @@ set -euo pipefail
 
 echo "==> Setting up dotfiles..."
 
+# Install Oh My Zsh if not present
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    echo "Installing Oh My Zsh..."
+    git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+else
+    echo "Oh My Zsh is already installed."
+fi
+
+# Install Oh My Zsh plugins
+ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
+if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
+    echo "Installing zsh-autosuggestions..."
+    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+fi
+if [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
+    echo "Installing zsh-syntax-highlighting..."
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+fi
+
 DOTFILES_SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../configs" && pwd)"
 BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d_%H%M%S)"
 
@@ -34,9 +53,9 @@ done
 
 echo "==> Validating default shell..."
 CURRENT_SHELL=$(getent passwd "$USER" | cut -d: -f7)
-ZSH_PATH=$(which zsh || echo "/usr/bin/zsh")
+ZSH_PATH=$(command -v zsh || echo "/usr/bin/zsh")
 
-if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
+if [ "$(readlink -f "$CURRENT_SHELL")" != "$(readlink -f "$ZSH_PATH")" ]; then
     echo "Changing default shell to zsh ($ZSH_PATH)..."
     # Try using sudo if chsh requires it (often does for changing shell)
     if command -v sudo >/dev/null 2>&1; then

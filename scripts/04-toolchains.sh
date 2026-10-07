@@ -15,6 +15,7 @@ fi
 
 # Ensure mise is available in current session for installation
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/share/mise/shims:$PATH"
 
 echo "==> Installing developer runtimes via mise..."
 mise use --global node@lts
