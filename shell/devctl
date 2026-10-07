@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Resolver la ruta real del script independientemente de enlaces simbólicos
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+BASE_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
+
+log() { echo -e "\n==> $1"; }
+
+require() {
+  command -v "$1" >/dev/null || { echo "Missing: $1"; exit 1; }
+}
+
+# --------------------------------------------------
+# PROJECTS
+# --------------------------------------------------
+
+project_init_django() {
+  log "Inicializando proyecto Django moderno (uv + venv)..."
+
+  mkdir -p app
+  if [ -d "$BASE_DIR/templates/django" ]; then
+    cp -r "$BASE_DIR/templates/django/"* app/
+  fi
+  if [ -f "$BASE_DIR/.envrc.template" ]; then
+    cp "$BASE_DIR/.envrc.template" .envrc
+  fi
+
+  chmod +x app/manage.sh || true
+  log "Proyecto preparado en ./app"
+  echo "Próximos pasos:"
+  echo "  1. cd app && ./manage.sh"
+  echo "  2. direnv allow (si usas direnv)"
+}
+
+# --------------------------------------------------
+# DIAGNÓSTICO
+# --------------------------------------------------
+
+doctor() {
+  log "Ejecutando diagnóstico del entorno Debian..."
+
+  check() {
+    if command -v "$1" >/dev/null; then
+      echo -e "  \033[32m✔\033[0m $1"
+    else
+      echo -e "  \033[31m✘\033[0m $1"
+    fi
+  }
+
+  echo "Herramientas del Host:"
+  check git
+  check gh
+  check zsh
+  check uv
+  check fnm
+  check code
+  check opencode
+  check antigravity
+
+  echo ""
+  echo "Docker Rootless:"
+  if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock" ]; then
+    echo -e "  \033[32m✔\033[0m Socket rootless detectado (${XDG_RUNTIME_DIR}/docker.sock)"
+    if DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/docker.sock" docker info &>/dev/null; then
+      echo -e "  \033[32m✔\033[0m Demonio Docker Rootless activo y respondiendo"
+    else
+      echo -e "  \033[31m✘\033[0m Demonio Docker Rootless no responde"
+    fi
+  else
+    echo -e "  \033[33m⚠️\033[0m No se encontró socket en ${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
+  fi
+
+  echo ""
+  echo "Memoria y Swap:"
+  swapon --show || echo "No hay swap activo"
+
+  echo ""
+  echo "Estado de zRAM:"
+  if command -v zramctl &>/dev/null; then
+    zramctl || echo "zRAM inactivo"
+  elif grep -q "zram" /proc/swaps; then
+    grep "zram" /proc/swaps
+  else
+    echo "No se detectó dispositivo zRAM"
+  fi
+}
+
+# --------------------------------------------------
+# ROUTER
+# --------------------------------------------------
+
+case "${1:-}" in
+project)
+  case "${2:-}" in
+    init)
+      case "${3:-}" in
+        django) project_init_django ;;
+        *) echo "Uso: devctl project init django" ;;
+      esac
+      ;;
+  esac
+  ;;
+
+doctor) doctor ;;
+
+*)
+  echo "devctl - Workstation CLI para Debian"
+  echo ""
+  echo "Uso:"
+  echo "  devctl project init django   # Inicializa proyecto Django con uv"
+  echo "  devctl doctor                # Diagnóstico del entorno y servicios"
+  ;;
+esac

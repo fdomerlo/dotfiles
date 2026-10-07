@@ -1,10 +1,11 @@
+[user]
+	name = fdomerlo
+	email = merlof@folp.unlp.edu.ar
+[init]
+	defaultBranch = main
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
-[user]
-	mail = fdomerlo@gmail.com
-	name = fdomerlo
-	email = fdomerlo@gmail.com
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential

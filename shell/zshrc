@@ -1,0 +1,58 @@
+# ---------------------------------------------------------------------------
+# ZSH y Oh My Zsh - Configuración Principal
+# ---------------------------------------------------------------------------
+
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME=""
+
+plugins=(
+  git
+  common-aliases
+  extract
+  colored-man-pages
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+)
+
+[ -s "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
+
+# ---------------------------------------------------------------------------
+# CONFIGURACIÓN DEL USUARIO (DEBIAN TRIXIE)
+# ---------------------------------------------------------------------------
+
+# --- Consolidación del PATH ---
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:/usr/local/bin:$PATH"
+
+# --- UV (Python) ---
+[ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
+
+# --- FNM (Node.js) ---
+export PATH="$HOME/.local/share/fnm:$PATH"
+if command -v fnm &> /dev/null; then
+    eval "$(fnm env --use-on-cd)"
+fi
+
+# --- SDKMAN (Java/JVM) ---
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# --- Docker Rootless Socket ---
+if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock" ]; then
+    export DOCKER_HOST="unix://${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
+fi
+
+# --- Prompt con vcs_info ---
+setopt prompt_subst
+autoload -Uz vcs_info
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:git:*' formats ' (%b)'
+
+precmd() {
+    vcs_info
+}
+
+PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
+
+# --- Aliases Útiles ---
+alias d="docker"
+alias dc="docker compose"
