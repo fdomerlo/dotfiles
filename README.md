@@ -5,30 +5,26 @@
 
 # Dotfiles - Debian Workstation
 
-Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian Stable (Trixie)**, optimizado para hardware con gráficos AMD, almacenamiento EXT4, contenedores **Docker Rootless**, gestores de paquetes modernos en espacio de usuario (`uv`, `fnm`, `sdkman`) y herramientas de Inteligencia Artificial.
+Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian Stable (Trixie)**, contenedores **Docker Rootless**, gestores de paquetes modernos en espacio de usuario (`uv`, `fnm`, `sdkman`).
 
 ---
 
 ## 🎯 Arquitectura y Rationale
 
-* **Host Nativo (Sin Distrobox):** El sistema operativo anfitrión ya es Debian, por lo que todo el tooling se ejecuta directamente sobre el host, maximizando el rendimiento y eliminando capas de emulación innecesarias.
 * **Docker Engine Rootless:** Despliegue de Docker CE con el demonio ejecutándose en el espacio del usuario bajo `systemd --user`. Toda la CLI de `docker` y `docker compose` opera sin permisos de superusuario (`sudo`) ni sockets expuestos a nivel de root.
 * **Runtimes Aislados en User-Space:**
   * **Python:** Administrado exclusivamente con [uv](https://astral.sh/uv) (rápido, compatible con PEP 668 de Debian y sin riesgo de corromper paquetes del sistema).
   * **Node.js:** Administrado con [fnm](https://github.com/Schniz/fnm) (Fast Node Manager escrito en Rust).
   * **Java/JVM:** Administrado con [sdkman](https://sdkman.io).
 * **Tooling Nativo sin Sandboxes:** Editores (VS Code con repositorio oficial APT de Microsoft, Zed editor) y navegadores (Google Chrome oficial) instalados como binarios nativos para evitar los problemas de integración y permisos típicos de Flatpak.
-* **Sinergia con `preseed.cfg`:** Diseñado para montarse sobre una instalación limpia realizada con el preseed del proyecto, aprovechando zRAM (`zstd`) como swap primario en memoria y el swapfile de respaldo en EXT4.
-* **Escritorio GNOME:** Tipografías tipográficas Google Sans y extensiones automáticas (Dash to Dock, Vitals, Alphabetical App Grid, Tiling Shell).
 
 ---
 
 ## 🚀 Instalación Rápida (One-Command)
 
-Tras finalizar la instalación limpia con `preseed.cfg`:
+En una instalación limpia de Debian ejecutar:
 
 ```bash
-sudo apt-get update && sudo apt-get install -y git make && \
 rm -rf ~/.dotfiles && \
 git clone https://github.com/fdomerlo/debian-dotfiles.git ~/.dotfiles && \
 cd ~/.dotfiles && \
