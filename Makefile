@@ -76,7 +76,6 @@ fonts:
 desktop: fonts
 	@echo "==> Configurando escritorio GNOME..."
 	bash scripts/desktop.sh
-	bash scripts/timeshift.sh
 
 # 9. Verificación de salud
 verify:
