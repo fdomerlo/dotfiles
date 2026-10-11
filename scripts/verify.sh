@@ -15,7 +15,7 @@ check_status() {
 
 # 1. Controlador AMDGPU
 echo -n "Controlador de gráficos (amdgpu)... "
-if lsmod | grep -q "^amdgpu"; then
+if lsmod | grep "^amdgpu" >/dev/null 2>&1; then
     check_status 0 "Módulo amdgpu cargado en el kernel"
 else
     check_status 1 "amdgpu NO está cargado"
@@ -37,18 +37,17 @@ else
     check_status 1 "Swapfile secundario no activo"
 fi
 
-# 4. Docker Rootless
-echo -n "Docker Rootless... "
-SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
-if [ -S "$SOCK" ] && DOCKER_HOST="unix://$SOCK" docker info &>/dev/null; then
-    check_status 0 "Docker Rootless activo y respondiendo"
+# 4. Podman Rootless
+echo -n "Podman Rootless... "
+if command -v podman &>/dev/null && [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ]; then
+    check_status 0 "Podman Rootless activo y operativo"
 else
-    check_status 1 "Docker Rootless no responde en $SOCK"
+    check_status 1 "Podman Rootless no disponible o sin modo rootless"
 fi
 
 # 5. Tipografías
 echo -n "Tipografías del sistema (Google Sans / Fira)... "
-if fc-list : family | grep -iq "Google Sans\|Fira Code"; then
+if fc-list : family | grep -iE "Google Sans|Fira Code" >/dev/null 2>&1; then
     check_status 0 "Fuentes reconocidas por fontconfig"
 else
     check_status 1 "No se encontraron Google Sans ni Fira Code"
@@ -71,7 +70,7 @@ fi
 
 # 7. Herramientas CLI críticas
 echo "Disponibilidad de herramientas clave:"
-for cmd in git gh uv fnm code antigravity; do
+for cmd in git gh uv fnm code antigravity podman; do
     echo -n "  -> $cmd: "
     if command -v "$cmd" &>/dev/null || [ -f "$HOME/.local/bin/$cmd" ]; then
         check_status 0 "Presente"

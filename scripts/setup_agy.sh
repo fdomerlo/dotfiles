@@ -22,7 +22,7 @@ echo "================================================================="
 if [[ ! -f "$ARCHIVO_APP" ]]; then
     echo "[-] Aviso: No se encontró $ARCHIVO_APP en $DIR_DESCARGAS."
     echo "    Si dispones del tarball de Antigravity, colócalo en ~/Descargas/ y vuelve a ejecutar este script."
-    echo "    Procediendo con la instalación del CLI únicamente..."
+    echo "    Procediendo con la verificación del CLI únicamente..."
 else
     ACTUALIZAR_APP=false
     if [[ ! -d "/opt/$SUBDIR_APP" ]] || [[ "$ARCHIVO_APP" -nt "/opt/$SUBDIR_APP" ]]; then
@@ -36,14 +36,21 @@ else
         sudo chown -R "$USUARIO_ACTUAL:$GRUPO_ACTUAL" "/opt/$SUBDIR_APP"
         sudo touch "/opt/$SUBDIR_APP"
     else
-        echo "[1/4] La versión en /opt/ ya está actualizada. Omitiendo extracción."
+        echo "[1/4] ✔ La versión en /opt/ ya está actualizada. Omitiendo extracción."
     fi
 
-    echo "[2/4] Verificando enlaces simbólicos en /usr/local/bin/..."
-    sudo ln -sf "/opt/$SUBDIR_APP/$BIN_APP" /usr/local/bin/antigravity
+    if [ -L "/usr/local/bin/antigravity" ] && [ "$(readlink "/usr/local/bin/antigravity")" = "/opt/$SUBDIR_APP/$BIN_APP" ]; then
+        echo "[2/4] ✔ Enlace simbólico en /usr/local/bin/antigravity ya configurado."
+    else
+        echo "[2/4] Configurando enlace simbólico en /usr/local/bin/..."
+        sudo ln -sf "/opt/$SUBDIR_APP/$BIN_APP" /usr/local/bin/antigravity
+    fi
 
-    echo "[3/4] Creando lanzador .desktop..."
-    sudo bash -c "cat <<EOF > /usr/share/applications/antigravity.desktop
+    if [ -f "/usr/share/applications/antigravity.desktop" ]; then
+        echo "[3/4] ✔ Lanzador antigravity.desktop ya existe."
+    else
+        echo "[3/4] Creando lanzador .desktop..."
+        sudo bash -c "cat <<EOF > /usr/share/applications/antigravity.desktop
 [Desktop Entry]
 Name=Antigravity 2.0
 Comment=Orquestación asíncrona de agentes autónomos
@@ -53,10 +60,16 @@ Type=Application
 Terminal=false
 Categories=Development;
 EOF"
-    sudo update-desktop-database /usr/share/applications/
+        sudo update-desktop-database /usr/share/applications/
+    fi
 fi
 
-echo "[4/4] Instalando / Actualizando Antigravity CLI..."
-curl -fsSL https://antigravity.google/cli/install.sh | bash
+echo "[4/4] Verificando Antigravity CLI..."
+if ! command -v antigravity &>/dev/null && [ ! -f "$HOME/.local/bin/antigravity" ] && [ ! -f "/usr/local/bin/antigravity" ]; then
+    echo "Instalando Antigravity CLI..."
+    curl -fsSL https://antigravity.google/cli/install.sh | bash
+else
+    echo "✔ Antigravity CLI ya está instalado."
+fi
 
 echo "✔ Despliegue de Antigravity finalizado."
