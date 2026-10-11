@@ -64,16 +64,20 @@ doctor() {
   check antigravity
 
   echo ""
-  echo "Docker Rootless:"
-  if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock" ]; then
-    echo -e "  \033[32m✔\033[0m Socket rootless detectado (${XDG_RUNTIME_DIR}/docker.sock)"
-    if DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/docker.sock" docker info &>/dev/null; then
-      echo -e "  \033[32m✔\033[0m Demonio Docker Rootless activo y respondiendo"
+  echo "Podman Rootless:"
+  if command -v podman &>/dev/null; then
+    echo -e "  \033[32m✔\033[0m Binario podman presente ($(podman --version))"
+    if [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ]; then
+      echo -e "  \033[32m✔\033[0m Podman Rootless activo y operativo"
     else
-      echo -e "  \033[31m✘\033[0m Demonio Docker Rootless no responde"
+      echo -e "  \033[31m✘\033[0m Podman no se está ejecutando en modo Rootless"
     fi
   else
-    echo -e "  \033[33m⚠️\033[0m No se encontró socket en ${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
+    echo -e "  \033[31m✘\033[0m podman no instalado"
+  fi
+
+  if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then
+    echo -e "  \033[32m✔\033[0m Socket Podman/Docker activo (${XDG_RUNTIME_DIR}/podman/podman.sock)"
   fi
 
   echo ""

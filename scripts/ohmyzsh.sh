@@ -9,7 +9,7 @@ if ! command -v zsh &>/dev/null; then
 fi
 
 CURRENT_SHELL=$(getent passwd "$USER" | cut -d: -f7)
-ZSH_PATH=$(command -v zsh)
+ZSH_PATH=$(command -v zsh || echo "/bin/zsh")
 
 if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
   sudo chsh -s "$ZSH_PATH" "$USER"
@@ -29,16 +29,16 @@ if [ ! -d "$PLUGINS_DIR/zsh-autosuggestions" ]; then
   echo "==> Clonando zsh-autosuggestions..."
   git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions "$PLUGINS_DIR/zsh-autosuggestions"
 else
-  echo "==> Actualizando zsh-autosuggestions..."
-  git -C "$PLUGINS_DIR/zsh-autosuggestions" pull
+  echo "==> zsh-autosuggestions ya está presente."
+  git -C "$PLUGINS_DIR/zsh-autosuggestions" pull -q || true
 fi
 
 if [ ! -d "$PLUGINS_DIR/zsh-syntax-highlighting" ]; then
   echo "==> Clonando zsh-syntax-highlighting..."
   git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting "$PLUGINS_DIR/zsh-syntax-highlighting"
 else
-  echo "==> Actualizando zsh-syntax-highlighting..."
-  git -C "$PLUGINS_DIR/zsh-syntax-highlighting" pull
+  echo "==> zsh-syntax-highlighting ya está presente."
+  git -C "$PLUGINS_DIR/zsh-syntax-highlighting" pull -q || true
 fi
 
 echo "✔ Zsh & Oh My Zsh configurados correctamente."

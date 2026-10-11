@@ -7,14 +7,14 @@ SHELL := /bin/bash
 export RUNZSH=no
 export CHSH=no
 
-.PHONY: help install host docker shell devtools tooling devai desktop fonts verify clean
+.PHONY: help install host podman docker shell devtools tooling devai desktop fonts verify clean
 
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Trixie):"
-	@echo "  make install   - Aprovisiona la estación de trabajo completa (host + docker + shell + devtools + tooling + devai + desktop + fonts)"
-	@echo "  make host      - Actualiza APT e instala paquetes base del sistema y dependencias de Docker"
-	@echo "  make docker    - Configura Docker Engine en modo Rootless (systemd --user)"
+	@echo "  make install   - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop + fonts)"
+	@echo "  make host      - Actualiza APT e instala paquetes base del sistema y dependencias de Podman"
+	@echo "  make podman    - Configura Podman en modo Rootless (systemd --user)"
 	@echo "  make shell     - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
 	@echo "  make devtools  - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
 	@echo "  make tooling   - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
@@ -25,7 +25,7 @@ help:
 	@echo "  make clean     - Limpia paquetes residuales de APT y temporales"
 
 # Instalación completa desatendida
-install: host docker shell devtools tooling devai desktop fonts clean
+install: host podman shell devtools tooling devai desktop fonts clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
 
 # 1. Host (requiere sudo)
@@ -33,10 +33,13 @@ host:
 	@echo "==> Configurando Host (Debian Trixie)..."
 	sudo bash host/setup.sh
 
-# 2. Docker Rootless (se ejecuta como usuario normal)
-docker:
-	@echo "==> Configurando Docker Rootless..."
-	bash host/docker_rootless.sh
+# 2. Podman Rootless (se ejecuta como usuario normal)
+podman:
+	@echo "==> Configurando Podman Rootless..."
+	bash host/podman.sh
+
+# Alias retrocompatible
+docker: podman
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
@@ -85,6 +88,11 @@ verify:
 # 10. Limpieza
 clean:
 	@echo "==> Limpiando paquetes residuales..."
-	sudo apt-get autoremove -y
-	sudo apt-get clean
+	@if sudo -n true 2>/dev/null; then \
+		sudo apt-get autoremove -y && sudo apt-get clean; \
+	elif [ "$$EUID" -eq 0 ]; then \
+		apt-get autoremove -y && apt-get clean; \
+	else \
+		echo "  (Omitiendo apt-get autoremove: requiere elevación interactiva con sudo)"; \
+	fi
 	rm -rf $(HOME)/.oh-my-zsh.tmp 2>/dev/null || true

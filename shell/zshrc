@@ -36,8 +36,10 @@ fi
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
-# --- Docker Rootless Socket ---
-if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock" ]; then
+# --- Podman / Docker Rootless Socket ---
+if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then
+    export DOCKER_HOST="unix://${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock"
+elif [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock" ]; then
     export DOCKER_HOST="unix://${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
 fi
 
@@ -53,6 +55,9 @@ precmd() {
 
 PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
 
-# --- Aliases Útiles ---
-alias d="docker"
-alias dc="docker compose"
+# --- Aliases útiles ---
+alias p="podman"
+alias pc="podman compose"
+alias docker="podman"
+alias d="podman"
+alias dc="podman compose"
