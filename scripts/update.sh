@@ -3,7 +3,8 @@
 #
 # Filosofía: NO rompe la idempotencia de install. Es seguro ejecutarlo N veces.
 #   - `make install`  -> converge todo desde cero (re-ejecutable).
-#   - `make update`   -> solo fast-forward: APT only-upgrade + self-updates user-space.
+#   - `make update`   -> higiene APT (apt-maintenance.sh) + fast-forward:
+#     APT only-upgrade + self-updates user-space.
 # No toca: claves SSH, `gh auth`, `/opt/Antigravity` (requiere tarball manual),
 #   shell por defecto (chsh), linger, ni registros de Podman.
 set -euo pipefail
@@ -23,8 +24,11 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 1. APT: only-upgrade de paquetes gestionados por el repo (no full-upgrade)
+# 1. Higiene APT + only-upgrade de paquetes gestionados (no full-upgrade)
 # ------------------------------------------------------------------------------
+step "Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
+sudo bash "$SCRIPT_DIR/apt-maintenance.sh" || warn "apt-maintenance falló, continúo."
+
 step "Actualizando paquetes APT gestionados (--only-upgrade)..."
 if command -v apt-get &>/dev/null; then
     sudo apt-get update -y || warn "apt-get update falló, continúo con caché local."
@@ -33,13 +37,14 @@ if command -v apt-get &>/dev/null; then
     CANDIDATES=(
         git curl wget jq unzip zip ca-certificates gnupg
         build-essential fonts-firacode fonts-noto-core
-        gnome-shell-extension-dash-to-dock libglib2.0-bin
+        gnome-shell-extension-dashtodock libglib2.0-bin
         uidmap dbus-user-session iptables
         podman buildah skopeo podman-compose slirp4netns catatonit
         zsh gh
     )
-    # VS Code solo si su repo está configurado; Chrome solo si está instalado.
-    if [ -f /etc/apt/sources.list.d/vscode.list ]; then
+    # VS Code si su repo está configurado (legacy .list o DEB822 .sources);
+    # Chrome solo si está instalado.
+    if [ -f /etc/apt/sources.list.d/vscode.list ] || [ -f /etc/apt/sources.list.d/vscode.sources ]; then
         CANDIDATES+=(code)
     fi
     if dpkg -s google-chrome-stable &>/dev/null; then

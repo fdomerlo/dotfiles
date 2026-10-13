@@ -49,7 +49,9 @@ make update
 ```
 
 > `install` y `update` son idempotentes y re-ejecutables. `install` converge
-> todo desde cero; `update` solo hace fast-forward (`apt-get install
+> todo desde cero; `update` primero ejecuta higiene APT (`apt-maintenance.sh`:
+> elimina fuentes Docker —política podman-only—, deduplica VS Code,
+> repara estados interrumpidos) y luego hace fast-forward (`apt-get install
 > --only-upgrade` de paquetes gestionados + `uv self update`, fnm, `sdk
 > selfupdate`, OpenCode/Zed/Antigravity CLI, `git pull --ff-only` de
 > Oh My Zsh/plugins, restart de `podman.socket` y `fc-cache`).
@@ -72,6 +74,7 @@ debian/
 │
 ├── scripts/                       # Instaladores y configuración de usuario
 │   ├── antigravity.png            #   Icono oficial para el lanzador .desktop
+│   ├── apt-maintenance.sh         #   Higiene APT podman-only (fuentes Docker, duplicados, reparación)
 │   ├── desktop.sh                 #   Tipografías del sistema y extensiones de GNOME Shell
 │   ├── devai.sh                   #   Instalador de OpenCode CLI y Antigravity 2.0
 │   ├── devtools.sh                #   Instalador de gh (APT), uv, fnm y sdkman
@@ -99,7 +102,7 @@ debian/
 | Target | Descripción |
 | :--- | :--- |
 | `make install` | Aprovisionamiento completo (host + podman + shell + devtools + tooling + devai + desktop + fonts) |
-| `make update` | Actualización idempotente (APT only-upgrade + user-space, sin tocar SSH/`gh auth`, `/opt`, `chsh`) |
+| `make update` | Actualización idempotente (higiene APT + only-upgrade + user-space, sin tocar SSH/`gh auth`, `/opt`, `chsh`) |
 | `make host` | Actualiza APT, instala paquetes base, dependencias y Podman (requiere `sudo`) |
 | `make podman` | Configura Podman en modo Rootless, registros y socket de usuario (`systemd --user`) |
 | `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig` y `devctl` |

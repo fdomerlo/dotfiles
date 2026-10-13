@@ -127,8 +127,8 @@ install_extension "AlphabeticalAppGrid@stuarthayhurst" ""
 # 2) Vitals
 install_extension "Vitals@CoreCoding.com" ""
 
-# 3) Dash to Dock (paquete oficial gnome-shell-extension-dash-to-dock en Debian)
-install_extension "dash-to-dock@micxgx.gmail.com" "gnome-shell-extension-dash-to-dock"
+# 3) Dash to Dock (paquete oficial gnome-shell-extension-dashtodock en Debian)
+install_extension "dash-to-dock@micxgx.gmail.com" "gnome-shell-extension-dashtodock"
 
 # 4) Tiling Shell
 install_extension "tilingshell@ferrarodomenico.com" ""

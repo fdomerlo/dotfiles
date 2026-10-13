@@ -79,6 +79,35 @@ for cmd in git gh uv fnm code antigravity podman; do
     fi
 done
 
+# 8. Higiene APT (solo lectura: podman-only, sin duplicados, keyrings presentes)
+echo -n "Higiene APT (podman-only, sin duplicados)... "
+apt_ok=0
+SOURCES_D="/etc/apt/sources.list.d"
+[ -e "$SOURCES_D/docker.list" ] && { echo -e "\n  -> Persiste fuente activa: docker.list"; apt_ok=1; }
+[ -e "$SOURCES_D/docker.sources" ] && { echo -e "\n  -> Persiste fuente activa: docker.sources"; apt_ok=1; }
+if [ -f "$SOURCES_D/vscode.list" ] && [ -f "$SOURCES_D/vscode.sources" ]; then
+    echo -e "\n  -> VS Code duplicado (vscode.list + vscode.sources)"
+    apt_ok=1
+fi
+for pkg in docker-ce docker-ce-cli containerd.io docker.io; do
+    if dpkg -s "$pkg" &>/dev/null; then
+        echo -e "\n  -> Paquete Docker instalado: $pkg"
+        apt_ok=1
+    fi
+done
+while IFS= read -r key; do
+    if [ -n "$key" ] && [ ! -e "$key" ]; then
+        echo -e "\n  -> Keyring referenciado inexistente: $key"
+        apt_ok=1
+    fi
+done < <( { sed -n 's/.*signed-by=\([^]]*\).*/\1/p' "$SOURCES_D"/*.list 2>/dev/null; \
+            sed -n 's/^Signed-By:[[:space:]]*//p' "$SOURCES_D"/*.sources 2>/dev/null; } | sort -u )
+if [ $apt_ok -eq 0 ]; then
+    check_status 0 "Fuentes limpias, podman-only, keyrings presentes"
+else
+    check_status 1 "Hay higiene APT pendiente (ejecuta 'make update')"
+fi
+
 echo "================================================================="
 echo "Verificación finalizada."
 echo "================================================================="
