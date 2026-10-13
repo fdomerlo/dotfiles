@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# scripts/apt-maintenance.sh - Higiene APT segura e idempotente (política podman-only).
+#
+# Ejecutar como root (los llamadores ya lo garantizan):
+#   host/setup.sh  -> directo (ya es root), ANTES de `apt-get update`.
+#   scripts/update.sh -> vía `sudo bash ...`, ANTES de `apt-get update`.
+#
+# Hace (seguro, re-ejecutable, nunca aborta el aprovisionamiento):
+#   1. Elimina fuentes activas de Docker Inc (docker.list/docker.sources),
+#      purga la pila docker-ce/containerd.io/docker.io si está instalada y
+#      deshabilita sus servicios. Este repo es podman-only.
+#   2. Deduplica VS Code: si existe vscode.sources (DEB822, canónico en Trixie),
+#      elimina el legacy vscode.list duplicado (mismo URI/suite/componente).
+#   3. Completa el Signed-By vacío de debian-backports.sources con el keyring
+#      oficial (silencia el aviso "Missing Signed-By").
+#   4. Repara estados interrumpidos: dpkg --configure -a, apt-get install -f -y,
+#      autoremove y clean.
+# Reporta sin tocar: fuentes de terceros desconocidas, keyrings referenciados
+# ausentes y respaldos *.bak/*.save (decisión manual del operador).
+#
+# Hooks de test: APT_SOURCES_D, APT_KEYRINGS_D (por defecto rutas del sistema).
+set -euo pipefail
+
+SOURCES_D="${APT_SOURCES_D:-/etc/apt/sources.list.d}"
+KEYRINGS_D="${APT_KEYRINGS_D:-/etc/apt/keyrings}"
+
+[[ $EUID -eq 0 ]] || { echo "Ejecutar como root: sudo bash scripts/apt-maintenance.sh"; exit 1; }
+
+warn() { echo "  ⚠️ $1"; }
+ok()   { echo "  ✔ $1"; }
+
+echo "================================================================="
+echo "==> Higiene APT (podman-only, idempotente)"
+echo "================================================================="
+
+# ------------------------------------------------------------------------------
+# 1. Docker Inc: fuera (fuentes, keyring huérfano, paquetes y servicios)
+# ------------------------------------------------------------------------------
+for f in "$SOURCES_D/docker.list" "$SOURCES_D/docker.sources"; do
+    if [ -e "$f" ]; then
+        echo "  Eliminando fuente Docker: $(basename "$f")..."
+        rm -f "$f"
+    fi
+done
+
+if [ -e "$KEYRINGS_D/docker.asc" ]; then
+    if grep -rh 'docker\.asc' "$SOURCES_D" --include='*.list' --include='*.sources' 2>/dev/null | grep -qv '^[[:space:]]*\(#\|$\)'; then
+        ok "Keyring docker.asc aún referenciado por una fuente activa, se conserva."
+    else
+        echo "  Eliminando keyring huérfano: docker.asc..."
+        rm -f "$KEYRINGS_D/docker.asc"
+    fi
+fi
+
+DOCKER_PKGS=(docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras docker.io)
+TO_PURGE=()
+for pkg in "${DOCKER_PKGS[@]}"; do
+    if dpkg -s "$pkg" &>/dev/null; then
+        TO_PURGE+=("$pkg")
+    fi
+done
+if [ "${#TO_PURGE[@]}" -gt 0 ]; then
+    echo "  Purgando pila Docker (podman-only): ${TO_PURGE[*]}..."
+    apt-get purge -y "${TO_PURGE[@]}" || warn "purga parcial, revisar con 'apt-get purge'."
+    ok "Pila Docker purgada."
+else
+    ok "Sin paquetes Docker instalados."
+fi
+systemctl disable --now docker.service docker.socket containerd.service 2>/dev/null || true
+
+# ------------------------------------------------------------------------------
+# 2. VS Code: deduplicar legacy .list si ya existe el .sources DEB822
+# ------------------------------------------------------------------------------
+if [ -f "$SOURCES_D/vscode.sources" ] && [ -f "$SOURCES_D/vscode.list" ]; then
+    echo "  Deduplicando VS Code: eliminando vscode.list (se conserva vscode.sources DEB822)..."
+    rm -f "$SOURCES_D/vscode.list"
+    ok "VS Code deduplicado."
+fi
+
+# ------------------------------------------------------------------------------
+# 3. Backports: completar Signed-By vacío con el keyring oficial de Debian
+# ------------------------------------------------------------------------------
+BACKPORTS="$SOURCES_D/debian-backports.sources"
+DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
+if [ -f "$BACKPORTS" ] && [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS"; then
+    echo "  Completando Signed-By en debian-backports.sources..."
+    sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS"
+    ok "Signed-By restaurado en backports."
+fi
+
+# ------------------------------------------------------------------------------
+# 4. Reparación segura de estados interrumpidos (no-op en sistema sano)
+# ------------------------------------------------------------------------------
+echo "==> Reparando estado de paquetes..."
+dpkg --configure -a || warn "dpkg --configure -a devolvió errores."
+apt-get install -f -y || warn "apt-get install -f devolvió errores."
+apt-get autoremove -y || warn "autoremove devolvió errores."
+apt-get clean || warn "apt-get clean devolvió errores."
+ok "Estado reparado y caché limpia."
+
+# ------------------------------------------------------------------------------
+# 5. Auditoría informativa (solo lectura, sin cambios)
+# ------------------------------------------------------------------------------
+echo "==> Auditoría de fuentes (informativa)..."
+echo "  Fuentes de terceros activas:"
+grep -rhE '^(deb[[:space:]]|URIs:)' "$SOURCES_D" --include='*.list' --include='*.sources' 2>/dev/null \
+    | grep -v 'debian\.org\|security\.debian\.org' || echo "    (ninguna además de Debian)"
+echo "  Keyrings referenciados inexistentes:"
+missing=0
+while IFS= read -r key; do
+    if [ -n "$key" ] && [ ! -e "$key" ]; then
+        echo "    ✘ Falta: $key"
+        missing=1
+    fi
+done < <( { sed -n 's/.*signed-by=\([^]]*\).*/\1/p' "$SOURCES_D"/*.list 2>/dev/null; \
+            sed -n 's/^Signed-By:[[:space:]]*//p' "$SOURCES_D"/*.sources 2>/dev/null; } | sort -u )
+[ "$missing" -eq 0 ] && ok "Todos los keyrings referenciados existen."
+
+echo "✔ Higiene APT completada."

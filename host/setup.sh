@@ -5,10 +5,14 @@ set -euo pipefail
 
 TARGET_USER="${SUDO_USER:-$(logname)}"
 USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "================================================================="
 echo "==> [Debian Trixie] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
+
+echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
+bash "$REPO_DIR/scripts/apt-maintenance.sh"
 
 echo "==> Actualizando repositorios APT..."
 export DEBIAN_FRONTEND=noninteractive
@@ -21,7 +25,7 @@ apt-get install -y \
   ca-certificates gnupg lsb-release \
   build-essential \
   fonts-firacode fonts-noto-core \
-  gnome-shell-extension-dash-to-dock \
+  gnome-shell-extension-dashtodock \
   libglib2.0-bin \
   uidmap dbus-user-session iptables
 
@@ -33,10 +37,6 @@ apt-get install -y \
   podman-compose \
   slirp4netns \
   catatonit
-
-echo "==> Limpiando repositorios y servicios obsoletos de Docker si existen..."
-rm -f /etc/apt/sources.list.d/docker.list /etc/apt/keyrings/docker.asc
-systemctl disable --now docker.service docker.socket 2>/dev/null || true
 
 echo "==> Verificando rangos subuid y subgid para $TARGET_USER..."
 if ! grep -q "^${TARGET_USER}:" /etc/subuid 2>/dev/null; then
