@@ -68,6 +68,28 @@ doctor() {
   fi
 
   echo ""
+  echo "GitHub (solo lectura):"
+  KEY_ARGS=()
+  [ -f "$HOME/.ssh/id_ed25519" ] && KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
+  SSH_REPLY=$(ssh -T "${KEY_ARGS[@]}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
+  if echo "$SSH_REPLY" | grep -q "successfully authenticated"; then
+    SSH_USER=$(echo "$SSH_REPLY" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
+    echo -e "  \033[32m✔\033[0m SSH autenticado como ${SSH_USER:-usuario}"
+  else
+    echo -e "  \033[31m✘\033[0m SSH con GitHub no autenticado"
+  fi
+  # `gh auth status` puede devolver 0 con token muerto; validar contra la API.
+  GH_USER=""
+  if command -v gh &>/dev/null; then
+    GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
+  fi
+  if [[ "$GH_USER" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?$ ]]; then
+    echo -e "  \033[32m✔\033[0m gh autenticado como $GH_USER"
+  else
+    echo -e "  \033[31m✘\033[0m gh sin sesión válida (gh auth login -h github.com -p ssh -w)"
+  fi
+
+  echo ""
   echo "Memoria y Swap:"
   swapon --show || echo "No hay swap activo"
 

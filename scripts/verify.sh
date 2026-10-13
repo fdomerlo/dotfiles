@@ -108,6 +108,30 @@ else
     check_status 1 "Hay higiene APT pendiente (ejecuta 'make update')"
 fi
 
+# 9. Login en GitHub (solo lectura: SSH + gh CLI, sin prompts)
+echo -n "Login GitHub (SSH)... "
+SSH_KEY_ARGS=()
+[ -f "$HOME/.ssh/id_ed25519" ] && SSH_KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
+SSH_REPLY=$(ssh -T "${SSH_KEY_ARGS[@]}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
+if echo "$SSH_REPLY" | grep -q "successfully authenticated"; then
+    SSH_USER=$(echo "$SSH_REPLY" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
+    check_status 0 "SSH autenticado como ${SSH_USER:-usuario}"
+else
+    check_status 1 "SSH con GitHub no autenticado (ejecuta 'make devtools')"
+fi
+echo -n "Login GitHub (gh CLI)... "
+# Ojo: `gh auth status` puede devolver 0 con un token muerto; la única prueba
+# fiable es llamar a la API y validar forma de usuario GitHub.
+GH_USER=""
+if command -v gh &>/dev/null; then
+    GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
+fi
+if [[ "$GH_USER" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?$ ]]; then
+    check_status 0 "gh autenticado como $GH_USER"
+else
+    check_status 1 "gh sin sesión válida (ejecuta 'gh auth login -h github.com -p ssh -w')"
+fi
+
 echo "================================================================="
 echo "Verificación finalizada."
 echo "================================================================="
