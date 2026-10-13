@@ -30,7 +30,7 @@ En una instalación limpia de Debian ejecutar:
 
 ```bash
 rm -rf ~/.dotfiles && \
-git clone https://github.com/fdomerlo/debian-dotfiles.git ~/.dotfiles && \
+git clone https://github.com/fdomerlo/dotfiles.git ~/.dotfiles && \
 cd ~/.dotfiles && \
 make help
 ```
@@ -40,6 +40,19 @@ Para aprovisionar el equipo por completo:
 ```bash
 make install
 ```
+
+Para actualizar una estación ya instalada (sin reconfigurar SSH/identidad):
+
+```bash
+make update
+# equivalente: devctl update
+```
+
+> `install` y `update` son idempotentes y re-ejecutables. `install` converge
+> todo desde cero; `update` solo hace fast-forward (`apt-get install
+> --only-upgrade` de paquetes gestionados + `uv self update`, fnm, `sdk
+> selfupdate`, OpenCode/Zed/Antigravity CLI, `git pull --ff-only` de
+> Oh My Zsh/plugins, restart de `podman.socket` y `fc-cache`).
 
 ---
 
@@ -67,16 +80,13 @@ debian/
 │   ├── setup_agy.sh               #   Despliegue de Antigravity Core/IDE en /opt y CLI
 │   ├── setup_gh.sh                #   Configuración desatendida de clave SSH con GitHub
 │   ├── tooling.sh                 #   Instalación de VS Code (APT), Chrome (.deb) y Zed
+│   ├── update.sh                  #   Actualización idempotente (only-upgrade + self-updates)
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
 ├── shell/                         # Dotfiles y utilitarios de línea de comandos
-│   ├── devctl                     #   CLI para scaffolding de proyectos y diagnósticos
+│   ├── devctl                     #   CLI de diagnóstico y actualización
 │   ├── gitconfig                  #   Configuración global de Git
 │   └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman y Podman Rootless
-│
-├── templates/                     # Plantillas de inicio rápido
-│   └── django/
-│       └── manage.sh              #   Script de inicialización de Django con uv venv
 │
 └── fonts/                         # Colección tipográfica de alta legibilidad
     └── .local/share/fonts/        #   Google Sans, Google Sans Code, Space Grotesk
@@ -89,6 +99,7 @@ debian/
 | Target | Descripción |
 | :--- | :--- |
 | `make install` | Aprovisionamiento completo (host + podman + shell + devtools + tooling + devai + desktop + fonts) |
+| `make update` | Actualización idempotente (APT only-upgrade + user-space, sin tocar SSH/`gh auth`, `/opt`, `chsh`) |
 | `make host` | Actualiza APT, instala paquetes base, dependencias y Podman (requiere `sudo`) |
 | `make podman` | Configura Podman en modo Rootless, registros y socket de usuario (`systemd --user`) |
 | `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig` y `devctl` |
@@ -110,8 +121,8 @@ debian/
 # Diagnóstico integral del sistema, Podman rootless, zram y swap
 devctl doctor
 
-# Inicializa un proyecto Django moderno con uv, venv y .envrc
-devctl project init django
+# Actualización idempotente de la estación (equivale a `make update`)
+devctl update
 ```
 
 ---

@@ -17,25 +17,12 @@ require() {
 }
 
 # --------------------------------------------------
-# PROJECTS
+# ACTUALIZACIÓN
 # --------------------------------------------------
 
-project_init_django() {
-  log "Inicializando proyecto Django moderno (uv + venv)..."
-
-  mkdir -p app
-  if [ -d "$BASE_DIR/templates/django" ]; then
-    cp -r "$BASE_DIR/templates/django/"* app/
-  fi
-  if [ -f "$BASE_DIR/.envrc.template" ]; then
-    cp "$BASE_DIR/.envrc.template" .envrc
-  fi
-
-  chmod +x app/manage.sh || true
-  log "Proyecto preparado en ./app"
-  echo "Próximos pasos:"
-  echo "  1. cd app && ./manage.sh"
-  echo "  2. direnv allow (si usas direnv)"
+update() {
+  log "Actualizando estación (idempotente, sin tocar SSH)..."
+  bash "$BASE_DIR/scripts/update.sh"
 }
 
 # --------------------------------------------------
@@ -100,24 +87,15 @@ doctor() {
 # --------------------------------------------------
 
 case "${1:-}" in
-project)
-  case "${2:-}" in
-    init)
-      case "${3:-}" in
-        django) project_init_django ;;
-        *) echo "Uso: devctl project init django" ;;
-      esac
-      ;;
-  esac
-  ;;
-
 doctor) doctor ;;
+
+update) update ;;
 
 *)
   echo "devctl - Workstation CLI para Debian"
   echo ""
   echo "Uso:"
-  echo "  devctl project init django   # Inicializa proyecto Django con uv"
   echo "  devctl doctor                # Diagnóstico del entorno y servicios"
+  echo "  devctl update                # Actualiza estación (APT only-upgrade + user-space)"
   ;;
 esac

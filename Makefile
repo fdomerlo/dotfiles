@@ -7,12 +7,13 @@ SHELL := /bin/bash
 export RUNZSH=no
 export CHSH=no
 
-.PHONY: help install host podman docker shell devtools tooling devai desktop fonts verify clean
+.PHONY: help install update host podman docker shell devtools tooling devai desktop fonts verify clean
 
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Trixie):"
 	@echo "  make install   - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop + fonts)"
+	@echo "  make update    - Actualiza la estación (APT only-upgrade + self-updates user-space, idempotente, sin tocar SSH)"
 	@echo "  make host      - Actualiza APT e instala paquetes base del sistema y dependencias de Podman"
 	@echo "  make podman    - Configura Podman en modo Rootless (systemd --user)"
 	@echo "  make shell     - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
@@ -24,9 +25,14 @@ help:
 	@echo "  make verify    - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean     - Limpia paquetes residuales de APT y temporales"
 
-# Instalación completa desatendida
+# Instalación completa desatendida (idempotente: re-ejecutable)
 install: host podman shell devtools tooling devai desktop fonts clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
+
+# Actualización idempotente (no reconfigura SSH/gh auth, /opt, chsh ni registros)
+update:
+	@echo "==> Actualizando estación (APT only-upgrade + user-space)..."
+	bash scripts/update.sh
 
 # 1. Host (requiere sudo)
 host:
