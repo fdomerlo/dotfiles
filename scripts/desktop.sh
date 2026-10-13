@@ -130,8 +130,8 @@ install_extension "Vitals@CoreCoding.com" ""
 # 3) Dash to Dock (paquete oficial gnome-shell-extension-dashtodock en Debian)
 install_extension "dash-to-dock@micxgx.gmail.com" "gnome-shell-extension-dashtodock"
 
-# 4) Tiling Shell
-install_extension "tilingshell@ferrarodomenico.com" ""
+# 4) Tiling Assistant de LelEat (reemplaza a Tiling Shell)
+install_extension "tiling-assistant@leleat-on-github" ""
 
 # ------------------------------------------------------------------------------
 # 4. Habilitar extensiones requeridas en GNOME
@@ -149,7 +149,7 @@ required = [
     "AlphabeticalAppGrid@stuarthayhurst",
     "Vitals@CoreCoding.com",
     "dash-to-dock@micxgx.gmail.com",
-    "tilingshell@ferrarodomenico.com"
+    "tiling-assistant@leleat-on-github"
 ]
 
 try:
@@ -166,6 +166,10 @@ updated = list(current)
 if "pop-shell@system76.com" in updated:
     updated.remove("pop-shell@system76.com")
 
+# Tiling Shell fue reemplazada por Tiling Assistant: sacarla de la lista
+if "tilingshell@ferrarodomenico.com" in updated:
+    updated.remove("tilingshell@ferrarodomenico.com")
+
 for ext in required:
     if ext not in updated:
         updated.append(ext)
@@ -179,8 +183,15 @@ else:
 EOF
 
 gnome-extensions disable "pop-shell@system76.com" 2>/dev/null || true
+gnome-extensions disable "tilingshell@ferrarodomenico.com" 2>/dev/null || true
 
-for uuid in "AlphabeticalAppGrid@stuarthayhurst" "Vitals@CoreCoding.com" "dash-to-dock@micxgx.gmail.com" "tilingshell@ferrarodomenico.com"; do
+# Purgar resto de Tiling Shell en user-space para evitar conflictos con Tiling Assistant
+if [ -d "$USER_EXT_DIR/tilingshell@ferrarodomenico.com" ]; then
+    echo "  Eliminando extensión reemplazada: tilingshell@ferrarodomenico.com..."
+    rm -rf "$USER_EXT_DIR/tilingshell@ferrarodomenico.com"
+fi
+
+for uuid in "AlphabeticalAppGrid@stuarthayhurst" "Vitals@CoreCoding.com" "dash-to-dock@micxgx.gmail.com" "tiling-assistant@leleat-on-github"; do
     gnome-extensions enable "$uuid" 2>/dev/null || true
 done
 
