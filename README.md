@@ -30,7 +30,7 @@ En una instalación limpia de Debian ejecutar:
 
 ```bash
 rm -rf ~/.dotfiles && \
-git clone https://github.com/fdomerlo/debian-dotfiles.git ~/.dotfiles && \
+git clone https://github.com/fdomerlo/dotfiles.git ~/.dotfiles && \
 cd ~/.dotfiles && \
 make help
 ```
