@@ -12,7 +12,7 @@ export CHSH=no
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Trixie):"
-	@echo "  make install   - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop + fonts)"
+	@echo "  make install   - Aprovisiona la estación de trabajo completa (host + timeshift + podman + shell + devtools + tooling + devai + desktop + fonts)"
 	@echo "  make update    - Actualiza la estación (APT only-upgrade + self-updates user-space, idempotente, sin tocar SSH)"
 	@echo "  make host      - Actualiza APT, instala paquetes base, CLI moderna, Flatpak y dependencias de Podman"
 	@echo "  make timeshift - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
@@ -27,7 +27,7 @@ help:
 	@echo "  make clean     - Limpia paquetes residuales de APT y temporales"
 
 # Instalación completa desatendida (idempotente: re-ejecutable; Timeshift es opcional vía 'make timeshift')
-install: host podman shell devtools tooling devai desktop fonts clean
+install: host timeshift podman shell devtools tooling devai desktop fonts clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
 	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
 
