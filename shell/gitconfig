@@ -3,6 +3,17 @@
 	email = merlof@folp.unlp.edu.ar
 [init]
 	defaultBranch = main
+[pull]
+	rebase = true
+[fetch]
+	prune = true
+[rerere]
+	enabled = true
+[diff]
+	algorithm = histogram
+	colorMoved = default
+[merge]
+	conflictstyle = zdiff3
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential

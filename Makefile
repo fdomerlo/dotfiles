@@ -7,14 +7,15 @@ SHELL := /bin/bash
 export RUNZSH=no
 export CHSH=no
 
-.PHONY: help install update host podman docker shell devtools tooling devai desktop fonts verify clean
+.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop fonts verify clean
 
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Trixie):"
 	@echo "  make install   - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop + fonts)"
 	@echo "  make update    - Actualiza la estación (APT only-upgrade + self-updates user-space, idempotente, sin tocar SSH)"
-	@echo "  make host      - Actualiza APT e instala paquetes base del sistema y dependencias de Podman"
+	@echo "  make host      - Actualiza APT, instala paquetes base, CLI moderna, Flatpak y dependencias de Podman"
+	@echo "  make timeshift - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
 	@echo "  make podman    - Configura Podman en modo Rootless (systemd --user)"
 	@echo "  make shell     - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
 	@echo "  make devtools  - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
@@ -25,9 +26,10 @@ help:
 	@echo "  make verify    - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean     - Limpia paquetes residuales de APT y temporales"
 
-# Instalación completa desatendida (idempotente: re-ejecutable)
+# Instalación completa desatendida (idempotente: re-ejecutable; Timeshift es opcional vía 'make timeshift')
 install: host podman shell devtools tooling devai desktop fonts clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
+	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
 
 # Actualización idempotente (no reconfigura SSH/gh auth, /opt, chsh ni registros)
 update:
@@ -38,6 +40,11 @@ update:
 host:
 	@echo "==> Configurando Host (Debian Trixie)..."
 	sudo bash host/setup.sh
+
+# 1b. Timeshift opcional posterior (requiere sudo; solo configura, no crea snapshot)
+timeshift:
+	@echo "==> Configurando Timeshift (opcional)..."
+	sudo bash host/timeshift.sh
 
 # 2. Podman Rootless (se ejecuta como usuario normal)
 podman:

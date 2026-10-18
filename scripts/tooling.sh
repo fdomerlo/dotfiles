@@ -5,15 +5,20 @@ echo "================================================================="
 echo "==> Instalando navegadores y editores (VS Code, Chrome, Zed)..."
 echo "================================================================="
 
-# 1. Visual Studio Code (APT Oficial)
-# En Trixie el formato canónico es DEB822 (vscode.sources); no crear el legacy
-# vscode.list si aquel ya existe, para evitar "configurado varias veces".
-if [ ! -f "/etc/apt/sources.list.d/vscode.list" ] && [ ! -f "/etc/apt/sources.list.d/vscode.sources" ]; then
-    echo "==> Configurando repositorio oficial de Microsoft VS Code..."
+# 1. Visual Studio Code (APT Oficial en formato canónico DEB822 para Debian Trixie)
+if [ ! -f "/etc/apt/sources.list.d/vscode.sources" ] && [ ! -f "/etc/apt/sources.list.d/vscode.list" ]; then
+    echo "==> Configurando repositorio oficial de Microsoft VS Code (DEB822)..."
     sudo install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor --yes -o /etc/apt/keyrings/packages.microsoft.gpg
     sudo chmod a+r /etc/apt/keyrings/packages.microsoft.gpg
-    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
+    sudo tee /etc/apt/sources.list.d/vscode.sources > /dev/null <<'EOF'
+Types: deb
+URIs: https://packages.microsoft.com/repos/code
+Suites: stable
+Components: main
+Architectures: amd64 arm64 armhf
+Signed-By: /etc/apt/keyrings/packages.microsoft.gpg
+EOF
     sudo apt-get update -y
 fi
 

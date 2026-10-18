@@ -19,22 +19,29 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y
 
-echo "==> Instalando paquetes base y dependencias de escritorio..."
+echo "==> Instalando paquetes base, CLI moderna y soporte de escritorio..."
 apt-get install -y \
   git curl wget jq unzip zip \
   ca-certificates gnupg lsb-release \
   build-essential \
+  ripgrep fd-find fzf bat btop direnv wl-clipboard \
   fonts-firacode fonts-noto-core \
   gnome-shell-extension-dashtodock \
+  flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
   libglib2.0-bin \
   uidmap dbus-user-session iptables
 
-echo "==> Instalando Podman y herramientas de contenedores..."
+echo "==> Configurando repositorio Flathub (aplicaciones de escritorio)..."
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || \
+  echo "  ⚠️ No se pudo registrar Flathub en este momento (verifica conexión de red)."
+
+echo "==> Instalando Podman y herramientas de contenedores (con red passt/pasta)..."
 apt-get install -y \
   podman \
   buildah \
   skopeo \
   podman-compose \
+  passt \
   slirp4netns \
   catatonit
 

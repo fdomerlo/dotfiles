@@ -1,8 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # --- CONFIGURACIÓN ---
-DIR_DESCARGAS="$HOME/Descargas"
+DIR_DESCARGAS="$(xdg-user-dir DOWNLOAD 2>/dev/null || true)"
+if [[ -z "$DIR_DESCARGAS" ]] || [[ ! -d "$DIR_DESCARGAS" ]]; then
+    if [[ -d "$HOME/Descargas" ]]; then
+        DIR_DESCARGAS="$HOME/Descargas"
+    else
+        DIR_DESCARGAS="$HOME/Downloads"
+    fi
+fi
 ARCHIVO_APP="$DIR_DESCARGAS/Antigravity.tar.gz"
 
 SUBDIR_APP="Antigravity-x64"
@@ -20,8 +27,8 @@ echo "=== Despliegue local de Antigravity Core / IDE ==="
 echo "================================================================="
 
 if [[ ! -f "$ARCHIVO_APP" ]]; then
-    echo "[-] Aviso: No se encontró $ARCHIVO_APP en $DIR_DESCARGAS."
-    echo "    Si dispones del tarball de Antigravity, colócalo en ~/Descargas/ y vuelve a ejecutar este script."
+    echo "[-] Aviso: No se encontró $ARCHIVO_APP."
+    echo "    Si dispones del tarball de Antigravity, colócalo en $DIR_DESCARGAS/ y vuelve a ejecutar este script."
     echo "    Procediendo con la verificación del CLI únicamente..."
 else
     ACTUALIZAR_APP=false

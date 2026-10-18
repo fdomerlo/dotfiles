@@ -5,26 +5,42 @@
 
 # Dotfiles - Debian Workstation
 
-Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian Stable (Trixie)**, contenedores **Podman Rootless**, gestores de paquetes modernos en espacio de usuario (`uv`, `fnm`, `sdkman`).
+Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian Stable (Trixie)**, desde la instalación desatendida del sistema operativo (`preseed.cfg` compatible con PC/Notebooks AMD e Intel) hasta contenedores **Podman Rootless** (con red moderna `passt`/`pasta`), utilidades CLI modernas, soporte Flatpak para aplicaciones de escritorio y gestores de lenguajes en espacio de usuario (`uv`, `fnm`, `sdkman`).
 
 ---
 
 ## 🎯 Arquitectura y Rationale
 
+* **Instalación Base Desatendida (`preseed.cfg`):** Configuración `debian-installer` para Debian 13 Trixie con detección automática de disco NVMe/SATA, particionado GPT + EFI + EXT4 monolítico (`noatime,commit=60`), `systemd-zram-generator` (`zstd`, prioridad 100) + `/swapfile` secundario de 4 GB (prioridad 10), ajuste de `sysctl` para memoria comprimida, microcódigo y firmware completo para **AMD e Intel** (CPU, GPU Vulkan/VA-API, Wi-Fi `iwlwifi`/`realtek`/`atheros`, audio SOF) y entorno mínimo `gnome-core`.
 * **Podman Rootless:** Motor de contenedores OCI sin demonio (daemonless) ejecutándose en espacio del usuario.
   * No requiere demonio en segundo plano (`dockerd`) ni privilegios de superusuario (`sudo`).
-  * Emplea *user namespaces* (`subuid`/`subgid`) nativos del kernel Linux.
+  * Emplea *user namespaces* (`subuid`/`subgid`) y el motor de red de alto rendimiento `passt`/`pasta` (junto a `slirp4netns`).
   * Soporte completo de socket de compatibilidad Docker vía `systemd --user` (`podman.socket`) y aliases de conveniencia (`docker`, `d`, `podman compose`, `dc`).
   * Integración nativa con repositorios oficiales de Debian (sin dependencias de repositorios externos).
 * **Runtimes Aislados en User-Space:**
   * **Python:** Administrado exclusivamente con [uv](https://astral.sh/uv) (rápido, compatible con PEP 668 de Debian y sin riesgo de corromper paquetes del sistema).
   * **Node.js:** Administrado con [fnm](https://github.com/Schniz/fnm) (Fast Node Manager escrito en Rust).
   * **Java/JVM:** Administrado con [sdkman](https://sdkman.io).
-* **Tooling Nativo sin Sandboxes:** Editores (VS Code con repositorio oficial APT de Microsoft, Zed editor) y navegadores (Google Chrome oficial) instalados como binarios nativos para evitar los problemas de integración y permisos típicos de Flatpak.
+* **Tríada CLI Moderna:** Incluye `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard` integrados directamente en Zsh.
+* **Tooling de Desarrollo Nativo + Flatpak para Escritorio:** Editores (VS Code con repositorio oficial APT DEB822 de Microsoft, Zed editor, Antigravity IDE) y navegadores (Google Chrome oficial) instalados como binarios nativos para evitar los problemas de integración y permisos en herramientas de desarrollo, mientras que Flatpak + Flathub se aprovisionan en `make host` exclusivamente para aplicaciones de escritorio general.
+* **Respaldos del Sistema Opcionales (`make timeshift`):** Instala y deja preconfigurado `/etc/timeshift/timeshift.json` (modo RSYNC en EXT4 o BTRFS, excluyendo `/home`, `/swapfile` y cachés de contenedores) sin forzar snapshots iniciales durante el aprovisionamiento. Los snapshots quedan bajo control del usuario.
 
 ---
 
-## 🚀 Instalación Rápida (One-Command)
+## 💿 Fase 0: Instalación Desatendida de Debian (`preseed.cfg`)
+
+El archivo [`preseed.cfg`](preseed.cfg) automatiza la instalación limpia de Debian 13 Trixie. Por seguridad, las credenciales sensibles están parametrizadas con placeholders:
+
+1. **Reemplazar placeholders locales antes de inyectar en el instalador/USB:**
+   * `<WIFI_SSID>` y `<WIFI_PASSWORD>`: Nombre y clave WPA de tu red Wi-Fi.
+   * `<PASSWORD_HASH_SHA512>`: Hash de tu contraseña de usuario generado con:
+     ```bash
+     openssl passwd -6
+     ```
+
+---
+
+## 🚀 Fase 1: Post-Instalación Rápida (One-Command)
 
 En una instalación limpia de Debian ejecutar:
 
@@ -39,6 +55,12 @@ Para aprovisionar el equipo por completo:
 
 ```bash
 make install
+```
+
+*(Opcional)* Para instalar y dejar configurado **Timeshift** (sin crear snapshots automáticos en ese instante):
+
+```bash
+make timeshift
 ```
 
 Para actualizar una estación ya instalada (sin reconfigurar SSH/identidad):
@@ -63,13 +85,14 @@ make update
 ```text
 debian/
 ├── Makefile                       # Orquestador con targets modulares
+├── preseed.cfg                    # Instalador desatendido Debian 13 Trixie (AMD/Intel)
 ├── README.md                      # Documentación y referencia
 ├── LICENSE                        # Licencia del proyecto
 ├── .gitignore                     # Filtros de exclusión de git
-├── .envrc.template                # Plantilla para direnv en proyectos
 │
 ├── host/                          # Scripts a nivel de sistema
-│   ├── setup.sh                   #   Actualización APT, paquetes base y Podman (sudo)
+│   ├── setup.sh                   #   APT, paquetes base, CLI moderna, Flatpak y Podman (sudo)
+│   ├── timeshift.sh               #   Instalación y configuración opcional de Timeshift (sudo)
 │   └── podman.sh                  #   Configuración de Podman Rootless, registros y socket (usuario)
 │
 ├── scripts/                       # Instaladores y configuración de usuario
@@ -82,17 +105,17 @@ debian/
 │   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
 │   ├── setup_agy.sh               #   Despliegue de Antigravity Core/IDE en /opt y CLI
 │   ├── setup_gh.sh                #   Configuración desatendida de clave SSH con GitHub
-│   ├── tooling.sh                 #   Instalación de VS Code (APT), Chrome (.deb) y Zed
+│   ├── tooling.sh                 #   Instalación de VS Code (APT DEB822), Chrome (.deb) y Zed
 │   ├── update.sh                  #   Actualización idempotente (only-upgrade + self-updates)
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
 ├── shell/                         # Dotfiles y utilitarios de línea de comandos
 │   ├── devctl                     #   CLI de diagnóstico y actualización
-│   ├── gitconfig                  #   Configuración global de Git
-│   └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman y Podman Rootless
+│   ├── gitconfig                  #   Configuración global ergonómica de Git
+│   └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman, fzf, direnv y Podman
 │
 └── fonts/                         # Colección tipográfica de alta legibilidad
-    └── .local/share/fonts/        #   Google Sans, Google Sans Code, Space Grotesk
+    └── .local/share/fonts/        #   Google Sans, Google Sans Code, Space Grotesk, Fira Code
 ```
 
 ---
@@ -103,7 +126,8 @@ debian/
 | :--- | :--- |
 | `make install` | Aprovisionamiento completo (host + podman + shell + devtools + tooling + devai + desktop + fonts) |
 | `make update` | Actualización idempotente (higiene APT + only-upgrade + user-space, sin tocar SSH/`gh auth`, `/opt`, `chsh`) |
-| `make host` | Actualiza APT, instala paquetes base, dependencias y Podman (requiere `sudo`) |
+| `make host` | Actualiza APT, instala paquetes base, CLI moderna, Flatpak y Podman (requiere `sudo`) |
+| `make timeshift` | *(Opcional)* Instala y configura `/etc/timeshift/timeshift.json` sin crear snapshots iniciales (requiere `sudo`) |
 | `make podman` | Configura Podman en modo Rootless, registros y socket de usuario (`systemd --user`) |
 | `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig` y `devctl` |
 | `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman` y sincroniza credenciales SSH con GitHub |
@@ -121,7 +145,7 @@ debian/
 `devctl` se instala automáticamente en `~/.local/bin/devctl` como enlace simbólico al repositorio.
 
 ```bash
-# Diagnóstico integral del sistema, Podman rootless, zram y swap
+# Diagnóstico integral del sistema, CLI moderna, Podman rootless, zram y swap
 devctl doctor
 
 # Actualización idempotente de la estación (equivale a `make update`)
@@ -139,10 +163,12 @@ make verify
 ```
 
 El script comprueba de forma automática:
-1. Módulo del kernel para aceleración gráfica (`amdgpu`).
+1. Módulo DRM del kernel para aceleración gráfica (`amdgpu` / `i915` / `xe`).
 2. Activación de `zRAM` como swap primario de alta velocidad.
 3. Existencia y montaje del `swapfile` secundario en EXT4.
-4. Estado operativo y modo rootless de **Podman Rootless**.
-5. Disponibilidad de tipografías *Google Sans* y *Fira Code* en Fontconfig.
-6. Integridad de los enlaces simbólicos de dotfiles (`~/.zshrc`, `~/.gitconfig`, `devctl`).
-7. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `antigravity`, `podman`).
+4. Estado de **Timeshift** (informativo/opcional).
+5. Estado operativo y modo rootless de **Podman Rootless**.
+6. Disponibilidad de tipografías *Google Sans* y *Fira Code* en Fontconfig.
+7. Integridad de los enlaces simbólicos de dotfiles (`~/.zshrc`, `~/.gitconfig`, `devctl`).
+8. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `zed`, `antigravity`, `podman`).
+9. Higiene de repositorios APT y autenticación de GitHub (SSH y API).

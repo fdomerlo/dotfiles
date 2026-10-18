@@ -33,10 +33,18 @@ doctor() {
   log "Ejecutando diagnóstico del entorno Debian..."
 
   check() {
-    if command -v "$1" >/dev/null; then
+    if command -v "$1" >/dev/null || [ -f "$HOME/.local/bin/$1" ]; then
       echo -e "  \033[32m✔\033[0m $1"
     else
       echo -e "  \033[31m✘\033[0m $1"
+    fi
+  }
+
+  check_opt() {
+    if command -v "$1" >/dev/null || [ -f "$HOME/.local/bin/$1" ]; then
+      echo -e "  \033[32m✔\033[0m $1"
+    else
+      echo -e "  \033[33m○\033[0m $1 (opcional)"
     fi
   }
 
@@ -47,8 +55,20 @@ doctor() {
   check uv
   check fnm
   check code
+  check zed
   check opencode
   check antigravity
+  check_opt timeshift
+
+  echo ""
+  echo "Tríada CLI Moderna:"
+  check_opt rg
+  check_opt fdfind
+  check_opt fzf
+  check_opt batcat
+  check_opt btop
+  check_opt direnv
+  check_opt wl-copy
 
   echo ""
   echo "Podman Rootless:"
@@ -78,7 +98,7 @@ doctor() {
   else
     echo -e "  \033[31m✘\033[0m SSH con GitHub no autenticado"
   fi
-  # `gh auth status` puede devolver 0 con token muerto; validar contra la API.
+  # `gh auth status` puede devolver 0 con un token muerto; validar contra la API.
   GH_USER=""
   if command -v gh &>/dev/null; then
     GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)

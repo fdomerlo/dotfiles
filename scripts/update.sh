@@ -33,13 +33,18 @@ step "Actualizando paquetes APT gestionados (--only-upgrade)..."
 if command -v apt-get &>/dev/null; then
     sudo apt-get update -y || warn "apt-get update falló, continúo con caché local."
 
-    # Candidatos gestionados por host/setup.sh, ohmyzsh.sh, devtools.sh y tooling.sh.
+    # Candidatos gestionados por host/setup.sh, host/timeshift.sh, ohmyzsh.sh, devtools.sh y tooling.sh.
     CANDIDATES=(
-        git curl wget jq unzip zip ca-certificates gnupg
-        build-essential fonts-firacode fonts-noto-core
-        gnome-shell-extension-dashtodock libglib2.0-bin
+        git curl wget jq unzip zip ca-certificates gnupg lsb-release
+        build-essential
+        ripgrep fd-find fzf bat btop direnv wl-clipboard
+        fonts-firacode fonts-noto-core
+        gnome-shell-extension-dashtodock
+        flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
+        libglib2.0-bin
         uidmap dbus-user-session iptables
-        podman buildah skopeo podman-compose slirp4netns catatonit
+        podman buildah skopeo podman-compose passt slirp4netns catatonit
+        timeshift cron
         zsh gh
     )
     # VS Code si su repo está configurado (legacy .list o DEB822 .sources);
@@ -121,7 +126,7 @@ else
 fi
 
 step "Convergencia Antigravity (/opt + CLI)..."
-# setup_agy.sh es idempotente: si el tarball de ~/Descargas es más nuevo que
+# setup_agy.sh es idempotente: si el tarball de Descargas es más nuevo que
 # /opt re-extrae; si no, solo verifica symlink/.desktop/CLI. Barato y seguro.
 bash "$SCRIPT_DIR/setup_agy.sh" || warn "setup_agy.sh falló."
 # Forzar CLI a última versión aunque ya existiera (setup_agy solo instala si falta).

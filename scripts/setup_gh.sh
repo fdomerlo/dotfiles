@@ -17,8 +17,8 @@ else
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
 
-    USER_EMAIL=""
-    if command -v gh &>/dev/null && gh auth status &>/dev/null; then
+    USER_EMAIL=$(git config --global user.email 2>/dev/null || true)
+    if [ -z "$USER_EMAIL" ] && command -v gh &>/dev/null && gh auth status &>/dev/null; then
         GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
         USER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null || true)
         if [ -z "$USER_EMAIL" ] && [ -n "$GH_USER" ]; then
@@ -37,24 +37,33 @@ if ! pgrep -u "$USER" ssh-agent > /dev/null; then
 fi
 ssh-add "$KEY_PATH" 2>/dev/null || true
 
+# Función auxiliar: sincroniza user.name y user.email solo si están vacíos (no ensucia shell/gitconfig versionado)
+ensure_git_identity() {
+    local gh_user="${1:-}"
+    local gh_email="${2:-}"
+    local current_name current_email
+    current_name=$(git config --global user.name 2>/dev/null || true)
+    current_email=$(git config --global user.email 2>/dev/null || true)
+
+    if [ -z "$current_name" ] && [ -n "$gh_user" ]; then
+        git config --global user.name "$gh_user"
+    fi
+    if [ -z "$current_email" ] && [ -n "$gh_email" ]; then
+        git config --global user.email "$gh_email"
+    fi
+}
+
 # 3. Comprobar si la autenticación SSH con GitHub ya está activa y funcionando
 echo "Verificando conexión SSH existente con GitHub..."
 SSH_CHECK=$(ssh -T -i "$KEY_PATH" -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
 
 if echo "$SSH_CHECK" | grep -q "successfully authenticated"; then
     echo "✔ Conexión SSH con GitHub ya autenticada y operativa."
-    # Asegurar git config user.name y user.email si no están establecidos
-    CURRENT_GIT_NAME=$(git config --global user.name 2>/dev/null || true)
-    CURRENT_GIT_EMAIL=$(git config --global user.email 2>/dev/null || true)
-    if [ -z "$CURRENT_GIT_NAME" ] || [ -z "$CURRENT_GIT_EMAIL" ]; then
-        if command -v gh &>/dev/null && gh auth status &>/dev/null; then
-            GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
-            USER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null || true)
-            [ -z "$USER_EMAIL" ] && [ -n "$GH_USER" ] && USER_EMAIL="${GH_USER}@users.noreply.github.com"
-            [ -z "$CURRENT_GIT_NAME" ] && [ -n "$GH_USER" ] && git config --global user.name "$GH_USER"
-            [ -z "$CURRENT_GIT_EMAIL" ] && [ -n "$USER_EMAIL" ] && git config --global user.email "$USER_EMAIL"
-            echo "✔ Git config sincronizado con perfil de GitHub ($GH_USER)."
-        fi
+    if command -v gh &>/dev/null && gh auth status &>/dev/null; then
+        GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
+        USER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null || true)
+        [ -z "$USER_EMAIL" ] && [ -n "$GH_USER" ] && USER_EMAIL="${GH_USER}@users.noreply.github.com"
+        ensure_git_identity "$GH_USER" "$USER_EMAIL"
     fi
     echo "================================================================="
     echo "✔ SSH y GitHub validados correctamente (sin acciones pendientes)."
@@ -102,10 +111,9 @@ else
     sleep 2
 fi
 
-# 7. Configurar usuario de git globalmente de forma automática
-echo "Sincronizando configuración global de Git..."
-git config --global user.email "$USER_EMAIL"
-git config --global user.name "$GH_USER"
+# 7. Asegurar identidad global de Git sin sobrescribir la ya versionada en shell/gitconfig
+echo "Verificando identidad global de Git..."
+ensure_git_identity "$GH_USER" "$USER_EMAIL"
 
 # 8. Probar la conexión SSH de forma robusta
 echo "Probando conexión con GitHub..."

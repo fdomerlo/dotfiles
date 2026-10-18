@@ -13,12 +13,17 @@ check_status() {
     fi
 }
 
-# 1. Controlador AMDGPU
-echo -n "Controlador de gráficos (amdgpu)... "
-if lsmod | grep "^amdgpu" >/dev/null 2>&1; then
-    check_status 0 "Módulo amdgpu cargado en el kernel"
+check_optional() {
+    echo -e " [ \033[33mINFO\033[0m ] $1"
+}
+
+# 1. Controlador de Gráficos (AMD / Intel)
+echo -n "Controlador de gráficos (DRM/GPU)... "
+LOADED_GPU=$(lsmod | awk '/^(amdgpu|i915|xe)[[:space:]]/ {print $1}' | head -n1 || true)
+if [ -n "$LOADED_GPU" ]; then
+    check_status 0 "Módulo $LOADED_GPU cargado en el kernel"
 else
-    check_status 1 "amdgpu NO está cargado"
+    check_status 1 "Ningún módulo DRM acelerado (amdgpu/i915/xe) detectado"
 fi
 
 # 2. zRAM
@@ -37,7 +42,15 @@ else
     check_status 1 "Swapfile secundario no activo"
 fi
 
-# 4. Podman Rootless
+# 4. Timeshift (Opcional)
+echo -n "Timeshift (Snapshots - opcional)... "
+if command -v timeshift &>/dev/null && [ -f /etc/timeshift/timeshift.json ]; then
+    check_status 0 "Timeshift instalado y configurado (/etc/timeshift/timeshift.json)"
+else
+    check_optional "No instalado (opcional: ejecuta 'make timeshift' si lo requieres)"
+fi
+
+# 5. Podman Rootless
 echo -n "Podman Rootless... "
 if command -v podman &>/dev/null && [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ]; then
     check_status 0 "Podman Rootless activo y operativo"
@@ -45,7 +58,7 @@ else
     check_status 1 "Podman Rootless no disponible o sin modo rootless"
 fi
 
-# 5. Tipografías
+# 6. Tipografías
 echo -n "Tipografías del sistema (Google Sans / Fira)... "
 if fc-list : family | grep -iE "Google Sans|Fira Code" >/dev/null 2>&1; then
     check_status 0 "Fuentes reconocidas por fontconfig"
@@ -53,7 +66,7 @@ else
     check_status 1 "No se encontraron Google Sans ni Fira Code"
 fi
 
-# 6. Enlaces simbólicos de dotfiles
+# 7. Enlaces simbólicos de dotfiles
 echo -n "Integridad de dotfiles... "
 missing=0
 for f in "$HOME/.zshrc" "$HOME/.gitconfig" "$HOME/.local/bin/devctl"; do
@@ -68,9 +81,9 @@ else
     check_status 1 "Faltan dotfiles requeridos"
 fi
 
-# 7. Herramientas CLI críticas
+# 8. Herramientas CLI críticas
 echo "Disponibilidad de herramientas clave:"
-for cmd in git gh uv fnm code antigravity podman; do
+for cmd in git gh uv fnm code zed antigravity podman; do
     echo -n "  -> $cmd: "
     if command -v "$cmd" &>/dev/null || [ -f "$HOME/.local/bin/$cmd" ]; then
         check_status 0 "Presente"
@@ -79,7 +92,7 @@ for cmd in git gh uv fnm code antigravity podman; do
     fi
 done
 
-# 8. Higiene APT (solo lectura: podman-only, sin duplicados, keyrings presentes)
+# 9. Higiene APT (solo lectura: podman-only, sin duplicados, keyrings presentes)
 echo -n "Higiene APT (podman-only, sin duplicados)... "
 apt_ok=0
 SOURCES_D="/etc/apt/sources.list.d"
@@ -108,7 +121,7 @@ else
     check_status 1 "Hay higiene APT pendiente (ejecuta 'make update')"
 fi
 
-# 9. Login en GitHub (solo lectura: SSH + gh CLI, sin prompts)
+# 10. Login en GitHub (solo lectura: SSH + gh CLI, sin prompts)
 echo -n "Login GitHub (SSH)... "
 SSH_KEY_ARGS=()
 [ -f "$HOME/.ssh/id_ed25519" ] && SSH_KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
