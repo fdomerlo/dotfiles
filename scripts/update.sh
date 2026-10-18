@@ -43,7 +43,7 @@ if command -v apt-get &>/dev/null; then
         flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
         libglib2.0-bin
         uidmap dbus-user-session iptables
-        podman buildah skopeo podman-compose passt slirp4netns catatonit
+        podman crun buildah skopeo podman-compose passt slirp4netns catatonit
         timeshift cron
         zsh gh
     )

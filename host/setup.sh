@@ -35,9 +35,10 @@ echo "==> Configurando repositorio Flathub (aplicaciones de escritorio)..."
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || \
   echo "  ⚠️ No se pudo registrar Flathub en este momento (verifica conexión de red)."
 
-echo "==> Instalando Podman y herramientas de contenedores (con red passt/pasta)..."
+echo "==> Instalando Podman y herramientas de contenedores (crun + passt/pasta)..."
 apt-get install -y \
   podman \
+  crun \
   buildah \
   skopeo \
   podman-compose \
