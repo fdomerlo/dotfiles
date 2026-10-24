@@ -7,23 +7,24 @@ SHELL := /bin/bash
 export RUNZSH=no
 export CHSH=no
 
-.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop verify clean
+.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop verify clean clean-deep
 
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Workstation):"
-	@echo "  make install   - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
-	@echo "  make update    - Actualiza la estación (APT only-upgrade + self-updates user-space, idempotente, sin tocar SSH)"
-	@echo "  make host      - Actualiza APT, instala paquetes base, CLI moderna, Flatpak y dependencias de Podman"
-	@echo "  make timeshift - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
-	@echo "  make podman    - Configura Podman en modo Rootless con backend pasta (systemd --user)"
-	@echo "  make shell     - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
-	@echo "  make devtools  - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
-	@echo "  make tooling   - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
-	@echo "  make devai     - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
-	@echo "  make desktop   - Configura tipografías, botones de ventana y extensiones de GNOME Shell"
-	@echo "  make verify    - Ejecuta diagnóstico de salud del sistema"
-	@echo "  make clean     - Limpia paquetes residuales de APT y temporales"
+	@echo "  make install    - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
+	@echo "  make update     - Actualiza la estación (APT only-upgrade + self-updates user-space, idempotente, sin tocar SSH)"
+	@echo "  make host       - Actualiza APT, instala paquetes base, CLI moderna, Flatpak y dependencias de Podman"
+	@echo "  make timeshift  - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
+	@echo "  make podman     - Configura Podman en modo Rootless con backend pasta (systemd --user)"
+	@echo "  make shell      - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
+	@echo "  make devtools   - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
+	@echo "  make tooling    - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
+	@echo "  make devai      - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
+	@echo "  make desktop    - Configura tipografías, botones de ventana y extensiones de GNOME Shell"
+	@echo "  make verify     - Ejecuta diagnóstico de salud del sistema"
+	@echo "  make clean      - Limpia paquetes residuales de APT y temporales"
+	@echo "  make clean-deep - Limpieza profunda post-upgrade: purga configs residuales (rc), dependencias, logs y cachés"
 
 # Instalación completa desatendida (idempotente: re-ejecutable; Timeshift es opcional vía 'make timeshift')
 install: host podman shell devtools tooling devai desktop clean
@@ -93,14 +94,19 @@ verify:
 	@echo "==> Verificando instalación..."
 	bash scripts/verify.sh
 
-# 9. Limpieza
+# 9. Limpieza estándar
 clean:
 	@echo "==> Limpiando paquetes residuales..."
 	@if sudo -n true 2>/dev/null; then \
-		sudo apt-get autoremove -y && sudo apt-get clean; \
+		sudo apt-get autoremove --purge -y && sudo apt-get clean; \
 	elif [ "$$EUID" -eq 0 ]; then \
-		apt-get autoremove -y && apt-get clean; \
+		apt-get autoremove --purge -y && apt-get clean; \
 	else \
 		echo "  (Omitiendo apt-get autoremove: requiere elevación interactiva con sudo)"; \
 	fi
 	rm -rf $(HOME)/.oh-my-zsh.tmp 2>/dev/null || true
+
+# 10. Limpieza profunda post-upgrade / post-migración
+clean-deep:
+	@echo "==> Ejecutando limpieza profunda del sistema..."
+	bash scripts/clean-system.sh

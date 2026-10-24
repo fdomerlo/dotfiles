@@ -54,7 +54,7 @@ fi
 
 # 5. Podman Rootless
 echo -n "Podman Rootless... "
-if command -v podman &>/dev/null && [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ]; then
+if command -v podman &>/dev/null && { [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ] || [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; }; then
     check_status 0 "Podman Rootless activo y operativo"
 else
     check_status 1 "Podman Rootless no disponible o sin modo rootless"

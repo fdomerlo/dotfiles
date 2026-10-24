@@ -15,8 +15,9 @@
 #      oficial (silencia el aviso "Missing Signed-By").
 #   4. Moderniza repositorios tradicionales (.list) al formato estándar DEB822
 #      (.sources) vía `apt modernize-sources` si está disponible en la versión de APT.
-#   5. Repara estados interrumpidos: dpkg --configure -a, apt-get install -f -y,
-#      autoremove y clean.
+#   5. Purgado de configuraciones residuales (paquetes desinstalados en estado 'rc' de dpkg).
+#   6. Repara estados interrumpidos: dpkg --configure -a, apt-get install -f -y,
+#      autoremove --purge y clean.
 # Reporta sin tocar: fuentes de terceros desconocidas, keyrings referenciados
 # ausentes y respaldos *.bak/*.save (decisión manual del operador).
 #
@@ -114,17 +115,28 @@ if apt help 2>&1 | grep -q "modernize-sources"; then
 fi
 
 # ------------------------------------------------------------------------------
-# 5. Reparación segura de estados interrumpidos (no-op en sistema sano)
+# 5. Purgar configuraciones residuales (paquetes en estado 'rc' en dpkg)
+# ------------------------------------------------------------------------------
+RC_PKGS=$(dpkg -l 2>/dev/null | awk '/^rc/ {print $2}' || true)
+if [ -n "$RC_PKGS" ]; then
+    echo "  Purgando archivos de configuración residuales (estado rc)..."
+    # shellcheck disable=SC2086
+    dpkg --purge $RC_PKGS 2>/dev/null || warn "purga parcial de paquetes en estado rc."
+    ok "Configuraciones residuales purgadas."
+fi
+
+# ------------------------------------------------------------------------------
+# 6. Reparación segura de estados interrumpidos (no-op en sistema sano)
 # ------------------------------------------------------------------------------
 echo "==> Reparando estado de paquetes..."
 dpkg --configure -a || warn "dpkg --configure -a devolvió errores."
 apt-get install -f -y || warn "apt-get install -f devolvió errores."
-apt-get autoremove -y || warn "autoremove devolvió errores."
+apt-get autoremove --purge -y || warn "autoremove devolvió errores."
 apt-get clean || warn "apt-get clean devolvió errores."
 ok "Estado reparado y caché limpia."
 
 # ------------------------------------------------------------------------------
-# 6. Auditoría informativa (solo lectura, sin cambios)
+# 7. Auditoría informativa (solo lectura, sin cambios)
 # ------------------------------------------------------------------------------
 echo "==> Auditoría de fuentes (informativa)..."
 echo "  Fuentes de terceros activas:"
@@ -138,7 +150,7 @@ while IFS= read -r key; do
         missing=1
     fi
 done < <( { sed -n 's/.*signed-by=\([^]]*\).*/\1/p' "$SOURCES_D"/*.list 2>/dev/null; \
-            sed -n 's/^Signed-By:[[:space:]]*//p' "$SOURCES_D"/*.sources 2>/dev/null; } | sort -u )
+            sed -n 's/^Signed-By:[[:space:]]*//p' "$SOURCES_D"/*.sources 2>/dev/null; } | sort -u )\
 [ "$missing" -eq 0 ] && ok "Todos los keyrings referenciados existen."
 
 echo "✔ Higiene APT completada."

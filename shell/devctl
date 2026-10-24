@@ -26,6 +26,15 @@ update() {
 }
 
 # --------------------------------------------------
+# LIMPIEZA PROFUNDA
+# --------------------------------------------------
+
+clean_deep() {
+  log "Ejecutando limpieza profunda post-upgrade..."
+  bash "$BASE_DIR/scripts/clean-system.sh"
+}
+
+# --------------------------------------------------
 # DIAGNÓSTICO
 # --------------------------------------------------
 
@@ -147,11 +156,14 @@ doctor) doctor ;;
 
 update) update ;;
 
+clean) clean_deep ;;
+
 *)
   echo "devctl - Workstation CLI para Debian"
   echo ""
   echo "Uso:"
   echo "  devctl doctor                # Diagnóstico del entorno y servicios"
   echo "  devctl update                # Actualiza estación (APT only-upgrade + user-space)"
+  echo "  devctl clean                 # Limpieza profunda post-upgrade (purga rc, huérfanos, logs)"
   ;;
 esac
