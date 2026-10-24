@@ -150,7 +150,8 @@ while IFS= read -r key; do
         missing=1
     fi
 done < <( { sed -n 's/.*signed-by=\([^]]*\).*/\1/p' "$SOURCES_D"/*.list 2>/dev/null; \
-            sed -n 's/^Signed-By:[[:space:]]*//p' "$SOURCES_D"/*.sources 2>/dev/null; } | sort -u )\
+            sed -n 's/^Signed-By:[[:space:]]*//p' "$SOURCES_D"/*.sources 2>/dev/null; } | sort -u )
+
 [ "$missing" -eq 0 ] && ok "Todos los keyrings referenciados existen."
 
 echo "✔ Higiene APT completada."
