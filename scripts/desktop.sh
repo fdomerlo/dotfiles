@@ -50,11 +50,14 @@ gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,m
 echo "    ✔ Botones:      $(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo 'N/A')"
 
 # ------------------------------------------------------------------------------
-# 3. Directorio Dedicado de Proyectos (XDG)
+# 3. Directorios Dedicados (Proyectos y Aplicaciones / AppImages)
 # ------------------------------------------------------------------------------
-echo "==> Configurando directorio de Proyectos..."
+echo "==> Configurando directorios de Proyectos y Aplicaciones (AppImages)..."
 PROJECTS_DIR="${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
 mkdir -p "$PROJECTS_DIR"
+
+APPIMAGE_DIR="${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}"
+mkdir -p "$APPIMAGE_DIR"
 
 if command -v xdg-user-dirs-update &>/dev/null; then
     xdg-user-dirs-update --set PROJECTS "$PROJECTS_DIR" 2>/dev/null || true
@@ -67,6 +70,7 @@ if [ -f "$USER_DIRS_CONF" ]; then
     fi
 fi
 echo "    ✔ Directorio de proyectos: $PROJECTS_DIR"
+echo "    ✔ Directorio de aplicaciones: $APPIMAGE_DIR"
 
 # ------------------------------------------------------------------------------
 # 4. Deshabilitar validación estricta de versión de extensiones en GNOME

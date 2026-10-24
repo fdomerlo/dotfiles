@@ -21,7 +21,7 @@ plugins=(
 # ---------------------------------------------------------------------------
 
 # --- Consolidación del PATH ---
-export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:/usr/local/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/Aplicaciones:$HOME/.opencode/bin:$HOME/bin:/usr/local/bin:$PATH"
 
 # --- UV (Python) ---
 [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
@@ -45,8 +45,10 @@ fi
 
 # --- Directorios de Trabajo y XDG ---
 export XDG_PROJECTS_DIR="${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
+export XDG_APPLICATIONS_DIR="${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}"
 export PROJECTS="$XDG_PROJECTS_DIR"
 alias pdir="cd $XDG_PROJECTS_DIR"
+alias adir="cd $XDG_APPLICATIONS_DIR"
 
 # --- Podman / Docker Rootless Socket ---
 if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then

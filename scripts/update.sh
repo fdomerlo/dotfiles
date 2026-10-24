@@ -42,6 +42,7 @@ if command -v apt-get &>/dev/null; then
         gnome-shell-extension-dashtodock
         flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
         libglib2.0-bin
+        fuse3 libfuse2t64 libfuse2 fasttrack-archive-keyring
         uidmap dbus-user-session iptables
         podman crun buildah skopeo podman-compose passt slirp4netns catatonit
         timeshift cron
@@ -159,7 +160,7 @@ step "Verificando Podman Rootless..."
 if command -v podman &>/dev/null; then
     systemctl --user daemon-reload 2>/dev/null || true
     systemctl --user restart podman.socket 2>/dev/null || systemctl --user start podman.socket 2>/dev/null || warn "no se pudo (re)iniciar podman.socket."
-    if [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ]; then
+    if [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ] || [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then
         ok "Podman Rootless operativo ($(podman --version))."
     else
         warn "Podman no reporta modo Rootless (ejecuta 'make podman')."
@@ -174,6 +175,15 @@ fi
 step "Refrescando caché de tipografías (fc-cache)..."
 fc-cache -f 2>/dev/null || true
 ok "Caché de tipografías al día."
+
+# ------------------------------------------------------------------------------
+# 8. Flatpak: actualizar aplicaciones de escritorio de usuario
+# ------------------------------------------------------------------------------
+if command -v flatpak &>/dev/null; then
+    step "Actualizando aplicaciones Flatpak..."
+    flatpak update -y 2>/dev/null || warn "flatpak update devolvió advertencias."
+    ok "Aplicaciones Flatpak al día."
+fi
 
 echo
 echo "================================================================="

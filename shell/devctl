@@ -125,11 +125,28 @@ doctor() {
   else
     echo -e "  \033[31m✘\033[0m Directorio de proyectos (${XDG_PROJECTS_DIR:-$HOME/Proyectos}) no encontrado"
   fi
+  if [ -d "${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}" ]; then
+    echo -e "  \033[32m✔\033[0m Directorio de aplicaciones portables: ${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}"
+  else
+    echo -e "  \033[33m○\033[0m Directorio de aplicaciones portables (${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}) no creado"
+  fi
   BTN_LAYOUT=$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo "''")
   if [[ "$BTN_LAYOUT" == *"minimize"* && "$BTN_LAYOUT" == *"maximize"* && "$BTN_LAYOUT" == *"close"* ]]; then
     echo -e "  \033[32m✔\033[0m Botones de ventana configurados ($BTN_LAYOUT)"
   else
     echo -e "  \033[33m○\033[0m Botones de ventana sin layout completo ($BTN_LAYOUT)"
+  fi
+  if command -v flatpak &>/dev/null && flatpak remotes 2>/dev/null | grep -q "flathub"; then
+    echo -e "  \033[32m✔\033[0m Flatpak con Flathub activo"
+  elif command -v flatpak &>/dev/null; then
+    echo -e "  \033[33m○\033[0m Flatpak instalado (Flathub no configurado)"
+  else
+    echo -e "  \033[31m✘\033[0m Flatpak no instalado"
+  fi
+  if dpkg -s libfuse2t64 &>/dev/null || dpkg -s libfuse2 &>/dev/null || [ -e /usr/lib/x86_64-linux-gnu/libfuse.so.2 ]; then
+    echo -e "  \033[32m✔\033[0m Soporte AppImage FUSE presente"
+  else
+    echo -e "  \033[33m○\033[0m Biblioteca FUSE 2 no detectada (opcional para AppImages)"
   fi
 
   echo ""

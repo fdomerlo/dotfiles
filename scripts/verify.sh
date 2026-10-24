@@ -164,6 +164,43 @@ else
     check_status 1 "No encontrado en $PROJECTS_DIR"
 fi
 
+# 12. Ecosistema de Aplicaciones (Flatpak, AppImage y Repositorios Oficiales)
+echo -n "Soporte Flatpak & Flathub... "
+if command -v flatpak &>/dev/null; then
+    if flatpak remotes 2>/dev/null | grep -q "flathub"; then
+        check_status 0 "Flatpak instalado con repositorio Flathub activo"
+    else
+        check_optional "Flatpak presente pero Flathub no registrado (ejecuta 'make host')"
+    fi
+else
+    check_status 1 "Flatpak no instalado"
+fi
+
+echo -n "Soporte AppImage (FUSE runtime)... "
+if dpkg -s libfuse2t64 &>/dev/null || dpkg -s libfuse2 &>/dev/null || [ -e /usr/lib/x86_64-linux-gnu/libfuse.so.2 ]; then
+    check_status 0 "Biblioteca FUSE 2 activa para AppImages"
+else
+    check_optional "libfuse2t64 / libfuse2 no detectado (opcional si no se usan AppImages FUSE 2)"
+fi
+
+echo -n "Directorio de aplicaciones portables/AppImages... "
+APPIMAGE_DIR="${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}"
+if [ -d "$APPIMAGE_DIR" ]; then
+    check_status 0 "Presente en $APPIMAGE_DIR"
+else
+    check_optional "No creado aún ($APPIMAGE_DIR)"
+fi
+
+echo -n "Repositorios extendidos oficiales (Backports / FastTrack)... "
+EXT_REPOS=()
+[ -f "/etc/apt/sources.list.d/debian-backports.sources" ] && EXT_REPOS+=("Backports")
+[ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ] && EXT_REPOS+=("FastTrack")
+if [ "${#EXT_REPOS[@]}" -gt 0 ]; then
+    check_status 0 "Configurados: ${EXT_REPOS[*]}"
+else
+    check_optional "No configurados aún (se añaden en 'make host')"
+fi
+
 echo "================================================================="
 echo "Verificación finalizada."
 echo "================================================================="

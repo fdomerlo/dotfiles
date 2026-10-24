@@ -6,7 +6,7 @@ set -euo pipefail
 TARGET_USER="${SUDO_USER:-$(logname)}"
 USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DISTRO_NAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "debian")
+DISTRO_NAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "trixie")
 
 echo "================================================================="
 echo "==> [Debian ${DISTRO_NAME^}] Configuración de Sistema y Paquetes Base"
@@ -15,12 +15,73 @@ echo "================================================================="
 echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
 bash "$REPO_DIR/scripts/apt-maintenance.sh"
 
+# ------------------------------------------------------------------------------
+# 1. Configuración de Repositorios Oficiales (Backports + FastTrack)
+# ------------------------------------------------------------------------------
+echo "==> Configurando repositorios extendidos oficiales (Backports & FastTrack)..."
+
+# Debian Backports (formato canónico DEB822)
+BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
+DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
+if [ ! -f "$BACKPORTS_FILE" ]; then
+    cat > "$BACKPORTS_FILE" << EOF
+Types: deb deb-src
+URIs: http://deb.debian.org/debian/
+Suites: ${DISTRO_NAME}-backports
+Components: main contrib non-free non-free-firmware
+Signed-By: $DEB_KEYRING
+EOF
+    echo "  ✔ Debian Backports configurado (${DISTRO_NAME}-backports)."
+else
+    # Asegurar que no esté deshabilitado
+    sed -i '/^Enabled:[[:space:]]*No/d' "$BACKPORTS_FILE" || true
+    if [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS_FILE"; then
+        sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS_FILE"
+    fi
+fi
+
+# Debian FastTrack (paquetes upstream de rápido movimiento para Debian Stable)
+FASTTRACK_KEYRING="/usr/share/keyrings/fasttrack-archive-keyring.gpg"
+if [ ! -f "$FASTTRACK_KEYRING" ]; then
+    if apt-get install -y fasttrack-archive-keyring 2>/dev/null; then
+        echo "  ✔ Paquete fasttrack-archive-keyring instalado vía APT."
+    else
+        echo "  Descargando keyring oficial de Debian FastTrack..."
+        curl -fsSL "https://fasttrack.debian.net/debian-fasttrack/pubkey.gpg" | gpg --dearmor -o "$FASTTRACK_KEYRING" 2>/dev/null || true
+    fi
+fi
+
+FASTTRACK_FILE="/etc/apt/sources.list.d/debian-fasttrack.sources"
+if [ -f "$FASTTRACK_KEYRING" ] && [ ! -f "$FASTTRACK_FILE" ]; then
+    cat > "$FASTTRACK_FILE" << EOF
+Types: deb deb-src
+URIs: https://fasttrack.debian.net/debian-fasttrack/
+Suites: ${DISTRO_NAME}-fasttrack
+Components: main contrib
+Signed-By: $FASTTRACK_KEYRING
+EOF
+    echo "  ✔ Debian FastTrack configurado (${DISTRO_NAME}-fasttrack)."
+fi
+
 echo "==> Actualizando repositorios APT..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get upgrade -y
 
-echo "==> Instalando paquetes base, CLI moderna y soporte de escritorio..."
+# ------------------------------------------------------------------------------
+# 2. Soporte para AppImage (FUSE 2 + FUSE 3)
+# ------------------------------------------------------------------------------
+# En Debian 13 (Trixie), libfuse2t64 es el paquete requerido para ejecutar AppImages
+# sin entrar en conflicto con fuse3 ni remover componentes de GNOME.
+APPIMAGE_FUSE_PKGS=()
+for fpkg in libfuse2t64 libfuse2; do
+    if apt-cache show "$fpkg" &>/dev/null; then
+        APPIMAGE_FUSE_PKGS+=("$fpkg")
+        break
+    fi
+done
+
+echo "==> Instalando paquetes base, CLI moderna, soporte Flatpak y AppImage..."
 apt-get install -y \
   git curl wget jq unzip zip \
   ca-certificates gnupg lsb-release \
@@ -29,12 +90,27 @@ apt-get install -y \
   fonts-firacode fonts-jetbrains-mono fonts-noto-core \
   flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
   libglib2.0-bin \
+  fuse3 "${APPIMAGE_FUSE_PKGS[@]}" \
   uidmap dbus-user-session iptables
 
+# ------------------------------------------------------------------------------
+# 3. Configuración de Flathub para Aplicaciones de Escritorio
+# ------------------------------------------------------------------------------
 echo "==> Configurando repositorio Flathub (aplicaciones de escritorio)..."
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || \
   echo "  ⚠️ No se pudo registrar Flathub en este momento (verifica conexión de red)."
 
+# ------------------------------------------------------------------------------
+# 4. Directorio Dedicado para AppImages y Herramientas Portables
+# ------------------------------------------------------------------------------
+APPIMAGE_DIR="$USER_HOME/Aplicaciones"
+mkdir -p "$APPIMAGE_DIR"
+chown "$TARGET_USER:$TARGET_USER" "$APPIMAGE_DIR"
+chmod 755 "$APPIMAGE_DIR"
+
+# ------------------------------------------------------------------------------
+# 5. Podman y Contenedores Rootless (crun + pasta/passt)
+# ------------------------------------------------------------------------------
 echo "==> Instalando Podman y herramientas de contenedores (crun + passt/pasta)..."
 apt-get install -y \
   podman \
@@ -58,5 +134,5 @@ echo "==> Habilitando systemd linger para $TARGET_USER..."
 loginctl enable-linger "$TARGET_USER"
 
 echo "================================================================="
-echo "✔ Host setup completado. Siguiente paso: configurar Podman Rootless."
+echo "✔ Host setup completado (Stable + Backports + FastTrack + Flatpak + AppImage)."
 echo "================================================================="

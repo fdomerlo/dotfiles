@@ -13,15 +13,15 @@ export CHSH=no
 help:
 	@echo "Opciones de aprovisionamiento (Debian Workstation):"
 	@echo "  make install    - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
-	@echo "  make update     - Actualiza la estación (APT only-upgrade + self-updates user-space, idempotente, sin tocar SSH)"
-	@echo "  make host       - Actualiza APT, instala paquetes base, CLI moderna, Flatpak y dependencias de Podman"
+	@echo "  make update     - Actualiza la estación (APT only-upgrade + self-updates user-space + flatpak, idempotente)"
+	@echo "  make host       - Configura APT, Backports, FastTrack, paquetes base, CLI moderna, AppImage, Flatpak y Podman"
 	@echo "  make timeshift  - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
 	@echo "  make podman     - Configura Podman en modo Rootless con backend pasta (systemd --user)"
 	@echo "  make shell      - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
 	@echo "  make devtools   - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
 	@echo "  make tooling    - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
 	@echo "  make devai      - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
-	@echo "  make desktop    - Configura tipografías, botones de ventana y extensiones de GNOME Shell"
+	@echo "  make desktop    - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
 	@echo "  make verify     - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean      - Limpia paquetes residuales de APT y temporales"
 	@echo "  make clean-deep - Limpieza profunda post-upgrade: purga configs residuales (rc), dependencias, logs y cachés"
@@ -60,7 +60,7 @@ ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 shell:
 	@echo "==> Configurando Zsh y Dotfiles..."
 	bash scripts/ohmyzsh.sh
-	mkdir -p $(HOME)/Proyectos
+	mkdir -p $(HOME)/Proyectos $(HOME)/Aplicaciones
 	ln -sf $(ROOT_DIR)/shell/zshrc $(HOME)/.zshrc
 	ln -sf $(ROOT_DIR)/shell/gitconfig $(HOME)/.gitconfig
 	mkdir -p $(HOME)/.local/bin
