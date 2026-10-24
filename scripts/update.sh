@@ -38,7 +38,7 @@ if command -v apt-get &>/dev/null; then
         git curl wget jq unzip zip ca-certificates gnupg lsb-release
         build-essential
         ripgrep fd-find fzf bat btop direnv wl-clipboard
-        fonts-firacode fonts-noto-core
+        fonts-firacode fonts-jetbrains-mono fonts-noto-core
         gnome-shell-extension-dashtodock
         flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
         libglib2.0-bin
@@ -169,10 +169,11 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 7. Tipografías: re-converger symlinks + fc-cache (barato e idempotente)
+# 7. Tipografías: refrescar caché (fc-cache)
 # ------------------------------------------------------------------------------
-step "Refrescando tipografías..."
-bash "$SCRIPT_DIR/fonts.sh" || warn "fonts.sh falló."
+step "Refrescando caché de tipografías (fc-cache)..."
+fc-cache -f 2>/dev/null || true
+ok "Caché de tipografías al día."
 
 echo
 echo "================================================================="

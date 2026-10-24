@@ -26,12 +26,22 @@ else
     podman system migrate
 fi
 
-echo "==> Configurando registros de contenedores (Docker Hub, Quay, GHCR)..."
+echo "==> Configurando optimizaciones de red Rootless (pasta/passt)..."
 mkdir -p "$HOME/.config/containers"
+if [ ! -f "$HOME/.config/containers/containers.conf" ]; then
+    cat <<'EOF' > "$HOME/.config/containers/containers.conf"
+[network]
+default_rootless_network_cmd = "pasta"
+EOF
+    echo "  ✔ containers.conf configurado con backend de red pasta."
+fi
+
+echo "==> Configurando registros de contenedores (Docker Hub, Quay, GHCR)..."
 if [ ! -f "$HOME/.config/containers/registries.conf" ]; then
     cat <<'EOF' > "$HOME/.config/containers/registries.conf"
 unqualified-search-registries = ["docker.io", "quay.io", "ghcr.io"]
 EOF
+    echo "  ✔ registries.conf configurado."
 fi
 
 echo "==> Habilitando e iniciando servicio de usuario systemd podman.socket..."

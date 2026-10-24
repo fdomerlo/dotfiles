@@ -6,8 +6,10 @@ set -euo pipefail
 
 [[ $EUID -eq 0 ]] || { echo "Ejecutar como root: sudo bash host/timeshift.sh"; exit 1; }
 
+DISTRO_NAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "debian")
+
 echo "================================================================="
-echo "==> [Debian Trixie] Configurando Timeshift (Snapshots del Sistema)"
+echo "==> [Debian ${DISTRO_NAME^}] Configurando Timeshift (Snapshots del Sistema)"
 echo "================================================================="
 
 # 1. Instalar Timeshift y daemon cron requerido por el planificador

@@ -27,3 +27,8 @@ __pycache__/
 
 # Node
 node_modules/
+
+# Agentes de IA y Skills de workspace
+skills/
+.agents/
+.gemini/

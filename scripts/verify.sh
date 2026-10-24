@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+DISTRO_NAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "debian")
+
 echo "================================================================="
-echo "       Debian Trixie Workstation - Verificación de Estado        "
+echo "       Debian ${DISTRO_NAME^} Workstation - Verificación de Estado        "
 echo "================================================================="
 
 check_status() {
@@ -58,12 +60,12 @@ else
     check_status 1 "Podman Rootless no disponible o sin modo rootless"
 fi
 
-# 6. Tipografías
-echo -n "Tipografías del sistema (Google Sans / Fira)... "
-if fc-list : family | grep -iE "Google Sans|Fira Code" >/dev/null 2>&1; then
+# 6. Tipografías del Sistema
+echo -n "Tipografías del sistema (JetBrains Mono / Fira Code / Noto Sans)... "
+if fc-list : family | grep -iE "JetBrains Mono|Fira Code|Noto Sans" >/dev/null 2>&1; then
     check_status 0 "Fuentes reconocidas por fontconfig"
 else
-    check_status 1 "No se encontraron Google Sans ni Fira Code"
+    check_status 1 "No se encontraron JetBrains Mono ni Fira Code"
 fi
 
 # 7. Enlaces simbólicos de dotfiles

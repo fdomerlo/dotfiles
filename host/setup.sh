@@ -6,9 +6,10 @@ set -euo pipefail
 TARGET_USER="${SUDO_USER:-$(logname)}"
 USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DISTRO_NAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "debian")
 
 echo "================================================================="
-echo "==> [Debian Trixie] Configuración de Sistema y Paquetes Base"
+echo "==> [Debian ${DISTRO_NAME^}] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
 
 echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
@@ -25,8 +26,7 @@ apt-get install -y \
   ca-certificates gnupg lsb-release \
   build-essential \
   ripgrep fd-find fzf bat btop direnv wl-clipboard \
-  fonts-firacode fonts-noto-core \
-  gnome-shell-extension-dashtodock \
+  fonts-firacode fonts-jetbrains-mono fonts-noto-core \
   flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
   libglib2.0-bin \
   uidmap dbus-user-session iptables

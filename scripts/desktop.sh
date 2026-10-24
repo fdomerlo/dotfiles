@@ -10,22 +10,30 @@ echo "================================================================="
 # ------------------------------------------------------------------------------
 echo "==> Aplicando configuración de fuentes..."
 
-# Interfaces: Adwaita Sans o Google Sans si está presente
-if fc-list : family | grep -iq "Google Sans"; then
-    gsettings set org.gnome.desktop.interface font-name 'Google Sans 11' || true
-else
-    gsettings set org.gnome.desktop.interface font-name 'Adwaita Sans 11' || true
+# Asegurar instalación de fuentes oficiales de Debian si están disponibles y faltan
+DEB_FONTS=(fonts-jetbrains-mono fonts-firacode fonts-noto-core)
+MISSING_FONTS=()
+for fpkg in "${DEB_FONTS[@]}"; do
+    if ! dpkg -s "$fpkg" &>/dev/null; then
+        MISSING_FONTS+=("$fpkg")
+    fi
+done
+
+if [ "${#MISSING_FONTS[@]}" -gt 0 ] && command -v apt-get &>/dev/null; then
+    if sudo -n true 2>/dev/null; then
+        echo "==> Instalando fuentes de Debian oficiales: ${MISSING_FONTS[*]}..."
+        sudo apt-get install -y "${MISSING_FONTS[@]}" || true
+    fi
 fi
+
+# Interfaz: Adwaita Sans 11 (la predeterminada del sistema, legibilidad limpia y descansada)
+gsettings set org.gnome.desktop.interface font-name 'Adwaita Sans 11' || true
 
 # Documentos: Noto Sans Regular 12
 gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 12' || true
 
-# Monoespaciada: Google Sans Code o Fira Code
-if fc-list : family | grep -iq "Google Sans Code"; then
-    gsettings set org.gnome.desktop.interface monospace-font-name 'Google Sans Code 11' || true
-else
-    gsettings set org.gnome.desktop.interface monospace-font-name 'Fira Code 11' || true
-fi
+# Monoespaciada: JetBrains Mono 11 (óptima legibilidad, ligaduras y descanso visual)
+gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 11' || true
 
 # Título de ventanas
 gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Adwaita Sans Bold 11' 2>/dev/null || true

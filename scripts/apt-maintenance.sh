@@ -13,7 +13,9 @@
 #      elimina el legacy vscode.list duplicado (mismo URI/suite/componente).
 #   3. Completa el Signed-By vacío de debian-backports.sources con el keyring
 #      oficial (silencia el aviso "Missing Signed-By").
-#   4. Repara estados interrumpidos: dpkg --configure -a, apt-get install -f -y,
+#   4. Moderniza repositorios tradicionales (.list) al formato estándar DEB822
+#      (.sources) vía `apt modernize-sources` si está disponible en la versión de APT.
+#   5. Repara estados interrumpidos: dpkg --configure -a, apt-get install -f -y,
 #      autoremove y clean.
 # Reporta sin tocar: fuentes de terceros desconocidas, keyrings referenciados
 # ausentes y respaldos *.bak/*.save (decisión manual del operador).
@@ -30,7 +32,7 @@ warn() { echo "  ⚠️ $1"; }
 ok()   { echo "  ✔ $1"; }
 
 echo "================================================================="
-echo "==> Higiene APT (podman-only, idempotente)"
+echo "==> Higiene APT (podman-only, DEB822, idempotente)"
 echo "================================================================="
 
 # ------------------------------------------------------------------------------
@@ -38,7 +40,7 @@ echo "================================================================="
 # ------------------------------------------------------------------------------
 for f in "$SOURCES_D/docker.list" "$SOURCES_D/docker.sources"; do
     if [ -e "$f" ]; then
-        echo "  Eliminando fuente Docker: $(basename "$f")..."
+        echo "  Eliminando fuente Docker: $(basename "$f")...\""
         rm -f "$f"
     fi
 done
@@ -89,7 +91,30 @@ if [ -f "$BACKPORTS" ] && [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:
 fi
 
 # ------------------------------------------------------------------------------
-# 4. Reparación segura de estados interrumpidos (no-op en sistema sano)
+# 4. Modernización a formato DEB822 (.sources) vía apt modernize-sources
+# ------------------------------------------------------------------------------
+if apt help 2>&1 | grep -q "modernize-sources"; then
+    has_legacy_sources=0
+    if [ -s /etc/apt/sources.list ] && grep -vE '^[[:space:]]*(#|$)' /etc/apt/sources.list >/dev/null 2>&1; then
+        has_legacy_sources=1
+    elif ls "$SOURCES_D"/*.list >/dev/null 2>&1; then
+        for f in "$SOURCES_D"/*.list; do
+            if [ -s "$f" ] && grep -vE '^[[:space:]]*(#|$)' "$f" >/dev/null 2>&1; then
+                has_legacy_sources=1
+                break
+            fi
+        done
+    fi
+
+    if [ "$has_legacy_sources" -eq 1 ]; then
+        echo "  Modernizando fuentes legacy (.list) a formato canónico DEB822 (.sources)..."
+        apt modernize-sources 2>/dev/null || warn "apt modernize-sources devolvió advertencias."
+        ok "Fuentes modernizadas a formato DEB822."
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+# 5. Reparación segura de estados interrumpidos (no-op en sistema sano)
 # ------------------------------------------------------------------------------
 echo "==> Reparando estado de paquetes..."
 dpkg --configure -a || warn "dpkg --configure -a devolvió errores."
@@ -99,7 +124,7 @@ apt-get clean || warn "apt-get clean devolvió errores."
 ok "Estado reparado y caché limpia."
 
 # ------------------------------------------------------------------------------
-# 5. Auditoría informativa (solo lectura, sin cambios)
+# 6. Auditoría informativa (solo lectura, sin cambios)
 # ------------------------------------------------------------------------------
 echo "==> Auditoría de fuentes (informativa)..."
 echo "  Fuentes de terceros activas:"
