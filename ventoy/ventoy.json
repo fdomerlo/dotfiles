@@ -1,0 +1,8 @@
+{
+    "auto_install": [
+        {
+            "image": "/debian-13.7.0-amd64-netinst.iso",
+            "template": "/preseed.cfg"
+        }
+    ]
+}
