@@ -5,8 +5,7 @@
 
 # Dotfiles - Debian Workstation
 
-Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian (Trixie Stable / Forky Testing)**, desde la instalación desatendida del sistema operativo (`preseed.cfg` compatible con PC/Notebooks AMD e Intel) hasta contenedores **Podman Rootless** (acelerados con `crun` y `pasta`/`passt`), utilidades CLI modernas, tipografías de alto confort visual (`Adwaita Sans`, `JetBrains Mono`, `Noto Sans`, `Google Sans`), soporte Flatpak para aplicaciones de escritorio y gestores de lenguajes aislados en espacio de usuario (`uv`, `fnm`, `sdkman`).
-Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian (Trixie Stable / Forky Testing)**, desde la instalación desatendida del sistema operativo (`preseed.cfg` compatible con PC/Notebooks AMD e Intel) hasta contenedores **Podman Rootless** (acelerados con `crun` y `pasta`/`passt`), utilidades CLI modernas, tipografías ergonómicas del sistema (`Adwaita Sans`, `JetBrains Mono`, `Noto Sans`), soporte Flatpak para aplicaciones de escritorio y gestores de lenguajes aislados en espacio de usuario (`uv`, `fnm`, `sdkman`).
+Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de desarrollo en **Debian (Trixie Stable / Forky Testing)**, desde la instalación desatendida del sistema operativo (`preseed.cfg` compatible con PC/Notebooks AMD e Intel) hasta contenedores **Podman Rootless** (acelerados con `crun` y `pasta`/`passt`), utilidades CLI modernas, personalización ergonómica de escritorio GNOME (botones minimizar/maximizar/cerrar y carpeta `~/Proyectos`), tipografías ergonómicas del sistema (`Adwaita Sans`, `JetBrains Mono`, `Noto Sans`), soporte Flatpak para aplicaciones de escritorio y gestores de lenguajes aislados en espacio de usuario (`uv`, `fnm`, `sdkman`).
 
 ---
 
@@ -18,6 +17,9 @@ Aprovisionamiento automatizado, modular e idempotente de una estación de trabaj
   * **Documentos:** `Noto Sans 12` (`fonts-noto-core`, excelente legibilidad para lectura de documentación).
   * **Monoespaciada / Código:** `JetBrains Mono 11` (`fonts-jetbrains-mono`, diseñada específicamente para programadores y descanso visual) con fallback a `Fira Code` (`fonts-firacode`).
   * Sin binarios de fuentes versionados en el repositorio: 100% provistas y gestionadas por los paquetes APT oficiales de Debian.
+* **Ergonomía de GNOME y Estándar XDG:**
+  * **Botones de ventana completos:** Configura minimizar, maximizar y cerrar en la barra de títulos (`org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'`).
+  * **Carpeta dedicada de proyectos:** Crea y registra `~/Proyectos` según el estándar Freedesktop XDG (`XDG_PROJECTS_DIR="$HOME/Proyectos"` en `~/.config/user-dirs.dirs`), exportado en Zsh (`$PROJECTS`) junto al alias rápido `pdir`.
 * **Podman Rootless de Alto Rendimiento:** Motor de contenedores OCI sin demonio (daemonless) ejecutándose en espacio del usuario:
   * No requiere demonio en segundo plano (`dockerd`) ni privilegios de superusuario (`sudo`).
   * Emplea *user namespaces* (`subuid`/`subgid`), runtime OCI rápido **`crun`** y el motor de red de alto rendimiento **`pasta` (`passt`)** preconfigurado en `~/.config/containers/containers.conf`.
@@ -68,24 +70,9 @@ make install
 make timeshift
 ```
 
-Para actualizar una estación ya instalada (sin reconfigurar SSH/identidad):
-
-```bash
-make update
-# equivalente: devctl update
-```
-
-> `install` y `update` son idempotentes y re-ejecutables. `install` converge
-> todo desde cero; `update` primero ejecuta higiene APT (`apt-maintenance.sh`:
-> elimina fuentes Docker —política podman-only—, deduplica VS Code,
-> repara estados interrumpidos) y luego hace fast-forward (`apt-get install
-> --only-upgrade` de paquetes gestionados + `uv self update`, fnm, `sdk
-> selfupdate`, OpenCode/Zed/Antigravity CLI, `git pull --ff-only` de
-> Oh My Zsh/plugins, restart de `podman.socket` y `fc-cache`).
-
 ---
 
-## 📁 Estructura del Repositorio
+## 📂 Estructura del Repositorio
 
 ```text
 debian/
@@ -103,7 +90,7 @@ debian/
 ├── scripts/                       # Instaladores y configuración de usuario
 │   ├── antigravity.png            #   Icono oficial para el lanzador .desktop
 │   ├── apt-maintenance.sh         #   Higiene APT podman-only (fuentes Docker, duplicados, reparación)
-│   ├── desktop.sh                 #   Tipografías del sistema y extensiones de GNOME Shell
+│   ├── desktop.sh                 #   Tipografías, botones de ventana (min/max/close), XDG Proyectos y extensiones GNOME
 │   ├── devai.sh                   #   Instalador de OpenCode CLI y Antigravity 2.0
 │   ├── devtools.sh                #   Instalador de gh (APT), uv, fnm y sdkman
 │   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
@@ -116,7 +103,7 @@ debian/
 └── shell/                         # Dotfiles y utilitarios de línea de comandos
     ├── devctl                     #   CLI de diagnóstico y actualización
     ├── gitconfig                  #   Configuración global ergonómica de Git
-    └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman, fzf, direnv y Podman
+    └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman, fzf, direnv, XDG y Podman
 ```
 
 ---
@@ -134,7 +121,7 @@ debian/
 | `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman` y sincroniza credenciales SSH con GitHub |
 | `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed) |
 | `make devai` | Instala OpenCode CLI, Antigravity CLI y despliega Antigravity Core/IDE |
-| `make desktop` | Aplica configuración de tipografías del sistema y activa extensiones GNOME |
+| `make desktop` | Aplica tipografías, botones de ventana (min/max/close), carpeta de proyectos y extensiones GNOME |
 | `make verify` | Ejecuta el test integral de salud del sistema |
 | `make clean` | Limpia paquetes residuales de APT y directorios temporales |
 
@@ -168,7 +155,9 @@ El script comprueba de forma automática:
 3. Existencia y montaje del `swapfile` secundario en EXT4.
 4. Estado de **Timeshift** (informativo/opcional).
 5. Estado operativo y modo rootless de **Podman Rootless**.
-6. Disponibilidad de tipografías del Monosistema en Fontconfig (`JetBrains Mono`, `Fira Code`, `Noto Sans`).
+6. Disponibilidad de tipografías del sistema en Fontconfig (`JetBrains Mono`, `Fira Code`, `Noto Sans`).
 7. Integridad de los enlaces simbólicos de dotfiles (`~/.zshrc`, `~/.gitconfig`, `devctl`).
 8. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `zed`, `antigravity`, `podman`).
-9. Higiene de repositorios APT y autenticación de GitHub (SSH y API).
+9. Higiene de repositorios APT (podman-only, sin duplicados) y autenticación de GitHub (SSH y API).
+10. Personalizaciones de GNOME (botones de ventana minimizar, maximizar y cerrar).
+11. Directorio dedicado de desarrollo (`~/Proyectos` / `XDG_PROJECTS_DIR`).

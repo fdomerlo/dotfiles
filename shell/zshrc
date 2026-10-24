@@ -43,6 +43,11 @@ fi
 [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
 [ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
 
+# --- Directorios de Trabajo y XDG ---
+export XDG_PROJECTS_DIR="${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
+export PROJECTS="$XDG_PROJECTS_DIR"
+alias pdir="cd $XDG_PROJECTS_DIR"
+
 # --- Podman / Docker Rootless Socket ---
 if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then
     export DOCKER_HOST="unix://${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock"

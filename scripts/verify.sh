@@ -147,6 +147,23 @@ else
     check_status 1 "gh sin sesión válida (ejecuta 'gh auth login -h github.com -p ssh -w')"
 fi
 
+# 11. Personalizaciones de GNOME y Directorios de Usuario
+echo -n "Botones de control en ventanas (minimizar, maximizar, cerrar)... "
+BTN_LAYOUT=$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo "''")
+if [[ "$BTN_LAYOUT" == *"minimize"* && "$BTN_LAYOUT" == *"maximize"* && "$BTN_LAYOUT" == *"close"* ]]; then
+    check_status 0 "Configurados correctamente ($BTN_LAYOUT)"
+else
+    check_status 1 "Configuración incompleta ($BTN_LAYOUT)"
+fi
+
+echo -n "Directorio dedicado de proyectos (XDG_PROJECTS_DIR)... "
+PROJECTS_DIR="${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
+if [ -d "$PROJECTS_DIR" ]; then
+    check_status 0 "Presente en $PROJECTS_DIR"
+else
+    check_status 1 "No encontrado en $PROJECTS_DIR"
+fi
+
 echo "================================================================="
 echo "Verificación finalizada."
 echo "================================================================="

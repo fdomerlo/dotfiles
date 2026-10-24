@@ -110,6 +110,20 @@ doctor() {
   fi
 
   echo ""
+  echo "Entorno y Escritorio:"
+  if [ -d "${XDG_PROJECTS_DIR:-$HOME/Proyectos}" ]; then
+    echo -e "  \033[32m✔\033[0m Directorio de proyectos: ${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
+  else
+    echo -e "  \033[31m✘\033[0m Directorio de proyectos (${XDG_PROJECTS_DIR:-$HOME/Proyectos}) no encontrado"
+  fi
+  BTN_LAYOUT=$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo "''")
+  if [[ "$BTN_LAYOUT" == *"minimize"* && "$BTN_LAYOUT" == *"maximize"* && "$BTN_LAYOUT" == *"close"* ]]; then
+    echo -e "  \033[32m✔\033[0m Botones de ventana configurados ($BTN_LAYOUT)"
+  else
+    echo -e "  \033[33m○\033[0m Botones de ventana sin layout completo ($BTN_LAYOUT)"
+  fi
+
+  echo ""
   echo "Memoria y Swap:"
   swapon --show || echo "No hay swap activo"
 

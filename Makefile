@@ -21,7 +21,7 @@ help:
 	@echo "  make devtools  - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
 	@echo "  make tooling   - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
 	@echo "  make devai     - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
-	@echo "  make desktop   - Configura tipografías y extensiones de GNOME Shell"
+	@echo "  make desktop   - Configura tipografías, botones de ventana y extensiones de GNOME Shell"
 	@echo "  make verify    - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean     - Limpia paquetes residuales de APT y temporales"
 
@@ -59,6 +59,7 @@ ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 shell:
 	@echo "==> Configurando Zsh y Dotfiles..."
 	bash scripts/ohmyzsh.sh
+	mkdir -p $(HOME)/Proyectos
 	ln -sf $(ROOT_DIR)/shell/zshrc $(HOME)/.zshrc
 	ln -sf $(ROOT_DIR)/shell/gitconfig $(HOME)/.gitconfig
 	mkdir -p $(HOME)/.local/bin

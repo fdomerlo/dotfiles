@@ -43,12 +43,38 @@ echo "    ✔ Documentos:   $(gsettings get org.gnome.desktop.interface document
 echo "    ✔ Monoespacio:  $(gsettings get org.gnome.desktop.interface monospace-font-name 2>/dev/null || echo 'N/A')"
 
 # ------------------------------------------------------------------------------
-# 2. Deshabilitar validación estricta de versión de extensiones en GNOME
+# 2. Configuración de Ventanas (Botones minimizar, maximizar y cerrar)
+# ------------------------------------------------------------------------------
+echo "==> Configurando botones de ventana (minimizar, maximizar, cerrar)..."
+gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close' 2>/dev/null || true
+echo "    ✔ Botones:      $(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo 'N/A')"
+
+# ------------------------------------------------------------------------------
+# 3. Directorio Dedicado de Proyectos (XDG)
+# ------------------------------------------------------------------------------
+echo "==> Configurando directorio de Proyectos..."
+PROJECTS_DIR="${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
+mkdir -p "$PROJECTS_DIR"
+
+if command -v xdg-user-dirs-update &>/dev/null; then
+    xdg-user-dirs-update --set PROJECTS "$PROJECTS_DIR" 2>/dev/null || true
+fi
+
+USER_DIRS_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
+if [ -f "$USER_DIRS_CONF" ]; then
+    if ! grep -q "^XDG_PROJECTS_DIR=" "$USER_DIRS_CONF"; then
+        echo "XDG_PROJECTS_DIR=\"$PROJECTS_DIR\"" >> "$USER_DIRS_CONF"
+    fi
+fi
+echo "    ✔ Directorio de proyectos: $PROJECTS_DIR"
+
+# ------------------------------------------------------------------------------
+# 4. Deshabilitar validación estricta de versión de extensiones en GNOME
 # ------------------------------------------------------------------------------
 gsettings set org.gnome.shell disable-extension-version-validation true 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
-# 3. Instalación de Extensiones
+# 5. Instalación de Extensiones
 # ------------------------------------------------------------------------------
 USER_EXT_DIR="$HOME/.local/share/gnome-shell/extensions"
 SYS_EXT_DIR="/usr/share/gnome-shell/extensions"
@@ -142,7 +168,7 @@ install_extension "dash-to-dock@micxgx.gmail.com" "gnome-shell-extension-dashtod
 install_extension "tiling-assistant@leleat-on-github" ""
 
 # ------------------------------------------------------------------------------
-# 4. Habilitar extensiones requeridas en GNOME
+# 6. Habilitar extensiones requeridas en GNOME
 # ------------------------------------------------------------------------------
 echo "==> Habilitando extensiones requeridas..."
 
