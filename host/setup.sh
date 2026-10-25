@@ -88,9 +88,10 @@ apt-get upgrade -y
 APPIMAGE_FUSE_PKGS=()
 FUSE2_DISPONIBLE=false
 
-# 1. Comprobar si existe alguna variante de FUSE 2 (Compatible con Debian Stable/Bookworm/Trixie)
+# 1. Comprobar si existe un candidato de instalación real para FUSE 2
 for fpkg in libfuse2t64 libfuse2; do
-    if apt-cache show "$fpkg" &>/dev/null; then
+    # 'apt-cache policy' nos dice con certeza si hay un candidato instalable
+    if apt-cache policy "$fpkg" 2>/dev/null | grep -qE "Candidato:|Candidate:" | grep -v "(ninguno\|none)"; then
         APPIMAGE_FUSE_PKGS+=("$fpkg")
         FUSE2_DISPONIBLE=true
         break
@@ -99,12 +100,12 @@ done
 
 # 2. Si no hay FUSE 2 (Como en Debian Testing/Forky), dependemos de fuse3 y del fallback de extracción
 if [ "$FUSE2_DISPONIBLE" = false ]; then
-    if apt-cache show "fuse3" &>/dev/null; then
+    # Verificamos si existe fuse3 (estándar moderno)
+    if apt-cache policy "fuse3" 2>/dev/null | grep -qE "Candidato:|Candidate:" | grep -v "(ninguno\|none)"; then
         APPIMAGE_FUSE_PKGS+=("fuse3")
     fi
     
     # Configurar el fallback global para AppImages en sistemas sin FUSE 2
-    # Esto le dice a los AppImages clásicos que se auto-extraigan y corran usando FUSE 3 de fondo
     if ! grep -q "APPIMAGE_EXTRACT_AND_RUN" /etc/environment 2>/dev/null; then
         echo "Configurando fallback de extracción para AppImages (Debian Testing)..."
         echo "APPIMAGE_EXTRACT_AND_RUN=1" | sudo tee -a /etc/environment > /dev/null
