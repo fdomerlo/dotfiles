@@ -22,14 +22,14 @@ if ! command -v gh &> /dev/null; then
     fi
     
     # 3. Obtener la última etiqueta de versión limpia (ej. v2.40.0) de la API de GitHub
-    GH_VERSION=$(curl -sSL https://github.com | jq -r .tag_name)
+    GH_VERSION=$(curl -sSL https://api.github.com/repos/cli/cli/releases/latest | jq -r .tag_name)
     # Quitarle la 'v' inicial para que coincida con el nombre de las carpetas internas
     VERSION_NUM="${GH_VERSION#v}"
     
     # 4. Descargar, extraer el binario usando llaves de protección y guardarlo
     TMP_DIR=$(mktemp -d)
     # Usamos la URL estructurada real que requiere la versión y la arquitectura explícitas
-    curl -fsSL "https://github.com{GH_VERSION}/gh_${VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TMP_DIR" --strip-components=1
+    curl -fsSL "https://github.com/cli/cli/releases/download/${GH_VERSION}/gh_${VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TMP_DIR" --strip-components=1
     
     mv "$TMP_DIR/bin/gh" "$HOME/.local/bin/gh"
     chmod +x "$HOME/.local/bin/gh"
