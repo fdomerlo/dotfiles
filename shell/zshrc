@@ -21,7 +21,7 @@ plugins=(
 # ---------------------------------------------------------------------------
 
 # --- Consolidación del PATH ---
-export PATH="$HOME/.local/bin:$HOME/Aplicaciones:$HOME/.opencode/bin:$HOME/bin:/usr/local/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/Aplicaciones:$HOME/.opencode/bin:$HOME/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/sbin:$PATH"
 
 # --- UV (Python) ---
 [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"

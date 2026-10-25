@@ -72,11 +72,22 @@ EOF"
 fi
 
 echo "[4/4] Verificando Antigravity CLI..."
-if ! command -v antigravity &>/dev/null && [ ! -f "$HOME/.local/bin/antigravity" ] && [ ! -f "/usr/local/bin/antigravity" ]; then
+mkdir -p "$HOME/.local/bin"
+if ! command -v agy &>/dev/null && [ ! -f "$HOME/.local/bin/agy" ]; then
     echo "Instalando Antigravity CLI..."
     curl -fsSL https://antigravity.google/cli/install.sh | bash
 else
     echo "✔ Antigravity CLI ya está instalado."
+fi
+
+# Enlace de compatibilidad y conveniencia para 'antigravity-cli' -> 'agy'
+if [ -f "$HOME/.local/bin/agy" ]; then
+    ln -sf "$HOME/.local/bin/agy" "$HOME/.local/bin/antigravity-cli"
+fi
+
+# Fallback: si no existe el Core/IDE (/usr/local/bin/antigravity), enlazar 'antigravity' al CLI
+if ! command -v antigravity &>/dev/null && [ ! -f "$HOME/.local/bin/antigravity" ] && [ ! -f "/usr/local/bin/antigravity" ] && [ -f "$HOME/.local/bin/agy" ]; then
+    ln -sf "$HOME/.local/bin/agy" "$HOME/.local/bin/antigravity"
 fi
 
 echo "✔ Despliegue de Antigravity finalizado."

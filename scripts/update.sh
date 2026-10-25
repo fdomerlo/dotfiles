@@ -131,8 +131,9 @@ step "Convergencia Antigravity (/opt + CLI)..."
 # /opt re-extrae; si no, solo verifica symlink/.desktop/CLI. Barato y seguro.
 bash "$SCRIPT_DIR/setup_agy.sh" || warn "setup_agy.sh falló."
 # Forzar CLI a última versión aunque ya existiera (setup_agy solo instala si falta).
-if command -v antigravity &>/dev/null || [ -f "$HOME/.local/bin/antigravity" ] || [ -f /usr/local/bin/antigravity ]; then
+if command -v agy &>/dev/null || [ -f "$HOME/.local/bin/agy" ]; then
     curl -fsSL https://antigravity.google/cli/install.sh | bash || warn "no se pudo actualizar Antigravity CLI."
+    [ -f "$HOME/.local/bin/agy" ] && ln -sf "$HOME/.local/bin/agy" "$HOME/.local/bin/antigravity-cli"
     ok "Antigravity CLI actualizado."
 fi
 

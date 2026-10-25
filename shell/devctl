@@ -10,6 +10,9 @@ while [ -h "$SOURCE" ]; do
 done
 BASE_DIR="$(cd -P "$(dirname "$SOURCE")/.." && pwd)"
 
+# Asegurar presencia de rutas administrativas de Debian (swapon, zramctl, etc.)
+export PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+
 log() { echo -e "\n==> $1"; }
 
 require() {
@@ -67,6 +70,7 @@ doctor() {
   check zed
   check opencode
   check antigravity
+  check_opt agy
   check_opt timeshift
 
   echo ""
@@ -151,13 +155,23 @@ doctor() {
 
   echo ""
   echo "Memoria y Swap:"
-  swapon --show || echo "No hay swap activo"
+  if command -v swapon &>/dev/null; then
+    swapon --show || echo "No hay swap activo"
+  elif [ -x /usr/sbin/swapon ]; then
+    /usr/sbin/swapon --show || echo "No hay swap activo"
+  elif [ -r /proc/swaps ] && [ "$(wc -l < /proc/swaps)" -gt 1 ]; then
+    cat /proc/swaps
+  else
+    echo "No hay swap activo"
+  fi
 
   echo ""
   echo "Estado de zRAM:"
   if command -v zramctl &>/dev/null; then
     zramctl || echo "zRAM inactivo"
-  elif grep -q "zram" /proc/swaps; then
+  elif [ -x /usr/sbin/zramctl ]; then
+    /usr/sbin/zramctl || echo "zRAM inactivo"
+  elif grep -q "zram" /proc/swaps 2>/dev/null; then
     grep "zram" /proc/swaps
   else
     echo "No se detectó dispositivo zRAM"
