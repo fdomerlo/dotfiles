@@ -68,10 +68,11 @@ El archivo [`preseed.cfg`](preseed.cfg) automatiza la instalación limpia de Deb
 En una instalación limpia de Debian ejecutar:
 
 ```bash
-sudo apt update && sudo apt install -y git make
-git clone https://github.com/fdomerlo/dotfiles.git ~/.dotfiles
+sudo apt update && sudo apt install -y git make && \
+rm -rf ~/.dotfiles && \
+git clone https://github.com/fdomerlo/dotfiles.git ~/.dotfiles && \
 cd ~/.dotfiles
-make install
+make help
 ```
 
 ---
