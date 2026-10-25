@@ -12,14 +12,14 @@ if ! command -v gh &> /dev/null; then
     sudo apt-get update -y
     sudo apt-get install -y curl gnupg
     
-    # 2. Descargar la clave GPG oficial usando el nuevo dominio de distribución
+    # 2. Descargar la clave GPG oficial de GitHub CLI de forma segura
     sudo mkdir -p /usr/share/keyrings
     curl -fsSL https://github.com | \
       sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
     sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
     
-    # 3. Registrar el repositorio con la URL corregida (pkg.github.com)
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://github.com stable main" | \
+    # 3. Registrar el repositorio oficial usando el dominio ://github.com
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://://github.com stable main" | \
       sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
     
     # 4. Actualizar e instalar el paquete fresco
