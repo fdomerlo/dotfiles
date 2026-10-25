@@ -38,11 +38,23 @@ clean_deep() {
 }
 
 # --------------------------------------------------
+# MIGRACIÓN (STABLE -> TESTING)
+# --------------------------------------------------
+
+migrate_testing() {
+  log "Iniciando transición asistida a Debian Testing..."
+  sudo bash "$BASE_DIR/scripts/migrate-to-testing.sh"
+}
+
+# --------------------------------------------------
 # DIAGNÓSTICO
 # --------------------------------------------------
 
 doctor() {
-  log "Ejecutando diagnóstico del entorno Debian..."
+  local suite_label
+  suite_label=$(bash "$BASE_DIR/scripts/detect-suite.sh" --label 2>/dev/null || echo "Debian")
+
+  log "Ejecutando diagnóstico del entorno Debian ($suite_label)..."
 
   check() {
     if command -v "$1" >/dev/null || [ -f "$HOME/.local/bin/$1" ]; then
@@ -60,6 +72,10 @@ doctor() {
     fi
   }
 
+  echo "Sistema Base:"
+  echo -e "  \033[32m✔\033[0m Debian $suite_label ($(uname -r), $(uname -m))"
+
+  echo ""
   echo "Herramientas del Host:"
   check git
   check gh
@@ -87,7 +103,7 @@ doctor() {
   echo "Podman Rootless:"
   if command -v podman &>/dev/null; then
     echo -e "  \033[32m✔\033[0m Binario podman presente ($(podman --version))"
-    if [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ]; then
+    if [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ] || [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then
       echo -e "  \033[32m✔\033[0m Podman Rootless activo y operativo"
     else
       echo -e "  \033[31m✘\033[0m Podman no se está ejecutando en modo Rootless"
@@ -189,6 +205,8 @@ update) update ;;
 
 clean) clean_deep ;;
 
+migrate-testing|to-testing) migrate_testing ;;
+
 *)
   echo "devctl - Workstation CLI para Debian"
   echo ""
@@ -196,5 +214,6 @@ clean) clean_deep ;;
   echo "  devctl doctor                # Diagnóstico del entorno y servicios"
   echo "  devctl update                # Actualiza estación (APT only-upgrade + user-space)"
   echo "  devctl clean                 # Limpieza profunda post-upgrade (purga rc, huérfanos, logs)"
+  echo "  devctl migrate-testing       # Migra la estación de trabajo de Debian Stable a Testing"
   ;;
 esac

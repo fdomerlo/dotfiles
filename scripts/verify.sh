@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DISTRO_NAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "debian")
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SUITE=$(bash "$SCRIPT_DIR/detect-suite.sh" 2>/dev/null || echo "stable")
+SUITE_LABEL=$(bash "$SCRIPT_DIR/detect-suite.sh" --label 2>/dev/null || echo "Stable")
 
 echo "================================================================="
-echo "       Debian ${DISTRO_NAME^} Workstation - Verificación de Estado        "
+echo "       Debian $SUITE_LABEL Workstation - Verificación de Estado        "
 echo "================================================================="
 
 check_status() {
@@ -62,10 +64,17 @@ fi
 
 # 6. Tipografías del Sistema
 echo -n "Tipografías del sistema (JetBrains Mono / Fira Code / Noto Sans)... "
-if fc-list : family | grep -iE "JetBrains Mono|Fira Code|Noto Sans" >/dev/null 2>&1; then
+fonts_ok=0
+INSTALLED_FONTS=$(fc-list : family 2>/dev/null || true)
+for f in "JetBrains Mono" "Fira Code" "Noto Sans"; do
+    if ! echo "$INSTALLED_FONTS" | grep -qi "$f"; then
+        fonts_ok=1
+    fi
+done
+if [ $fonts_ok -eq 0 ]; then
     check_status 0 "Fuentes reconocidas por fontconfig"
 else
-    check_status 1 "No se encontraron JetBrains Mono ni Fira Code"
+    check_status 1 "Faltan fuentes esenciales en fontconfig"
 fi
 
 # 7. Enlaces simbólicos de dotfiles
@@ -110,33 +119,31 @@ for pkg in docker-ce docker-ce-cli containerd.io docker.io; do
         apt_ok=1
     fi
 done
-while IFS= read -r key; do
-    if [ -n "$key" ] && [ ! -e "$key" ]; then
-        echo -e "\n  -> Keyring referenciado inexistente: $key"
+if [ -e /etc/apt/keyrings/docker.asc ]; then
+    if ! grep -rh 'docker\.asc' "$SOURCES_D" --include='*.list' --include='*.sources' 2>/dev/null | grep -qv '^[[:space:]]*\(#\|$\)'; then
+        echo -e "\n  -> Keyring huérfano: /etc/apt/keyrings/docker.asc"
         apt_ok=1
     fi
-done < <( { sed -n 's/.*signed-by=\([^]]*\).*/\1/p' "$SOURCES_D"/*.list 2>/dev/null; \
-            sed -n 's/^Signed-By:[[:space:]]*//p' "$SOURCES_D"/*.sources 2>/dev/null; } | sort -u )
+fi
 if [ $apt_ok -eq 0 ]; then
     check_status 0 "Fuentes limpias, podman-only, keyrings presentes"
 else
-    check_status 1 "Hay higiene APT pendiente (ejecuta 'make update')"
+    check_status 1 "Se detectaron residuos de Docker o duplicados (ejecuta 'sudo bash scripts/apt-maintenance.sh')"
 fi
 
-# 10. Login en GitHub (solo lectura: SSH + gh CLI, sin prompts)
+# 10. Autenticación con GitHub (solo lectura, sin mutar credenciales)
 echo -n "Login GitHub (SSH)... "
-SSH_KEY_ARGS=()
-[ -f "$HOME/.ssh/id_ed25519" ] && SSH_KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
-SSH_REPLY=$(ssh -T "${SSH_KEY_ARGS[@]}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
+KEY_ARGS=()
+[ -f "$HOME/.ssh/id_ed25519" ] && KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
+SSH_REPLY=$(ssh -T "${KEY_ARGS[@]}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
 if echo "$SSH_REPLY" | grep -q "successfully authenticated"; then
     SSH_USER=$(echo "$SSH_REPLY" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
     check_status 0 "SSH autenticado como ${SSH_USER:-usuario}"
 else
-    check_status 1 "SSH con GitHub no autenticado (ejecuta 'make devtools')"
+    check_status 1 "SSH con GitHub no autenticado (revisa ~/.ssh/id_ed25519)"
 fi
+
 echo -n "Login GitHub (gh CLI)... "
-# Ojo: `gh auth status` puede devolver 0 con un token muerto; la única prueba
-# fiable es llamar a la API y validar forma de usuario GitHub.
 GH_USER=""
 if command -v gh &>/dev/null; then
     GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
@@ -144,16 +151,16 @@ fi
 if [[ "$GH_USER" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?$ ]]; then
     check_status 0 "gh autenticado como $GH_USER"
 else
-    check_status 1 "gh sin sesión válida (ejecuta 'gh auth login -h github.com -p ssh -w')"
+    check_status 1 "gh CLI sin sesión activa (ejecuta 'gh auth login -h github.com -p ssh -w')"
 fi
 
-# 11. Personalizaciones de GNOME y Directorios de Usuario
+# 11. Personalizaciones de GNOME y Directorios de Trabajo
 echo -n "Botones de control en ventanas (minimizar, maximizar, cerrar)... "
 BTN_LAYOUT=$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo "''")
 if [[ "$BTN_LAYOUT" == *"minimize"* && "$BTN_LAYOUT" == *"maximize"* && "$BTN_LAYOUT" == *"close"* ]]; then
     check_status 0 "Configurados correctamente ($BTN_LAYOUT)"
 else
-    check_status 1 "Configuración incompleta ($BTN_LAYOUT)"
+    check_optional "Layout actual: $BTN_LAYOUT (ejecuta 'make desktop' para aplicar appmenu:minimize,maximize,close)"
 fi
 
 echo -n "Directorio dedicado de proyectos (XDG_PROJECTS_DIR)... "
@@ -191,14 +198,23 @@ else
     check_optional "No creado aún ($APPIMAGE_DIR)"
 fi
 
-echo -n "Repositorios extendidos oficiales (Backports / FastTrack)... "
-EXT_REPOS=()
-[ -f "/etc/apt/sources.list.d/debian-backports.sources" ] && EXT_REPOS+=("Backports")
-[ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ] && EXT_REPOS+=("FastTrack")
-if [ "${#EXT_REPOS[@]}" -gt 0 ]; then
-    check_status 0 "Configurados: ${EXT_REPOS[*]}"
+echo -n "Repositorios oficiales de Debian ($SUITE_LABEL)... "
+if [ "$SUITE" = "stable" ]; then
+    EXT_REPOS=()
+    [ -f "/etc/apt/sources.list.d/debian-backports.sources" ] && EXT_REPOS+=("Backports")
+    [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ] && EXT_REPOS+=("FastTrack")
+    if [ "${#EXT_REPOS[@]}" -gt 0 ]; then
+        check_status 0 "Configurados para Stable: ${EXT_REPOS[*]}"
+    else
+        check_optional "No configurados aún (se añaden en 'make host')"
+    fi
 else
-    check_optional "No configurados aún (se añaden en 'make host')"
+    # Testing
+    if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
+        check_status 1 "FastTrack detectado en Testing (debe removerse para evitar conflictos)"
+    else
+        check_status 0 "Debian Testing activo (paquetes rolling upstream)"
+    fi
 fi
 
 echo "================================================================="

@@ -17,7 +17,7 @@ plugins=(
 [ -s "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
 
 # ---------------------------------------------------------------------------
-# CONFIGURACIÓN DEL USUARIO (DEBIAN TRIXIE)
+# CONFIGURACIÓN DEL USUARIO (DEBIAN)
 # ---------------------------------------------------------------------------
 
 # --- Consolidación del PATH ---

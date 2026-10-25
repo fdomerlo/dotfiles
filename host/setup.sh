@@ -6,61 +6,75 @@ set -euo pipefail
 TARGET_USER="${SUDO_USER:-$(logname)}"
 USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DISTRO_NAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "trixie")
+
+SUITE=$(bash "$REPO_DIR/scripts/detect-suite.sh" 2>/dev/null || echo "stable")
+SUITE_LABEL=$(bash "$REPO_DIR/scripts/detect-suite.sh" --label 2>/dev/null || echo "Stable")
 
 echo "================================================================="
-echo "==> [Debian ${DISTRO_NAME^}] Configuración de Sistema y Paquetes Base"
+echo "==> [Debian $SUITE_LABEL] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
 
 echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
 bash "$REPO_DIR/scripts/apt-maintenance.sh"
 
 # ------------------------------------------------------------------------------
-# 1. Configuración de Repositorios Oficiales (Backports + FastTrack)
+# 1. Configuración de Repositorios Oficiales según Suite
 # ------------------------------------------------------------------------------
-echo "==> Configurando repositorios extendidos oficiales (Backports & FastTrack)..."
+if [ "$SUITE" = "stable" ]; then
+    echo "==> Configurando repositorios extendidos para Debian Stable (Backports & FastTrack)..."
 
-# Debian Backports (formato canónico DEB822)
-BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
-DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
-if [ ! -f "$BACKPORTS_FILE" ]; then
-    cat > "$BACKPORTS_FILE" << EOF
+    # Debian Backports (formato canónico DEB822)
+    BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
+    DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
+    if [ ! -f "$BACKPORTS_FILE" ]; then
+        cat > "$BACKPORTS_FILE" << EOF
 Types: deb deb-src
 URIs: http://deb.debian.org/debian/
-Suites: ${DISTRO_NAME}-backports
+Suites: stable-backports
 Components: main contrib non-free non-free-firmware
 Signed-By: $DEB_KEYRING
 EOF
-    echo "  ✔ Debian Backports configurado (${DISTRO_NAME}-backports)."
-else
-    # Asegurar que no esté deshabilitado
-    sed -i '/^Enabled:[[:space:]]*No/d' "$BACKPORTS_FILE" || true
-    if [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS_FILE"; then
-        sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS_FILE"
-    fi
-fi
-
-# Debian FastTrack (paquetes upstream de rápido movimiento para Debian Stable)
-FASTTRACK_KEYRING="/usr/share/keyrings/fasttrack-archive-keyring.gpg"
-if [ ! -f "$FASTTRACK_KEYRING" ]; then
-    if apt-get install -y fasttrack-archive-keyring 2>/dev/null; then
-        echo "  ✔ Paquete fasttrack-archive-keyring instalado vía APT."
+        echo "  ✔ Debian Backports configurado (stable-backports)."
     else
-        echo "  Descargando keyring oficial de Debian FastTrack..."
-        curl -fsSL "https://fasttrack.debian.net/debian-fasttrack/pubkey.gpg" | gpg --dearmor -o "$FASTTRACK_KEYRING" 2>/dev/null || true
+        # Asegurar que no esté deshabilitado
+        sed -i '/^Enabled:[[:space:]]*No/d' "$BACKPORTS_FILE" || true
+        if [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS_FILE"; then
+            sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS_FILE"
+        fi
     fi
-fi
 
-FASTTRACK_FILE="/etc/apt/sources.list.d/debian-fasttrack.sources"
-if [ -f "$FASTTRACK_KEYRING" ] && [ ! -f "$FASTTRACK_FILE" ]; then
-    cat > "$FASTTRACK_FILE" << EOF
+    # Debian FastTrack (paquetes upstream de rápido movimiento para Debian Stable)
+    CODENAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "")
+    if [ -n "$CODENAME" ]; then
+        FASTTRACK_KEYRING="/usr/share/keyrings/fasttrack-archive-keyring.gpg"
+        if [ ! -f "$FASTTRACK_KEYRING" ]; then
+            if apt-get install -y fasttrack-archive-keyring 2>/dev/null; then
+                echo "  ✔ Paquete fasttrack-archive-keyring instalado vía APT."
+            else
+                echo "  Descargando keyring oficial de Debian FastTrack..."
+                curl -fsSL "https://fasttrack.debian.net/debian-fasttrack/pubkey.gpg" | gpg --dearmor -o "$FASTTRACK_KEYRING" 2>/dev/null || true
+            fi
+        fi
+
+        FASTTRACK_FILE="/etc/apt/sources.list.d/debian-fasttrack.sources"
+        if [ -f "$FASTTRACK_KEYRING" ] && [ ! -f "$FASTTRACK_FILE" ]; then
+            cat > "$FASTTRACK_FILE" << EOF
 Types: deb deb-src
 URIs: https://fasttrack.debian.net/debian-fasttrack/
-Suites: ${DISTRO_NAME}-fasttrack
+Suites: ${CODENAME}-fasttrack
 Components: main contrib
 Signed-By: $FASTTRACK_KEYRING
 EOF
-    echo "  ✔ Debian FastTrack configurado (${DISTRO_NAME}-fasttrack)."
+            echo "  ✔ Debian FastTrack configurado (${CODENAME}-fasttrack)."
+        fi
+    fi
+else
+    echo "==> Entorno Debian Testing detectado: gestionando paquetes nativos de upstream..."
+    # Si migró desde Stable, purgar FastTrack para prevenir errores 404 o dependencias rotas
+    if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
+        echo "  Limpiando debian-fasttrack.sources obsoleto..."
+        rm -f "/etc/apt/sources.list.d/debian-fasttrack.sources"
+    fi
 fi
 
 echo "==> Actualizando repositorios APT..."
@@ -71,8 +85,6 @@ apt-get upgrade -y
 # ------------------------------------------------------------------------------
 # 2. Soporte para AppImage (FUSE 2 + FUSE 3)
 # ------------------------------------------------------------------------------
-# En Debian 13 (Trixie), libfuse2t64 es el paquete requerido para ejecutar AppImages
-# sin entrar en conflicto con fuse3 ni remover componentes de GNOME.
 APPIMAGE_FUSE_PKGS=()
 for fpkg in libfuse2t64 libfuse2; do
     if apt-cache show "$fpkg" &>/dev/null; then
@@ -134,5 +146,5 @@ echo "==> Habilitando systemd linger para $TARGET_USER..."
 loginctl enable-linger "$TARGET_USER"
 
 echo "================================================================="
-echo "✔ Host setup completado (Stable + Backports + FastTrack + Flatpak + AppImage)."
+echo "✔ Host setup completado (Debian $SUITE_LABEL + Flatpak + AppImage + Podman Rootless)."
 echo "================================================================="
