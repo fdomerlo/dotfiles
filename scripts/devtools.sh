@@ -12,12 +12,25 @@ if ! command -v gh &> /dev/null; then
     mkdir -p "$HOME/.local/bin"
     
     # 2. Detectar arquitectura del procesador
-    ARCH=$(dpkg --print-architecture)
-    if [ "$ARCH" = "amd64" ]; then ARCH="amd64"; elif [ "$ARCH" = "arm64" ]; then ARCH="arm64"; fi
+    DET_ARCH=$(dpkg --print-architecture)
+    if [ "$DET_ARCH" = "amd64" ]; then 
+        ARCH="amd64"
+    elif [ "$DET_ARCH" = "arm64" ]; then 
+        ARCH="arm64"
+    else
+        ARCH="386"
+    fi
     
-    # 3. Descargar el archivo comprimido oficial, extraer solo el binario y guardarlo
+    # 3. Obtener la última etiqueta de versión limpia (ej. v2.40.0) de la API de GitHub
+    GH_VERSION=$(curl -sSL https://github.com | jq -r .tag_name)
+    # Quitarle la 'v' inicial para que coincida con el nombre de las carpetas internas
+    VERSION_NUM="${GH_VERSION#v}"
+    
+    # 4. Descargar, extraer el binario usando llaves de protección y guardarlo
     TMP_DIR=$(mktemp -d)
-    curl -fsSL "https://github.com{ARCH}_linux.tar.gz" | tar -xz -C "$TMP_DIR" --strip-components=1
+    # Usamos la URL estructurada real que requiere la versión y la arquitectura explícitas
+    curl -fsSL "https://github.com{GH_VERSION}/gh_${VERSION_NUM}_linux_${ARCH}.tar.gz" | tar -xz -C "$TMP_DIR" --strip-components=1
+    
     mv "$TMP_DIR/bin/gh" "$HOME/.local/bin/gh"
     chmod +x "$HOME/.local/bin/gh"
     rm -rf "$TMP_DIR"
