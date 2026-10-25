@@ -6,25 +6,23 @@ echo "==> Instalando DevManagers (gh, uv, fnm, sdkman)..."
 echo "================================================================="
 
 if ! command -v gh &> /dev/null; then
-    echo "Instalando GitHub CLI (gh vía repositorios oficiales)..."
+    echo "Instalando GitHub CLI (gh vía binario oficial para Debian Testing)..."
     
-    # 1. Asegurar herramientas iniciales para manejar llaves
-    sudo apt-get update -y
-    sudo apt-get install -y curl gnupg
+    # 1. Crear directorio local de binarios si no existe
+    mkdir -p "$HOME/.local/bin"
     
-    # 2. Descargar la clave GPG oficial de GitHub CLI de forma segura
-    sudo mkdir -p /usr/share/keyrings
-    curl -fsSL https://github.com | \
-      sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
-    sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+    # 2. Detectar arquitectura del procesador
+    ARCH=$(dpkg --print-architecture)
+    if [ "$ARCH" = "amd64" ]; then ARCH="amd64"; elif [ "$ARCH" = "arm64" ]; then ARCH="arm64"; fi
     
-    # 3. Registrar el repositorio oficial usando el dominio ://github.com
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://://github.com stable main" | \
-      sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    # 3. Descargar el archivo comprimido oficial, extraer solo el binario y guardarlo
+    TMP_DIR=$(mktemp -d)
+    curl -fsSL "https://github.com{ARCH}_linux.tar.gz" | tar -xz -C "$TMP_DIR" --strip-components=1
+    mv "$TMP_DIR/bin/gh" "$HOME/.local/bin/gh"
+    chmod +x "$HOME/.local/bin/gh"
+    rm -rf "$TMP_DIR"
     
-    # 4. Actualizar e instalar el paquete fresco
-    sudo apt-get update -y
-    sudo apt-get install -y gh
+    echo "✔ gh instalado correctamente en ~/.local/bin/gh"
 else
     echo "✔ gh ya está instalado"
 fi
