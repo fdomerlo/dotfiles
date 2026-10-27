@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PATH="$HOME/.local/bin:$PATH"
+
 echo "================================================================="
 echo "==> Instalando DevManagers (gh, uv, fnm, sdkman)..."
 echo "================================================================="
