@@ -66,12 +66,12 @@ else
   "include_btrfs_home_for_restore" : "false",
   "stop_cron_emails" : "true",
   "schedule_monthly" : "false",
-  "schedule_weekly" : "true",
+  "schedule_weekly" : "false",
   "schedule_daily" : "true",
   "schedule_hourly" : "false",
   "schedule_boot" : "false",
   "count_monthly" : "0",
-  "count_weekly" : "2",
+  "count_weekly" : "0",
   "count_daily" : "3",
   "count_hourly" : "0",
   "count_boot" : "0",
@@ -83,7 +83,9 @@ else
     "- /var/lib/docker/**",
     "- /var/lib/containers/**",
     "- /var/cache/**",
-    "- /var/tmp/**"
+    "- /var/tmp/**",
+    "- /var/log/**",
+    "- /tmp/**"
   ],
   "exclude-apps" : []
 }

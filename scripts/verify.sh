@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUITE=$(bash "$SCRIPT_DIR/detect-suite.sh" 2>/dev/null || echo "stable")
-SUITE_LABEL=$(bash "$SCRIPT_DIR/detect-suite.sh" --label 2>/dev/null || echo "Stable")
-
 echo "================================================================="
-echo "       Debian $SUITE_LABEL Workstation - Verificación de Estado        "
+echo "        Debian Testing Workstation - Verificación de Estado"
 echo "================================================================="
 
 check_status() {
@@ -183,11 +179,11 @@ else
     check_status 1 "Flatpak no instalado"
 fi
 
-echo -n "Soporte AppImage (FUSE runtime)... "
-if dpkg -s libfuse2t64 &>/dev/null || dpkg -s libfuse2 &>/dev/null || [ -e /usr/lib/x86_64-linux-gnu/libfuse.so.2 ]; then
-    check_status 0 "Biblioteca FUSE 2 activa para AppImages"
+echo -n "Soporte AppImage (FUSE / Extract-and-Run)... "
+if dpkg -s libfuse2t64 &>/dev/null || dpkg -s libfuse2 &>/dev/null || [ -e /usr/lib/x86_64-linux-gnu/libfuse.so.2 ] || { dpkg -s fuse3 &>/dev/null && grep -q "^APPIMAGE_EXTRACT_AND_RUN=1" /etc/environment 2>/dev/null; }; then
+    check_status 0 "Soporte AppImage activo"
 else
-    check_optional "libfuse2t64 / libfuse2 no detectado (opcional si no se usan AppImages FUSE 2)"
+    check_optional "Soporte AppImage no detectado (ejecuta 'make host')"
 fi
 
 echo -n "Directorio de aplicaciones portables/AppImages... "
@@ -198,23 +194,13 @@ else
     check_optional "No creado aún ($APPIMAGE_DIR)"
 fi
 
-echo -n "Repositorios oficiales de Debian ($SUITE_LABEL)... "
-if [ "$SUITE" = "stable" ]; then
-    EXT_REPOS=()
-    [ -f "/etc/apt/sources.list.d/debian-backports.sources" ] && EXT_REPOS+=("Backports")
-    [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ] && EXT_REPOS+=("FastTrack")
-    if [ "${#EXT_REPOS[@]}" -gt 0 ]; then
-        check_status 0 "Configurados para Stable: ${EXT_REPOS[*]}"
-    else
-        check_optional "No configurados aún (se añaden en 'make host')"
-    fi
+echo -n "Repositorios oficiales y Pinning de Debian Testing... "
+if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ] || [ -f "/etc/apt/sources.list.d/debian-backports.sources" ]; then
+    check_status 1 "Fuentes de Stable (Backports/FastTrack) detectadas en Testing (deben removerse)"
+elif [ -f "/etc/apt/preferences.d/00-testing-pinning.pref" ]; then
+    check_status 0 "Debian Testing activo con APT Pinning configurado"
 else
-    # Testing
-    if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
-        check_status 1 "FastTrack detectado en Testing (debe removerse para evitar conflictos)"
-    else
-        check_status 0 "Debian Testing activo (paquetes rolling upstream)"
-    fi
+    check_optional "Debian Testing activo (APT Pinning pendiente: ejecuta 'make host')"
 fi
 
 echo "================================================================="

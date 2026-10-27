@@ -3,8 +3,8 @@
 #
 # Filosofía: NO rompe la idempotencia de install. Es seguro ejecutarlo N veces.
 #   - `make install`  -> converge todo desde cero (re-ejecutable).
-#   - `make update`   -> higiene APT (apt-maintenance.sh) + fast-forward:
-#     APT only-upgrade + self-updates user-space.
+#   - `make update`   -> higiene APT (apt-maintenance.sh) + actualización integral
+#     sincronizada del sistema base (Debian Testing) + self-updates user-space.
 # No toca: claves SSH, `gh auth`, `/opt/Antigravity` (requiere tarball manual),
 #   shell por defecto (chsh), linger, ni registros de Podman.
 set -euo pipefail
@@ -15,6 +15,13 @@ warn() { echo "  ⚠️ $1"; }
 ok()   { echo "  ✔ $1"; }
 step() { echo; echo "==> $1"; }
 
+TAKE_SNAPSHOT=0
+for arg in "$@"; do
+    case "$arg" in
+        --snapshot|-s) TAKE_SNAPSHOT=1 ;;
+    esac
+done
+
 # ------------------------------------------------------------------------------
 # 0. Pre-vuelos (no fatal)
 # ------------------------------------------------------------------------------
@@ -24,54 +31,27 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 1. Higiene APT + only-upgrade de paquetes gestionados (no full-upgrade)
+# 1. Higiene APT + actualización integral sincronizada (Debian Testing)
 # ------------------------------------------------------------------------------
 step "Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
 sudo bash "$SCRIPT_DIR/apt-maintenance.sh" || warn "apt-maintenance falló, continúo."
 
-step "Actualizando paquetes APT gestionados (--only-upgrade)..."
+SKIP_SNAPSHOT="${SKIP_SNAPSHOT:-0}"
+if [ "$SKIP_SNAPSHOT" != "1" ] && command -v timeshift &>/dev/null && [ -f /etc/timeshift/timeshift.json ]; then
+    if [ "$TAKE_SNAPSHOT" -eq 1 ]; then
+        step "Creando snapshot preventivo con Timeshift..."
+        sudo timeshift --create --comments "Pre-update scripts/update.sh" --scripted || warn "No se pudo crear el snapshot de Timeshift."
+        ok "Snapshot previo completado."
+    else
+        echo "  ℹ️ Timeshift detectado. Puedes crear un snapshot previo usando: devctl update --snapshot (o SKIP_SNAPSHOT=1 para silenciar)."
+    fi
+fi
+
+step "Actualizando sistema base APT de forma sincronizada (upgrade --with-new-pkgs)..."
 if command -v apt-get &>/dev/null; then
     sudo apt-get update -y || warn "apt-get update falló, continúo con caché local."
-
-    # Candidatos gestionados por host/setup.sh, host/timeshift.sh, ohmyzsh.sh, devtools.sh y tooling.sh.
-    CANDIDATES=(
-        git curl wget jq unzip zip ca-certificates gnupg lsb-release
-        build-essential
-        ripgrep fd-find fzf bat btop direnv wl-clipboard
-        fonts-firacode fonts-jetbrains-mono fonts-noto-core
-        gnome-shell-extension-dashtodock
-        flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
-        libglib2.0-bin
-        fuse3 libfuse2t64 libfuse2 fasttrack-archive-keyring
-        uidmap dbus-user-session iptables
-        podman crun buildah skopeo podman-compose passt slirp4netns catatonit
-        timeshift cron
-        zsh gh
-    )
-    # VS Code si su repo está configurado (legacy .list o DEB822 .sources);
-    # Chrome solo si está instalado.
-    if [ -f /etc/apt/sources.list.d/vscode.list ] || [ -f /etc/apt/sources.list.d/vscode.sources ]; then
-        CANDIDATES+=(code)
-    fi
-    if dpkg -s google-chrome-stable &>/dev/null; then
-        CANDIDATES+=(google-chrome-stable)
-    fi
-
-    # Filtrar a paquetes realmente instalados (--only-upgrade no instala nuevos,
-    # pero filtrar evita ruido y errores si el repo de un candidato falta).
-    TO_UPGRADE=()
-    for pkg in "${CANDIDATES[@]}"; do
-        if dpkg -s "$pkg" &>/dev/null; then
-            TO_UPGRADE+=("$pkg")
-        fi
-    done
-
-    if [ "${#TO_UPGRADE[@]}" -gt 0 ]; then
-        sudo apt-get install --only-upgrade -y "${TO_UPGRADE[@]}" || warn "APT only-upgrade parcial, revisa con 'sudo apt-get upgrade'."
-        ok "APT actualizado: ${TO_UPGRADE[*]}"
-    else
-        ok "APT: nada que actualizar (ningún gestionado instalado)."
-    fi
+    sudo apt-get upgrade --with-new-pkgs -y
+    ok "Sistema base APT actualizado."
 else
     warn "apt-get no disponible, omitiendo."
 fi

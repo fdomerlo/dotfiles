@@ -7,75 +7,70 @@ TARGET_USER="${SUDO_USER:-$(logname)}"
 USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-SUITE=$(bash "$REPO_DIR/scripts/detect-suite.sh" 2>/dev/null || echo "stable")
-SUITE_LABEL=$(bash "$REPO_DIR/scripts/detect-suite.sh" --label 2>/dev/null || echo "Stable")
-
 echo "================================================================="
-echo "==> [Debian $SUITE_LABEL] Configuración de Sistema y Paquetes Base"
+echo "==> [Debian Testing] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
 
 echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
 bash "$REPO_DIR/scripts/apt-maintenance.sh"
 
 # ------------------------------------------------------------------------------
-# 1. Configuración de Repositorios Oficiales según Suite
+# 1. Configuración de Repositorios Oficiales y Pinning Híbrido (Testing)
 # ------------------------------------------------------------------------------
-if [ "$SUITE" = "stable" ]; then
-    echo "==> Configurando repositorios extendidos para Debian Stable (Backports & FastTrack)..."
+echo "==> Configurando repositorios DEB822 y APT Pinning para [Debian Testing]..."
 
-    # Debian Backports (formato canónico DEB822)
-    BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
-    DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
-    if [ ! -f "$BACKPORTS_FILE" ]; then
-        cat > "$BACKPORTS_FILE" << EOF
+# 1. Neutralización de /etc/apt/sources.list legacy si contiene líneas activas
+if [ -f /etc/apt/sources.list ] && grep -vE '^[[:space:]]*(#|$)' /etc/apt/sources.list >/dev/null 2>&1; then
+    echo "  Neutralizando /etc/apt/sources.list legacy (backup en /etc/apt/sources.list.bak)..."
+    cp -a /etc/apt/sources.list /etc/apt/sources.list.bak
+    echo "# Migrado a DEB822 en /etc/apt/sources.list.d/debian.sources" > /etc/apt/sources.list
+fi
+
+# 2. Eliminación defensiva de fuentes exclusivas de Stable si existieran
+rm -f /etc/apt/sources.list.d/debian-fasttrack.sources \
+      /etc/apt/sources.list.d/debian-backports.sources
+
+# 3. Escritura canónica de /etc/apt/sources.list.d/debian.sources en formato DEB822
+mkdir -p /etc/apt/sources.list.d
+cat > /etc/apt/sources.list.d/debian.sources << 'EOF'
 Types: deb deb-src
 URIs: http://deb.debian.org/debian/
-Suites: stable-backports
+Suites: testing testing-updates unstable
 Components: main contrib non-free non-free-firmware
-Signed-By: $DEB_KEYRING
-EOF
-        echo "  ✔ Debian Backports configurado (stable-backports)."
-    else
-        # Asegurar que no esté deshabilitado
-        sed -i '/^Enabled:[[:space:]]*No/d' "$BACKPORTS_FILE" || true
-        if [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS_FILE"; then
-            sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS_FILE"
-        fi
-    fi
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
-    # Debian FastTrack (paquetes upstream de rápido movimiento para Debian Stable)
-    CODENAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "")
-    if [ -n "$CODENAME" ]; then
-        FASTTRACK_KEYRING="/usr/share/keyrings/fasttrack-archive-keyring.gpg"
-        if [ ! -f "$FASTTRACK_KEYRING" ]; then
-            if apt-get install -y fasttrack-archive-keyring 2>/dev/null; then
-                echo "  ✔ Paquete fasttrack-archive-keyring instalado vía APT."
-            else
-                echo "  Descargando keyring oficial de Debian FastTrack..."
-                curl -fsSL "https://fasttrack.debian.net/debian-fasttrack/pubkey.gpg" | gpg --dearmor -o "$FASTTRACK_KEYRING" 2>/dev/null || true
-            fi
-        fi
-
-        FASTTRACK_FILE="/etc/apt/sources.list.d/debian-fasttrack.sources"
-        if [ -f "$FASTTRACK_KEYRING" ] && [ ! -f "$FASTTRACK_FILE" ]; then
-            cat > "$FASTTRACK_FILE" << EOF
 Types: deb deb-src
-URIs: https://fasttrack.debian.net/debian-fasttrack/
-Suites: ${CODENAME}-fasttrack
-Components: main contrib
-Signed-By: $FASTTRACK_KEYRING
+URIs: http://security.debian.org/debian-security/
+Suites: testing-security stable-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 EOF
-            echo "  ✔ Debian FastTrack configurado (${CODENAME}-fasttrack)."
-        fi
-    fi
-else
-    echo "==> Entorno Debian Testing detectado: gestionando paquetes nativos de upstream..."
-    # Si migró desde Stable, purgar FastTrack para prevenir errores 404 o dependencias rotas
-    if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
-        echo "  Limpiando debian-fasttrack.sources obsoleto..."
-        rm -f "/etc/apt/sources.list.d/debian-fasttrack.sources"
-    fi
-fi
+echo "  ✔ /etc/apt/sources.list.d/debian.sources configurado (DEB822 híbrido)."
+
+# 4. Escritura de /etc/apt/preferences.d/00-testing-pinning.pref
+mkdir -p /etc/apt/preferences.d
+cat > /etc/apt/preferences.d/00-testing-pinning.pref << 'EOF'
+Package: *
+Pin: release a=testing
+Pin-Priority: 900
+
+Package: *
+Pin: release a=testing-security
+Pin-Priority: 900
+
+Package: *
+Pin: release a=testing-updates
+Pin-Priority: 900
+
+Package: *
+Pin: release a=stable-security
+Pin-Priority: 500
+
+Package: *
+Pin: release a=unstable
+Pin-Priority: 100
+EOF
+echo "  ✔ /etc/apt/preferences.d/00-testing-pinning.pref configurado."
 
 echo "==> Actualizando repositorios APT..."
 export DEBIAN_FRONTEND=noninteractive
@@ -83,45 +78,33 @@ apt-get update -y
 apt-get upgrade -y
 
 # ------------------------------------------------------------------------------
-# 2. Soporte para AppImage (FUSE 2 para Stable / Fallback Auto-extraíble para Testing)
+# 2. Soporte para AppImage y Paquetes Base (Filtro "Sieve" para Testing)
 # ------------------------------------------------------------------------------
-APPIMAGE_FUSE_PKGS=()
-FUSE2_DISPONIBLE=false
+APPIMAGE_FUSE_PKGS=("fuse3")
 
-# 1. Comprobar si existe un candidato de instalación real para FUSE 2
-for fpkg in libfuse2t64 libfuse2; do
-    # 'apt-cache policy' nos dice con certeza si hay un candidato instalable
-    if apt-cache policy "$fpkg" 2>/dev/null | grep -qE "Candidato:|Candidate:" | grep -v "(ninguno\|none)"; then
-        APPIMAGE_FUSE_PKGS+=("$fpkg")
-        FUSE2_DISPONIBLE=true
-        break
-    fi
-done
-
-# 2. Si no hay FUSE 2 (Como en Debian Testing/Forky), dependemos de fuse3 y del fallback de extracción
-if [ "$FUSE2_DISPONIBLE" = false ]; then
-    # Verificamos si existe fuse3 (estándar moderno)
-    if apt-cache policy "fuse3" 2>/dev/null | grep -qE "Candidato:|Candidate:" | grep -v "(ninguno\|none)"; then
-        APPIMAGE_FUSE_PKGS+=("fuse3")
-    fi
-    
-    # Configurar el fallback global para AppImages en sistemas sin FUSE 2
-    if ! grep -q "APPIMAGE_EXTRACT_AND_RUN" /etc/environment 2>/dev/null; then
-        echo "Configurando fallback de extracción para AppImages (Debian Testing)..."
-        echo "APPIMAGE_EXTRACT_AND_RUN=1" | sudo tee -a /etc/environment > /dev/null
-    fi
+# Comprobar de forma opcional si libfuse2t64 está disponible en caché
+if apt-cache policy libfuse2t64 2>/dev/null | grep -qE "Candidato:|Candidate:" | grep -v "(ninguno\|none)"; then
+    APPIMAGE_FUSE_PKGS+=("libfuse2t64")
 fi
 
-echo "==> Instalando paquetes base, CLI moderna, soporte Flatpak y AppImage..."
+# Asegurar siempre APPIMAGE_EXTRACT_AND_RUN=1 en /etc/environment
+if ! grep -q "^APPIMAGE_EXTRACT_AND_RUN=1" /etc/environment 2>/dev/null; then
+    echo "Configurando APPIMAGE_EXTRACT_AND_RUN=1 en /etc/environment..."
+    sed -i '/^APPIMAGE_EXTRACT_AND_RUN=/d' /etc/environment 2>/dev/null || true
+    echo "APPIMAGE_EXTRACT_AND_RUN=1" >> /etc/environment
+fi
+
+echo "==> Instalando paquetes base, guardarraíles Sieve, CLI moderna, soporte Flatpak y AppImage..."
 apt-get install -y \
   git curl wget jq unzip zip \
   ca-certificates gnupg lsb-release \
   build-essential \
+  apt-listbugs apt-listchanges needrestart \
   ripgrep fd-find fzf bat btop direnv wl-clipboard \
   fonts-firacode fonts-jetbrains-mono fonts-noto-core \
   flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
   libglib2.0-bin \
-  fuse3 "${APPIMAGE_FUSE_PKGS[@]}" \
+  "${APPIMAGE_FUSE_PKGS[@]}" \
   uidmap dbus-user-session iptables
 
 # ------------------------------------------------------------------------------
@@ -165,5 +148,5 @@ echo "==> Habilitando systemd linger para $TARGET_USER..."
 loginctl enable-linger "$TARGET_USER"
 
 echo "================================================================="
-echo "✔ Host setup completado (Debian $SUITE_LABEL + Flatpak + AppImage + Podman Rootless)."
+echo "✔ Host setup completado ([Debian Testing] + Flatpak + AppImage + Podman Rootless)."
 echo "================================================================="

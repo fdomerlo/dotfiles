@@ -20,12 +20,37 @@ require() {
 }
 
 # --------------------------------------------------
+# SNAPSHOTS Y ROLLBACK (TIMESHIFT)
+# --------------------------------------------------
+
+snapshot() {
+  require timeshift
+  local comment="${1:-Snapshot manual devctl}"
+  log "Creando snapshot de sistema con Timeshift ($comment)..."
+  sudo timeshift --create --comments "$comment" --scripted
+}
+
+rollback() {
+  require timeshift
+  log "Listando snapshots disponibles en Timeshift..."
+  sudo timeshift --list
+  log "Iniciando restauración interactiva con Timeshift..."
+  sudo timeshift --restore
+}
+
+# --------------------------------------------------
 # ACTUALIZACIÓN
 # --------------------------------------------------
 
 update() {
-  log "Actualizando estación (idempotente, sin tocar SSH)..."
-  bash "$BASE_DIR/scripts/update.sh"
+  if [[ "${1:-}" == "--snapshot" || "${1:-}" == "-s" ]]; then
+    snapshot "Pre-update devctl"
+    log "Actualizando estación (idempotente, sin tocar SSH)..."
+    SKIP_SNAPSHOT=1 bash "$BASE_DIR/scripts/update.sh"
+  else
+    log "Actualizando estación (idempotente, sin tocar SSH)..."
+    bash "$BASE_DIR/scripts/update.sh"
+  fi
 }
 
 # --------------------------------------------------
@@ -38,23 +63,11 @@ clean_deep() {
 }
 
 # --------------------------------------------------
-# MIGRACIÓN (STABLE -> TESTING)
-# --------------------------------------------------
-
-migrate_testing() {
-  log "Iniciando transición asistida a Debian Testing..."
-  sudo bash "$BASE_DIR/scripts/migrate-to-testing.sh"
-}
-
-# --------------------------------------------------
 # DIAGNÓSTICO
 # --------------------------------------------------
 
 doctor() {
-  local suite_label
-  suite_label=$(bash "$BASE_DIR/scripts/detect-suite.sh" --label 2>/dev/null || echo "Debian")
-
-  log "Ejecutando diagnóstico del entorno Debian ($suite_label)..."
+  log "Ejecutando diagnóstico del entorno Debian Testing..."
 
   check() {
     if command -v "$1" >/dev/null || [ -f "$HOME/.local/bin/$1" ]; then
@@ -73,7 +86,18 @@ doctor() {
   }
 
   echo "Sistema Base:"
-  echo -e "  \033[32m✔\033[0m Debian $suite_label ($(uname -r), $(uname -m))"
+  echo -e "  \033[32m✔\033[0m Debian Testing ($(uname -r), $(uname -m))"
+
+  echo ""
+  echo "Guardarraíles de Estabilidad (Testing):"
+  check_opt apt-listbugs
+  check_opt apt-listchanges
+  check_opt needrestart
+  if [ -f /etc/apt/preferences.d/00-testing-pinning.pref ]; then
+    echo -e "  \033[32m✔\033[0m APT Pinning activo (Testing=900 / Stable-Sec=500 / Sid=100)"
+  else
+    echo -e "  \033[31m✘\033[0m APT Pinning ausente"
+  fi
 
   echo ""
   echo "Herramientas del Host:"
@@ -163,10 +187,10 @@ doctor() {
   else
     echo -e "  \033[31m✘\033[0m Flatpak no instalado"
   fi
-  if dpkg -s libfuse2t64 &>/dev/null || dpkg -s libfuse2 &>/dev/null || [ -e /usr/lib/x86_64-linux-gnu/libfuse.so.2 ]; then
-    echo -e "  \033[32m✔\033[0m Soporte AppImage FUSE presente"
+  if dpkg -s libfuse2t64 &>/dev/null || dpkg -s libfuse2 &>/dev/null || [ -e /usr/lib/x86_64-linux-gnu/libfuse.so.2 ] || { dpkg -s fuse3 &>/dev/null && grep -q "^APPIMAGE_EXTRACT_AND_RUN=1" /etc/environment 2>/dev/null; }; then
+    echo -e "  \033[32m✔\033[0m Soporte AppImage FUSE / Extract-and-Run presente"
   else
-    echo -e "  \033[33m○\033[0m Biblioteca FUSE 2 no detectada (opcional para AppImages)"
+    echo -e "  \033[33m○\033[0m Soporte AppImage no detectado (opcional para AppImages)"
   fi
 
   echo ""
@@ -201,19 +225,30 @@ doctor() {
 case "${1:-}" in
 doctor) doctor ;;
 
-update) update ;;
+update)
+  shift
+  update "${1:-}"
+  ;;
+
+snapshot)
+  shift
+  snapshot "${*:-}"
+  ;;
+
+rollback)
+  rollback
+  ;;
 
 clean) clean_deep ;;
 
-migrate-testing|to-testing) migrate_testing ;;
-
 *)
-  echo "devctl - Workstation CLI para Debian"
+  echo "devctl - Workstation CLI para Debian Testing"
   echo ""
   echo "Uso:"
-  echo "  devctl doctor                # Diagnóstico del entorno y servicios"
-  echo "  devctl update                # Actualiza estación (APT only-upgrade + user-space)"
+  echo "  devctl doctor                # Diagnóstico del entorno, guardarraíles de estabilidad y servicios"
+  echo "  devctl update [--snapshot]   # Actualiza estación (con snapshot previo opcional en Timeshift)"
+  echo "  devctl snapshot [comentario] # Crea un snapshot manual del sistema con Timeshift"
+  echo "  devctl rollback              # Lista snapshots e inicia restauración interactiva con Timeshift"
   echo "  devctl clean                 # Limpieza profunda post-upgrade (purga rc, huérfanos, logs)"
-  echo "  devctl migrate-testing       # Migra la estación de trabajo de Debian Stable a Testing"
   ;;
 esac
