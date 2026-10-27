@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/apt-maintenance.sh - Higiene APT segura e idempotente (política podman-only).
+# scripts/apt-maintenance.sh - Higiene APT segura e idempotente (Debian Testing, podman-only).
 #
 # Ejecutar como root (los llamadores ya lo garantizan):
 #   host/setup.sh  -> directo (ya es root), ANTES de `apt-get update`.
@@ -11,9 +11,9 @@
 #      deshabilita sus servicios. Este repo es podman-only.
 #   2. Deduplica VS Code: si existe vscode.sources (DEB822),
 #      elimina el legacy vscode.list duplicado (mismo URI/suite/componente).
-#   3. Gestiona repositorios oficiales según la suite (Stable vs Testing):
-#      - En Stable: completa Signed-By en backports y fasttrack.
-#      - En Testing: retira fuentes de FastTrack (exclusivo de Stable).
+#   3. Gestiona repositorios oficiales para Debian Testing:
+#      - Elimina debian-backports.sources y debian-fasttrack.sources si existieran.
+#      - Asegura la existencia de /etc/apt/preferences.d/00-testing-pinning.pref.
 #   4. Moderniza repositorios tradicionales (.list) al formato estándar DEB822
 #      (.sources) vía `apt modernize-sources` si está disponible en la versión de APT.
 #   5. Purgado de configuraciones residuales (paquetes desinstalados en estado 'rc' de dpkg).
@@ -25,7 +25,6 @@
 # Hooks de test: APT_SOURCES_D, APT_KEYRINGS_D (por defecto rutas del sistema).
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCES_D="${APT_SOURCES_D:-/etc/apt/sources.list.d}"
 KEYRINGS_D="${APT_KEYRINGS_D:-/etc/apt/keyrings}"
 
@@ -34,11 +33,8 @@ KEYRINGS_D="${APT_KEYRINGS_D:-/etc/apt/keyrings}"
 warn() { echo "  ⚠️ $1"; }
 ok()   { echo "  ✔ $1"; }
 
-SUITE=$(bash "$SCRIPT_DIR/detect-suite.sh" 2>/dev/null || echo "stable")
-SUITE_LABEL=$(bash "$SCRIPT_DIR/detect-suite.sh" --label 2>/dev/null || echo "Stable")
-
 echo "================================================================="
-echo "==> Higiene APT (Debian $SUITE_LABEL, podman-only, DEB822, idempotente)"
+echo "==> Higiene APT ([Debian Testing], podman-only, DEB822, idempotente)"
 echo "================================================================="
 
 # ------------------------------------------------------------------------------
@@ -86,32 +82,44 @@ if [ -f "$SOURCES_D/vscode.sources" ] && [ -f "$SOURCES_D/vscode.list" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Repositorios oficiales: gestión según Suite (Stable vs Testing)
+# 3. Repositorios oficiales y Pinning para Debian Testing
 # ------------------------------------------------------------------------------
-BACKPORTS="$SOURCES_D/debian-backports.sources"
-DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
-if [ -f "$BACKPORTS" ] && [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS"; then
-    echo "  Completando Signed-By en debian-backports.sources..."
-    sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS"
-    ok "Signed-By restaurado en backports."
-fi
+for legacy_repo in "$SOURCES_D/debian-backports.sources" "$SOURCES_D/debian-fasttrack.sources"; do
+    if [ -f "$legacy_repo" ]; then
+        echo "  Eliminando repositorio obsoleto de Stable: $(basename "$legacy_repo")..."
+        rm -f "$legacy_repo"
+        ok "$(basename "$legacy_repo") eliminado."
+    fi
+done
 
-FASTTRACK="$SOURCES_D/debian-fasttrack.sources"
-FASTTRACK_KEYRING="/usr/share/keyrings/fasttrack-archive-keyring.gpg"
-if [ "$SUITE" = "testing" ]; then
-    # En Testing, FastTrack no existe ni es compatible
-    if [ -f "$FASTTRACK" ]; then
-        echo "  Detectada suite Testing: eliminando debian-fasttrack.sources residual..."
-        rm -f "$FASTTRACK"
-        ok "debian-fasttrack.sources eliminado de Testing."
-    fi
+PINNING_FILE="/etc/apt/preferences.d/00-testing-pinning.pref"
+if [ ! -f "$PINNING_FILE" ]; then
+    echo "  Recreando $PINNING_FILE con prioridades de Testing (Testing=900, Stable-Security=500, Unstable=100)..."
+    mkdir -p /etc/apt/preferences.d
+    cat > "$PINNING_FILE" << 'EOF'
+Package: *
+Pin: release a=testing
+Pin-Priority: 900
+
+Package: *
+Pin: release a=testing-security
+Pin-Priority: 900
+
+Package: *
+Pin: release a=testing-updates
+Pin-Priority: 900
+
+Package: *
+Pin: release a=stable-security
+Pin-Priority: 500
+
+Package: *
+Pin: release a=unstable
+Pin-Priority: 100
+EOF
+    ok "APT Pinning configurado en $PINNING_FILE."
 else
-    # En Stable, verificar integridad de FastTrack si está presente
-    if [ -f "$FASTTRACK" ] && [ -f "$FASTTRACK_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$FASTTRACK"; then
-        echo "  Completando Signed-By en debian-fasttrack.sources..."
-        sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $FASTTRACK_KEYRING|" "$FASTTRACK"
-        ok "Signed-By restaurado en fasttrack."
-    fi
+    ok "APT Pinning presente en $PINNING_FILE."
 fi
 
 # ------------------------------------------------------------------------------
