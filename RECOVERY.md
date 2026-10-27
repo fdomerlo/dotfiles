@@ -1,6 +1,6 @@
-# 🚨 Guía de Recuperación de Desastres (RECOVERY.md)
+# 🚨 Guía de Recuperación de Desastres
 
-**Perfil de Estación:** Debian Testing (Rodete) · Particionado GPT (`EFI` 512 MB + `ext4` monolítico) · Respaldo del sistema vía **Timeshift (RSYNC)**.
+**Perfil de Estación:** Debian Testing · Particionado GPT (`EFI` 512 MB + `ext4` monolítico) · Respaldo del sistema vía **Timeshift (RSYNC)**.
 
 > **Garantía de Integridad de Datos:** La política de snapshots configurada en `/etc/timeshift/timeshift.json` excluye explícitamente `/home/**` y `/root/**`. **Cualquier restauración con Timeshift revierte únicamente el sistema operativo base (`/`), manteniendo intactos tus proyectos, documentos, contenedores de usuario y claves SSH.**
 
