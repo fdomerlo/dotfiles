@@ -2,6 +2,8 @@
 # scripts/setup_gh.sh - Configuración SSH automática con GitHub CLI
 set -euo pipefail
 
+export PATH="$HOME/.local/bin:$PATH"
+
 echo "================================================================="
 echo "=== Iniciando configuración SSH Automatizada con GitHub ==="
 echo "================================================================="
