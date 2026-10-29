@@ -7,11 +7,13 @@ SHELL := /bin/bash
 export RUNZSH=no
 export CHSH=no
 
-.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop verify clean clean-deep
+.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop verify clean clean-deep audit adopt
 
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Testing):"
+	@echo "  make audit           - Audita estación preexistente vs preseed.cfg y make install (dictamina adopción vs reinstalar)"
+	@echo "  make adopt           - Nivelación base de estación preexistente (zRAM, microcode, sysctl, fstab) + make install"
 	@echo "  make install         - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
 	@echo "  make update          - Actualiza la estación (APT upgrade sincronizado + self-updates user-space + flatpak, idempotente)"
 	@echo "  make host            - Configura APT (DEB822 + APT Pinning), CLI moderna, AppImage, Flatpak y Podman"
@@ -25,6 +27,18 @@ help:
 	@echo "  make verify          - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean           - Limpia paquetes residuales de APT y temporales"
 	@echo "  make clean-deep      - Limpieza profunda post-upgrade: purga configs residuales (rc), dependencias, logs y cachés"
+
+# Auditoría de compatibilidad (solo lectura)
+audit:
+	@echo "==> Auditando estado de la estación vs preseed.cfg..."
+	@bash scripts/audit-system.sh || true
+
+# Adopción in-place y aprovisionamiento (requiere sudo para nivelación base)
+adopt:
+	@echo "==> Iniciando adopción y nivelación de la estación..."
+	sudo bash scripts/adopt-system.sh
+	$(MAKE) podman shell devtools tooling devai desktop clean
+	@echo -e "\n✅ Estación adoptada y aprovisionada exitosamente."
 
 # Instalación completa desatendida (idempotente: re-ejecutable; Timeshift es opcional vía 'make timeshift')
 install: host podman shell devtools tooling devai desktop clean

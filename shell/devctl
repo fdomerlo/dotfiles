@@ -39,6 +39,21 @@ rollback() {
 }
 
 # --------------------------------------------------
+# AUDITORÍA Y ADOPCIÓN
+# --------------------------------------------------
+
+audit() {
+  bash "$BASE_DIR/scripts/audit-system.sh" || true
+}
+
+adopt() {
+  log "Iniciando adopción y nivelación de la estación preexistente..."
+  sudo bash "$BASE_DIR/scripts/adopt-system.sh" "$@"
+  log "Continuando con la configuración del entorno de usuario..."
+  make -C "$BASE_DIR" podman shell devtools tooling devai desktop clean
+}
+
+# --------------------------------------------------
 # ACTUALIZACIÓN
 # --------------------------------------------------
 
@@ -225,6 +240,13 @@ doctor() {
 case "${1:-}" in
 doctor) doctor ;;
 
+audit) audit ;;
+
+adopt)
+  shift
+  adopt "$@"
+  ;;
+
 update)
   shift
   update "${1:-}"
@@ -246,6 +268,8 @@ clean) clean_deep ;;
   echo ""
   echo "Uso:"
   echo "  devctl doctor                # Diagnóstico del entorno, guardarraíles de estabilidad y servicios"
+  echo "  devctl audit                 # Audita estación vs preseed.cfg y make install (adopción vs reinstalar)"
+  echo "  devctl adopt [--force]       # Nivelación base (zRAM, microcode, sysctl, fstab) + make install"
   echo "  devctl update [--snapshot]   # Actualiza estación (con snapshot previo opcional en Timeshift)"
   echo "  devctl snapshot [comentario] # Crea un snapshot manual del sistema con Timeshift"
   echo "  devctl rollback              # Lista snapshots e inicia restauración interactiva con Timeshift"

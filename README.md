@@ -58,9 +58,50 @@ El archivo [`preseed.cfg`](preseed.cfg) automatiza la instalación limpia direct
 
 ---
 
+## 🔍 Estaciones Preexistentes: Auditoría vs Adopción (`make audit` / `make adopt`)
+
+¿Qué ocurre si ya tienes una estación con Debian instalado y deseas alinearla al perfil de ingeniería? El repositorio incluye herramientas automáticas de auditoría, diagnóstico y nivelación:
+
+### 1. Diagnóstico y Comparativa contra `preseed.cfg`
+Ejecuta la auditoría de solo lectura para inspeccionar el estado actual frente a la arquitectura propuesta:
+
+```bash
+make audit
+# o alternativamente:
+devctl audit
+```
+
+El script evalúa:
+* **Criterios Críticos de Sistema (Showstoppers):**
+  * Sistema Operativo: ¿Es Debian puro o compatible?
+  * Modo de arranque: ¿Es UEFI nativo con GPT (`/sys/firmware/efi`)? *(Si está en BIOS Legacy o MBR se recomienda reinstalar para evitar rotura de booteo)*.
+  * Espacio disponible en `/`: ¿Cuenta con al menos 15-20 GB libres para herramientas y contenedores?
+  * Suite de Debian: ¿Es Testing / Sid o Debian 12 reciente? *(Debian 11 o inferior requiere reinstalación)*.
+* **Capa Base de Preseed:**
+  * Microcódigo de CPU detectado (`amd64-microcode` o `intel-microcode`).
+  * Drivers gráficos Vulkan/VA-API y firmware no-libre de red/audio.
+  * Memoria de intercambio: `zRAM` (`systemd-zram-generator`) + `/swapfile` (4 GB, pri=10).
+  * Sysctl optimizado (`vm.swappiness = 180`, etc.) y opciones de montaje en fstab (`noatime,commit=60`).
+* **Capa de Aprovisionamiento (`make install`):**
+  * Repositorios DEB822 Testing y APT Pinning.
+  * Podman Rootless, dotfiles, devtools (`gh`, `uv`, `fnm`, `sdkman`), navegadores, editores y DevAI.
+
+### 2. Adopción y Nivelación In-Place
+Si la estación es dictaminada como **Apta para Adopción In-Place**, ejecuta la nivelación automática:
+
+```bash
+make adopt
+# o alternativamente:
+devctl adopt
+```
+
+`make adopt` asimilará la base de `preseed.cfg` (zRAM, microcode, sysctl, fstab, timers) y posteriormente ejecutará el aprovisionamiento completo de `make install`.
+
+---
+
 ## 🚀 Fase 1: Post-Instalación Rápida (One-Command)
 
-En una instalación limpia de Debian Testing ejecutar:
+En una instalación limpia de Debian Testing (o tras clonar los dotfiles) ejecutar:
 
 ```bash
 sudo apt update && sudo apt install -y git make && \
@@ -76,7 +117,7 @@ make help
 
 ```text
 ~/.dotfiles/
-├── Makefile                       # Orquestador modular (install, update, host, devai, etc.)
+├── Makefile                       # Orquestador modular (audit, adopt, install, update, etc.)
 ├── preseed.cfg                    # Instalador desatendido Debian Testing (AMD/Intel)
 │
 ├── host/                          # Configuración del sistema base (requiere sudo)
@@ -85,8 +126,10 @@ make help
 │   └── timeshift.sh               #   Configuración opcional de snapshots Timeshift
 │
 ├── scripts/                       # Instaladores y configuración de usuario
+│   ├── adopt-system.sh            #   Nivelación in-place de estaciones existentes hacia preseed.cfg
 │   ├── antigravity.png            #   Icono oficial para el lanzador .desktop
 │   ├── apt-maintenance.sh         #   Higiene APT (podman-only, DEB822, APT Pinning y keyrings)
+│   ├── audit-system.sh            #   Auditoría profunda vs preseed.cfg y make install
 │   ├── clean-system.sh            #   Limpieza profunda post-upgrade (purga rc, huérfanos, cachés y logs)
 │   ├── desktop.sh                 #   Tipografías, botones ventana, carpetas Proyectos/Aplicaciones y GNOME
 │   ├── devai.sh                   #   Instalador de OpenCode CLI y Antigravity Core/CLI
@@ -99,7 +142,7 @@ make help
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
 └── shell/                         # Dotfiles y utilitarios de línea de comandos
-    ├── devctl                     #   CLI de diagnóstico, actualización, snapshots/rollback y limpieza
+    ├── devctl                     #   CLI de diagnóstico, auditoría, actualización, snapshots y limpieza
     ├── gitconfig                  #   Configuración global ergonómica de Git
     └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman, fzf, direnv, XDG y Podman
 ```
@@ -110,6 +153,8 @@ make help
 
 | Target | Descripción |
 | :--- | :--- |
+| `make audit` | Audita estación preexistente vs `preseed.cfg` y `make install` (dictamina adopción vs reinstalación) |
+| `make adopt` | Nivelación base de estación preexistente (zRAM, microcode, sysctl, fstab) + `make install` |
 | `make install` | Aprovisionamiento completo (host + podman + shell + devtools + tooling + devai + desktop) |
 | `make update` | Actualización idempotente (higiene APT + upgrade sincronizado + user-space + flatpak, sin tocar SSH/`gh auth`) |
 | `make host` | Configura APT (DEB822 híbrido + APT Pinning), filtro Sieve, CLI moderna, AppImage, Flatpak y Podman |
@@ -133,6 +178,12 @@ make help
 ```bash
 # Diagnóstico integral del sistema Debian Testing, guardarraíles Sieve/Pinning, CLI moderna, Podman rootless, zram, Flatpak y AppImage
 devctl doctor
+
+# Auditoría comparativa frente a preseed.cfg y make install
+devctl audit
+
+# Adopción y nivelación in-place de estación preexistente (zram, microcode, sysctl, fstab + make install)
+devctl adopt [--force]
 
 # Actualización sincronizada de la estación (acepta --snapshot opcional para crear respaldo previo en Timeshift)
 devctl update [--snapshot]
