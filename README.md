@@ -159,7 +159,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Compositor | `hyprland` (desde `stable-backports`) |
 | Barra | `waybar` |
 | Lanzador | `wofi` (`rofi` queda como alternativa manual) |
-| Notificaciones | `mako` |
+| Notificaciones | `mako-notifier` (binario `mako`) |
 | Idle / bloqueo | `hypridle` + `hyprlock` |
 | Wallpaper | `hyprpaper` si existe `~/.config/hypr/wallpapers/default.png`; si no, `swaybg` con color sólido |
 | Agente polkit | `hyprpolkitagent` |
@@ -209,7 +209,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
    find ~/.config/hypr ~/.config/waybar ~/.config/wofi ~/.config/mako \
      -maxdepth 2 -type l -lname '*/.dotfiles/hypr/*' -delete 2>/dev/null || true
    sudo apt-get remove --purge hyprland hyprpaper hypridle hyprlock hyprpolkitagent \
-       xdg-desktop-portal-hyprland waybar wofi mako grim slurp cliphist swaybg
+       xdg-desktop-portal-hyprland waybar wofi mako-notifier grim slurp cliphist swaybg
    ```
 3. Restaurar los backups `.bak.<timestamp>` si se habían personalizado archivos previos.
 

@@ -30,7 +30,7 @@ BACKPORTS_PKGS=(
 MAIN_PKGS=(
     waybar
     wofi
-    mako
+    mako-notifier
     grim
     slurp
     wl-clipboard
@@ -106,8 +106,11 @@ fi
 ok "Debian Stable detectado."
 
 echo "==> Verificando disponibilidad en stable-backports..."
+# `apt-cache policy <paquete>` no muestra los campos de release (o=, a=), solo la
+# suite en la tabla de versiones (p. ej. "trixie-backports/main"). Por eso se
+# detecta el origen por el sufijo de backports de esa línea.
 for pkg in "${BACKPORTS_PKGS[@]}"; do
-    if ! apt-cache policy "$pkg" 2>/dev/null | grep -q 'a=stable-backports'; then
+    if ! apt-cache policy "$pkg" 2>/dev/null | grep -q -- '-backports/'; then
         die "El paquete '$pkg' no está disponible en stable-backports. Revisá los repositorios con 'make verify'."
     fi
 done
