@@ -1,23 +1,23 @@
 ![status](https://img.shields.io/badge/status-active-success)
-![platform](https://img.shields.io/badge/platform-Debian%20(Stable%20%7C%20Testing)-red)
+![platform](https://img.shields.io/badge/platform-Debian%20Stable-red)
 ![shell](https://img.shields.io/badge/shell-zsh-green)
 ![podman](https://img.shields.io/badge/podman-rootless-purple)
 ![apps](https://img.shields.io/badge/apps-Flatpak%20%7C%20AppImage-blue)
 
-# Dotfiles - Debian Workstation (Stable / Testing)
+# Dotfiles - Debian Stable Workstation
 
-Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de alto rendimiento para tareas de **ingeniería de software, DevOps e Inteligencia Artificial**. Diseñada para operar de forma agnóstica tanto sobre **Debian Stable** como sobre **Debian Testing**, detectando la versión activa sin nombres en clave fijos y facilitando la migración fluida entre ambas suites.
+Aprovisionamiento automatizado, modular e idempotente de una estación de trabajo de alto rendimiento para tareas de **ingeniería de software, DevOps e Inteligencia Artificial**, diseñada exclusivamente para **Debian Stable**. Cada ejecución converge el sistema al estado deseado y puede repetirse sin efectos secundarios.
 
-Combina la estabilidad del sistema base con capas modernas desacopladas: **Backports y FastTrack** (en Stable), **Flatpak + Flathub**, soporte nativo para **AppImage** y contenedores **Podman Rootless** (`crun` + `pasta`/`passt`).
+Combina la estabilidad del sistema base con capas modernas desacopladas: **Backports** (en Stable), **Flatpak + Flathub**, soporte nativo para **AppImage** y contenedores **Podman Rootless** (`crun` + `pasta`/`passt`). Incluye además un **perfil opcional Hyprland** (`make hyprland`) que convive con GNOME sin reemplazarlo.
 
 ---
 
 ## 🎯 Arquitectura y Rationale
 
-* **Detección Dinámica de Suite (Stable vs Testing):**
-  * **Debian Stable:** Se aprovisiona con soporte extendido para kernels recientes vía **Debian Backports** (`stable-backports`) y paquetes upstream de rápido movimiento vía **Debian FastTrack** (`fasttrack.debian.net`), manteniendo la estabilidad de la base del sistema.
-  * **Debian Testing:** Opera directamente con paquetes rolling upstream de vanguardia, retirando automáticamente repositorios incompatibles (como FastTrack) para garantizar actualizaciones limpias y sin conflictos.
-  * **Migraciones Asistidas (`Stable -> Testing`):** Vía `devctl migrate-testing` o `make migrate-testing`, automatizando la actualización de fuentes DEB822, la remoción de repositorios obsoletos de Stable, el `dist-upgrade` y la purga post-upgrade.
+* **Base Debian Stable con Repositorios Extendidos:**
+  * **Debian Stable:** Se aprovisiona con soporte extendido para kernels recientes vía **Debian Backports** (`stable-backports`), manteniendo la estabilidad de la base del sistema. El aprovisionamiento está diseñado y validado para **Debian Stable**; Testing/Forky no está soportado y el perfil Hyprland rechaza explícitamente sistemas que no sean Stable.
+  * **Convergencia idempotente:** Cada ejecución de `make install` o `make host` deja Backports en su estado canónico (formato DEB822, `Signed-By` correcto y suite `stable-backports`), corrigiendo desviaciones sin duplicar configuración.
+  * **Sin FastTrack:** Se eliminó el repositorio FastTrack del aprovisionamiento: ningún paquete lo requería y su presencia rompía la resolución de APT en suites no estables. Si un host conserva `/etc/apt/sources.list.d/debian-fasttrack.sources`, `make host` lo elimina automáticamente.
 * **Sistema Base Inmutable (`preseed.cfg`):** Instalación desatendida con particionado GPT + EFI + EXT4 monolítico (`noatime,commit=60`), memoria comprimida ultra-rápida vía `systemd-zram-generator` (`zstd`, prioridad 100) respaldada por swapfile de 4 GB, microcódigo y firmware oficial completo para hardware **AMD e Intel** (CPU, GPU Vulkan/VA-API, Wi-Fi `iwlwifi`/`realtek`/`atheros`, audio SOF) y entorno mínimo `gnome-core`.
 * **Aplicaciones de Escritorio Aisladas (Flatpak & AppImage):**
   * **Flatpak + Flathub:** Configurado de forma nativa (`gnome-software-plugin-flatpak`, `xdg-desktop-portal-gnome` y remote `flathub`) para aislar completamente las aplicaciones de consumo general del sistema base.
@@ -48,7 +48,7 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
 
 ## 💿 Fase 0: Instalación Desatendida de Debian (`preseed.cfg`)
 
-El archivo [`preseed.cfg`](preseed.cfg) automatiza la instalación limpia de Debian (Stable o Testing). Por seguridad, las credenciales sensibles están parametrizadas con placeholders:
+El archivo [`preseed.cfg`](preseed.cfg) automatiza la instalación limpia de Debian Stable. Por seguridad, las credenciales sensibles están parametrizadas con placeholders:
 
 1. **Reemplazar placeholders locales antes de inyectar en el instalador/USB:**
    * `<WIFI_SSID>` y `<WIFI_PASSWORD>`: Nombre y clave WPA de tu red Wi-Fi.
@@ -56,10 +56,7 @@ El archivo [`preseed.cfg`](preseed.cfg) automatiza la instalación limpia de Deb
      ```bash
      openssl passwd -6
      ```
-   * En `preseed.cfg`, la suite por defecto es `stable`. Para aprovisionar directamente Debian Testing desde el instalador, basta configurar:
-     ```text
-     d-i mirror/suite string testing
-     ```
+   * En `preseed.cfg`, la suite de instalación está fijada en `stable`.
 
 ---
 
@@ -82,22 +79,32 @@ make help
 ```text
 ~/.dotfiles/
 ├── Makefile                       # Orquestador modular (install, update, host, devai, etc.)
-├── preseed.cfg                    # Instalador desatendido Debian (Stable / Testing, AMD/Intel)
+├── preseed.cfg                    # Instalador desatendido Debian Stable (AMD/Intel)
 │
 ├── host/                          # Configuración del sistema base (requiere sudo)
 │   ├── podman.sh                  #   Configuración de Podman Rootless (crun, pasta) y socket (usuario)
-│   ├── setup.sh                   #   Configuración de APT (Backports/FastTrack en Stable), base y podman
+│   ├── setup.sh                   #   Configuración de APT (Backports), base y podman
 │   └── timeshift.sh               #   Configuración opcional de snapshots Timeshift
+│
+├── hypr/                          # Perfil opcional Hyprland (no reemplaza GNOME)
+│   ├── hyprland.conf              #   Entrada principal; incluye conf/*.conf
+│   ├── conf/                      #   env, monitors, appearance, keybinds, windowrules, autostart
+│   ├── hypridle.conf              #   Bloqueo y apagado de pantalla por inactividad
+│   ├── hyprlock.conf              #   Pantalla de bloqueo
+│   ├── hyprpaper.conf             #   Wallpaper (fallback a swaybg)
+│   ├── mako/config                #   Notificaciones
+│   ├── scripts/                   #   wallpaper, screenshots y portapapeles
+│   ├── waybar/                    #   Barra (config.jsonc + style.css)
+│   └── wofi/                      #   Lanzador (config + style.css)
 │
 ├── scripts/                       # Instaladores y configuración de usuario
 │   ├── antigravity.png            #   Icono oficial para el lanzador .desktop
 │   ├── apt-maintenance.sh         #   Higiene APT (podman-only, DEB822, deduplicación y keyrings)
 │   ├── clean-system.sh            #   Limpieza profunda post-upgrade (purga rc, huérfanos, cachés y logs)
 │   ├── desktop.sh                 #   Tipografías, botones ventana, carpetas Proyectos/Aplicaciones y GNOME
-│   ├── detect-suite.sh            #   Detección agnóstica de suite Debian (Stable vs Testing)
 │   ├── devai.sh                   #   Instalador de OpenCode CLI y Antigravity Core/CLI
 │   ├── devtools.sh                #   Instalador de gh (APT), uv, fnm y sdkman
-│   ├── migrate-to-testing.sh      #   Migración guiada e higiénica de Stable a Testing
+│   ├── hyprland.sh                #   Instalador del perfil opcional Hyprland (solo Debian Stable)
 │   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
 │   ├── setup_agy.sh               #   Despliegue de Antigravity Core/IDE en /opt y CLI
 │   ├── setup_gh.sh                #   Configuración desatendida de clave SSH con GitHub
@@ -106,7 +113,7 @@ make help
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
 └── shell/                         # Dotfiles y utilitarios de línea de comandos
-    ├── devctl                     #   CLI de diagnóstico, actualización, migración y limpieza
+    ├── devctl                     #   CLI de diagnóstico, actualización y limpieza
     ├── gitconfig                  #   Configuración global ergonómica de Git
     └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman, fzf, direnv, XDG y Podman
 ```
@@ -119,7 +126,7 @@ make help
 | :--- | :--- |
 | `make install` | Aprovisionamiento completo (host + podman + shell + devtools + tooling + devai + desktop) |
 | `make update` | Actualización idempotente (higiene APT + only-upgrade + user-space + flatpak, sin tocar SSH/`gh auth`) |
-| `make host` | Configura APT (según suite: Backports/FastTrack en Stable), CLI moderna, AppImage, Flatpak y Podman |
+| `make host` | Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman |
 | `make timeshift` | *(Opcional)* Instala y configura `/etc/timeshift/timeshift.json` sin crear snapshots iniciales |
 | `make podman` | Configura Podman en modo Rootless con backend pasta (systemd --user) |
 | `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig` y `devctl` |
@@ -127,10 +134,86 @@ make help
 | `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed) |
 | `make devai` | Instala OpenCode CLI, Antigravity CLI y despliega Antigravity Core/IDE |
 | `make desktop` | Aplica tipografías, botones de ventana (min/max/close), directorios de trabajo y extensiones GNOME |
+| `make hyprland` | *(Opcional)* Instala y configura el perfil Hyprland sin reemplazar GNOME (solo Debian Stable) |
 | `make verify` | Ejecuta el test integral de salud del sistema |
 | `make clean` | Limpia paquetes residuales de APT y directorios temporales |
 | `make clean-deep` | Limpieza profunda post-upgrade: purga configs residuales (`rc`), dependencias huérfanas, journals y cachés |
-| `make migrate-testing` | Migra asistidamente la estación de trabajo de Debian Stable a Debian Testing |
+
+---
+
+## 🪟 Perfil opcional Hyprland
+
+`make hyprland` instala un escritorio Wayland completo **sin reemplazar GNOME** y **solo sobre Debian Stable**. GNOME sigue siendo el entorno predeterminado y puede elegirse en GDM en cualquier momento.
+
+```bash
+make host       # asegura Backports de Stable (requerido)
+make hyprland   # instala el stack e enlaza la configuración
+```
+
+El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.list.d/debian-backports.sources`.
+
+### Componentes
+
+| Función | Paquete / Herramienta |
+| :--- | :--- |
+| Compositor | `hyprland` (desde `stable-backports`) |
+| Barra | `waybar` |
+| Lanzador | `wofi` (`rofi` queda como alternativa manual) |
+| Notificaciones | `mako` |
+| Idle / bloqueo | `hypridle` + `hyprlock` |
+| Wallpaper | `hyprpaper` si existe `~/.config/hypr/wallpapers/default.png`; si no, `swaybg` con color sólido |
+| Agente polkit | `hyprpolkitagent` |
+| Portales | `xdg-desktop-portal-hyprland` + `xdg-desktop-portal-gtk` (fallback) |
+| Capturas | `grim` + `slurp` |
+| Portapapeles | `wl-clipboard` + `cliphist` |
+| Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
+| Terminal / archivos | `kitty` / `nautilus` |
+| Tema | JetBrains Mono, Fira Code, Noto, Papirus, Bibata, `qt6ct` |
+
+En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
+
+### Atajos principales
+
+| Atajo | Acción |
+| :--- | :--- |
+| `Super+Return` | Terminal (`kitty`) |
+| `Super+D` | Lanzador de aplicaciones (`wofi`) |
+| `Super+E` | Gestor de archivos (`nautilus`) |
+| `Super+Q` | Cerrar ventana |
+| `Super+F` | Pantalla completa |
+| `Super+Space` | Alternar flotante |
+| `Super+L` | Bloquear sesión (`hyprlock`) |
+| `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`) |
+| `Print` | Captura de región a archivo + portapapeles |
+| `Shift+Print` | Captura de pantalla completa a archivo + portapapeles |
+| `Super+1..0` / `Super+Shift+1..0` | Ir / mover ventana al workspace |
+| `Super+flechas` / `Super+Shift+flechas` | Foco / mover ventana |
+| `Super+Ctrl+flechas` | Redimensionar ventana |
+| `XF86Audio*` / `XF86MonBrightness*` | Volumen, mute, multimedia y brillo |
+
+### Sesión, portal y theming
+
+* **Display manager:** GDM detecta automáticamente `/usr/share/wayland-sessions/hyprland.desktop`. No se instala `sddm`, `greetd` ni `uwsm`.
+* **Agente polkit:** `hyprpolkitagent` se inicia desde `autostart.conf` solo dentro de Hyprland; no se habilita globalmente para no interferir con el agente de GNOME.
+* **Screen sharing:** `xdg-desktop-portal-hyprland` provee `hyprland.portal` con `UseIn=Hyprland`, por lo que se selecciona solo dentro de la sesión. `xdg-desktop-portal-gtk` cubre el file picker y aplicaciones GTK.
+* **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.
+* **Monitores:** `hypr/conf/monitors.conf` usa `monitor = ,preferred,auto,1`. Para fijar salidas, reemplazar por reglas explícitas (ver `hyprctl monitors`).
+* **Wallpaper:** crear `~/.config/hypr/wallpapers/default.png` y ejecutar `~/.config/hypr/scripts/wallpaper.sh`; sin imagen se usa `swaybg -c '#1e1e2e'`.
+* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi` y `~/.config/mako`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente.
+
+### Rollback
+
+1. En GDM, elegir **GNOME** (o **GNOME on Xorg**) y volver a iniciar sesión.
+2. Opcionalmente, quitar solo los enlaces creados por el perfil (los archivos propios y backups se conservan):
+   ```bash
+   find ~/.config/hypr ~/.config/waybar ~/.config/wofi ~/.config/mako \
+     -maxdepth 2 -type l -lname '*/.dotfiles/hypr/*' -delete 2>/dev/null || true
+   sudo apt-get remove --purge hyprland hyprpaper hypridle hyprlock hyprpolkitagent \
+       xdg-desktop-portal-hyprland waybar wofi mako grim slurp cliphist swaybg
+   ```
+3. Restaurar los backups `.bak.<timestamp>` si se habían personalizado archivos previos.
+
+GNOME y el resto del aprovisionamiento no se modifican al instalar o quitar el perfil.
 
 ---
 
@@ -139,7 +222,7 @@ make help
 `devctl` se instala automáticamente en `~/.local/bin/devctl` como enlace simbólico al repositorio.
 
 ```bash
-# Diagnóstico integral del sistema, suite (Stable/Testing), CLI moderna, Podman rootless, zram, Flatpak y AppImage
+# Diagnóstico integral del sistema, CLI moderna, Podman rootless, zram, Flatpak y AppImage
 devctl doctor
 
 # Actualización idempotente de la estación (equivale a `make update`)
@@ -147,9 +230,6 @@ devctl update
 
 # Limpieza profunda post-upgrade (equivale a `make clean-deep`)
 devctl clean
-
-# Migración asistida de Debian Stable a Debian Testing con higiene de repositorios
-devctl migrate-testing
 ```
 
 ---
@@ -174,4 +254,5 @@ El script comprueba de forma automática:
 9. Higiene de repositorios APT (podman-only, sin duplicados) y autenticación de GitHub (SSH y API).
 10. Personalizaciones de GNOME (botones de ventana minimizar, maximizar y cerrar).
 11. Directorio dedicado de desarrollo (`~/Proyectos` / `XDG_PROJECTS_DIR`).
-12. Ecosistema de aplicaciones: Flatpak + Flathub activo, AppImage runtime FUSE y repositorios oficiales de la suite activa.
+12. Ecosistema de aplicaciones: Flatpak + Flathub activo, AppImage runtime FUSE y repositorios oficiales de Debian Stable (Backports).
+13. Perfil Hyprland (opcional): binarios, agente polkit, sesión en GDM, portal de escritorio, symlinks de configuración y `hyprctl configerrors` cuando la sesión está activa. Si no está instalado, solo informa sin fallar.

@@ -6,7 +6,7 @@ echo "==> Instalando DevManagers (gh, uv, fnm, sdkman)..."
 echo "================================================================="
 
 if ! command -v gh &> /dev/null; then
-    echo "Instalando GitHub CLI (gh vía binario oficial para Debian Testing)..."
+    echo "Instalando GitHub CLI (gh vía binario oficial)..."
     
     # 1. Crear directorio local de binarios si no existe
     mkdir -p "$HOME/.local/bin"

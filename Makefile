@@ -1,5 +1,5 @@
 # ==============================================================================
-# Debian Workstation - Dev Environment Setup
+# Debian Stable Workstation - Dev Environment Setup
 # ==============================================================================
 
 SHELL := /bin/bash
@@ -7,14 +7,14 @@ SHELL := /bin/bash
 export RUNZSH=no
 export CHSH=no
 
-.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop verify clean clean-deep migrate-testing
+.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep
 
 # Target por defecto: mostrar ayuda
 help:
-	@echo "Opciones de aprovisionamiento (Debian Workstation - Stable / Testing):"
+	@echo "Opciones de aprovisionamiento (Debian Stable Workstation):"
 	@echo "  make install         - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
 	@echo "  make update          - Actualiza la estación (APT only-upgrade + self-updates user-space + flatpak, idempotente)"
-	@echo "  make host            - Configura APT (según suite: Backports/FastTrack en Stable), CLI moderna, AppImage, Flatpak y Podman"
+	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
 	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
 	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
@@ -22,10 +22,10 @@ help:
 	@echo "  make tooling         - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
 	@echo "  make desktop         - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
+	@echo "  make hyprland        - (Opcional) Instala y configura el perfil Hyprland sin reemplazar GNOME"
 	@echo "  make verify          - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean           - Limpia paquetes residuales de APT y temporales"
 	@echo "  make clean-deep      - Limpieza profunda post-upgrade: purga configs residuales (rc), dependencias, logs y cachés"
-	@echo "  make migrate-testing - Migra la estación de trabajo de Debian Stable a Debian Testing con higiene de repositorios"
 
 # Instalación completa desatendida (idempotente: re-ejecutable; Timeshift es opcional vía 'make timeshift')
 install: host podman shell devtools tooling devai desktop clean
@@ -90,6 +90,11 @@ desktop:
 	@echo "==> Configurando escritorio GNOME..."
 	bash scripts/desktop.sh
 
+# 7b. Perfil opcional Hyprland (no reemplaza GNOME; solo Debian Stable)
+hyprland:
+	@echo "==> Configurando perfil opcional Hyprland..."
+	bash scripts/hyprland.sh
+
 # 8. Verificación de salud
 verify:
 	@echo "==> Verificando instalación..."
@@ -107,12 +112,7 @@ clean:
 	fi
 	rm -rf $(HOME)/.oh-my-zsh.tmp 2>/dev/null || true
 
-# 10. Limpieza profunda post-upgrade / post-migración
+# 10. Limpieza profunda post-upgrade
 clean-deep:
 	@echo "==> Ejecutando limpieza profunda del sistema..."
 	bash scripts/clean-system.sh
-
-# 11. Migración asistida a Debian Testing
-migrate-testing:
-	@echo "==> Iniciando migración a Debian Testing..."
-	sudo bash scripts/migrate-to-testing.sh

@@ -7,74 +7,59 @@ TARGET_USER="${SUDO_USER:-$(logname)}"
 USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-SUITE=$(bash "$REPO_DIR/scripts/detect-suite.sh" 2>/dev/null || echo "stable")
-SUITE_LABEL=$(bash "$REPO_DIR/scripts/detect-suite.sh" --label 2>/dev/null || echo "Stable")
-
 echo "================================================================="
-echo "==> [Debian $SUITE_LABEL] Configuración de Sistema y Paquetes Base"
+echo "==> [Debian Stable] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
 
 echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
 bash "$REPO_DIR/scripts/apt-maintenance.sh"
 
 # ------------------------------------------------------------------------------
-# 1. Configuración de Repositorios Oficiales según Suite
+# 1. Repositorios extendidos de Debian Stable (Backports)
 # ------------------------------------------------------------------------------
-if [ "$SUITE" = "stable" ]; then
-    echo "==> Configurando repositorios extendidos para Debian Stable (Backports & FastTrack)..."
+echo "==> Configurando repositorios extendidos para Debian Stable (Backports)..."
 
-    # Debian Backports (formato canónico DEB822)
+# Escribe $file solo si su contenido difiere de $content (convergencia idempotente).
+write_if_changed() {
+    local file="$1"
+    local content="$2"
+    if [ ! -f "$file" ] || [ "$(cat "$file")" != "$content" ]; then
+        printf '%s\n' "$content" > "$file"
+        return 0
+    fi
+    return 1
+}
+
+# Debian Backports (formato canónico DEB822), solo si el sistema es Debian Stable.
+# La coma final evita confundir 'stable' con 'stable-backports' en apt-cache policy.
+# Fallback: en una instalación recién hecha puede no haber listas APT todavía;
+# /etc/debian_version numérico (p. ej. 13.1) identifica una release estable.
+IS_STABLE=false
+if command -v apt-cache &>/dev/null && apt-cache policy 2>/dev/null | grep -q 'o=Debian,a=stable,'; then
+    IS_STABLE=true
+elif [ -r /etc/debian_version ] && grep -qE '^[0-9]+\.[0-9]+' /etc/debian_version; then
+    IS_STABLE=true
+fi
+
+if [ "$IS_STABLE" = true ]; then
     BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
     DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
-    if [ ! -f "$BACKPORTS_FILE" ]; then
-        cat > "$BACKPORTS_FILE" << EOF
+    BACKPORTS_CONTENT=$(cat << EOF
 Types: deb deb-src
 URIs: http://deb.debian.org/debian/
 Suites: stable-backports
 Components: main contrib non-free non-free-firmware
 Signed-By: $DEB_KEYRING
 EOF
+)
+    if write_if_changed "$BACKPORTS_FILE" "$BACKPORTS_CONTENT"; then
         echo "  ✔ Debian Backports configurado (stable-backports)."
     else
-        # Asegurar que no esté deshabilitado
-        sed -i '/^Enabled:[[:space:]]*No/d' "$BACKPORTS_FILE" || true
-        if [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS_FILE"; then
-            sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS_FILE"
-        fi
-    fi
-
-    # Debian FastTrack (paquetes upstream de rápido movimiento para Debian Stable)
-    CODENAME=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "")
-    if [ -n "$CODENAME" ]; then
-        FASTTRACK_KEYRING="/usr/share/keyrings/fasttrack-archive-keyring.gpg"
-        if [ ! -f "$FASTTRACK_KEYRING" ]; then
-            if apt-get install -y fasttrack-archive-keyring 2>/dev/null; then
-                echo "  ✔ Paquete fasttrack-archive-keyring instalado vía APT."
-            else
-                echo "  Descargando keyring oficial de Debian FastTrack..."
-                curl -fsSL "https://fasttrack.debian.net/debian-fasttrack/pubkey.gpg" | gpg --dearmor -o "$FASTTRACK_KEYRING" 2>/dev/null || true
-            fi
-        fi
-
-        FASTTRACK_FILE="/etc/apt/sources.list.d/debian-fasttrack.sources"
-        if [ -f "$FASTTRACK_KEYRING" ] && [ ! -f "$FASTTRACK_FILE" ]; then
-            cat > "$FASTTRACK_FILE" << EOF
-Types: deb deb-src
-URIs: https://fasttrack.debian.net/debian-fasttrack/
-Suites: ${CODENAME}-fasttrack
-Components: main contrib
-Signed-By: $FASTTRACK_KEYRING
-EOF
-            echo "  ✔ Debian FastTrack configurado (${CODENAME}-fasttrack)."
-        fi
+        echo "  ✔ Debian Backports ya actualizado (stable-backports)."
     fi
 else
-    echo "==> Entorno Debian Testing detectado: gestionando paquetes nativos de upstream..."
-    # Si migró desde Stable, purgar FastTrack para prevenir errores 404 o dependencias rotas
-    if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
-        echo "  Limpiando debian-fasttrack.sources obsoleto..."
-        rm -f "/etc/apt/sources.list.d/debian-fasttrack.sources"
-    fi
+    echo "  ⚠️ No se detectó Debian Stable; se omite Backports."
+    echo "     Este repositorio solo soporta configuraciones para Debian Stable."
 fi
 
 echo "==> Actualizando repositorios APT..."
@@ -83,32 +68,38 @@ apt-get update -y
 apt-get upgrade -y
 
 # ------------------------------------------------------------------------------
-# 2. Soporte para AppImage (FUSE 2 para Stable / Fallback Auto-extraíble para Testing)
+# 2. Soporte para AppImage (FUSE 2 nativo / Fallback Auto-extraíble)
 # ------------------------------------------------------------------------------
 APPIMAGE_FUSE_PKGS=()
 FUSE2_DISPONIBLE=false
 
+# Devuelve 0 si el paquete tiene un candidato de instalación real.
+has_apt_candidate() {
+    local candidate
+    candidate=$(apt-cache policy "$1" 2>/dev/null | awk '/Candidato:|Candidate:/ {print; exit}')
+    [ -n "$candidate" ] && ! printf '%s\n' "$candidate" | grep -qE '\(ninguno|\(none'
+}
+
 # 1. Comprobar si existe un candidato de instalación real para FUSE 2
 for fpkg in libfuse2t64 libfuse2; do
-    # 'apt-cache policy' nos dice con certeza si hay un candidato instalable
-    if apt-cache policy "$fpkg" 2>/dev/null | grep -qE "Candidato:|Candidate:" | grep -v "(ninguno\|none)"; then
+    if has_apt_candidate "$fpkg"; then
         APPIMAGE_FUSE_PKGS+=("$fpkg")
         FUSE2_DISPONIBLE=true
         break
     fi
 done
 
-# 2. Si no hay FUSE 2 (Como en Debian Testing/Forky), dependemos de fuse3 y del fallback de extracción
+# 2. Si no hay FUSE 2, dependemos de fuse3 y del fallback de extracción
 if [ "$FUSE2_DISPONIBLE" = false ]; then
     # Verificamos si existe fuse3 (estándar moderno)
-    if apt-cache policy "fuse3" 2>/dev/null | grep -qE "Candidato:|Candidate:" | grep -v "(ninguno\|none)"; then
+    if has_apt_candidate "fuse3"; then
         APPIMAGE_FUSE_PKGS+=("fuse3")
     fi
-    
+
     # Configurar el fallback global para AppImages en sistemas sin FUSE 2
     if ! grep -q "APPIMAGE_EXTRACT_AND_RUN" /etc/environment 2>/dev/null; then
-        echo "Configurando fallback de extracción para AppImages (Debian Testing)..."
-        echo "APPIMAGE_EXTRACT_AND_RUN=1" | sudo tee -a /etc/environment > /dev/null
+        echo "Configurando fallback de extracción para AppImages..."
+        echo "APPIMAGE_EXTRACT_AND_RUN=1" | tee -a /etc/environment > /dev/null
     fi
 fi
 
@@ -165,5 +156,5 @@ echo "==> Habilitando systemd linger para $TARGET_USER..."
 loginctl enable-linger "$TARGET_USER"
 
 echo "================================================================="
-echo "✔ Host setup completado (Debian $SUITE_LABEL + Flatpak + AppImage + Podman Rootless)."
+echo "✔ Host setup completado (Debian Stable + Backports + Flatpak + AppImage + Podman Rootless)."
 echo "================================================================="

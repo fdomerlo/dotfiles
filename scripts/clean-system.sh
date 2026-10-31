@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # scripts/clean-system.sh - Limpieza profunda e higienización post-upgrade en Debian.
 #
-# Diseñado para purgar residuos dejados por transiciones entre versiones de Debian
-# (ej. Stable -> Testing o Testing -> Sid):
+# Diseñado para purgar residuos dejados por actualizaciones de Debian Stable:
 #   1. Purga configuraciones residuales (paquetes desinstalados en estado 'rc' de dpkg).
 #   2. Purga dependencias huérfanas con autoremove --purge.
 #   3. Limpieza de paquetes huérfanos con deborphan si está disponible.

@@ -1,0 +1,15 @@
+background-color=#1e1e2e
+text-color=#cdd6f4
+border-color=#89b4fa
+progress-color=over #89b4fa
+border-size=2
+border-radius=8
+default-timeout=5000
+font=JetBrains Mono 10
+anchor=top-right
+margin=12
+padding=12
+width=360
+height=150
+max-icon-size=48
+icon-path=/usr/share/icons/Papirus

@@ -11,9 +11,9 @@
 #      deshabilita sus servicios. Este repo es podman-only.
 #   2. Deduplica VS Code: si existe vscode.sources (DEB822),
 #      elimina el legacy vscode.list duplicado (mismo URI/suite/componente).
-#   3. Gestiona repositorios oficiales según la suite (Stable vs Testing):
-#      - En Stable: completa Signed-By en backports y fasttrack.
-#      - En Testing: retira fuentes de FastTrack (exclusivo de Stable).
+#   3. Gestiona repositorios oficiales de Debian Stable:
+#      - Completa Signed-By en backports si quedó vacío.
+#      - Elimina el archivo legacy de FastTrack (repo discontinuado en estos dotfiles).
 #   4. Moderniza repositorios tradicionales (.list) al formato estándar DEB822
 #      (.sources) vía `apt modernize-sources` si está disponible en la versión de APT.
 #   5. Purgado de configuraciones residuales (paquetes desinstalados en estado 'rc' de dpkg).
@@ -25,7 +25,6 @@
 # Hooks de test: APT_SOURCES_D, APT_KEYRINGS_D (por defecto rutas del sistema).
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCES_D="${APT_SOURCES_D:-/etc/apt/sources.list.d}"
 KEYRINGS_D="${APT_KEYRINGS_D:-/etc/apt/keyrings}"
 
@@ -34,12 +33,18 @@ KEYRINGS_D="${APT_KEYRINGS_D:-/etc/apt/keyrings}"
 warn() { echo "  ⚠️ $1"; }
 ok()   { echo "  ✔ $1"; }
 
-SUITE=$(bash "$SCRIPT_DIR/detect-suite.sh" 2>/dev/null || echo "stable")
-SUITE_LABEL=$(bash "$SCRIPT_DIR/detect-suite.sh" --label 2>/dev/null || echo "Stable")
+echo "================================================================="
+echo "==> Higiene APT (Debian Stable, podman-only, DEB822, idempotente)"
+echo "================================================================="
 
-echo "================================================================="
-echo "==> Higiene APT (Debian $SUITE_LABEL, podman-only, DEB822, idempotente)"
-echo "================================================================="
+# Preflight informativo: este repositorio asume Debian Stable y no aborta.
+if command -v apt-cache &>/dev/null; then
+    stable_hits=$(apt-cache policy 2>/dev/null | grep -c 'o=Debian,a=stable,' || true)
+    if [ "${stable_hits:-0}" -eq 0 ]; then
+        echo "  ⚠️ No se detectó el archive 'stable' de Debian."
+        echo "     Este aprovisionamiento asume Debian Stable; continúo igualmente."
+    fi
+fi
 
 # ------------------------------------------------------------------------------
 # 1. Docker Inc: fuera (fuentes, keyring huérfano, paquetes y servicios)
@@ -86,7 +91,7 @@ if [ -f "$SOURCES_D/vscode.sources" ] && [ -f "$SOURCES_D/vscode.list" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Repositorios oficiales: gestión según Suite (Stable vs Testing)
+# 3. Repositorios oficiales de Debian Stable
 # ------------------------------------------------------------------------------
 BACKPORTS="$SOURCES_D/debian-backports.sources"
 DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
@@ -97,21 +102,10 @@ if [ -f "$BACKPORTS" ] && [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:
 fi
 
 FASTTRACK="$SOURCES_D/debian-fasttrack.sources"
-FASTTRACK_KEYRING="/usr/share/keyrings/fasttrack-archive-keyring.gpg"
-if [ "$SUITE" = "testing" ]; then
-    # En Testing, FastTrack no existe ni es compatible
-    if [ -f "$FASTTRACK" ]; then
-        echo "  Detectada suite Testing: eliminando debian-fasttrack.sources residual..."
-        rm -f "$FASTTRACK"
-        ok "debian-fasttrack.sources eliminado de Testing."
-    fi
-else
-    # En Stable, verificar integridad de FastTrack si está presente
-    if [ -f "$FASTTRACK" ] && [ -f "$FASTTRACK_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$FASTTRACK"; then
-        echo "  Completando Signed-By en debian-fasttrack.sources..."
-        sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $FASTTRACK_KEYRING|" "$FASTTRACK"
-        ok "Signed-By restaurado en fasttrack."
-    fi
+if [ -f "$FASTTRACK" ]; then
+    echo "  Eliminando FastTrack legacy (repo discontinuado en estos dotfiles)..."
+    rm -f "$FASTTRACK"
+    ok "FastTrack legacy eliminado."
 fi
 
 # ------------------------------------------------------------------------------

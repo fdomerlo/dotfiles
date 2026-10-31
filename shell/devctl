@@ -38,23 +38,14 @@ clean_deep() {
 }
 
 # --------------------------------------------------
-# MIGRACIÓN (STABLE -> TESTING)
-# --------------------------------------------------
-
-migrate_testing() {
-  log "Iniciando transición asistida a Debian Testing..."
-  sudo bash "$BASE_DIR/scripts/migrate-to-testing.sh"
-}
-
-# --------------------------------------------------
 # DIAGNÓSTICO
 # --------------------------------------------------
 
 doctor() {
-  local suite_label
-  suite_label=$(bash "$BASE_DIR/scripts/detect-suite.sh" --label 2>/dev/null || echo "Debian")
+  local debian_codename
+  debian_codename=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release 2>/dev/null || echo "")
 
-  log "Ejecutando diagnóstico del entorno Debian ($suite_label)..."
+  log "Ejecutando diagnóstico del entorno Debian..."
 
   check() {
     if command -v "$1" >/dev/null || [ -f "$HOME/.local/bin/$1" ]; then
@@ -73,7 +64,7 @@ doctor() {
   }
 
   echo "Sistema Base:"
-  echo -e "  \033[32m✔\033[0m Debian $suite_label ($(uname -r), $(uname -m))"
+  echo -e "  \033[32m✔\033[0m Debian${debian_codename:+ $debian_codename} ($(uname -r), $(uname -m))"
 
   echo ""
   echo "Herramientas del Host:"
@@ -170,6 +161,52 @@ doctor() {
   fi
 
   echo ""
+  echo "Hyprland (opcional):"
+  if command -v Hyprland &>/dev/null; then
+    check hyprctl
+    check waybar
+    check wofi
+    check mako
+    check hypridle
+    check hyprlock
+    check grim
+    check slurp
+    check wl-copy
+    check cliphist
+    check brightnessctl
+    check playerctl
+    check wpctl
+    check kitty
+    if command -v hyprpaper &>/dev/null || command -v swaybg &>/dev/null; then
+      echo -e "  \033[32m✔\033[0m hyprpaper/swaybg"
+    else
+      echo -e "  \033[31m✘\033[0m hyprpaper/swaybg"
+    fi
+    if [ -x /usr/libexec/hyprpolkitagent ]; then
+      echo -e "  \033[32m✔\033[0m hyprpolkitagent"
+    else
+      echo -e "  \033[31m✘\033[0m hyprpolkitagent"
+    fi
+    if [ -f /usr/share/wayland-sessions/hyprland.desktop ]; then
+      echo -e "  \033[32m✔\033[0m Sesión disponible en GDM"
+    else
+      echo -e "  \033[31m✘\033[0m Sesión hyprland.desktop no encontrada"
+    fi
+    if [ -f /usr/share/xdg-desktop-portal/portals/hyprland.portal ]; then
+      echo -e "  \033[32m✔\033[0m Portal xdg-desktop-portal-hyprland"
+    else
+      echo -e "  \033[31m✘\033[0m Portal xdg-desktop-portal-hyprland no encontrado"
+    fi
+    if [ -e "$HOME/.config/hypr/hyprland.conf" ]; then
+      echo -e "  \033[32m✔\033[0m Configuración desplegada en ~/.config"
+    else
+      echo -e "  \033[33m○\033[0m Configuración no desplegada (ejecuta 'make hyprland')"
+    fi
+  else
+    echo -e "  \033[33m○\033[0m Hyprland no instalado (opcional: make hyprland)"
+  fi
+
+  echo ""
   echo "Memoria y Swap:"
   if command -v swapon &>/dev/null; then
     swapon --show || echo "No hay swap activo"
@@ -205,8 +242,6 @@ update) update ;;
 
 clean) clean_deep ;;
 
-migrate-testing|to-testing) migrate_testing ;;
-
 *)
   echo "devctl - Workstation CLI para Debian"
   echo ""
@@ -214,6 +249,5 @@ migrate-testing|to-testing) migrate_testing ;;
   echo "  devctl doctor                # Diagnóstico del entorno y servicios"
   echo "  devctl update                # Actualiza estación (APT only-upgrade + user-space)"
   echo "  devctl clean                 # Limpieza profunda post-upgrade (purga rc, huérfanos, logs)"
-  echo "  devctl migrate-testing       # Migra la estación de trabajo de Debian Stable a Testing"
   ;;
 esac

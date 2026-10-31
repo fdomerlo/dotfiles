@@ -42,7 +42,7 @@ if command -v apt-get &>/dev/null; then
         gnome-shell-extension-dashtodock
         flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
         libglib2.0-bin
-        fuse3 libfuse2t64 libfuse2 fasttrack-archive-keyring
+        fuse3 libfuse2t64 libfuse2
         uidmap dbus-user-session iptables
         podman crun buildah skopeo podman-compose passt slirp4netns catatonit
         timeshift cron

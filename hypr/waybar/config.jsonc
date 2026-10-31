@@ -1,0 +1,66 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 34,
+  "spacing": 6,
+  "modules-left": ["hyprland/workspaces", "hyprland/window"],
+  "modules-center": ["clock"],
+  "modules-right": ["cpu", "memory", "pulseaudio", "network", "tray", "custom/media"],
+
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "on-click": "activate",
+    "persistent-workspaces": {
+      "*": 5
+    }
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 60,
+    "separate-outputs": true
+  },
+
+  "clock": {
+    "format": "{:%H:%M  %d/%m}",
+    "tooltip-format": "{:%A, %d de %B de %Y}"
+  },
+
+  "cpu": {
+    "format": "CPU {usage}%",
+    "interval": 2
+  },
+
+  "memory": {
+    "format": "RAM {used}/{total} GiB",
+    "interval": 2
+  },
+
+  "pulseaudio": {
+    "format": "VOL {volume}%",
+    "format-muted": "MUTE",
+    "on-click": "pavucontrol"
+  },
+
+  "network": {
+    "format-wifi": "WiFi {essid}",
+    "format-ethernet": "LAN {ifname}",
+    "format-disconnected": "Sin red",
+    "tooltip-format": "{ifname} via {gwaddr}",
+    "on-click": "nm-connection-editor"
+  },
+
+  "tray": {
+    "spacing": 8
+  },
+
+  "custom/media": {
+    "format": "PLAY {text}",
+    "max-length": 40,
+    "interval": 5,
+    "exec": "playerctl metadata --format '{{artist}} - {{title}}' 2>/dev/null",
+    "on-click": "playerctl play-pause",
+    "on-scroll-up": "playerctl next",
+    "on-scroll-down": "playerctl previous"
+  }
+}

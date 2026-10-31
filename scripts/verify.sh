@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUITE=$(bash "$SCRIPT_DIR/detect-suite.sh" 2>/dev/null || echo "stable")
-SUITE_LABEL=$(bash "$SCRIPT_DIR/detect-suite.sh" --label 2>/dev/null || echo "Stable")
-
 echo "================================================================="
-echo "       Debian $SUITE_LABEL Workstation - Verificación de Estado        "
+echo "       Debian Stable Workstation - Verificación de Estado          "
 echo "================================================================="
 
 check_status() {
@@ -198,22 +194,88 @@ else
     check_optional "No creado aún ($APPIMAGE_DIR)"
 fi
 
-echo -n "Repositorios oficiales de Debian ($SUITE_LABEL)... "
-if [ "$SUITE" = "stable" ]; then
-    EXT_REPOS=()
-    [ -f "/etc/apt/sources.list.d/debian-backports.sources" ] && EXT_REPOS+=("Backports")
-    [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ] && EXT_REPOS+=("FastTrack")
-    if [ "${#EXT_REPOS[@]}" -gt 0 ]; then
-        check_status 0 "Configurados para Stable: ${EXT_REPOS[*]}"
-    else
-        check_optional "No configurados aún (se añaden en 'make host')"
-    fi
+echo -n "Repositorios oficiales de Debian Stable... "
+EXT_REPOS=()
+[ -f "/etc/apt/sources.list.d/debian-backports.sources" ] && EXT_REPOS+=("Backports")
+if [ "${#EXT_REPOS[@]}" -gt 0 ]; then
+    check_status 0 "Configurados: ${EXT_REPOS[*]}"
 else
-    # Testing
-    if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
-        check_status 1 "FastTrack detectado en Testing (debe removerse para evitar conflictos)"
+    check_optional "No configurados aún (se añaden en 'make host')"
+fi
+
+if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
+    check_optional "FastTrack legacy detectado (se elimina con 'make host')"
+fi
+
+# 13. Perfil opcional Hyprland (no falla si no está instalado)
+echo -n "Perfil Hyprland (opcional)... "
+if ! command -v Hyprland &>/dev/null; then
+    check_optional "No instalado (perfil opcional: ejecuta 'make hyprland')"
+else
+    check_status 0 "Instalado"
+
+    echo -n "Componentes del escritorio Hyprland... "
+    hypr_missing=()
+    for cmd in Hyprland hyprctl waybar wofi mako hypridle hyprlock \
+               grim slurp wl-copy cliphist brightnessctl playerctl wpctl; do
+        command -v "$cmd" &>/dev/null || hypr_missing+=("$cmd")
+    done
+    if command -v hyprpaper &>/dev/null || command -v swaybg &>/dev/null; then
+        :
     else
-        check_status 0 "Debian Testing activo (paquetes rolling upstream)"
+        hypr_missing+=("hyprpaper|swaybg")
+    fi
+    if [ -x /usr/libexec/hyprpolkitagent ]; then
+        :
+    else
+        hypr_missing+=("hyprpolkitagent")
+    fi
+    if [ "${#hypr_missing[@]}" -eq 0 ]; then
+        check_status 0 "Binarios y agente polkit presentes"
+    else
+        check_status 1 "Faltan: ${hypr_missing[*]} (ejecuta 'make hyprland')"
+    fi
+
+    echo -n "Sesión de Hyprland en el display manager... "
+    if [ -f /usr/share/wayland-sessions/hyprland.desktop ]; then
+        check_status 0 "hyprland.desktop presente (GDM la detecta automáticamente)"
+    else
+        check_status 1 "No se encontró /usr/share/wayland-sessions/hyprland.desktop"
+    fi
+
+    echo -n "Portal de escritorio (screen sharing)... "
+    if [ -f /usr/share/xdg-desktop-portal/portals/hyprland.portal ]; then
+        if dpkg -s xdg-desktop-portal-gtk &>/dev/null; then
+            check_status 0 "Portal Hyprland + fallback GTK presentes"
+        else
+            check_optional "Portal Hyprland presente (falta xdg-desktop-portal-gtk)"
+        fi
+    else
+        check_status 1 "No se encontró hyprland.portal (ejecuta 'make hyprland')"
+    fi
+
+    echo -n "Configuración de Hyprland desplegada... "
+    cfg_missing=()
+    for f in "$HOME/.config/hypr/hyprland.conf" \
+             "$HOME/.config/waybar/config.jsonc" \
+             "$HOME/.config/wofi/config" \
+             "$HOME/.config/mako/config"; do
+        [ -e "$f" ] || cfg_missing+=("$f")
+    done
+    if [ "${#cfg_missing[@]}" -eq 0 ]; then
+        check_status 0 "Symlinks de configuración presentes"
+    else
+        check_status 1 "Faltan: ${cfg_missing[*]} (ejecuta 'make hyprland')"
+    fi
+
+    if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v hyprctl &>/dev/null; then
+        echo -n "Errores de configuración de Hyprland... "
+        HYPR_ERRORS="$(hyprctl configerrors 2>/dev/null || true)"
+        if [ -z "$HYPR_ERRORS" ] || echo "$HYPR_ERRORS" | grep -qiE '^no errors|config ok'; then
+            check_status 0 "Sin errores de configuración"
+        else
+            check_status 1 "hyprctl reportó errores: $HYPR_ERRORS"
+        fi
     fi
 fi
 
