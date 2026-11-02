@@ -24,6 +24,7 @@ BACKPORTS_PKGS=(
     hypridle
     hyprlock
     hyprpolkitagent
+    hyprland-guiutils
 )
 
 # Paquetes disponibles en Stable main.
