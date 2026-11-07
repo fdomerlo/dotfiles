@@ -9,7 +9,7 @@ export CHSH=no
 export KEEP_ZSHRC=yes
 export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
+.PHONY: help install full-install update host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
