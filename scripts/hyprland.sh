@@ -251,10 +251,11 @@ Próximos pasos:
      $CONFIG_HOME/hypr/wallpapers/default.png
      y recargá con $CONFIG_HOME/hypr/scripts/wallpaper.sh
 
-Atajos principales:
-  Super+Return  terminal (kitty)      Super+D       lanzador (wofi)
-  Super+Q       cerrar ventana        Super+L       bloquear (hyprlock)
-  Super+Shift+V historial portapapeles
-  Print         captura de región     Shift+Print   captura completa
+Atajos y gestos principales:
+  Super+Return         terminal (kitty)      Super+D       lanzador (wofi)
+  Super+Q              cerrar ventana        Super+L       bloquear (hyprlock)
+  Super+Shift+V        historial portapapeles
+  3 dedos horizontal   cambiar workspace     3 dedos arriba lanzador (wofi)
+  Print                captura de región     Shift+Print   captura completa
 
 EOF
