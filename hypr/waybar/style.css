@@ -1,61 +1,149 @@
+/* ==============================================================================
+   Waybar - Estilo Otter-bar / PikaOS (Cyber-Teal Glass)
+   ============================================================================== */
+
 * {
-    font-family: "JetBrains Mono", "Noto Sans", sans-serif;
+    font-family: "JetBrains Mono", "Font Awesome 6 Free", "Font Awesome 6 Brands", sans-serif;
     font-size: 12px;
+    font-weight: 500;
     min-height: 0;
+    border: none;
 }
 
 window#waybar {
-    background: rgba(30, 30, 46, 0.94);
-    color: #cdd6f4;
-    border-bottom: 2px solid rgba(137, 180, 250, 0.35);
+    background: rgba(12, 16, 18, 0.90);
+    color: #e6ece8;
+    border: 1px solid rgba(13, 183, 212, 0.35);
+    border-radius: 14px;
+}
+
+/* --- Módulos Izquierda --- */
+
+#custom-launcher {
+    font-size: 16px;
+    color: #0db7d4;
+    padding: 0 12px;
+    margin: 3px 2px;
+    border-radius: 8px;
+    background: rgba(24, 34, 36, 0.60);
+    border: 1px solid rgba(13, 183, 212, 0.25);
+    transition: all 0.2s ease;
+}
+
+#custom-launcher:hover {
+    background: #0db7d4;
+    color: #0c1012;
+}
+
+#workspaces {
+    background: rgba(24, 34, 36, 0.40);
+    border-radius: 8px;
+    margin: 3px 2px;
+    padding: 0 2px;
+    border: 1px solid rgba(42, 56, 52, 0.50);
 }
 
 #workspaces button {
     padding: 0 8px;
-    color: #a6adc8;
+    margin: 2px 1px;
+    color: #91a39a;
     background: transparent;
-    border: none;
     border-radius: 6px;
-}
-
-#workspaces button.active {
-    color: #1e1e2e;
-    background: #89b4fa;
+    transition: all 0.2s ease;
 }
 
 #workspaces button:hover {
-    color: #cdd6f4;
-    background: rgba(137, 180, 250, 0.25);
+    color: #e6ece8;
+    background: rgba(13, 183, 212, 0.25);
 }
 
-#window {
-    color: #bac2de;
-    padding: 0 8px;
-}
-
-#clock {
-    color: #cba6f7;
+#workspaces button.active {
+    color: #0c1012;
+    background: #0db7d4;
     font-weight: bold;
 }
+
+#workspaces button.urgent {
+    color: #0c1012;
+    background: #e56b72;
+}
+
+#custom-media {
+    background: rgba(24, 34, 36, 0.60);
+    border: 1px solid rgba(42, 56, 52, 0.70);
+    border-radius: 8px;
+    margin: 3px 4px;
+    padding: 0 10px;
+    color: #48d7b0;
+}
+
+/* --- Módulo Centro --- */
+
+#window {
+    color: #e6ece8;
+    font-weight: 600;
+    padding: 0 14px;
+    background: rgba(24, 34, 36, 0.35);
+    border-radius: 8px;
+    margin: 3px 0;
+    border: 1px solid rgba(42, 56, 52, 0.40);
+}
+
+/* --- Módulos Derecha --- */
 
 #cpu,
 #memory,
 #pulseaudio,
 #network,
-#tray,
-#custom-media {
-    padding: 0 8px;
-    color: #cdd6f4;
+#clock,
+#tray {
+    background: rgba(24, 34, 36, 0.65);
+    border: 1px solid rgba(42, 56, 52, 0.70);
+    border-radius: 8px;
+    margin: 3px 2px;
+    padding: 0 10px;
+    color: #e6ece8;
+}
+
+#cpu {
+    color: #e6ece8;
+}
+
+#memory {
+    color: #e6ece8;
+}
+
+#pulseaudio {
+    color: #7aa2f7;
 }
 
 #pulseaudio.muted {
-    color: #f38ba8;
+    color: #e56b72;
+}
+
+#network {
+    color: #48d7b0;
 }
 
 #network.disconnected {
-    color: #f38ba8;
+    color: #e56b72;
 }
 
-#custom-media {
-    color: #a6e3a1;
+#clock {
+    color: #0db7d4;
+    font-weight: bold;
+    border-color: rgba(13, 183, 212, 0.40);
+}
+
+#tray {
+    padding: 0 8px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: #e56b72;
 }

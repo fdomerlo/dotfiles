@@ -1,66 +1,104 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 34,
-  "spacing": 6,
-  "modules-left": ["hyprland/workspaces", "hyprland/window"],
-  "modules-center": ["clock"],
-  "modules-right": ["cpu", "memory", "pulseaudio", "network", "tray", "custom/media"],
+  "height": 36,
+  "margin-top": 6,
+  "margin-left": 10,
+  "margin-right": 10,
+  "spacing": 4,
+
+  "modules-left": [
+    "custom/launcher",
+    "hyprland/workspaces",
+    "custom/media"
+  ],
+  "modules-center": [
+    "hyprland/window"
+  ],
+  "modules-right": [
+    "cpu",
+    "memory",
+    "pulseaudio",
+    "network",
+    "clock",
+    "tray"
+  ],
+
+  "custom/launcher": {
+    "format": "󰀻",
+    "on-click": "wofi --show drun",
+    "tooltip": true,
+    "tooltip-format": "Lanzador de aplicaciones (Super + D)"
+  },
 
   "hyprland/workspaces": {
     "format": "{name}",
     "on-click": "activate",
+    "disable-scroll": false,
+    "all-outputs": true,
     "persistent-workspaces": {
       "*": 5
     }
   },
 
+  "custom/media": {
+    "format": "󰎆 {text}",
+    "max-length": 35,
+    "interval": 3,
+    "exec": "playerctl metadata --format '{{artist}} - {{title}}' 2>/dev/null",
+    "on-click": "playerctl play-pause",
+    "on-scroll-up": "playerctl next",
+    "on-scroll-down": "playerctl previous",
+    "tooltip": true,
+    "tooltip-format": "Reproductor multimedia (Click: Pausa/Play)"
+  },
+
   "hyprland/window": {
     "format": "{title}",
-    "max-length": 60,
+    "max-length": 55,
     "separate-outputs": true
   },
 
-  "clock": {
-    "format": "{:%H:%M  %d/%m}",
-    "tooltip-format": "{:%A, %d de %B de %Y}"
-  },
-
   "cpu": {
-    "format": "CPU {usage}%",
-    "interval": 2
+    "format": " {usage}%",
+    "interval": 2,
+    "tooltip": true
   },
 
   "memory": {
-    "format": "RAM {used}/{total} GiB",
-    "interval": 2
+    "format": " {used:0.1f}G",
+    "interval": 2,
+    "tooltip-format": "Memoria en uso: {used:0.2f}GiB de {total:0.2f}GiB"
   },
 
   "pulseaudio": {
-    "format": "VOL {volume}%",
-    "format-muted": "MUTE",
-    "on-click": "pavucontrol"
+    "format": "{icon} {volume}%",
+    "format-muted": "󰖁 MUTE",
+    "format-icons": {
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
+    "scroll-step": 5,
+    "on-click": "pavucontrol",
+    "tooltip": true,
+    "tooltip-format": "Volumen: {volume}%"
   },
 
   "network": {
-    "format-wifi": "WiFi {essid}",
-    "format-ethernet": "LAN {ifname}",
-    "format-disconnected": "Sin red",
+    "format-wifi": " {essid}",
+    "format-ethernet": "󰈀 LAN",
+    "format-disconnected": "󰪎 Sin red",
     "tooltip-format": "{ifname} via {gwaddr}",
     "on-click": "nm-connection-editor"
   },
 
-  "tray": {
-    "spacing": 8
+  "clock": {
+    "format": "󱑂 {:%H:%M}",
+    "format-alt": "󰃭 {:%A, %d de %B de %Y - %H:%M}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>"
   },
 
-  "custom/media": {
-    "format": "PLAY {text}",
-    "max-length": 40,
-    "interval": 5,
-    "exec": "playerctl metadata --format '{{artist}} - {{title}}' 2>/dev/null",
-    "on-click": "playerctl play-pause",
-    "on-scroll-up": "playerctl next",
-    "on-scroll-down": "playerctl previous"
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8
   }
 }

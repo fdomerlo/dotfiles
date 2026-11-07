@@ -191,6 +191,9 @@ done
 link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
 
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
+if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
+    link_file "$HYPR_SRC/wallpapers/default.png" "$CONFIG_HOME/hypr/wallpapers/default.png"
+fi
 ok "Directorio de wallpapers: $CONFIG_HOME/hypr/wallpapers"
 
 if [ ! -d /usr/share/icons/Bibata-Modern-Ice ]; then
