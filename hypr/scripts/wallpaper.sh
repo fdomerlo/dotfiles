@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Aplica el wallpaper: hyprpaper si existe la imagen; swaybg como fallback PikaOS.
+# Aplica el wallpaper: swaybg preferido por compatibilidad universal Wayland;
+# fallback a hyprpaper si swaybg no está disponible.
 # ==============================================================================
 set -euo pipefail
 
@@ -17,14 +18,18 @@ if [ -z "$WALL" ]; then
     fi
 fi
 
-pkill -x hyprpaper 2>/dev/null || true
 pkill -x swaybg 2>/dev/null || true
+pkill -x hyprpaper 2>/dev/null || true
 
-if [ -n "$WALL" ] && [ -f "$WALL" ] && command -v hyprpaper >/dev/null 2>&1; then
-    CONF_DIR="${XDG_RUNTIME_DIR:-$HOME/.cache}"
-    mkdir -p "$CONF_DIR"
-    CONF="$CONF_DIR/hyprpaper-runtime.conf"
-    cat > "$CONF" <<EOF
+if [ -n "$WALL" ] && [ -f "$WALL" ]; then
+    if command -v swaybg >/dev/null 2>&1; then
+        swaybg -i "$WALL" -m fill -c '#0c1012' >/dev/null 2>&1 &
+        exit 0
+    elif command -v hyprpaper >/dev/null 2>&1; then
+        CONF_DIR="${XDG_RUNTIME_DIR:-$HOME/.cache}"
+        mkdir -p "$CONF_DIR"
+        CONF="$CONF_DIR/hyprpaper-runtime.conf"
+        cat > "$CONF" <<EOF
 splash = false
 wallpaper {
     monitor =
@@ -32,16 +37,12 @@ wallpaper {
     fit_mode = cover
 }
 EOF
-    hyprpaper -c "$CONF" >/dev/null 2>&1 &
-    sleep 0.6
-    if pgrep -x hyprpaper >/dev/null 2>&1; then
-        # Best-effort: asegura la asignación en todos los monitores
-        hyprctl hyprpaper wallpaper ",$WALL,cover" >/dev/null 2>&1 || true
+        hyprpaper -c "$CONF" >/dev/null 2>&1 &
         exit 0
     fi
 fi
 
-# Fallback con el color base de PikaOS (Cyber-Teal / Deep Slate)
+# Fallback si no hay imagen: color sólido base de PikaOS
 if command -v swaybg >/dev/null 2>&1; then
     swaybg -c '#0c1012' >/dev/null 2>&1 &
 fi

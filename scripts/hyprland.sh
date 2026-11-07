@@ -201,7 +201,7 @@ if [ ! -d /usr/share/icons/Bibata-Modern-Ice ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 6. Agente polkit de usuario
+# 6. Agente polkit de usuario y servicios systemd
 # ------------------------------------------------------------------------------
 # No se habilita globalmente: el servicio se inicia solo desde autostart.conf
 # dentro de la sesión Hyprland, para no interferir con el agente de GNOME.
@@ -209,6 +209,14 @@ if [ -f /usr/lib/systemd/user/hyprpolkitagent.service ]; then
     ok "hyprpolkitagent disponible (se inicia desde autostart.conf en Hyprland)."
 else
     warn "No se encontró la unidad hyprpolkitagent.service; el agente podría no iniciarse."
+fi
+
+# El paquete Debian habilita hyprpaper.service como servicio systemd de usuario,
+# lo que provoca que intente arrancar en GNOME y falle en bucle. El wallpaper se
+# gestiona directamente vía wallpaper.sh desde autostart.conf en Hyprland.
+if systemctl --user is-enabled hyprpaper.service 2>/dev/null | grep -qv "masked"; then
+    systemctl --user disable --now hyprpaper.service 2>/dev/null || true
+    systemctl --user mask hyprpaper.service 2>/dev/null || true
 fi
 
 # ------------------------------------------------------------------------------
