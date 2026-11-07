@@ -61,6 +61,8 @@ MAIN_PKGS=(
     fonts-firacode
     fonts-noto-core
     fonts-font-awesome
+    curl
+    unzip
 )
 
 die() { echo -e "\n\033[31m✘ $*\033[0m" >&2; exit 1; }
@@ -192,6 +194,7 @@ for f in "$HYPR_SRC"/kitty/*; do
     link_file "$f" "$CONFIG_HOME/kitty/$(basename "$f")"
 done
 link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
+link_file "$HYPR_SRC/xdg-desktop-portal/portals.conf" "$CONFIG_HOME/xdg-desktop-portal/portals.conf"
 
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
 if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
@@ -215,6 +218,28 @@ if [ ! -d /usr/share/icons/Bibata-Modern-Ice ]; then
     warn "El tema de cursor 'Bibata-Modern-Ice' no está presente; Hyprland usará el cursor por defecto."
 fi
 
+# Nerd Fonts: style.css de Waybar usa "Symbols Nerd Font" para los glifos de los
+# módulos (launcher, CPU, memoria, reloj, etc.). Debian no empaqueta Nerd Fonts,
+# así que se descarga el paquete oficial de símbolos si no está instalado.
+NERD_FONT_DIR="$HOME/.local/share/fonts"
+if fc-list : family 2>/dev/null | grep -qi "Symbols Nerd Font"; then
+    ok "Symbols Nerd Font ya está instalada."
+else
+    echo "==> Instalando Symbols Nerd Font (glifos de Waybar)..."
+    NERD_TMP="$(mktemp -d)"
+    if curl -fsSL -o "$NERD_TMP/symbols.zip" \
+            https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip \
+        && unzip -oq "$NERD_TMP/symbols.zip" -d "$NERD_TMP"; then
+        mkdir -p "$NERD_FONT_DIR"
+        cp -f "$NERD_TMP"/SymbolsNerdFont*.ttf "$NERD_FONT_DIR"/
+        fc-cache -f "$NERD_FONT_DIR" >/dev/null 2>&1 || true
+        ok "Symbols Nerd Font instalada en $NERD_FONT_DIR"
+    else
+        warn "No se pudo descargar Symbols Nerd Font; los iconos de Waybar se verán como cuadros."
+    fi
+    rm -rf "$NERD_TMP"
+fi
+
 # ------------------------------------------------------------------------------
 # 6. Agente polkit de usuario y servicios systemd
 # ------------------------------------------------------------------------------
@@ -232,6 +257,15 @@ fi
 if systemctl --user is-enabled hyprpaper.service 2>/dev/null | grep -qv "masked"; then
     systemctl --user disable --now hyprpaper.service 2>/dev/null || true
     systemctl --user mask hyprpaper.service 2>/dev/null || true
+fi
+
+# El paquete Debian también habilita waybar.service, que arranca con
+# graphical-session.target (GNOME) y falla en bucle porque GNOME no soporta
+# wlr-layer-shell. Waybar se inicia solo desde autostart.conf en Hyprland,
+# esperando los sockets IPC con scripts/start-waybar.sh.
+if systemctl --user is-enabled waybar.service 2>/dev/null | grep -qv "masked"; then
+    systemctl --user disable --now waybar.service 2>/dev/null || true
+    systemctl --user mask waybar.service 2>/dev/null || true
 fi
 
 # ------------------------------------------------------------------------------
