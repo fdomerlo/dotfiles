@@ -36,7 +36,7 @@ install: host podman shell devtools tooling devai desktop clean
 	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
 
 # Instalación completa desatendida + Hyprland
-install: host podman shell devtools tooling devai desktop timeshift hyprland clean
+full-install: host podman shell devtools tooling devai desktop timeshift hyprland clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
 	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
 
