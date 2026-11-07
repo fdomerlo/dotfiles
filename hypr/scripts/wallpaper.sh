@@ -1,48 +1,176 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Aplica el wallpaper: swaybg preferido por compatibilidad universal Wayland;
-# fallback a hyprpaper si swaybg no está disponible.
+# Gestor y cambiador automático de Wallpaper para Hyprland / Wayland
+# - Selecciona wallpapers aleatorios (.png, .jpg, .jpeg, .webp)
+# - Modo daemon: rota periódicamente (por defecto cada 30 min / 1800 seg)
+# - Transición suave sin parpadeo negro
+# - Admite cambio a demanda con --next o enviando señal SIGUSR1
 # ==============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_WALL="$(cd "$SCRIPT_DIR/.." && pwd)/wallpapers/default.png"
-USER_WALL="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpapers/default.png"
+REPO_WALLPAPERS="$(cd "$SCRIPT_DIR/.." && pwd)/wallpapers"
+USER_WALLPAPERS="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpapers"
+PICTURES_ES="$HOME/Imágenes/Wallpapers"
+PICTURES_EN="$HOME/Pictures/Wallpapers"
 
-WALL="${HYPR_WALLPAPER:-}"
-if [ -z "$WALL" ]; then
-    if [ -f "$USER_WALL" ]; then
-        WALL="$USER_WALL"
-    elif [ -f "$REPO_WALL" ]; then
-        WALL="$REPO_WALL"
+STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr_current_wallpaper"
+PID_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr_wallpaper_daemon.pid"
+
+DEFAULT_INTERVAL=1800 # 30 minutos
+
+# Obtener lista de todos los wallpapers disponibles en las carpetas
+get_wallpapers() {
+    local dirs=("$USER_WALLPAPERS" "$PICTURES_ES" "$PICTURES_EN" "$REPO_WALLPAPERS")
+    local found=()
+    for d in "${dirs[@]}"; do
+        if [ -d "$d" ]; then
+            while IFS= read -r -d '' file; do
+                found+=("$file")
+            done < <(find -L "$d" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \) -print0 2>/dev/null)
+        fi
+    done
+    if [ ${#found[@]} -gt 0 ]; then
+        printf "%s\n" "${found[@]}" | sort -u
     fi
-fi
+}
 
-pkill -x swaybg 2>/dev/null || true
-pkill -x hyprpaper 2>/dev/null || true
+# Aplica una imagen de fondo específica
+apply_wallpaper() {
+    local wall="$1"
+    if [ ! -f "$wall" ]; then
+        return 1
+    fi
 
-if [ -n "$WALL" ] && [ -f "$WALL" ]; then
+    # Guardar la imagen aplicada como actual
+    echo "$wall" > "$STATE_FILE"
+
     if command -v swaybg >/dev/null 2>&1; then
-        swaybg -i "$WALL" -m fill -c '#0c1012' >/dev/null 2>&1 &
-        exit 0
+        local old_pids
+        old_pids=$(pgrep -x swaybg || true)
+        swaybg -i "$wall" -m fill -c '#0c1012' >/dev/null 2>&1 &
+        sleep 0.5
+        if [ -n "$old_pids" ]; then
+            kill $old_pids 2>/dev/null || true
+        fi
+        return 0
     elif command -v hyprpaper >/dev/null 2>&1; then
-        CONF_DIR="${XDG_RUNTIME_DIR:-$HOME/.cache}"
-        mkdir -p "$CONF_DIR"
-        CONF="$CONF_DIR/hyprpaper-runtime.conf"
-        cat > "$CONF" <<EOF
+        local conf_dir="${XDG_RUNTIME_DIR:-$HOME/.cache}"
+        mkdir -p "$conf_dir"
+        local conf="$conf_dir/hyprpaper-runtime.conf"
+        cat > "$conf" <<EOF
 splash = false
 wallpaper {
     monitor =
-    path = $WALL
+    path = $wall
     fit_mode = cover
 }
 EOF
-        hyprpaper -c "$CONF" >/dev/null 2>&1 &
-        exit 0
+        pkill -x hyprpaper 2>/dev/null || true
+        hyprpaper -c "$conf" >/dev/null 2>&1 &
+        return 0
     fi
-fi
 
-# Fallback si no hay imagen: color sólido base de PikaOS
-if command -v swaybg >/dev/null 2>&1; then
-    swaybg -c '#0c1012' >/dev/null 2>&1 &
-fi
+    return 1
+}
+
+# Elige un wallpaper aleatorio (sin repetir el actual si hay más de uno)
+apply_random() {
+    local wall_list=()
+    mapfile -t wall_list < <(get_wallpapers)
+    local total=${#wall_list[@]}
+
+    if [ "$total" -eq 0 ]; then
+        if command -v swaybg >/dev/null 2>&1; then
+            pkill -x swaybg 2>/dev/null || true
+            swaybg -c '#0c1012' >/dev/null 2>&1 &
+        fi
+        return 0
+    fi
+
+    local current=""
+    if [ -f "$STATE_FILE" ]; then
+        current=$(cat "$STATE_FILE" 2>/dev/null || true)
+    fi
+
+    local candidate=""
+    if [ "$total" -eq 1 ]; then
+        candidate="${wall_list[0]}"
+    else
+        local filtered=()
+        for w in "${wall_list[@]}"; do
+            if [ "$w" != "$current" ]; then
+                filtered+=("$w")
+            fi
+        done
+        if [ ${#filtered[@]} -gt 0 ]; then
+            candidate="${filtered[RANDOM % ${#filtered[@]}]}"
+        else
+            candidate="${wall_list[RANDOM % total]}"
+        fi
+    fi
+
+    apply_wallpaper "$candidate"
+}
+
+# Bucle en segundo plano (daemon)
+run_daemon() {
+    local interval="${1:-$DEFAULT_INTERVAL}"
+
+    # Prevenir instancias duplicadas
+    if [ -f "$PID_FILE" ]; then
+        local prev_pid
+        prev_pid=$(cat "$PID_FILE" 2>/dev/null || true)
+        if [ -n "$prev_pid" ] && kill -0 "$prev_pid" 2>/dev/null; then
+            echo "El daemon de wallpapers ya está en ejecución (PID $prev_pid)."
+            exit 0
+        fi
+    fi
+    echo "$$" > "$PID_FILE"
+    trap 'rm -f "$PID_FILE"; exit 0' EXIT INT TERM
+
+    # Atrapa SIGUSR1 para cambiar inmediatamente de fondo a demanda
+    trap 'apply_random' USR1
+
+    # Primer fondo al inicio
+    apply_random
+
+    while true; do
+        sleep "$interval" &
+        wait $! || true
+        apply_random
+    done
+}
+
+# Solicita al daemon el cambio inmediato o ejecuta si no hay daemon activo
+trigger_next() {
+    if [ -f "$PID_FILE" ]; then
+        local pid
+        pid=$(cat "$PID_FILE" 2>/dev/null || true)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill -USR1 "$pid"
+            exit 0
+        fi
+    fi
+    apply_random
+}
+
+case "${1:-}" in
+    --daemon|-d)
+        run_daemon "${2:-$DEFAULT_INTERVAL}"
+        ;;
+    --next|-n|--random|-r)
+        trigger_next
+        ;;
+    "")
+        apply_random
+        ;;
+    *)
+        if [ -f "$1" ]; then
+            apply_wallpaper "$1"
+        else
+            echo "Uso: $0 [--daemon [segundos] | --next | /ruta/a/imagen]"
+            exit 1
+        fi
+        ;;
+esac
