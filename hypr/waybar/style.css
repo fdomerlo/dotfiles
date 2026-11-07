@@ -106,8 +106,10 @@ window#waybar.empty #window {
 #memory,
 #pulseaudio,
 #network,
+#bluetooth,
 #clock,
-#tray {
+#tray,
+#custom-power {
     background: rgba(24, 34, 36, 0.65);
     border: 1px solid rgba(42, 56, 52, 0.70);
     border-radius: 8px;
@@ -140,6 +142,18 @@ window#waybar.empty #window {
     color: #e56b72;
 }
 
+#bluetooth {
+    color: #7aa2f7;
+}
+
+#bluetooth.disabled {
+    color: #91a39a;
+}
+
+#bluetooth.connected {
+    color: #48d7b0;
+}
+
 #clock {
     color: #0db7d4;
     font-weight: bold;
@@ -157,4 +171,17 @@ window#waybar.empty #window {
 #tray > .needs-attention {
     -gtk-icon-effect: highlight;
     background-color: #e56b72;
+}
+
+#custom-power {
+    color: #e56b72;
+    border-color: rgba(229, 107, 114, 0.40);
+    padding: 0 11px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+#custom-power:hover {
+    background: #e56b72;
+    color: #0c1012;
 }
