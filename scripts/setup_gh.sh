@@ -75,45 +75,73 @@ fi
 echo "La conexión SSH requiere configuración. Verificando GitHub CLI..."
 
 if ! command -v gh &>/dev/null; then
-    echo "[-] Error: gh CLI no está instalado."
-    exit 1
+    echo "gh CLI no está instalado. Instalando desde el repositorio APT oficial..."
+    if ! command -v curl &>/dev/null || ! dpkg -s ca-certificates &>/dev/null; then
+        sudo apt-get -o DPkg::Lock::Timeout=120 update -y
+        sudo apt-get -o DPkg::Lock::Timeout=120 install -y curl ca-certificates
+    fi
+
+    sudo install -m 0755 -d /etc/apt/keyrings
+    if [ ! -s /etc/apt/keyrings/githubcli-archive-keyring.gpg ]; then
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+        sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    fi
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    sudo apt-get -o DPkg::Lock::Timeout=120 update -y
+    sudo apt-get -o DPkg::Lock::Timeout=120 install -y gh
 fi
 
 if ! gh auth status &>/dev/null; then
     echo "No se detectó una sesión activa en GitHub CLI."
-    echo "Iniciando inicio de sesión interactivo con los permisos requeridos..."
-    gh auth login -h github.com -p ssh -w -s admin:public_key
-fi
-
-# 5. Autodetectar datos del desarrollador vía gh
-echo "Detectando información de la cuenta de GitHub..."
-GH_USER=$(gh api user --jq '.login')
-USER_EMAIL=$(gh api user --jq '.email // empty')
-if [ -z "$USER_EMAIL" ]; then
-    USER_EMAIL="${GH_USER}@users.noreply.github.com"
-fi
-
-# 6. Verificar presencia de la clave en GitHub y subirla si falta
-echo "Verificando llaves registradas en tu perfil de GitHub..."
-PUB_BLOB=$(awk '{print $2}' "${KEY_PATH}.pub")
-
-if gh ssh-key list 2>/dev/null | grep -F "$PUB_BLOB" >/dev/null; then
-    echo "✔ Esta clave pública ya está registrada en GitHub."
-else
-    # Validar scope admin:public_key antes de intentar añadirla
-    if ! gh auth status 2>&1 | grep -q "admin:public_key"; then
-        echo "La clave SSH no está en GitHub y la sesión actual no tiene permiso 'admin:public_key'."
-        echo "Actualizando permisos de tu sesión de GitHub CLI..."
-        gh auth refresh -h github.com -s admin:public_key
+    if [ -t 1 ]; then
+        echo "Iniciando inicio de sesión interactivo con los permisos requeridos..."
+        gh auth login -h github.com -p ssh -w -s admin:public_key
+    else
+        echo "Modo no interactivo detectado. Omitiendo inicio de sesión en GitHub CLI."
+        echo "Por favor, inicie sesión manualmente más tarde ejecutando: gh auth login -h github.com -p ssh -w -s admin:public_key"
     fi
-    echo "Subiendo la clave pública a GitHub bajo el título '$KEY_TITLE'..."
-    gh ssh-key add "${KEY_PATH}.pub" --title "$KEY_TITLE" --type authentication
-    sleep 2
 fi
 
-# 7. Asegurar identidad global de Git sin sobrescribir la ya versionada en shell/gitconfig
-echo "Verificando identidad global de Git..."
-ensure_git_identity "$GH_USER" "$USER_EMAIL"
+# Solo continuamos con operaciones de API si estamos autenticados
+if gh auth status &>/dev/null; then
+    # 5. Autodetectar datos del desarrollador vía gh
+    echo "Detectando información de la cuenta de GitHub..."
+    GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
+    USER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null || true)
+    if [ -z "$USER_EMAIL" ] && [ -n "$GH_USER" ]; then
+        USER_EMAIL="${GH_USER}@users.noreply.github.com"
+    fi
+
+    # 6. Verificar presencia de la clave en GitHub y subirla si falta
+    echo "Verificando llaves registradas en tu perfil de GitHub..."
+    PUB_BLOB=$(awk '{print $2}' "${KEY_PATH}.pub")
+
+    if gh ssh-key list 2>/dev/null | grep -F "$PUB_BLOB" >/dev/null; then
+        echo "✔ Esta clave pública ya está registrada en GitHub."
+    else
+        # Validar scope admin:public_key antes de intentar añadirla
+        if ! gh auth status 2>&1 | grep -q "admin:public_key"; then
+            echo "La clave SSH no está en GitHub y la sesión actual no tiene permiso 'admin:public_key'."
+            if [ -t 1 ]; then
+                echo "Actualizando permisos de tu sesión de GitHub CLI..."
+                gh auth refresh -h github.com -s admin:public_key
+            else
+                echo "Omitiendo refresco de permisos en modo no interactivo."
+            fi
+        fi
+        if gh auth status 2>&1 | grep -q "admin:public_key"; then
+            echo "Subiendo la clave pública a GitHub bajo el título '$KEY_TITLE'..."
+            gh ssh-key add "${KEY_PATH}.pub" --title "$KEY_TITLE" --type authentication 2>/dev/null || echo "Error subiendo la clave a GitHub."
+            sleep 2
+        fi
+    fi
+
+    # 7. Asegurar identidad global de Git sin sobrescribir la ya versionada en shell/gitconfig
+    echo "Verificando identidad global de Git..."
+    ensure_git_identity "$GH_USER" "$USER_EMAIL"
+else
+    echo "Operaciones de API de GitHub omitidas debido a la falta de autenticación."
+fi
 
 # 8. Probar la conexión SSH de forma robusta
 echo "Probando conexión con GitHub..."

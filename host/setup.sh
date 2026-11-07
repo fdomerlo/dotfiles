@@ -11,6 +11,17 @@ echo "================================================================="
 echo "==> [Debian Stable] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
 
+echo "==> Configurando timeout global para locks de APT (120s)..."
+echo 'DPkg::Lock::Timeout "120";' | sudo tee /etc/apt/apt.conf.d/99lock-timeout > /dev/null
+
+echo "==> Esperando a que finalicen tareas automáticas de APT en segundo plano..."
+for svc in apt-daily.service apt-daily-upgrade.service; do
+    if systemctl is-active --quiet "$svc"; then
+        echo "    Esperando a $svc..."
+        while systemctl is-active --quiet "$svc"; do sleep 2; done
+    fi
+done
+
 echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
 bash "$REPO_DIR/scripts/apt-maintenance.sh"
 
