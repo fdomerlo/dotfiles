@@ -188,6 +188,9 @@ done
 for f in "$HYPR_SRC"/wofi/*; do
     link_file "$f" "$CONFIG_HOME/wofi/$(basename "$f")"
 done
+for f in "$HYPR_SRC"/kitty/*; do
+    link_file "$f" "$CONFIG_HOME/kitty/$(basename "$f")"
+done
 link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
 
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
@@ -195,6 +198,18 @@ if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
     link_file "$HYPR_SRC/wallpapers/default.png" "$CONFIG_HOME/hypr/wallpapers/default.png"
 fi
 ok "Directorio de wallpapers: $CONFIG_HOME/hypr/wallpapers"
+
+# Modo oscuro GTK3/GTK4 para aplicaciones en Hyprland
+for gtk_ver in gtk-3.0 gtk-4.0; do
+    mkdir -p "$CONFIG_HOME/$gtk_ver"
+    if [ ! -f "$CONFIG_HOME/$gtk_ver/settings.ini" ]; then
+        cat > "$CONFIG_HOME/$gtk_ver/settings.ini" <<EOF
+[Settings]
+gtk-theme-name = Adwaita-dark
+gtk-application-prefer-dark-theme = 1
+EOF
+    fi
+done
 
 if [ ! -d /usr/share/icons/Bibata-Modern-Ice ]; then
     warn "El tema de cursor 'Bibata-Modern-Ice' no está presente; Hyprland usará el cursor por defecto."

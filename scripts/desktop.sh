@@ -52,6 +52,10 @@ gsettings_set_if_needed org.gnome.desktop.interface monospace-font-name "'JetBra
 # Título de ventanas
 gsettings_set_if_needed org.gnome.desktop.wm.preferences titlebar-font "'Adwaita Sans Bold 11'" "Adwaita Sans Bold 11"
 
+# Modo oscuro predeterminado
+gsettings_set_if_needed org.gnome.desktop.interface color-scheme "'prefer-dark'" "prefer-dark"
+gsettings_set_if_needed org.gnome.desktop.interface gtk-theme "'Adwaita-dark'" "Adwaita-dark"
+
 echo "    ✔ Interfaz:     $(gsettings get org.gnome.desktop.interface font-name 2>/dev/null || echo 'N/A')"
 echo "    ✔ Documentos:   $(gsettings get org.gnome.desktop.interface document-font-name 2>/dev/null || echo 'N/A')"
 echo "    ✔ Monoespacio:  $(gsettings get org.gnome.desktop.interface monospace-font-name 2>/dev/null || echo 'N/A')"
