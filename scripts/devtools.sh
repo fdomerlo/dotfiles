@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ $EUID -eq 0 ]]; then
+    echo "ERROR: Ejecutá este script como usuario normal (sin sudo)." >&2
+    exit 1
+fi
+
+export PATH="$HOME/.local/bin:$HOME/.local/share/fnm:$PATH"
+
 echo "================================================================="
 echo "==> Instalando DevManagers (gh, uv, fnm, sdkman)..."
 echo "================================================================="
@@ -42,7 +49,7 @@ fi
 
 if ! command -v uv &> /dev/null && [ ! -f "$HOME/.local/bin/uv" ]; then
     echo "Instalando uv (Astral Python Package Manager)..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh
 else
     echo "✔ uv ya está instalado"
 fi
@@ -60,7 +67,7 @@ if [ ! -d "$HOME/.sdkman" ]; then
         sudo apt-get install -y zip unzip
     fi
     export SDKMAN_DIR="$HOME/.sdkman"
-    curl -s "https://get.sdkman.io" | bash
+    curl -fsSL "https://get.sdkman.io?rcupdate=false" | bash
 else
     echo "✔ sdkman ya está instalado"
 fi

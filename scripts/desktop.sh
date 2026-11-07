@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ $EUID -eq 0 ]]; then
+    echo "ERROR: Ejecutá este script como usuario normal (sin sudo)." >&2
+    exit 1
+fi
+
+gsettings_set_if_needed() {
+    local schema="$1" key="$2" expected="$3" raw="$4"
+    local current
+    current="$(gsettings get "$schema" "$key" 2>/dev/null || true)"
+    if [[ "$current" != "$expected" ]]; then
+        gsettings set "$schema" "$key" "$raw" 2>/dev/null || true
+    fi
+}
+
 echo "================================================================="
 echo "==> Configurando entorno de escritorio GNOME (Fuentes y Extensiones)"
 echo "================================================================="
@@ -27,16 +41,16 @@ if [ "${#MISSING_FONTS[@]}" -gt 0 ] && command -v apt-get &>/dev/null; then
 fi
 
 # Interfaz: Adwaita Sans 11 (la predeterminada del sistema, legibilidad limpia y descansada)
-gsettings set org.gnome.desktop.interface font-name 'Adwaita Sans 11' || true
+gsettings_set_if_needed org.gnome.desktop.interface font-name "'Adwaita Sans 11'" "Adwaita Sans 11"
 
 # Documentos: Noto Sans Regular 12
-gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 12' || true
+gsettings_set_if_needed org.gnome.desktop.interface document-font-name "'Noto Sans 12'" "Noto Sans 12"
 
 # Monoespaciada: JetBrains Mono 11 (óptima legibilidad, ligaduras y descanso visual)
-gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 11' || true
+gsettings_set_if_needed org.gnome.desktop.interface monospace-font-name "'JetBrains Mono 11'" "JetBrains Mono 11"
 
 # Título de ventanas
-gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Adwaita Sans Bold 11' 2>/dev/null || true
+gsettings_set_if_needed org.gnome.desktop.wm.preferences titlebar-font "'Adwaita Sans Bold 11'" "Adwaita Sans Bold 11"
 
 echo "    ✔ Interfaz:     $(gsettings get org.gnome.desktop.interface font-name 2>/dev/null || echo 'N/A')"
 echo "    ✔ Documentos:   $(gsettings get org.gnome.desktop.interface document-font-name 2>/dev/null || echo 'N/A')"
@@ -46,7 +60,7 @@ echo "    ✔ Monoespacio:  $(gsettings get org.gnome.desktop.interface monospac
 # 2. Configuración de Ventanas (Botones minimizar, maximizar y cerrar)
 # ------------------------------------------------------------------------------
 echo "==> Configurando botones de ventana (minimizar, maximizar, cerrar)..."
-gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close' 2>/dev/null || true
+gsettings_set_if_needed org.gnome.desktop.wm.preferences button-layout "'appmenu:minimize,maximize,close'" "appmenu:minimize,maximize,close"
 echo "    ✔ Botones:      $(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo 'N/A')"
 
 # ------------------------------------------------------------------------------
@@ -75,7 +89,7 @@ echo "    ✔ Directorio de aplicaciones: $APPIMAGE_DIR"
 # ------------------------------------------------------------------------------
 # 4. Deshabilitar validación estricta de versión de extensiones en GNOME
 # ------------------------------------------------------------------------------
-gsettings set org.gnome.shell disable-extension-version-validation true 2>/dev/null || true
+gsettings_set_if_needed org.gnome.shell disable-extension-version-validation "true" "true"
 
 # ------------------------------------------------------------------------------
 # 5. Instalación de Extensiones

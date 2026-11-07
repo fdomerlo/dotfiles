@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ $EUID -eq 0 ]]; then
+    echo "ERROR: Ejecutá este script como usuario normal (sin sudo)." >&2
+    exit 1
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
 echo "================================================================="
 echo "==> Instalando navegadores y editores (VS Code, Chrome, Zed)..."
 echo "================================================================="

@@ -2,6 +2,15 @@
 # scripts/setup_gh.sh - Configuración SSH automática con GitHub CLI
 set -euo pipefail
 
+if [[ $EUID -eq 0 ]]; then
+    echo "ERROR: Ejecutá este script como usuario normal (sin sudo)." >&2
+    exit 1
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
+MODE="${1:-default}"
+
 echo "================================================================="
 echo "=== Iniciando configuración SSH Automatizada con GitHub ==="
 echo "================================================================="
@@ -37,7 +46,7 @@ if ! pgrep -u "$USER" ssh-agent > /dev/null; then
 fi
 ssh-add "$KEY_PATH" 2>/dev/null || true
 
-# Función auxiliar: sincroniza user.name y user.email solo si están vacíos (no ensucia shell/gitconfig versionado)
+# Función auxiliar: sincroniza user.name y user.email solo si están vacíos
 ensure_git_identity() {
     local gh_user="${1:-}"
     local gh_email="${2:-}"
@@ -57,7 +66,7 @@ ensure_git_identity() {
 echo "Verificando conexión SSH existente con GitHub..."
 SSH_CHECK=$(ssh -T -i "$KEY_PATH" -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
 
-if echo "$SSH_CHECK" | grep -q "successfully authenticated"; then
+if [[ "$MODE" != "--auth" && "$MODE" != "auth" ]] && echo "$SSH_CHECK" | grep -q "successfully authenticated"; then
     echo "✔ Conexión SSH con GitHub ya autenticada y operativa."
     if command -v gh &>/dev/null && gh auth status &>/dev/null; then
         GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
@@ -71,49 +80,67 @@ if echo "$SSH_CHECK" | grep -q "successfully authenticated"; then
     exit 0
 fi
 
-# 4. Si SSH no funciona, resolver autenticación con GitHub CLI
-echo "La conexión SSH requiere configuración. Verificando GitHub CLI..."
+# 4. Si SSH no funciona o se fuerza --auth, resolver con GitHub CLI
+echo "Verificando GitHub CLI..."
 
 if ! command -v gh &>/dev/null; then
-    echo "[-] Error: gh CLI no está instalado."
-    exit 1
+    if [ -x "$HOME/.local/bin/gh" ]; then
+        export PATH="$HOME/.local/bin:$PATH"
+    else
+        echo "[-] Error: gh CLI no está instalado en PATH ni en ~/.local/bin/gh."
+        exit 1
+    fi
 fi
 
-if ! gh auth status &>/dev/null; then
-    echo "No se detectó una sesión activa en GitHub CLI."
-    echo "Iniciando inicio de sesión interactivo con los permisos requeridos..."
-    gh auth login -h github.com -p ssh -w -s admin:public_key
+# Configurar protocolo git en gh como SSH de forma idempotente
+CURRENT_PROTO="$(gh config get git_protocol 2>/dev/null || true)"
+if [[ "$CURRENT_PROTO" != "ssh" ]]; then
+    gh config set git_protocol ssh 2>/dev/null || true
+fi
+
+if ! gh auth status &>/dev/null || [[ "$MODE" == "--auth" || "$MODE" == "auth" ]]; then
+    if [[ -t 0 || "$MODE" == "--auth" || "$MODE" == "auth" ]]; then
+        echo "No se detectó una sesión activa en GitHub CLI."
+        echo "Iniciando inicio de sesión interactivo con los permisos requeridos..."
+        gh auth login -h github.com -p ssh -w -s admin:public_key
+    else
+        echo "⚠️ Aviso: GitHub CLI no está autenticado y no hay una TTY interactiva disponible."
+        echo "   Para iniciar sesión y subir tu clave SSH ejecuta: make github-auth"
+        exit 0
+    fi
 fi
 
 # 5. Autodetectar datos del desarrollador vía gh
 echo "Detectando información de la cuenta de GitHub..."
-GH_USER=$(gh api user --jq '.login')
-USER_EMAIL=$(gh api user --jq '.email // empty')
-if [ -z "$USER_EMAIL" ]; then
+GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
+USER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null || true)
+if [ -z "$USER_EMAIL" ] && [ -n "$GH_USER" ]; then
     USER_EMAIL="${GH_USER}@users.noreply.github.com"
 fi
 
 # 6. Verificar presencia de la clave en GitHub y subirla si falta
 echo "Verificando llaves registradas en tu perfil de GitHub..."
-PUB_BLOB=$(awk '{print $2}' "${KEY_PATH}.pub")
-
-if gh ssh-key list 2>/dev/null | grep -F "$PUB_BLOB" >/dev/null; then
-    echo "✔ Esta clave pública ya está registrada en GitHub."
-else
-    # Validar scope admin:public_key antes de intentar añadirla
-    if ! gh auth status 2>&1 | grep -q "admin:public_key"; then
-        echo "La clave SSH no está en GitHub y la sesión actual no tiene permiso 'admin:public_key'."
-        echo "Actualizando permisos de tu sesión de GitHub CLI..."
-        gh auth refresh -h github.com -s admin:public_key
+if [ -f "${KEY_PATH}.pub" ]; then
+    PUB_BLOB=$(awk '{print $2}' "${KEY_PATH}.pub")
+    if gh ssh-key list 2>/dev/null | grep -F "$PUB_BLOB" >/dev/null; then
+        echo "✔ Esta clave pública ya está registrada en GitHub."
+    else
+        if ! gh auth status 2>&1 | grep -q "admin:public_key"; then
+            echo "La clave SSH no está en GitHub y la sesión actual no tiene permiso 'admin:public_key'."
+            echo "Actualizando permisos de tu sesión de GitHub CLI..."
+            gh auth refresh -h github.com -s admin:public_key
+        fi
+        echo "Subiendo la clave pública a GitHub bajo el título '$KEY_TITLE'..."
+        gh ssh-key add "${KEY_PATH}.pub" --title "$KEY_TITLE" --type authentication
+        sleep 2
     fi
-    echo "Subiendo la clave pública a GitHub bajo el título '$KEY_TITLE'..."
-    gh ssh-key add "${KEY_PATH}.pub" --title "$KEY_TITLE" --type authentication
-    sleep 2
 fi
 
-# 7. Asegurar identidad global de Git sin sobrescribir la ya versionada en shell/gitconfig
-echo "Verificando identidad global de Git..."
-ensure_git_identity "$GH_USER" "$USER_EMAIL"
+# 7. Asegurar identidad global de Git
+if [ -n "$GH_USER" ]; then
+    echo "Verificando identidad global de Git..."
+    ensure_git_identity "$GH_USER" "$USER_EMAIL"
+fi
 
 # 8. Probar la conexión SSH de forma robusta
 echo "Probando conexión con GitHub..."
@@ -121,7 +148,7 @@ SSH_CHECK=$(ssh -T -i "$KEY_PATH" -o StrictHostKeyChecking=no -o ConnectTimeout=
 
 if echo "$SSH_CHECK" | grep -q "successfully authenticated"; then
     echo "================================================================="
-    echo "✔ ¡SSH y GitHub configurados con éxito para $GH_USER!"
+    echo "✔ ¡SSH y GitHub configurados con éxito${GH_USER:+ para $GH_USER}!"
     echo "================================================================="
 else
     echo "⚠️ Advertencia: No se pudo validar la conexión SSH automáticamente."

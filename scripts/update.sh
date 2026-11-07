@@ -9,6 +9,8 @@
 #   shell por defecto (chsh), linger, ni registros de Podman.
 set -euo pipefail
 
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/local/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 warn() { echo "  ⚠️ $1"; }

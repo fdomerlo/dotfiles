@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/local/bin:$PATH"
+
 echo "================================================================="
 echo "       Debian Stable Workstation - Verificación de Estado          "
 echo "================================================================="
@@ -16,6 +21,21 @@ check_status() {
 check_optional() {
     echo -e " [ \033[33mINFO\033[0m ] $1"
 }
+
+# 0. Validación de sintaxis de scripts del repositorio
+echo -n "Sintaxis Bash de scripts del repositorio... "
+syntax_fail=0
+for s in "$REPO_DIR"/host/*.sh "$REPO_DIR"/scripts/*.sh "$REPO_DIR"/shell/devctl; do
+    if [ -f "$s" ] && ! bash -n "$s" &>/dev/null; then
+        syntax_fail=1
+        echo -e "\n  -> Error de sintaxis en: ${s#"$REPO_DIR/"}"
+    fi
+done
+if [ $syntax_fail -eq 0 ]; then
+    check_status 0 "Todos los scripts pasaron 'bash -n' correctamente"
+else
+    check_status 1 "Se detectaron errores de sintaxis en scripts"
+fi
 
 # 1. Controlador de Gráficos (AMD / Intel)
 echo -n "Controlador de gráficos (DRM/GPU)... "
@@ -90,7 +110,7 @@ fi
 
 # 8. Herramientas CLI críticas
 echo "Disponibilidad de herramientas clave:"
-for cmd in git gh uv fnm code zed antigravity podman; do
+for cmd in git gh uv fnm code zed opencode antigravity agy podman; do
     echo -n "  -> $cmd: "
     if command -v "$cmd" &>/dev/null || [ -f "$HOME/.local/bin/$cmd" ]; then
         check_status 0 "Presente"

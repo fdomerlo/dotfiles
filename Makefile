@@ -6,8 +6,10 @@ SHELL := /bin/bash
 
 export RUNZSH=no
 export CHSH=no
+export KEEP_ZSHRC=yes
+export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep
+.PHONY: help install update host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
@@ -74,6 +76,17 @@ devtools:
 	@echo "==> Instalando DevManagers (gh, uv, fnm, sdkman)..."
 	bash scripts/devtools.sh
 	bash scripts/setup_gh.sh
+	bash scripts/setup_git.sh
+
+# Configuración explícita de identidad Git
+gitconfig:
+	@echo "==> Configurando identidad global de Git..."
+	bash scripts/setup_git.sh
+
+# Autenticación interactiva opcional directa con GitHub CLI
+github-auth:
+	@echo "==> Autenticación interactiva con GitHub CLI..."
+	bash scripts/setup_gh.sh --auth
 
 # 5. Navegadores y Editores Nativos
 tooling:

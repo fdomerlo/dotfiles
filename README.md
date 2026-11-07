@@ -102,12 +102,13 @@ make help
 │   ├── apt-maintenance.sh         #   Higiene APT (podman-only, DEB822, deduplicación y keyrings)
 │   ├── clean-system.sh            #   Limpieza profunda post-upgrade (purga rc, huérfanos, cachés y logs)
 │   ├── desktop.sh                 #   Tipografías, botones ventana, carpetas Proyectos/Aplicaciones y GNOME
-│   ├── devai.sh                   #   Instalador de OpenCode CLI y Antigravity Core/CLI
-│   ├── devtools.sh                #   Instalador de gh (APT), uv, fnm y sdkman
+│   ├── devai.sh                   #   Instalador de OpenCode CLI, Antigravity CLI y Core/IDE
+│   ├── devtools.sh                #   Instalador de gh (binario oficial), uv, fnm y sdkman
 │   ├── hyprland.sh                #   Instalador del perfil opcional Hyprland (solo Debian Stable)
 │   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
-│   ├── setup_agy.sh               #   Despliegue de Antigravity Core/IDE en /opt y CLI
-│   ├── setup_gh.sh                #   Configuración desatendida de clave SSH con GitHub
+│   ├── setup_agy.sh               #   Despliegue atómico de Antigravity Core/IDE en /opt (opcional)
+│   ├── setup_gh.sh                #   Configuración y autenticación SSH con GitHub CLI
+│   ├── setup_git.sh               #   Configuración idempotente de identidad global de Git
 │   ├── tooling.sh                 #   Instalación de VS Code (APT DEB822), Chrome (.deb) y Zed
 │   ├── update.sh                  #   Actualización idempotente (only-upgrade + self-updates + flatpak)
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
@@ -130,9 +131,11 @@ make help
 | `make timeshift` | *(Opcional)* Instala y configura `/etc/timeshift/timeshift.json` sin crear snapshots iniciales |
 | `make podman` | Configura Podman en modo Rootless con backend pasta (systemd --user) |
 | `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig` y `devctl` |
-| `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman` y sincroniza credenciales SSH con GitHub |
+| `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman`, prepara SSH con GitHub e identidad Git |
+| `make gitconfig` | Configura `user.name` y `user.email` en Git (idempotente e interactivo) |
+| `make github-auth` | Flujo interactivo oficial de autenticación en GitHub CLI (`gh auth login`) |
 | `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed) |
-| `make devai` | Instala OpenCode CLI, Antigravity CLI y despliega Antigravity Core/IDE |
+| `make devai` | Instala OpenCode CLI, Antigravity CLI y despliega Antigravity Core/IDE (opcional) |
 | `make desktop` | Aplica tipografías, botones de ventana (min/max/close), directorios de trabajo y extensiones GNOME |
 | `make hyprland` | *(Opcional)* Instala y configura el perfil Hyprland sin reemplazar GNOME (solo Debian Stable) |
 | `make verify` | Ejecuta el test integral de salud del sistema |
