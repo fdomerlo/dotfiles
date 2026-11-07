@@ -15,15 +15,16 @@ export PATH := $(HOME)/.local/bin:$(PATH)
 help:
 	@echo "Opciones de aprovisionamiento (Debian Stable Workstation):"
 	@echo "  make install         - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
+	@echo "  make full-install    - Aprovisiona la estación de trabajo completa con Hyprland como escritorio"
 	@echo "  make update          - Actualiza la estación (APT only-upgrade + self-updates user-space + flatpak, idempotente)"
 	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
-	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
 	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
 	@echo "  make devtools        - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
 	@echo "  make tooling         - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
 	@echo "  make desktop         - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
+	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
 	@echo "  make hyprland        - (Opcional) Instala y configura el perfil Hyprland sin reemplazar GNOME"
 	@echo "  make verify          - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean           - Limpia paquetes residuales de APT y temporales"
@@ -31,6 +32,11 @@ help:
 
 # Instalación completa desatendida (idempotente: re-ejecutable; Timeshift es opcional vía 'make timeshift')
 install: host podman shell devtools tooling devai desktop clean
+	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
+	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
+
+# Instalación completa desatendida + Hyprland
+install: host podman shell devtools tooling devai desktop timeshift hyprland clean
 	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
 	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
 
