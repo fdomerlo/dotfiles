@@ -18,7 +18,7 @@ CHOSEN=$(printf "%s\n%s\n%s\n%s\n%s\n" \
     "$OP_SHUTDOWN" | wofi --dmenu \
                           --prompt "Sistema:" \
                           --width 320 \
-                          --height 340 \
+                          --height 270 \
                           --location center \
                           --insensitive)
 
