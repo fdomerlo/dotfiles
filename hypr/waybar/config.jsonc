@@ -126,9 +126,10 @@
   },
 
   "clock": {
-    "format": "󰃭 {:%A, %d de %B de %Y - %H:%M}",
-    "format-alt": "󱑂 {:%H:%M}",
-    "tooltip-format": "<tt><small>{calendar}</small></tt>"
+    "format": "󰃭 {:L%a %d %b - %H:%M}",
+    "tooltip-format": "󰃭 {:L%A, %d de %B de %Y}",
+    "locale": "es_AR.UTF-8",
+    "timezone": "America/Argentina/Buenos_Aires"
   },
 
   "tray": {

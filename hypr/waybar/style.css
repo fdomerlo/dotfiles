@@ -107,6 +107,7 @@ window#waybar.empty #window {
 #pulseaudio,
 #network,
 #bluetooth,
+#custom-notification,
 #clock,
 #tray,
 #custom-power {
@@ -156,7 +157,7 @@ window#waybar.empty #window {
 
 #custom-notification {
     color: #91a39a;
-    padding: 0 8px;
+    padding: 0 10px;
     font-size: 14px;
     transition: all 0.2s ease;
 }

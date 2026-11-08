@@ -41,6 +41,14 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Revisar que `~/.config/swaync/config.json` y `style.css` se lean sin warnings en el log de swaync. El journal no muestra errores de configuración ni de CSS.
 - [x] Verificar `backlight`: este equipo no expone `/sys/class/backlight`, así que el widget y el OSD de brillo no tienen efecto. Evaluar quitar el widget en P2.
 
+### Waybar
+
+- [x] Dar al icono de notificaciones el mismo borde, fondo y padding que el resto de los módulos derechos.
+- [x] Unificar el indicador de red: queda solo el módulo `network` de Waybar y se quitó `nm-applet` del autostart.
+- [x] Reloj: fecha corta en español y hora local, sin `format-alt`; el tooltip muestra la fecha completa en lugar del calendario.
+- [x] Ajustar `layer-shell-cover-screen = false` en swaync para que el clic llegue a la barra.
+- [ ] Confirmar manualmente que el clic en la campana alterna el panel y que el clic afuera también lo cierra.
+
 ### OSD (`swayosd`)
 
 - [x] Probar volumen subir/bajar/mute y mic mute con las teclas `XF86Audio*`. Los cuatro comandos de `osd.sh` salen con código 0.
