@@ -177,7 +177,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Portapapeles | `wl-clipboard` + `cliphist` |
 | Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
 | Terminal / archivos | `kitty` / `nautilus` |
-| Tema | JetBrains Mono, Fira Code, Noto, Papirus, Bibata, `qt6ct` |
+| Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), Bibata, `qt6ct` |
 
 En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
 

@@ -56,7 +56,6 @@ MAIN_PKGS=(
     qtwayland5
     xwayland
     adwaita-icon-theme
-    papirus-icon-theme
     bibata-cursor-theme
     gnome-themes-extra
     fonts-jetbrains-mono
