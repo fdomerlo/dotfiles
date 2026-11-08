@@ -38,6 +38,18 @@ keyname() {
         XF86AudioStop)      printf 'Stop' ;;
         XF86MonBrightnessUp)   printf 'Brillo +' ;;
         XF86MonBrightnessDown) printf 'Brillo -' ;;
+        # Teclado numérico: mismos nombres para los estados con y sin NumLock.
+        KP_[0-9])           printf 'Numpad %s' "${1#KP_}" ;;
+        KP_End)             printf 'Numpad 1' ;;
+        KP_Down)            printf 'Numpad 2' ;;
+        KP_Next)            printf 'Numpad 3' ;;
+        KP_Left)            printf 'Numpad 4' ;;
+        KP_Begin)           printf 'Numpad 5' ;;
+        KP_Right)           printf 'Numpad 6' ;;
+        KP_Home)            printf 'Numpad 7' ;;
+        KP_Up)              printf 'Numpad 8' ;;
+        KP_Prior)           printf 'Numpad 9' ;;
+        KP_Insert)          printf 'Numpad 0' ;;
         *)                  printf '%s' "$1" ;;
     esac
 }
@@ -66,5 +78,5 @@ while IFS=$'\t' read -r modmask key dispatcher arg; do
     action="$dispatcher"
     [ -n "$arg" ] && action="$action $arg"
     printf '%s\t%s\n' "$combo" "$action"
-done < <(format_binds) | sort -f | column -t -s $'\t' -o '   ' |
+done < <(format_binds) | sort -u -f | column -t -s $'\t' -o '   ' |
     wofi --dmenu --insensitive --prompt 'Atajos' --width 900 --height 700

@@ -207,7 +207,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `Super+V` / `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`, alterna) |
 | `Print` | Captura de región a archivo + portapapeles |
 | `Shift+Print` | Captura de pantalla completa a archivo + portapapeles |
-| `Super+1..0` / `Super+Shift+1..0` | Ir al workspace / mover ventana sin seguirla |
+| `Super+1..0` / `Super+Shift+1..0` | Ir al workspace / mover ventana sin seguirla (también con el teclado numérico) |
 | `Super+flechas` / `Super+Shift+flechas` | Foco / mover ventana |
 | `Super+Ctrl+flechas` | Redimensionar ventana |
 | `XF86Audio*` / `XF86MonBrightness*` | Volumen, mute, multimedia y brillo (con OSD) |
