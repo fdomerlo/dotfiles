@@ -55,7 +55,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [ ] Probar `Super+Shift+\`` para mover una ventana al scratchpad.
 - [ ] Probar grupos: `Super+G`, `Super+Tab`, `Super+Shift+Tab`, `Super+Ctrl+G`, `Super+Shift+G`.
 - [ ] Verificar que `Super+Shift+1..0` mueve la ventana sin cambiar de workspace.
-- [x] Abrir `Super+/` y confirmar que el cheatsheet lista los atajos nuevos con nombres legibles. Genera 84 entradas y el bind está cargado.
+- [x] Abrir `Super+F1` y confirmar que el cheatsheet lista los atajos nuevos con nombres legibles. Genera 84 entradas y el bind está cargado. Se cambió desde `Super+/` porque en latam `/` es `Shift+7` y colisiona con `movetoworkspacesilent 7`.
 - [ ] Validar `Super+M` (maximizar/restaurar) en ventanas tileadas y flotantes.
 
 ### Shell

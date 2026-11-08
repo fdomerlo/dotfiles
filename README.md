@@ -203,7 +203,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `Super+Tab` / `Super+Shift+Tab` | Ciclar ventanas del grupo |
 | `Super+Ctrl+G` / `Super+Shift+G` | Mover ventana al grupo / sacarla del grupo |
 | `Super+N` / `Super+Shift+N` | Centro de notificaciones / No molestar |
-| `Super+/` | Cheatsheet de atajos activos |
+| `Super+F1` | Cheatsheet de atajos activos |
 | `Super+V` / `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`, alterna) |
 | `Print` | Captura de región a archivo + portapapeles |
 | `Shift+Print` | Captura de pantalla completa a archivo + portapapeles |
