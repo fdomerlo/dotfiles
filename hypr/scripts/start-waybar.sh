@@ -35,4 +35,10 @@ if pgrep -x waybar >/dev/null 2>&1; then
     exit 0
 fi
 
+# Al matar Waybar, sus suscripciones a swaync quedan huérfanas (PPID 1).
+# Limpiarlas evita acumular un `swaync-client -swb` por cada reinicio.
+for pid in $(pgrep -f '^swaync-client -swb$' 2>/dev/null); do
+    [ "$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')" = "1" ] && kill "$pid" 2>/dev/null || true
+done
+
 exec waybar "$@"

@@ -45,8 +45,9 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 
 - [x] Dar al icono de notificaciones el mismo borde, fondo y padding que el resto de los módulos derechos.
 - [x] Unificar el indicador de red: queda solo el módulo `network` de Waybar y se quitó `nm-applet` del autostart.
-- [x] Reloj: fecha corta en español y hora local, sin `format-alt`; el tooltip muestra la fecha completa en lugar del calendario.
-- [x] Ajustar `layer-shell-cover-screen = false` en swaync para que el clic llegue a la barra.
+- [x] Reloj: solo hora local en la barra (con `locale` y `timezone` explícitos), sin `format-alt`; el tooltip muestra la fecha completa en lugar del calendario.
+- [x] swaync: `keyboard-shortcuts: false` para no secuestrar el teclado/foco, `layer-shell-cover-screen: true` para detectar el clic afuera y `layerrule order -1` para dejar Waybar por encima del panel.
+- [x] Clic en CPU y MEM abre `btop` en una terminal kitty.
 - [ ] Confirmar manualmente que el clic en la campana alterna el panel y que el clic afuera también lo cierra.
 
 ### OSD (`swayosd`)
