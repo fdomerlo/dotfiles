@@ -36,8 +36,8 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 
 - [x] Verificar que `swaync` toma el bus de notificaciones sin conflicto con `mako`.
 - [x] Probar `Super+N` (centro de notificaciones) y `Super+Shift+N` (No molestar). Los comandos `swaync-client -op/-cp` y `-dn/-df` responden y los binds están cargados.
-- [ ] Confirmar historial, botón "Limpiar todo", MPRIS, volumen y brillo en el centro de control.
-- [ ] Verificar visualmente los estados del módulo de Waybar: normal, con notificaciones, DND e inhibido.
+- [x] Confirmar historial, botón "Limpiar todo", MPRIS, volumen y brillo en el centro de control.
+- [x] Verificar visualmente los estados del módulo de Waybar: normal, con notificaciones, DND e inhibido.
 - [x] Revisar que `~/.config/swaync/config.json` y `style.css` se lean sin warnings en el log de swaync. El journal no muestra errores de configuración ni de CSS.
 - [x] Verificar `backlight`: este equipo no expone `/sys/class/backlight`, así que el widget y el OSD de brillo no tienen efecto. Evaluar quitar el widget en P2.
 
@@ -63,7 +63,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Probar `z` y `zi` con directorios recientes: las funciones existen y `zoxide query` responde.
 - [x] Probar la inicialización de Atuin y su historial: `atuin history list` responde. Falta confirmar el chord `Ctrl+R` en una terminal interactiva frente a `fzf`.
 - [x] Revisar el prompt de Starship en repos Git con cambios, ramas y comandos lentos: renderiza rama, estado y duración.
-- [ ] Probar `Super+Shift+Return` y confirmar que reutiliza la sesión `main` de tmux.
+- [x] Probar `Super+Shift+Return` y confirmar que reutiliza la sesión `main` de tmux.
 - [x] Revisar `~/.tmux.conf`: prefix `Ctrl+a`, mouse, `history-limit 100000`, `base-index 1`, splits en el directorio actual y recarga con `prefix + r` verificados con `tmux show`/`list-keys`.
 
 ## P2 — Siguiente lote de productividad
@@ -121,7 +121,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Revisar y commitear los cambios actuales (hay archivos modificados y nuevos sin commit).
 - [ ] Decidir si `scripts/update.sh` debe actualizar también los paquetes del perfil Hyprland (`swaync`, `swayosd`, etc.).
 - [ ] Revisar si `verify.sh` debe tratar `swaync`/`swayosd` como obligatorios o como opcionales con aviso.
-- [ ] Quitar `papirus-icon-theme` del sistema (opcional, requiere sudo): Hyprland ya no lo instala ni lo fuerza y usa el tema de iconos del sistema.
+- [x] Quitar `papirus-icon-theme` del sistema (opcional, requiere sudo): Hyprland ya no lo instala ni lo fuerza y usa el tema de iconos del sistema.
 - [ ] Documentar en README el flujo de rollback de notificaciones: volver a `mako` si `swaync` falla.
 - [ ] Agregar una captura o GIF del escritorio al README (opcional).
 
