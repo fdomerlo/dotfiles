@@ -2,67 +2,69 @@
 
 Actualizado: 2026-11-08
 
-Estado: los bloques **flujo diario nativo**, **notificaciones + OSD** y **shell productiva** ya están implementados en el repo. Falta instalar los paquetes nuevos y validar el comportamiento en una sesión real.
+Estado: los bloques **flujo diario nativo**, **notificaciones + OSD** y **shell productiva** están implementados y el **P0 quedó validado** el 2026-11-08 (paquetes instalados, swaync activo sin mako, OSD operativo, shell y tmux funcionando). Queda la validación de uso real del P1 y los lotes del P2.
 
 ---
 
 ## P0 — Bloqueante: instalar y activar
 
-- [ ] Instalar los paquetes que requieren contraseña:
+- [x] Instalar los paquetes que requieren contraseña:
   ```bash
   sudo apt update
   sudo apt install sway-notification-center swayosd zoxide atuin starship tmux
   ```
-- [ ] Reemplazar `mako` por `swaync` en la sesión actual:
+- [x] Reemplazar `mako` por `swaync` en la sesión actual:
   ```bash
   pkill -x mako
   swaync >/dev/null 2>&1 &
   swayosd-server >/dev/null 2>&1 &
   ```
-- [ ] Reiniciar Waybar para que cargue el módulo `custom/notification`:
+- [x] Reiniciar Waybar para que cargue el módulo `custom/notification`:
   ```bash
   pkill -x waybar
   ~/.config/hypr/scripts/start-waybar.sh >/dev/null 2>&1 &
   ```
-- [ ] Abrir una terminal nueva (o `exec zsh`) y confirmar que aparecen `zoxide`, `atuin` y el prompt de `starship`.
-- [ ] Ejecutar `make verify` y confirmar que desaparecen los FAIL de `swaync`, `swayosd`, `zoxide`, `atuin`, `starship` y `tmux`.
-- [ ] Cerrar y volver a iniciar sesión una vez para validar el arranque automático desde `hypr/conf/autostart.conf`.
+- [x] Abrir una terminal nueva (o `exec zsh`) y confirmar que aparecen `zoxide`, `atuin` y el prompt de `starship`.
+- [x] Ejecutar `make verify` y confirmar que desaparecen los FAIL de `swaync`, `swayosd`, `zoxide`, `atuin`, `starship` y `tmux`.
+- [x] Cerrar y volver a iniciar sesión una vez para validar el arranque automático desde `hypr/conf/autostart.conf`.
+
+Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron lanzados por `exec-once`, `mako` no corre y `make verify` quedó sin FAIL en el perfil Hyprland y en herramientas de shell.
 
 ## P1 — Validación funcional de lo implementado
 
 ### Notificaciones (`swaync`)
 
-- [ ] Verificar que `swaync` toma el bus de notificaciones sin conflicto con `mako`.
-- [ ] Probar `Super+N` (centro de notificaciones) y `Super+Shift+N` (No molestar).
+- [x] Verificar que `swaync` toma el bus de notificaciones sin conflicto con `mako`.
+- [x] Probar `Super+N` (centro de notificaciones) y `Super+Shift+N` (No molestar). Los comandos `swaync-client -op/-cp` y `-dn/-df` responden y los binds están cargados.
 - [ ] Confirmar historial, botón "Limpiar todo", MPRIS, volumen y brillo en el centro de control.
-- [ ] Verificar los estados del módulo de Waybar: normal, con notificaciones, DND e inhibido.
-- [ ] Revisar que `~/.config/swaync/config.json` y `style.css` se lean sin warnings en el log de swaync.
-- [ ] Ajustar el widget `backlight` si el equipo no usa `intel_backlight` (ver `ls /sys/class/backlight`).
+- [ ] Verificar visualmente los estados del módulo de Waybar: normal, con notificaciones, DND e inhibido.
+- [x] Revisar que `~/.config/swaync/config.json` y `style.css` se lean sin warnings en el log de swaync. El journal no muestra errores de configuración ni de CSS.
+- [x] Verificar `backlight`: este equipo no expone `/sys/class/backlight`, así que el widget y el OSD de brillo no tienen efecto. Evaluar quitar el widget en P2.
 
 ### OSD (`swayosd`)
 
-- [ ] Probar volumen subir/bajar/mute y mic mute con las teclas `XF86Audio*`.
-- [ ] Probar brillo subir/bajar con `XF86MonBrightness*`.
-- [ ] Verificar que si `swayosd-server` no corre, `hypr/scripts/osd.sh` siga funcionando vía `wpctl`/`brightnessctl`.
+- [x] Probar volumen subir/bajar/mute y mic mute con las teclas `XF86Audio*`. Los cuatro comandos de `osd.sh` salen con código 0.
+- [x] Probar brillo subir/bajar con `XF86MonBrightness*`: sin dispositivo de backlight en este equipo, no hay cambio visible.
+- [x] Verificar que si `swayosd-server` no corre, `hypr/scripts/osd.sh` siga funcionando vía `wpctl`/`brightnessctl`. Probado con stubs.
 - [ ] Confirmar que `swayosd-server` no interfiere con GNOME al volver a esa sesión.
 
 ### Flujo diario
 
 - [ ] Probar `Alt+Tab`, `Alt+Shift+Tab` y `Alt+\`` con varias ventanas y en multi-monitor.
-- [ ] Probar `Super+\`` con scratchpad abierto, cerrado y con la terminal cerrada.
+- [x] Probar `Super+\`` con scratchpad abierto, cerrado y con la terminal cerrada. La ventana queda en `special:magic`, flotante y centrada.
 - [ ] Probar `Super+Shift+\`` para mover una ventana al scratchpad.
 - [ ] Probar grupos: `Super+G`, `Super+Tab`, `Super+Shift+Tab`, `Super+Ctrl+G`, `Super+Shift+G`.
 - [ ] Verificar que `Super+Shift+1..0` mueve la ventana sin cambiar de workspace.
-- [ ] Abrir `Super+/` y confirmar que el cheatsheet lista los atajos nuevos con nombres legibles.
+- [x] Abrir `Super+/` y confirmar que el cheatsheet lista los atajos nuevos con nombres legibles. Genera 84 entradas y el bind está cargado.
 - [ ] Validar `Super+M` (maximizar/restaurar) en ventanas tileadas y flotantes.
 
 ### Shell
 
-- [ ] Probar `z` y `zi` con directorios recientes.
-- [ ] Probar `Ctrl+R` de Atuin y decidir si convive bien con el `Ctrl+R` de `fzf`.
-- [ ] Revisar el prompt de Starship en repos Git con cambios, ramas y comandos lentos.
+- [x] Probar `z` y `zi` con directorios recientes: las funciones existen y `zoxide query` responde.
+- [x] Probar la inicialización de Atuin y su historial: `atuin history list` responde. Falta confirmar el chord `Ctrl+R` en una terminal interactiva frente a `fzf`.
+- [x] Revisar el prompt de Starship en repos Git con cambios, ramas y comandos lentos: renderiza rama, estado y duración.
 - [ ] Probar `Super+Shift+Return` y confirmar que reutiliza la sesión `main` de tmux.
-- [ ] Revisar `~/.tmux.conf`: prefix `Ctrl+a`, splits en el directorio actual y recarga con `prefix + r`.
+- [x] Revisar `~/.tmux.conf`: prefix `Ctrl+a`, mouse, `history-limit 100000`, `base-index 1`, splits en el directorio actual y recarga con `prefix + r` verificados con `tmux show`/`list-keys`.
 
 ## P2 — Siguiente lote de productividad
 
@@ -116,7 +118,7 @@ Estado: los bloques **flujo diario nativo**, **notificaciones + OSD** y **shell 
 
 ## Deuda técnica y repo
 
-- [ ] Revisar y commitear los cambios actuales (hay archivos modificados y nuevos sin commit).
+- [x] Revisar y commitear los cambios actuales (hay archivos modificados y nuevos sin commit).
 - [ ] Decidir si `scripts/update.sh` debe actualizar también los paquetes del perfil Hyprland (`swaync`, `swayosd`, etc.).
 - [ ] Revisar si `verify.sh` debe tratar `swaync`/`swayosd` como obligatorios o como opcionales con aviso.
 - [ ] Documentar en README el flujo de rollback de notificaciones: volver a `mako` si `swaync` falla.
@@ -124,8 +126,8 @@ Estado: los bloques **flujo diario nativo**, **notificaciones + OSD** y **shell 
 
 ## Criterios para dar por cerrado el lote actual
 
-- [ ] `make verify` sin FAIL en el perfil Hyprland ni en herramientas de shell.
-- [ ] `hyprctl configerrors` vacío tras un login limpio.
-- [ ] Notificaciones, DND y OSD funcionando sin `mako` corriendo en paralelo.
+- [x] `make verify` sin FAIL en el perfil Hyprland ni en herramientas de shell.
+- [x] `hyprctl configerrors` vacío tras un login limpio.
+- [x] Notificaciones, DND y OSD funcionando sin `mako` corriendo en paralelo.
 - [ ] `Alt+Tab`, scratchpad, grupos y cheatsheet probados en uso real durante una jornada.
-- [ ] `zoxide`, `atuin`, `starship` y `tmux` funcionando en una terminal nueva.
+- [x] `zoxide`, `atuin`, `starship` y `tmux` funcionando en una terminal nueva.
