@@ -154,6 +154,26 @@ window#waybar.empty #window {
     color: #48d7b0;
 }
 
+#custom-notification {
+    color: #91a39a;
+    padding: 0 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+#custom-notification.notification {
+    color: #0db7d4;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+    color: #e0af68;
+}
+
+#custom-notification:hover {
+    color: #e6ece8;
+}
+
 #clock {
     color: #0db7d4;
     font-weight: bold;

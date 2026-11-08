@@ -40,6 +40,7 @@ if command -v apt-get &>/dev/null; then
         git curl wget jq unzip zip ca-certificates gnupg lsb-release
         build-essential
         ripgrep fd-find fzf bat btop direnv wl-clipboard
+        zoxide atuin starship tmux
         fonts-firacode fonts-jetbrains-mono fonts-noto-core
         gnome-shell-extension-dashtodock
         flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome

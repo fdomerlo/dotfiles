@@ -38,7 +38,7 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
   * **Python:** Administrado exclusivamente con [uv](https://astral.sh/uv) (rápido, compatible con PEP 668 y sin riesgo de corromper paquetes de Debian).
   * **Node.js:** Administrado con [fnm](https://github.com/Schniz/fnm) (Fast Node Manager escrito en Rust).
   * **Java/JVM:** Administrado con [sdkman](https://sdkman.io).
-* **Tríada CLI Moderna:** Incluye `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard` integrados directamente en Zsh.
+* **CLI Moderna y Shell Productiva:** `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard`, más `zoxide` (`z`/`zi`), `atuin` (historial con `Ctrl+R`), `starship` (prompt) y `tmux` (sesiones persistentes, `Super+Shift+Return`).
 * **Tooling de Desarrollo Nativo & DevAI:**
   * **Editores y Navegadores:** VS Code (con repositorio oficial APT DEB822 de Microsoft), Zed editor, Google Chrome oficial.
   * **Herramientas de IA:** OpenCode CLI, Antigravity IDE (Core 2.0 en `/opt`) y Antigravity CLI (`agy` / `antigravity-cli`).
@@ -79,6 +79,7 @@ make help
 ```text
 ~/.dotfiles/
 ├── Makefile                       # Orquestador modular (install, update, host, devai, etc.)
+├── BACKLOG.md                     # Pendientes y próximos lotes de productividad
 ├── preseed.cfg                    # Instalador desatendido Debian Stable (AMD/Intel)
 │
 ├── host/                          # Configuración del sistema base (requiere sudo)
@@ -92,8 +93,9 @@ make help
 │   ├── hypridle.conf              #   Bloqueo y apagado de pantalla por inactividad
 │   ├── hyprlock.conf              #   Pantalla de bloqueo
 │   ├── hyprpaper.conf             #   Wallpaper (fallback a swaybg)
-│   ├── mako/config                #   Notificaciones
-│   ├── scripts/                   #   wallpaper, screenshots y portapapeles
+│   ├── mako/config                #   Notificaciones (respaldo)
+│   ├── swaync/                    #   Centro de notificaciones (config.json + style.css)
+│   ├── scripts/                   #   wallpaper, screenshots, portapapeles, scratchpad, atajos y OSD
 │   ├── waybar/                    #   Barra (config.jsonc + style.css)
 │   └── wofi/                      #   Lanzador (config + style.css)
 │
@@ -114,8 +116,11 @@ make help
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
 └── shell/                         # Dotfiles y utilitarios de línea de comandos
+    ├── atuin.toml                 #   Historial de comandos (Atuin)
     ├── devctl                     #   CLI de diagnóstico, actualización y limpieza
     ├── gitconfig                  #   Configuración global ergonómica de Git
+    ├── starship.toml              #   Prompt (Starship)
+    ├── tmux.conf                  #   Sesiones y splits de tmux
     └── zshrc                      #   Configuración Zsh con uv, fnm, sdkman, fzf, direnv, XDG y Podman
 ```
 
@@ -162,7 +167,8 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Compositor | `hyprland` (desde `stable-backports`) |
 | Barra | `waybar` |
 | Lanzador | `wofi` (`rofi` queda como alternativa manual) |
-| Notificaciones | `mako-notifier` (binario `mako`) |
+| Notificaciones | `sway-notification-center` (`swaync`) con historial y No molestar; `mako` queda como respaldo |
+| OSD | `swayosd` para volumen y brillo (respaldo directo con `wpctl`/`brightnessctl`) |
 | Idle / bloqueo | `hypridle` + `hyprlock` |
 | Wallpaper | `hyprpaper` si existe `~/.config/hypr/wallpapers/default.png`; si no, `swaybg` con color sólido |
 | Agente polkit | `hyprpolkitagent` |
@@ -180,19 +186,31 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | Atajo | Acción |
 | :--- | :--- |
 | `Super+Return` | Terminal (`kitty`) |
-| `Super+D` | Lanzador de aplicaciones (`wofi`) |
+| `Super+Shift+Return` | Terminal con `tmux` (sesión `main` persistente) |
+| `Super` | Abrir/cerrar el lanzador (`wofi`) |
+| `Super+D` / `Super+Space` | Lanzador de aplicaciones (`wofi`, alterna) |
 | `Super+E` | Gestor de archivos (`nautilus`) |
 | `Super+Q` | Cerrar ventana |
 | `Super+F` | Pantalla completa |
-| `Super+Space` | Alternar flotante |
+| `Super+M` | Maximizar / restaurar |
+| `Super+Shift+Space` | Alternar flotante |
 | `Super+L` | Bloquear sesión (`hyprlock`) |
-| `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`) |
+| `Alt+Tab` / `Alt+Shift+Tab` | Siguiente / anterior ventana |
+| ``Alt+` `` | Volver a la ventana anterior |
+| ``Super+` `` | Abrir/cerrar scratchpad (terminal flotante) |
+| ``Super+Shift+` `` | Mover la ventana actual al scratchpad |
+| `Super+G` | Crear/deshacer grupo de ventanas |
+| `Super+Tab` / `Super+Shift+Tab` | Ciclar ventanas del grupo |
+| `Super+Ctrl+G` / `Super+Shift+G` | Mover ventana al grupo / sacarla del grupo |
+| `Super+N` / `Super+Shift+N` | Centro de notificaciones / No molestar |
+| `Super+/` | Cheatsheet de atajos activos |
+| `Super+V` / `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`, alterna) |
 | `Print` | Captura de región a archivo + portapapeles |
 | `Shift+Print` | Captura de pantalla completa a archivo + portapapeles |
-| `Super+1..0` / `Super+Shift+1..0` | Ir / mover ventana al workspace |
+| `Super+1..0` / `Super+Shift+1..0` | Ir al workspace / mover ventana sin seguirla |
 | `Super+flechas` / `Super+Shift+flechas` | Foco / mover ventana |
 | `Super+Ctrl+flechas` | Redimensionar ventana |
-| `XF86Audio*` / `XF86MonBrightness*` | Volumen, mute, multimedia y brillo |
+| `XF86Audio*` / `XF86MonBrightness*` | Volumen, mute, multimedia y brillo (con OSD) |
 
 ### Sesión, portal y theming
 
@@ -206,7 +224,9 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 * **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.
 * **Monitores:** `hypr/conf/monitors.conf` usa `monitor = ,preferred,auto,1`. Para fijar salidas, reemplazar por reglas explícitas (ver `hyprctl monitors`).
 * **Wallpaper:** crear `~/.config/hypr/wallpapers/default.png` y ejecutar `~/.config/hypr/scripts/wallpaper.sh`; sin imagen se usa `swaybg -c '#1e1e2e'`.
-* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi` y `~/.config/mako`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente.
+* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi`, `~/.config/mako` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente.
+* **Notificaciones y OSD:** `swaync` reemplaza a `mako` como demonio de notificaciones (historial, No molestar y panel de control); si no está instalado, `autostart.conf` arranca `mako` como respaldo. `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.
+* **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva el prompt nativo con `vcs_info` como respaldo. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
 
 ### Rollback
 

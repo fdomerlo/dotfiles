@@ -20,6 +20,7 @@
     "pulseaudio",
     "network",
     "bluetooth",
+    "custom/notification",
     "clock",
     "tray",
     "custom/power"
@@ -103,6 +104,27 @@
     "on-click": "blueman-manager"
   },
 
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󰂚",
+      "none": "󰂜",
+      "dnd-notification": "󰂛",
+      "dnd-none": "󰂛",
+      "inhibited-notification": "󰂚",
+      "inhibited-none": "󰂜",
+      "dnd-inhibited-notification": "󰂛",
+      "dnd-inhibited-none": "󰂛"
+    },
+    "return-type": "json",
+    "exec-if": "command -v swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true
+  },
+
   "clock": {
     "format": "󰃭 {:%A, %d de %B de %Y - %H:%M}",
     "format-alt": "󱑂 {:%H:%M}",
@@ -118,6 +140,6 @@
     "format": "󰐥",
     "tooltip": true,
     "tooltip-format": "Menú del sistema (Apagar / Cerrar sesión)",
-    "on-click": "~/.config/hypr/scripts/powermenu.sh"
+    "on-click": "~/.config/hypr/scripts/toggle-wofi.sh 'Sistema:' ~/.config/hypr/scripts/powermenu.sh"
   }
 }

@@ -72,6 +72,10 @@ shell:
 	mkdir -p $(HOME)/Proyectos $(HOME)/Aplicaciones
 	ln -sf $(ROOT_DIR)/shell/zshrc $(HOME)/.zshrc
 	ln -sf $(ROOT_DIR)/shell/gitconfig $(HOME)/.gitconfig
+	ln -sf $(ROOT_DIR)/shell/starship.toml $(HOME)/.config/starship.toml
+	ln -sf $(ROOT_DIR)/shell/tmux.conf $(HOME)/.tmux.conf
+	mkdir -p $(HOME)/.config/atuin
+	ln -sf $(ROOT_DIR)/shell/atuin.toml $(HOME)/.config/atuin/config.toml
 	mkdir -p $(HOME)/.local/bin
 	chmod +x shell/devctl
 	ln -sf $(ROOT_DIR)/shell/devctl $(HOME)/.local/bin/devctl

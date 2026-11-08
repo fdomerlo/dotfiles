@@ -119,6 +119,16 @@ for cmd in git gh uv fnm code zed opencode antigravity agy podman; do
     fi
 done
 
+echo "Herramientas de shell productiva:"
+for cmd in zoxide atuin starship tmux; do
+    echo -n "  -> $cmd: "
+    if command -v "$cmd" &>/dev/null; then
+        check_status 0 "Presente"
+    else
+        check_status 1 "No encontrado (ejecuta 'make host')"
+    fi
+done
+
 # 9. Higiene APT (solo lectura: podman-only, sin duplicados, keyrings presentes)
 echo -n "Higiene APT (podman-only, sin duplicados)... "
 apt_ok=0
@@ -237,6 +247,7 @@ else
     echo -n "Componentes del escritorio Hyprland... "
     hypr_missing=()
     for cmd in Hyprland hyprctl waybar wofi mako hypridle hyprlock \
+               swaync swaync-client swayosd-server swayosd-client \
                grim slurp wl-copy cliphist brightnessctl playerctl wpctl; do
         command -v "$cmd" &>/dev/null || hypr_missing+=("$cmd")
     done
@@ -279,7 +290,8 @@ else
     for f in "$HOME/.config/hypr/hyprland.conf" \
              "$HOME/.config/waybar/config.jsonc" \
              "$HOME/.config/wofi/config" \
-             "$HOME/.config/mako/config"; do
+             "$HOME/.config/mako/config" \
+             "$HOME/.config/swaync/config.json"; do
         [ -e "$f" ] || cfg_missing+=("$f")
     done
     if [ "${#cfg_missing[@]}" -eq 0 ]; then

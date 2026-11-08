@@ -1,0 +1,13 @@
+# ==============================================================================
+# Atuin - Historial de comandos (sin sincronización en la nube por defecto)
+# ==============================================================================
+
+auto_sync = false
+update_check = false
+
+# Enter ejecuta el comando seleccionado; Tab lo coloca en la línea.
+enter_accept = true
+
+style = "compact"
+inline_height = 20
+show_preview = true

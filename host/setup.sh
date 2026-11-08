@@ -109,6 +109,7 @@ apt-get install -y \
   ca-certificates gnupg lsb-release \
   build-essential \
   ripgrep fd-find fzf bat btop direnv wl-clipboard \
+  zoxide atuin starship tmux \
   fonts-firacode fonts-jetbrains-mono fonts-noto-core \
   flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
   libglib2.0-bin \

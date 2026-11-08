@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Cheatsheet de atajos: lee los binds activos de Hyprland y los muestra en wofi.
+#
+# El texto "Atajos" se pasa como --prompt para que toggle-wofi.sh pueda
+# reconocer el menú y cerrarlo con la misma tecla.
+# ==============================================================================
+set -euo pipefail
+
+for bin in hyprctl jq wofi; do
+    command -v "$bin" >/dev/null 2>&1 || exit 1
+done
+
+mods() {
+    local mask="$1" out=()
+    (( mask & 64 )) && out+=("Super")
+    (( mask & 4 )) && out+=("Ctrl")
+    (( mask & 8 )) && out+=("Alt")
+    (( mask & 1 )) && out+=("Shift")
+    local IFS="+"
+    printf '%s' "${out[*]}"
+}
+
+keyname() {
+    case "$1" in
+        grave)              printf '`' ;;
+        slash)              printf '/' ;;
+        Return)             printf 'Enter' ;;
+        Escape)             printf 'Esc' ;;
+        Print)              printf 'Print' ;;
+        XF86AudioRaiseVolume) printf 'Volumen +' ;;
+        XF86AudioLowerVolume) printf 'Volumen -' ;;
+        XF86AudioMute)      printf 'Mute' ;;
+        XF86AudioMicMute)   printf 'Mic mute' ;;
+        XF86AudioPlay)      printf 'Play/Pausa' ;;
+        XF86AudioNext)      printf 'Siguiente' ;;
+        XF86AudioPrev)      printf 'Anterior' ;;
+        XF86AudioStop)      printf 'Stop' ;;
+        XF86MonBrightnessUp)   printf 'Brillo +' ;;
+        XF86MonBrightnessDown) printf 'Brillo -' ;;
+        *)                  printf '%s' "$1" ;;
+    esac
+}
+
+format_binds() {
+    hyprctl binds -j 2>/dev/null | jq -r '
+        .[]
+        | select(.mouse == false and .key != "")
+        | [ (.modmask | tostring), .key, (.dispatcher // ""), (.arg // "") ]
+        | @tsv
+    '
+}
+
+while IFS=$'\t' read -r modmask key dispatcher arg; do
+    [ -n "$key" ] || continue
+    combo="$(mods "$modmask")"
+    # Un toque de Super se muestra como "Super", sin repetir la tecla física.
+    if [[ "$key" != SUPER_* ]]; then
+        name="$(keyname "$key")"
+        if [ -n "$combo" ]; then
+            combo="$combo+$name"
+        else
+            combo="$name"
+        fi
+    fi
+    action="$dispatcher"
+    [ -n "$arg" ] && action="$action $arg"
+    printf '%s\t%s\n' "$combo" "$action"
+done < <(format_binds) | sort -f | column -t -s $'\t' -o '   ' |
+    wofi --dmenu --insensitive --prompt 'Atajos' --width 900 --height 700

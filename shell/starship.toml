@@ -1,0 +1,34 @@
+# ==============================================================================
+# Starship - Prompt coherente con el tema Cyber-Teal del escritorio
+# ==============================================================================
+
+"$schema" = "https://starship.rs/config-schema.json"
+
+format = """
+[╭─](bold #0db7d4)$directory$git_branch$git_status$fill$cmd_duration
+[╰─](bold #0db7d4)$character"""
+
+add_newline = false
+
+[directory]
+style = "bold #7aa2f7"
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+style = "bold #48d7b0"
+format = " [$symbol$branch]($style)"
+symbol = "󰊢 "
+
+[git_status]
+style = "bold #e0af68"
+format = " [$all_status$ahead_behind]($style)"
+
+[cmd_duration]
+min_time = 2000
+format = " [took $duration](#e0af68)"
+
+[character]
+success_symbol = "[❯](bold #48d7b0)"
+error_symbol = "[❯](bold #f7768e)"
+vimcmd_symbol = "[❮](bold #e0af68)"

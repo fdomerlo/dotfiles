@@ -32,6 +32,8 @@ MAIN_PKGS=(
     waybar
     wofi
     mako-notifier
+    sway-notification-center
+    swayosd
     grim
     slurp
     wl-clipboard
@@ -135,6 +137,7 @@ echo "==> Verificando instalación..."
 REQUIRED_BINS=(
     Hyprland hyprctl hyprpaper hypridle hyprlock
     waybar wofi mako grim slurp wl-copy cliphist swaybg
+    swaync swaync-client swayosd-server swayosd-client
     brightnessctl playerctl wpctl kitty nautilus pavucontrol
     nm-applet blueman-applet qt6ct
 )
@@ -194,6 +197,9 @@ for f in "$HYPR_SRC"/kitty/*; do
     link_file "$f" "$CONFIG_HOME/kitty/$(basename "$f")"
 done
 link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
+for f in "$HYPR_SRC"/swaync/*; do
+    link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
+done
 link_file "$HYPR_SRC/xdg-desktop-portal/portals.conf" "$CONFIG_HOME/xdg-desktop-portal/portals.conf"
 
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
@@ -286,9 +292,12 @@ Próximos pasos:
      y recargá con $CONFIG_HOME/hypr/scripts/wallpaper.sh
 
 Atajos y gestos principales:
-  Super+Return         terminal (kitty)      Super+D       lanzador (wofi)
-  Super+Q              cerrar ventana        Super+L       bloquear (hyprlock)
-  Super+Shift+V        historial portapapeles
+  Super                abrir/cerrar lanzador     Super+D       lanzador (wofi)
+  Super+Return         terminal (kitty)           Super+L       bloquear (hyprlock)
+  Super+Shift+Return   terminal con tmux         Super+Q       cerrar ventana
+  Alt+Tab              cambiar de ventana         Super+N       notificaciones (swaync)
+  Super+grave          scratchpad (terminal)      Super+/       cheatsheet de atajos
+  Super+Shift+V        historial portapapeles (alterna)
   3 dedos horizontal   cambiar workspace     3 dedos arriba lanzador (wofi)
   Print                captura de región     Shift+Print   captura completa
 
