@@ -57,7 +57,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Probar brillo subir/bajar con `XF86MonBrightness*`: sin dispositivo de backlight en este equipo, no hay cambio visible.
 - [x] Verificar que si `swayosd-server` no corre, `hypr/scripts/osd.sh` siga funcionando vía `wpctl`/`brightnessctl`. Probado con stubs.
 - [x] Corregir el volumen atascado en 100%: `audio-init.sh` detecta si WirePlumber dejó solo `Dummy Output` y lo reinicia antes de lanzar Waybar para que aparezcan Speaker/HDMI.
-- [ ] Confirmar que `swayosd-server` no interfiere con GNOME al volver a esa sesión.
+- [x] Confirmar que `swayosd-server` no interfiere con GNOME al volver a esa sesión.
 
 ### Flujo diario
 
@@ -85,7 +85,6 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
   - Walker y Vicinae no están empaquetados en Debian; habría que compilarlos o usar *scripts* sobre `wofi`.
   - Alternativa de bajo riesgo: `Super+Ctrl+F` para buscar archivos con `fdfind` + `fzf` + `batcat`.
 - [ ] Agregar `Super+=` para `gnome-calculator` (ya instalado).
-- [ ] Evaluar `rofi-calc` / `rofi-emoji` solo si se migra a Debian Testing.
 
 ### Ventanas estilo GNOME
 
