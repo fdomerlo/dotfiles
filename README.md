@@ -12,8 +12,6 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
 
 ---
 
-## 🖼️ Vista previa
-
 ![Escritorio Hyprland con Waybar, yazi y btop](assets/hyprland-desktop.png)
 
 *Perfil Hyprland con Waybar, `yazi` y `btop` sobre el wallpaper de Mr. Robot.*
