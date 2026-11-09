@@ -35,7 +35,8 @@ step "Actualizando paquetes APT gestionados (--only-upgrade)..."
 if command -v apt-get &>/dev/null; then
     sudo apt-get update -y || warn "apt-get update falló, continúo con caché local."
 
-    # Candidatos gestionados por host/setup.sh, host/timeshift.sh, ohmyzsh.sh, devtools.sh y tooling.sh.
+    # Candidatos gestionados por host/setup.sh, host/timeshift.sh, ohmyzsh.sh,
+    # devtools.sh, tooling.sh y scripts/hyprland.sh.
     CANDIDATES=(
         git curl wget jq unzip zip ca-certificates gnupg lsb-release
         build-essential
@@ -60,6 +61,23 @@ if command -v apt-get &>/dev/null; then
         CANDIDATES+=(google-chrome-stable)
     fi
 
+    # Perfil Hyprland (scripts/hyprland.sh). Solo se actualizan los instalados.
+    HYPR_CANDIDATES=(
+        hyprland hyprpaper hypridle hyprlock hyprpolkitagent hyprland-guiutils
+        xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+        waybar wofi mako-notifier sway-notification-center swayosd
+        grim slurp cliphist swaybg brightnessctl playerctl
+        kitty nautilus pavucontrol libnotify-bin network-manager-gnome blueman
+        qt6ct qt5ct qtwayland5 xwayland adwaita-icon-theme
+        bibata-cursor-theme gnome-themes-extra
+        pipewire pipewire-audio pipewire-pulse wireplumber
+        fonts-font-awesome
+    )
+    CANDIDATES+=("${HYPR_CANDIDATES[@]}")
+
+    # Deduplicar preservando el orden: hay paquetes compartidos con la base.
+    mapfile -t CANDIDATES < <(printf '%s\n' "${CANDIDATES[@]}" | awk '!seen[$0]++')
+
     # Filtrar a paquetes realmente instalados (--only-upgrade no instala nuevos,
     # pero filtrar evita ruido y errores si el repo de un candidato falta).
     TO_UPGRADE=()
@@ -80,7 +98,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 2. Managers user-space: uv, fnm, sdkman
+# 2. Managers user-space: uv, fnm, sdkman, yazi
 # ------------------------------------------------------------------------------
 step "Actualizando uv (Python)..."
 if command -v uv &>/dev/null || [ -x "$HOME/.local/bin/uv" ]; then
@@ -105,6 +123,36 @@ if [ -d "$HOME/.sdkman" ]; then
     ok "sdkman actualizado (candidatos java/node no se tocan)."
 else
     warn "sdkman no instalado (ejecuta 'make devtools')."
+fi
+
+step "Actualizando Yazi (Terminal File Manager)..."
+if command -v yazi &>/dev/null || [ -f "$HOME/.local/bin/yazi" ]; then
+    DET_ARCH=$(dpkg --print-architecture)
+    if [ "$DET_ARCH" = "amd64" ]; then
+        YAZI_TARGET="x86_64-unknown-linux-gnu"
+    elif [ "$DET_ARCH" = "arm64" ]; then
+        YAZI_TARGET="aarch64-unknown-linux-gnu"
+    else
+        YAZI_TARGET=""
+    fi
+    if [ -n "$YAZI_TARGET" ]; then
+        YAZI_VERSION=$(curl -sSL https://api.github.com/repos/sxyazi/yazi/releases/latest 2>/dev/null | jq -r .tag_name || echo "")
+        if [ -n "$YAZI_VERSION" ] && [ "$YAZI_VERSION" != "null" ]; then
+            TMP_DIR=$(mktemp -d)
+            if curl -fsSL -o "$TMP_DIR/yazi.zip" "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-${YAZI_TARGET}.zip" 2>/dev/null; then
+                unzip -q "$TMP_DIR/yazi.zip" -d "$TMP_DIR"
+                mv "$TMP_DIR/yazi-${YAZI_TARGET}/yazi" "$HOME/.local/bin/yazi"
+                [ -f "$TMP_DIR/yazi-${YAZI_TARGET}/ya" ] && mv "$TMP_DIR/yazi-${YAZI_TARGET}/ya" "$HOME/.local/bin/ya" && chmod +x "$HOME/.local/bin/ya"
+                chmod +x "$HOME/.local/bin/yazi"
+                ok "Yazi actualizado ($YAZI_VERSION)."
+            else
+                warn "no se pudo descargar actualización de Yazi."
+            fi
+            rm -rf "$TMP_DIR"
+        fi
+    fi
+else
+    warn "yazi no instalado (ejecuta 'make devtools')."
 fi
 
 # ------------------------------------------------------------------------------
@@ -148,8 +196,8 @@ if [ -d "$HOME/.oh-my-zsh" ]; then
     git -C "$HOME/.oh-my-zsh" pull --ff-only -q || warn "OMZ core no avanzó (divergió o sin red)."
     for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
         PLUGIN_DIR="$HOME/.oh-my-zsh/custom/plugins/$plugin"
-        if [ -d "$PLUGIN_DIR" ]; then
-            git -C "$PLUGIN_DIR" pull -q --ff-only || warn "$plugin no avanzó."
+        if [ -d "$PLUGIN_DIR/.git" ]; then
+            git -C "$PLUGIN_DIR" pull --ff-only -q || warn "$plugin no avanzó (divergió o sin red)."
         fi
     done
     ok "Oh My Zsh y plugins al día."
@@ -158,14 +206,13 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 6. Podman Rootless: reiniciar socket + verificar (sin migrate disruptivo)
+# 6. Podman: verificar socket de usuario
 # ------------------------------------------------------------------------------
-step "Verificando Podman Rootless..."
+step "Verificando servicio Podman rootless (systemd --user)..."
 if command -v podman &>/dev/null; then
-    systemctl --user daemon-reload 2>/dev/null || true
-    systemctl --user restart podman.socket 2>/dev/null || systemctl --user start podman.socket 2>/dev/null || warn "no se pudo (re)iniciar podman.socket."
-    if [ "$(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" = "true" ] || [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then
-        ok "Podman Rootless operativo ($(podman --version))."
+    if podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null | grep -qi "true"; then
+        systemctl --user is-active --quiet podman.socket || systemctl --user start podman.socket 2>/dev/null || true
+        ok "Podman rootless operativo (socket activo)."
     else
         warn "Podman no reporta modo Rootless (ejecuta 'make podman')."
     fi
@@ -193,4 +240,5 @@ echo
 echo "================================================================="
 echo "✔ Update completado (idempotente). Valida con: make verify"
 echo "  Nota: no se tocó SSH/gh auth, /opt (sin tarball nuevo), ni chsh."
+echo "  Si cambiaste configs/scripts de Hyprland en el repo: git pull && make refresh"
 echo "================================================================="

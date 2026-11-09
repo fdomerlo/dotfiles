@@ -9,18 +9,19 @@ export CHSH=no
 export KEEP_ZSHRC=yes
 export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install full-install update host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
+.PHONY: help install full-install update refresh host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Stable Workstation):"
 	@echo "  make install         - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
 	@echo "  make full-install    - Aprovisiona la estación de trabajo completa con Hyprland como escritorio"
-	@echo "  make update          - Actualiza la estación (APT only-upgrade + self-updates user-space + flatpak, idempotente)"
+	@echo "  make update          - Actualiza la estación (APT only-upgrade incl. perfil Hyprland + self-updates + flatpak)"
+	@echo "  make refresh         - Re-sincroniza configs/scripts de Hyprland desde el repo y recarga la sesión (tras git pull)"
 	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
 	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
-	@echo "  make devtools        - Instala gh, uv, fnm, sdkman y sincroniza SSH de GitHub"
+	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi y sincroniza SSH de GitHub"
 	@echo "  make tooling         - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
 	@echo "  make desktop         - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
@@ -44,6 +45,11 @@ full-install: host podman shell devtools tooling devai desktop timeshift hyprlan
 update:
 	@echo "==> Actualizando estación (APT only-upgrade + user-space)..."
 	bash scripts/update.sh
+
+# Re-sincronizar configs/scripts de Hyprland y recargar la sesión (sin instalar)
+refresh:
+	@echo "==> Refrescando configuración de Hyprland..."
+	bash scripts/hyprland-refresh.sh
 
 # 1. Host (requiere sudo)
 host:
@@ -83,7 +89,7 @@ shell:
 
 # 4. Herramientas de Desarrollo y GitHub
 devtools:
-	@echo "==> Instalando DevManagers (gh, uv, fnm, sdkman)..."
+	@echo "==> Instalando DevManagers (gh, uv, fnm, sdkman, yazi)..."
 	bash scripts/devtools.sh
 	bash scripts/setup_gh.sh
 	bash scripts/setup_git.sh
