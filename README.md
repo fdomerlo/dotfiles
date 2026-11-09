@@ -295,6 +295,8 @@ Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths c
 
 `Super+Shift+T` abre el selector. El script recarga Hyprland, reinicia Waybar y relee el CSS de swaync; `wofi`, `kitty` e `hyprlock` toman el tema en su próxima apertura. `hypr/themes/active` es estado runtime y está en `.gitignore`; `make hyprland` lo recrea con `mr-robot` si no existe.
 
+`kitty` usa `font_size` en **puntos**, no en píxeles: `9.0` pt ≈ `12` px a 96 DPI. Una ventana ya abierta recarga el archivo con `Ctrl+Shift+F5`; una nueva lo toma automáticamente.
+
 Para agregar un tema, crear `hypr/themes/<nombre>/` con la misma estructura (`appearance.conf`, `hyprlock.conf`, `kitty/kitty.conf`, `swaync/style.css`, `waybar/config.jsonc`, `waybar/style.css`, `wofi/style.css`) y usar `theme-switch.sh <nombre>`.
 
 ### Rollback
