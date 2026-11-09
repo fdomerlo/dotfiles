@@ -137,7 +137,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [ ] Revisar si `verify.sh` debe tratar `swaync`/`swayosd` como obligatorios o como opcionales con aviso.
 - [x] Quitar `papirus-icon-theme` del sistema (opcional, requiere sudo): Hyprland ya no lo instala ni lo fuerza y usa el tema de iconos del sistema.
 - [ ] Documentar en README el flujo de rollback de notificaciones: volver a `mako` si `swaync` falla.
-- [ ] Agregar una captura o GIF del escritorio al README (opcional).
+- [x] Agregar una captura del escritorio al README (`assets/hyprland-desktop.png`).
 
 ## Criterios para dar por cerrado el lote actual
 

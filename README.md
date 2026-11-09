@@ -12,6 +12,14 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
 
 ---
 
+## 🖼️ Vista previa
+
+![Escritorio Hyprland con Waybar, yazi y btop](assets/hyprland-desktop.png)
+
+*Perfil Hyprland con Waybar, `yazi` y `btop` sobre el wallpaper de Mr. Robot.*
+
+---
+
 ## 🎯 Arquitectura y Rationale
 
 * **Base Debian Stable con Repositorios Extendidos:**
@@ -81,6 +89,9 @@ make help
 ├── Makefile                       # Orquestador modular (install, update, host, devai, etc.)
 ├── BACKLOG.md                     # Pendientes y próximos lotes de productividad
 ├── preseed.cfg                    # Instalador desatendido Debian Stable (AMD/Intel)
+│
+├── assets/                        # Capturas usadas en la documentación
+│   └── hyprland-desktop.png       #   Vista previa del perfil Hyprland
 │
 ├── host/                          # Configuración del sistema base (requiere sudo)
 │   ├── podman.sh                  #   Configuración de Podman Rootless (crun, pasta) y socket (usuario)
