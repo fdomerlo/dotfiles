@@ -114,8 +114,10 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 
 ### Estética
 
+- [x] Intercambiador de temas con dos variantes completas: `mr-robot` y `cyber-teal` (`theme-switch.sh`, `Super+Shift+T`). Cubre Hyprland, Waybar, swaync, wofi, kitty y hyprlock.
 - [ ] Evaluar generación de tema desde el wallpaper (`matugen`/`wallust`), sabiendo que no están empaquetados y hay que compilarlos.
-- [ ] Unificar notificaciones, Waybar, wofi y tmux bajo la misma paleta Cyber-Teal (parcialmente hecho).
+- [ ] Tematizar `btop` para que combine con el tema activo (hoy usa su paleta por defecto).
+- [ ] Evaluar wallpaper por tema y aplicarlo desde `theme-switch.sh`.
 
 ## P3 — Exploración / decisiones futuras
 

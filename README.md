@@ -203,6 +203,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `Super+Tab` / `Super+Shift+Tab` | Ciclar ventanas del grupo |
 | `Super+Ctrl+G` / `Super+Shift+G` | Mover ventana al grupo / sacarla del grupo |
 | `Super+N` / `Super+Shift+N` | Centro de notificaciones / No molestar |
+| `Super+Shift+T` | Intercambiador de temas (Mr. Robot / Cyber-Teal) |
 | `Super+F1` | Cheatsheet de atajos activos |
 | `Super+V` / `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`, alterna) |
 | `Print` | Captura de región a archivo + portapapeles |
@@ -224,12 +225,33 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 * **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.
 * **Monitores:** `hypr/conf/monitors.conf` usa `monitor = ,preferred,auto,1`. Para fijar salidas, reemplazar por reglas explícitas (ver `hyprctl monitors`).
 * **Wallpaper:** crear `~/.config/hypr/wallpapers/default.png` y ejecutar `~/.config/hypr/scripts/wallpaper.sh`; sin imagen se usa `swaybg -c '#1e1e2e'`.
-* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi`, `~/.config/mako` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente.
+* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi`, `~/.config/mako` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
 * **Notificaciones y OSD:** `swaync` reemplaza a `mako` como demonio de notificaciones (historial, No molestar y panel de control); si no está instalado, `autostart.conf` arranca `mako` como respaldo. `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.
 * **Red y reloj:** el estado de red se muestra solo en el módulo `network` de Waybar; no se inicia `nm-applet` para evitar el icono duplicado en la bandeja. Las conexiones nuevas se gestionan con `nm-connection-editor` o `nmcli`. El reloj muestra solo la hora local (con `locale` y `timezone` explícitos) y la fecha completa en el tooltip.
 * **Panel de notificaciones:** `swaync` corre con `keyboard-shortcuts: false` para no quedarse con el teclado/foco, y con `layer-shell-cover-screen: true` para cerrar al hacer clic fuera. Una `layerrule` mantiene Waybar por encima del panel, y el icono de la campana usa `notifications-toggle.sh` con caché de estado. Trade-off: ESC y la navegación por teclado dentro del panel no están disponibles; se cierra con clic en la campana, clic afuera o `Super+N`.
 * **Indicadores CPU/MEM:** un clic abre `btop` en kitty.
 * **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva el prompt nativo con `vcs_info` como respaldo. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
+
+### Temas
+
+Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths clásicos (`hypr/conf/appearance.conf`, `hypr/waybar/*`, `hypr/swaync/style.css`, `hypr/wofi/style.css`, `hypr/kitty/kitty.conf` y `hypr/hyprlock.conf`) son symlinks a `hypr/themes/active/…`. Cambiar de tema solo mueve el symlink `active`, así que no se modifican archivos versionados ni queda el working tree sucio.
+
+| Tema | Estilo |
+| :--- | :--- |
+| `mr-robot` | Negro azulado, bordes acero de 1 px, esquinas rectas, acento rojo `fsociety`, reloj con segundos. |
+| `cyber-teal` | Glass cian/turquesa, bordes degradados, esquinas redondeadas, blur y sombras. |
+
+```bash
+~/.config/hypr/scripts/theme-switch.sh            # tema activo
+~/.config/hypr/scripts/theme-switch.sh list       # temas disponibles
+~/.config/hypr/scripts/theme-switch.sh menu       # selector con wofi
+~/.config/hypr/scripts/theme-switch.sh toggle     # alterna al siguiente
+~/.config/hypr/scripts/theme-switch.sh mr-robot   # aplica un tema
+```
+
+`Super+Shift+T` abre el selector. El script recarga Hyprland, reinicia Waybar y relee el CSS de swaync; `wofi`, `kitty` e `hyprlock` toman el tema en su próxima apertura. `hypr/themes/active` es estado runtime y está en `.gitignore`; `make hyprland` lo recrea con `mr-robot` si no existe.
+
+Para agregar un tema, crear `hypr/themes/<nombre>/` con la misma estructura (`appearance.conf`, `hyprlock.conf`, `kitty/kitty.conf`, `swaync/style.css`, `waybar/config.jsonc`, `waybar/style.css`, `wofi/style.css`) y usar `theme-switch.sh <nombre>`.
 
 ### Rollback
 

@@ -177,6 +177,17 @@ link_file() {
 }
 
 link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
+
+# Los paths clásicos son symlinks a hypr/themes/active/…; asegurar un tema
+# válido antes de desplegar para que readlink -f no encuentre enlaces roto
+# (por ejemplo, en un clon nuevo o después de un git clean).
+THEMES_DIR="$HYPR_SRC/themes"
+ACTIVE_THEME_LINK="$THEMES_DIR/active"
+if [ ! -d "$ACTIVE_THEME_LINK" ]; then
+    ln -sfn mr-robot "$ACTIVE_THEME_LINK"
+    warn "Tema activo ausente; se configuró mr-robot por defecto."
+fi
+
 for f in "$HYPR_SRC"/conf/*.conf; do
     link_file "$f" "$CONFIG_HOME/hypr/conf/$(basename "$f")"
 done

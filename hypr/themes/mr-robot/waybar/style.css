@@ -1,0 +1,233 @@
+/* ==============================================================================
+   Waybar - Mr. Robot / fsociety
+   Terminal HUD: fondo casi negro azulado, bordes de 1px azul acero,
+   tipografia monoespaciada, esquinas rectas y rojo reservado para alertas.
+   ============================================================================== */
+
+* {
+    font-family: "JetBrains Mono", "Symbols Nerd Font", "Font Awesome 6 Free", "FontAwesome", sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    min-height: 0;
+    border: none;
+}
+
+window#waybar {
+    background: #05080b;
+    color: #c3d2dd;
+    border-bottom: 1px solid #2e7491;
+    border-radius: 0;
+}
+
+window#waybar > box {
+    padding: 0 6px;
+}
+
+/* --- Modulos Izquierda --- */
+
+#custom-launcher {
+    font-size: 13px;
+    font-weight: bold;
+    color: #c83434;
+    padding: 0 10px;
+    margin: 3px 1px;
+    border-radius: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.12s ease;
+}
+
+#custom-launcher:hover {
+    background: #c83434;
+    color: #05080b;
+    border-color: #c83434;
+}
+
+#workspaces {
+    background: transparent;
+    border-radius: 0;
+    margin: 3px 1px;
+    padding: 0;
+    border: none;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    margin: 0;
+    color: #5f7684;
+    background: transparent;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.12s ease;
+}
+
+#workspaces button:hover {
+    color: #c3d2dd;
+    background: rgba(46, 116, 145, 0.18);
+    border-bottom-color: #2e7491;
+    box-shadow: none;
+}
+
+#workspaces button.active {
+    color: #d8e4ec;
+    background: rgba(46, 116, 145, 0.24);
+    border-bottom-color: #4f9fbf;
+    font-weight: bold;
+    box-shadow: none;
+}
+
+#workspaces button.urgent {
+    color: #05080b;
+    background: #c83434;
+    border-bottom-color: #c83434;
+}
+
+#custom-media {
+    background: transparent;
+    border: none;
+    border-left: 1px solid #23414f;
+    border-radius: 0;
+    margin: 6px 4px;
+    padding: 0 10px;
+    color: #6fae8f;
+}
+
+/* --- Titulo de la Ventana --- */
+
+#window {
+    color: #8fa6b5;
+    font-weight: 500;
+    padding: 0 12px;
+    background: transparent;
+    border-radius: 0;
+    margin: 3px 2px;
+    border: none;
+    border-left: 1px solid rgba(35, 65, 79, 0.60);
+}
+
+window#waybar.empty #window {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* --- Modulos Derecha --- */
+
+#cpu,
+#memory,
+#pulseaudio,
+#network,
+#bluetooth,
+#custom-notification,
+#clock,
+#tray,
+#custom-power {
+    background: rgba(10, 16, 21, 0.78);
+    border: 1px solid #1d3542;
+    border-radius: 0;
+    margin: 4px 1px;
+    padding: 0 9px;
+    color: #c3d2dd;
+}
+
+#cpu,
+#memory {
+    color: #8fb3c7;
+}
+
+#pulseaudio {
+    color: #6fae8f;
+}
+
+#pulseaudio.muted {
+    color: #c83434;
+}
+
+#network {
+    color: #4f9fbf;
+}
+
+#network.disconnected {
+    color: #c83434;
+}
+
+#bluetooth {
+    color: #4f9fbf;
+}
+
+#bluetooth.disabled {
+    color: #5f7684;
+}
+
+#bluetooth.connected {
+    color: #6fae8f;
+}
+
+#custom-notification {
+    color: #5f7684;
+    padding: 0 9px;
+    font-size: 13px;
+    transition: all 0.12s ease;
+}
+
+#custom-notification.notification {
+    color: #c83434;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+    color: #c9a227;
+}
+
+#custom-notification:hover {
+    color: #d8e4ec;
+    border-color: #2e7491;
+}
+
+#clock {
+    color: #d33a3a;
+    font-weight: bold;
+    border-color: rgba(200, 52, 52, 0.45);
+}
+
+#tray {
+    padding: 0 7px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: #c83434;
+}
+
+#custom-power {
+    color: #c83434;
+    border-color: rgba(200, 52, 52, 0.40);
+    padding: 0 10px;
+    font-size: 13px;
+    transition: all 0.12s ease;
+}
+
+#custom-power:hover {
+    background: #c83434;
+    color: #05080b;
+    border-color: #c83434;
+}
+
+/* --- Tooltip --- */
+
+tooltip {
+    background: rgba(5, 8, 11, 0.98);
+    border: 1px solid #23414f;
+    border-radius: 0;
+}
+
+tooltip label {
+    color: #c3d2dd;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+}

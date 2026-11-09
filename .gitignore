@@ -32,3 +32,6 @@ node_modules/
 skills/
 .agents/
 .gemini/
+
+# Tema activo de Hyprland (estado runtime, no versionado)
+hypr/themes/active
