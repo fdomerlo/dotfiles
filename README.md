@@ -22,11 +22,11 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
 * **Aplicaciones de Escritorio Aisladas (Flatpak & AppImage):**
   * **Flatpak + Flathub:** Configurado de forma nativa (`gnome-software-plugin-flatpak`, `xdg-desktop-portal-gnome` y remote `flathub`) para aislar completamente las aplicaciones de consumo general del sistema base.
   * **AppImage Out-of-the-Box:** Soporte FUSE 2 y FUSE 3 garantizado mediante `libfuse2t64` y `fuse3`, con directorio dedicado `~/Aplicaciones` integrado directamente en el `$PATH` del usuario.
-* **Tipografías Nativas y Descanso Visual (Repositorios Debian):**
-  * **Interfaz de GNOME:** `Adwaita Sans 11` (tipografía oficial predeterminada de GNOME, limpia y balanceada).
+* **Tipografías Nativas y Descanso Visual:**
+  * **Interfaz de GNOME:** `Adwaita Sans 11` (tipografía oficial predeterminada de GNOME, limpia y balanceada; descargada automáticamente a `~/.local/share/fonts` desde el upstream oficial de GNOME al no estar empaquetada en repositorios de Debian).
   * **Documentos:** `Noto Sans 12` (`fonts-noto-core`, excelente legibilidad para lectura de documentación).
   * **Monoespaciada / Código:** `JetBrains Mono 11` (`fonts-jetbrains-mono`, diseñada específicamente para programadores y descanso visual) con fallback a `Fira Code` (`fonts-firacode`).
-  * Sin binarios de fuentes en el repo: 100% provistas y gestionadas por paquetes APT oficiales.
+  * Sin binarios de fuentes en el repo git: provistas por paquetes APT oficiales y descargas limpias en espacio de usuario.
 * **Ergonomía de GNOME y Estándar XDG:**
   * **Botones de ventana completos:** Configura minimizar, maximizar y cerrar en la barra de títulos (`org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'`).
   * **Directorios de trabajo dedicados:** Crea y registra `~/Proyectos` (`XDG_PROJECTS_DIR`) y `~/Aplicaciones` (`XDG_APPLICATIONS_DIR`) en `~/.config/user-dirs.dirs`, con aliases rápidos en Zsh (`pdir` y `adir`).
@@ -38,7 +38,7 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
   * **Python:** Administrado exclusivamente con [uv](https://astral.sh/uv) (rápido, compatible con PEP 668 y sin riesgo de corromper paquetes de Debian).
   * **Node.js:** Administrado con [fnm](https://github.com/Schniz/fnm) (Fast Node Manager escrito en Rust).
   * **Java/JVM:** Administrado con [sdkman](https://sdkman.io).
-* **CLI Moderna y Shell Productiva:** `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard`, más `zoxide` (`z`/`zi`), `atuin` (historial con `Ctrl+R`), `starship` (prompt) y `tmux` (sesiones persistentes, `Super+Shift+Return`).
+* **CLI Moderna y Shell Productiva:** `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard`, gestor de archivos en terminal [yazi](https://github.com/sxyazi/yazi) (con previews en Kitty y wrapper `y`), más `zoxide` (`z`/`zi`), `atuin` (historial con `Ctrl+R`), `starship` (prompt) y `tmux` (sesiones persistentes, `Super+Shift+Return`).
 * **Tooling de Desarrollo Nativo & DevAI:**
   * **Editores y Navegadores:** VS Code (con repositorio oficial APT DEB822 de Microsoft), Zed editor, Google Chrome oficial.
   * **Herramientas de IA:** OpenCode CLI, Antigravity IDE (Core 2.0 en `/opt`) y Antigravity CLI (`agy` / `antigravity-cli`).
@@ -105,14 +105,15 @@ make help
 │   ├── clean-system.sh            #   Limpieza profunda post-upgrade (purga rc, huérfanos, cachés y logs)
 │   ├── desktop.sh                 #   Tipografías, botones ventana, carpetas Proyectos/Aplicaciones y GNOME
 │   ├── devai.sh                   #   Instalador de OpenCode CLI, Antigravity CLI y Core/IDE
-│   ├── devtools.sh                #   Instalador de gh (binario oficial), uv, fnm y sdkman
+│   ├── devtools.sh                #   Instalador de gh (binario oficial), uv, fnm, sdkman y yazi
 │   ├── hyprland.sh                #   Instalador del perfil opcional Hyprland (solo Debian Stable)
+│   ├── hyprland-refresh.sh        #   Re-sincroniza configs/scripts desde el repo y recarga la sesión
 │   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
 │   ├── setup_agy.sh               #   Despliegue atómico de Antigravity Core/IDE en /opt (opcional)
 │   ├── setup_gh.sh                #   Configuración y autenticación SSH con GitHub CLI
 │   ├── setup_git.sh               #   Configuración idempotente de identidad global de Git
 │   ├── tooling.sh                 #   Instalación de VS Code (APT DEB822), Chrome (.deb) y Zed
-│   ├── update.sh                  #   Actualización idempotente (only-upgrade + self-updates + flatpak)
+│   ├── update.sh                  #   Actualización idempotente (only-upgrade incl. Hyprland + self-updates + flatpak)
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
 └── shell/                         # Dotfiles y utilitarios de línea de comandos
@@ -131,12 +132,13 @@ make help
 | Target | Descripción |
 | :--- | :--- |
 | `make install` | Aprovisionamiento completo (host + podman + shell + devtools + tooling + devai + desktop) |
-| `make update` | Actualización idempotente (higiene APT + only-upgrade + user-space + flatpak, sin tocar SSH/`gh auth`) |
+| `make update` | Actualización idempotente (higiene APT + only-upgrade incl. perfil Hyprland + user-space + flatpak, sin tocar SSH/`gh auth`) |
+| `make refresh` | Re-sincroniza configs/scripts de Hyprland desde el repo y recarga Hyprland, Waybar, swaync e hypridle (sin instalar paquetes) |
 | `make host` | Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman |
 | `make timeshift` | *(Opcional)* Instala y configura `/etc/timeshift/timeshift.json` sin crear snapshots iniciales |
 | `make podman` | Configura Podman en modo Rootless con backend pasta (systemd --user) |
 | `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig` y `devctl` |
-| `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman`, prepara SSH con GitHub e identidad Git |
+| `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman`, `yazi`, prepara SSH con GitHub e identidad Git |
 | `make gitconfig` | Configura `user.name` y `user.email` en Git (idempotente e interactivo) |
 | `make github-auth` | Flujo interactivo oficial de autenticación en GitHub CLI (`gh auth login`) |
 | `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed) |
@@ -176,7 +178,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Capturas | `grim` + `slurp` |
 | Portapapeles | `wl-clipboard` + `cliphist` |
 | Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
-| Terminal / archivos | `kitty` / `nautilus` |
+| Terminal / archivos | `kitty` / `nautilus` (gráfico) + `yazi` (terminal) |
 | Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), Bibata, `qt6ct` |
 
 En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
@@ -189,7 +191,8 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `Super+Shift+Return` | Terminal con `tmux` (sesión `main` persistente) |
 | `Super` | Abrir/cerrar el lanzador (`wofi`) |
 | `Super+D` / `Super+Space` | Lanzador de aplicaciones (`wofi`, alterna) |
-| `Super+E` | Gestor de archivos (`nautilus`) |
+| `Super+E` | Gestor de archivos gráfico (`nautilus`) |
+| `Super+Y` | Gestor de archivos en terminal (`yazi` con previews nativas en Kitty) |
 | `Super+Q` | Cerrar ventana |
 | `Super+F` | Pantalla completa |
 | `Super+M` | Maximizar / restaurar |
@@ -228,9 +231,37 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 * **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi`, `~/.config/mako` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
 * **Notificaciones y OSD:** `swaync` reemplaza a `mako` como demonio de notificaciones (historial, No molestar y panel de control); si no está instalado, `autostart.conf` arranca `mako` como respaldo. `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.
 * **Red y reloj:** el estado de red se muestra solo en el módulo `network` de Waybar; no se inicia `nm-applet` para evitar el icono duplicado en la bandeja. Las conexiones nuevas se gestionan con `nm-connection-editor` o `nmcli`. El reloj muestra solo la hora local (con `locale` y `timezone` explícitos) y la fecha completa en el tooltip.
+* **Bluetooth:** el estado se muestra solo en el módulo `bluetooth` de Waybar; no se inicia `blueman-applet` para evitar el icono duplicado en la bandeja. El clic abre `blueman-manager`, y el paquete `blueman` se mantiene instalado.
 * **Panel de notificaciones:** `swaync` corre con `keyboard-shortcuts: false` para no quedarse con el teclado/foco, y con `layer-shell-cover-screen: true` para cerrar al hacer clic fuera. Una `layerrule` mantiene Waybar por encima del panel, y el icono de la campana usa `notifications-toggle.sh` con caché de estado. Trade-off: ESC y la navegación por teclado dentro del panel no están disponibles; se cierra con clic en la campana, clic afuera o `Super+N`.
 * **Indicadores CPU/MEM:** un clic abre `btop` en kitty.
+* **Audio:** `start-waybar.sh` ejecuta `audio-init.sh` antes de lanzar Waybar. Si WirePlumber arrancó antes que PipeWire y dejó solo `Dummy Output` (carrera conocida con `sof-hda-dsp`), lo reinicia una vez para crear Speaker/HDMI; así el módulo `pulseaudio` sigue el sink real y el volumen responde.
 * **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva el prompt nativo con `vcs_info` como respaldo. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
+
+### Actualizar y refrescar cambios
+
+`make update` mantiene los paquetes al día, incluidos los del perfil Hyprland (`hyprland`, `waybar`, `swaync`, `swayosd`, `hypridle`, portales, PipeWire, etc.). Solo actualiza los que estén instalados, así que es seguro ejecutarlo también en equipos sin Hyprland.
+
+Cuando edites configs o scripts en un equipo y los traigas al otro con `git pull`, no hace falta reinstalar el perfil ni cerrar sesión:
+
+```bash
+git pull
+make refresh
+```
+
+`scripts/hyprland-refresh.sh`:
+
+1. Re-enlaza los mismos destinos que `make hyprland` (`hypr/`, `waybar/`, `wofi/`, `kitty/`, `mako/`, `swaync/`, portal y wallpapers) en `~/.config`. Si encuentra un archivo real, lo conserva como `.bak.<timestamp>`.
+2. Elimina symlinks rotos que apunten al repo (scripts o configs retirados).
+3. Recarga `hyprctl`, reinicia Waybar, relee config/CSS de `swaync` (o `mako`) y reinicia `hypridle`.
+4. Informa errores de `hyprctl configerrors` si los hubiera.
+
+Si solo querés sincronizar archivos sin tocar la sesión activa:
+
+```bash
+bash scripts/hyprland-refresh.sh --no-reload
+```
+
+`kitty`, `wofi` y `hyprlock` toman los cambios en su próxima apertura; el resto se aplica al instante. `hypr/themes/active` es estado runtime (gitignored): si no existe, el script lo recrea apuntando a `mr-robot`.
 
 ### Temas
 
@@ -300,9 +331,9 @@ El script comprueba de forma automática:
 3. Existencia y montaje del `swapfile` secundario en EXT4.
 4. Estado de **Timeshift** (informativo/opcional).
 5. Estado operativo y modo rootless de **Podman Rootless**.
-6. Disponibilidad de tipografías del sistema en Fontconfig (`JetBrains Mono`, `Fira Code`, `Noto Sans`).
+6. Disponibilidad de tipografías del sistema en Fontconfig (`JetBrains Mono`, `Fira Code`, `Noto Sans`, `Adwaita Sans`).
 7. Integridad de los enlaces simbólicos de dotfiles (`~/.zshrc`, `~/.gitconfig`, `devctl`).
-8. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `zed`, `antigravity`, `podman`).
+8. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `zed`, `antigravity`, `podman`, `yazi`).
 9. Higiene de repositorios APT (podman-only, sin duplicados) y autenticación de GitHub (SSH y API).
 10. Personalizaciones de GNOME (botones de ventana minimizar, maximizar y cerrar).
 11. Directorio dedicado de desarrollo (`~/Proyectos` / `XDG_PROJECTS_DIR`).

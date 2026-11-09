@@ -1,6 +1,6 @@
 # Backlog — Hyprland productivo
 
-Actualizado: 2026-11-08
+Actualizado: 2026-11-09
 
 Estado: los bloques **flujo diario nativo**, **notificaciones + OSD** y **shell productiva** están implementados y el **P0 quedó validado** el 2026-11-08 (paquetes instalados, swaync activo sin mako, OSD operativo, shell y tmux funcionando). Queda la validación de uso real del P1 y los lotes del P2.
 
@@ -48,13 +48,15 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Reloj: solo hora local en la barra (con `locale` y `timezone` explícitos), sin `format-alt`; el tooltip muestra la fecha completa en lugar del calendario.
 - [x] swaync: `keyboard-shortcuts: false` para no secuestrar el teclado/foco, `layer-shell-cover-screen: true` para detectar el clic afuera y `layerrule order -1` para dejar Waybar por encima del panel.
 - [x] Clic en CPU y MEM abre `btop` en una terminal kitty.
-- [ ] Confirmar manualmente que el clic en la campana alterna el panel y que el clic afuera también lo cierra.
+- [x] Quitar `blueman-applet` del autostart: el módulo nativo `bluetooth` de Waybar ya cubre estado/batería y el clic abre `blueman-manager`, sin ícono duplicado en la bandeja.
+- [x] Confirmar manualmente que el clic en la campana alterna el panel y que el clic afuera también lo cierra.
 
 ### OSD (`swayosd`)
 
 - [x] Probar volumen subir/bajar/mute y mic mute con las teclas `XF86Audio*`. Los cuatro comandos de `osd.sh` salen con código 0.
 - [x] Probar brillo subir/bajar con `XF86MonBrightness*`: sin dispositivo de backlight en este equipo, no hay cambio visible.
 - [x] Verificar que si `swayosd-server` no corre, `hypr/scripts/osd.sh` siga funcionando vía `wpctl`/`brightnessctl`. Probado con stubs.
+- [x] Corregir el volumen atascado en 100%: `audio-init.sh` detecta si WirePlumber dejó solo `Dummy Output` y lo reinicia antes de lanzar Waybar para que aparezcan Speaker/HDMI.
 - [ ] Confirmar que `swayosd-server` no interfiere con GNOME al volver a esa sesión.
 
 ### Flujo diario
@@ -130,7 +132,8 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 ## Deuda técnica y repo
 
 - [x] Revisar y commitear los cambios actuales (hay archivos modificados y nuevos sin commit).
-- [ ] Decidir si `scripts/update.sh` debe actualizar también los paquetes del perfil Hyprland (`swaync`, `swayosd`, etc.).
+- [x] `scripts/update.sh` actualiza también los paquetes del perfil Hyprland (`hyprland`, `waybar`, `swaync`, `swayosd`, etc.), filtrando solo los instalados.
+- [x] Agregar `make refresh` (`scripts/hyprland-refresh.sh`) para re-sincronizar configs/scripts tras `git pull` y recargar Hyprland, Waybar, swaync e hypridle sin reinstalar.
 - [ ] Revisar si `verify.sh` debe tratar `swaync`/`swayosd` como obligatorios o como opcionales con aviso.
 - [x] Quitar `papirus-icon-theme` del sistema (opcional, requiere sudo): Hyprland ya no lo instala ni lo fuerza y usa el tema de iconos del sistema.
 - [ ] Documentar en README el flujo de rollback de notificaciones: volver a `mako` si `swaync` falla.
