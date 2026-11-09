@@ -30,6 +30,10 @@ if [ ! -S "$SOCK_DIR/.socket.sock" ] || [ ! -S "$SOCK_DIR/.socket2.sock" ]; then
     echo "start-waybar: los sockets IPC de Hyprland no aparecieron en $SOCK_DIR" >&2
 fi
 
+# Reparar el arranque de audio antes de que Waybar conecte el módulo
+# pulseaudio: si WirePlumber dejó solo Dummy Output, se reinicia una vez.
+"$HOME/.config/hypr/scripts/audio-init.sh" || true
+
 # Si systemd u otra instancia ya lo arrancó, no duplicar la barra.
 if pgrep -x waybar >/dev/null 2>&1; then
     exit 0

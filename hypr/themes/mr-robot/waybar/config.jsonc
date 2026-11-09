@@ -128,7 +128,7 @@
   },
 
   "clock": {
-    "format": "{:%H:%M:%S}",
+    "format": "{:%H:%M}",
     "tooltip-format": "{:L%A, %d de %B de %Y}",
     "locale": "es_AR.UTF-8",
     "timezone": "America/Argentina/Buenos_Aires"

@@ -6,8 +6,8 @@
 
 * {
     font-family: "JetBrains Mono", "Symbols Nerd Font", "Font Awesome 6 Free", "FontAwesome", sans-serif;
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     min-height: 0;
     border: none;
 }
@@ -26,7 +26,7 @@ window#waybar > box {
 /* --- Modulos Izquierda --- */
 
 #custom-launcher {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: bold;
     color: #c83434;
     padding: 0 10px;
@@ -96,7 +96,7 @@ window#waybar > box {
 
 #window {
     color: #8fa6b5;
-    font-weight: 500;
+    font-weight: 600;
     padding: 0 12px;
     background: transparent;
     border-radius: 0;
@@ -167,7 +167,7 @@ window#waybar.empty #window {
 #custom-notification {
     color: #5f7684;
     padding: 0 9px;
-    font-size: 13px;
+    font-size: 14px;
     transition: all 0.12s ease;
 }
 
@@ -186,9 +186,9 @@ window#waybar.empty #window {
 }
 
 #clock {
-    color: #d33a3a;
+    color: #d8e4ec;
     font-weight: bold;
-    border-color: rgba(200, 52, 52, 0.45);
+    border-color: rgba(46, 116, 145, 0.45);
 }
 
 #tray {
@@ -208,7 +208,7 @@ window#waybar.empty #window {
     color: #c83434;
     border-color: rgba(200, 52, 52, 0.40);
     padding: 0 10px;
-    font-size: 13px;
+    font-size: 14px;
     transition: all 0.12s ease;
 }
 
@@ -229,5 +229,5 @@ tooltip {
 tooltip label {
     color: #c3d2dd;
     font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
+    font-size: 12px;
 }
