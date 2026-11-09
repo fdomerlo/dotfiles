@@ -138,6 +138,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Quitar `papirus-icon-theme` del sistema (opcional, requiere sudo): Hyprland ya no lo instala ni lo fuerza y usa el tema de iconos del sistema.
 - [ ] Documentar en README el flujo de rollback de notificaciones: volver a `mako` si `swaync` falla.
 - [x] Agregar una captura del escritorio al README (`assets/hyprland-desktop.png`).
+- [x] Separar la configuración de portales por sesión (`hyprland-portals.conf`) y cerrar `graphical-session.target` al salir de Hyprland: evita que GNOME herede un `xdg-desktop-portal` con el entorno de Hyprland y que sus apps queden esperando timeouts de D-Bus.
 
 ## Criterios para dar por cerrado el lote actual
 

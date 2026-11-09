@@ -88,7 +88,7 @@ link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
 done
-link_file "$HYPR_SRC/xdg-desktop-portal/portals.conf" "$CONFIG_HOME/xdg-desktop-portal/portals.conf"
+link_file "$HYPR_SRC/xdg-desktop-portal/hyprland-portals.conf" "$CONFIG_HOME/xdg-desktop-portal/hyprland-portals.conf"
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
 if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
     link_file "$HYPR_SRC/wallpapers/default.png" "$CONFIG_HOME/hypr/wallpapers/default.png"
@@ -128,6 +128,12 @@ fi
 
 # Recargar solo si hay una sesión Hyprland activa.
 if ! command -v hyprctl >/dev/null 2>&1 || ! hyprctl version >/dev/null 2>&1; then
+    # En GNOME no hay Hyprland que recargar, pero el portal debe releer la
+    # configuración si se migró portals.conf -> hyprland-portals.conf.
+    if printf '%s' "${XDG_CURRENT_DESKTOP:-}" | grep -qi 'gnome' && command -v systemctl >/dev/null 2>&1; then
+        systemctl --user restart xdg-desktop-portal.service 2>/dev/null \
+            && ok "xdg-desktop-portal reiniciado para la sesión GNOME."
+    fi
     echo "✔ Configuración sincronizada. Hyprland no está activo; se aplicará al iniciar sesión."
     exit 0
 fi

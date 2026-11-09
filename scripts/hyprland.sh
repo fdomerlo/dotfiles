@@ -210,7 +210,7 @@ link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
 done
-link_file "$HYPR_SRC/xdg-desktop-portal/portals.conf" "$CONFIG_HOME/xdg-desktop-portal/portals.conf"
+link_file "$HYPR_SRC/xdg-desktop-portal/hyprland-portals.conf" "$CONFIG_HOME/xdg-desktop-portal/hyprland-portals.conf"
 
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
 if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then

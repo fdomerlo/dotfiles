@@ -108,7 +108,8 @@ make help
 │   ├── swaync/                    #   Centro de notificaciones (config.json + style.css)
 │   ├── scripts/                   #   wallpaper, screenshots, portapapeles, scratchpad, atajos y OSD
 │   ├── waybar/                    #   Barra (config.jsonc + style.css)
-│   └── wofi/                      #   Lanzador (config + style.css)
+│   ├── wofi/                      #   Lanzador (config + style.css)
+│   └── xdg-desktop-portal/        #   Portal específico de Hyprland (hyprland-portals.conf)
 │
 ├── scripts/                       # Instaladores y configuración de usuario
 │   ├── antigravity.png            #   Icono oficial para el lanzador .desktop
@@ -235,7 +236,8 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 * **Iconos de Waybar:** `style.css` usa `Symbols Nerd Font` para los glifos de los módulos. Debian no empaqueta Nerd Fonts, así que `scripts/hyprland.sh` descarga el release oficial `NerdFontsSymbolsOnly` en `~/.local/share/fonts` si la fuente no está presente. Sin ella los iconos se ven como cuadros.
 * **Screen sharing:** `xdg-desktop-portal-hyprland` provee `hyprland.portal` con `UseIn=Hyprland`, por lo que se selecciona solo dentro de la sesión. `xdg-desktop-portal-gtk` cubre el file picker y aplicaciones GTK.
 * **`XDG_CURRENT_DESKTOP`:** se define como `Hyprland:GNOME` en `env.conf` de forma intencional, para que los portales de GNOME cubran file picker y secretos. Por eso `appearance.conf` activa `misc:disable_xdg_env_checks`, que silencia el aviso de Hyprland sobre entornos «gestionados externamente».
-* **Portal (`portals.conf`):** como `XDG_CURRENT_DESKTOP` incluye `GNOME`, `xdg-desktop-portal` intentaba usar `gnome.portal` para las interfaces que `hyprland.portal`/`gtk.portal` no implementan. Ese backend no existe en Hyprland y el portal quedaba bloqueado esperando timeouts de D-Bus; como consecuencia `org.freedesktop.portal.Settings` no respondía y Waybar se quedaba esperando el esquema de color sin dibujarse. `hypr/xdg-desktop-portal/portals.conf` fija `default=hyprland;gtk`, mantiene `Secret=gnome-keyring` y desactiva con `none` las interfaces exclusivas de GNOME.
+* **Portal (`hyprland-portals.conf`):** como `XDG_CURRENT_DESKTOP` incluye `GNOME`, `xdg-desktop-portal` intentaba usar `gnome.portal` para las interfaces que `hyprland.portal`/`gtk.portal` no implementan. Ese backend no existe en Hyprland y el portal quedaba bloqueado esperando timeouts de D-Bus; como consecuencia `org.freedesktop.portal.Settings` no respondía y Waybar se quedaba esperando el esquema de color sin dibujarse. `hypr/xdg-desktop-portal/hyprland-portals.conf` fija `default=hyprland;gtk`, mantiene `Secret=gnome-keyring` y desactiva con `none` las interfaces exclusivas de GNOME. El nombre `hyprland-portals.conf` es intencional: xdg-desktop-portal solo lo aplica cuando `XDG_CURRENT_DESKTOP` contiene `Hyprland`; en GNOME usa `gnome-portals.conf` del sistema. Un `portals.conf` genérico también se aplicaba en GNOME y hacía que sus apps (Nautilus, Calculadora, Text Editor) esperaran timeouts de los backends equivocados.
+* **Ciclo de sesión:** `autostart.conf` inicia `graphical-session.target` y lo detiene con `exec-shutdown`. Los portales son `PartOf` de ese target, así que no sobreviven a un cambio Hyprland → GNOME con un entorno obsoleto.
 * **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.
 * **Monitores:** `hypr/conf/monitors.conf` usa `monitor = ,preferred,auto,1`. Para fijar salidas, reemplazar por reglas explícitas (ver `hyprctl monitors`).
 * **Wallpaper:** crear `~/.config/hypr/wallpapers/default.png` y ejecutar `~/.config/hypr/scripts/wallpaper.sh`; sin imagen se usa `swaybg -c '#1e1e2e'`.
@@ -273,6 +275,8 @@ bash scripts/hyprland-refresh.sh --no-reload
 ```
 
 `kitty`, `wofi` y `hyprlock` toman los cambios en su próxima apertura; el resto se aplica al instante. `hypr/themes/active` es estado runtime (gitignored): si no existe, el script lo recrea apuntando a `mr-robot`.
+
+Si `make refresh` se ejecuta desde GNOME, sincroniza los archivos y reinicia `xdg-desktop-portal` para que tome `hyprland-portals.conf` (Hyprland) o `gnome-portals.conf` (GNOME); no intenta recargar Hyprland. Al cerrar Hyprland, `exec-shutdown` detiene `graphical-session.target`, así que los portales no quedan vivos con el entorno de la sesión anterior.
 
 ### Temas
 
