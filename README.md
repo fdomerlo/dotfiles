@@ -238,7 +238,7 @@ Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths c
 
 | Tema | Estilo |
 | :--- | :--- |
-| `mr-robot` | Negro azulado, bordes acero de 1 px, esquinas rectas, acento rojo `fsociety`, reloj con segundos. |
+| `mr-robot` | Negro azulado, bordes acero de 1 px, transparencia pareja, foco solo por borde, acento rojo `fsociety`, reloj con segundos. |
 | `cyber-teal` | Glass cian/turquesa, bordes degradados, esquinas redondeadas, blur y sombras. |
 
 ```bash
