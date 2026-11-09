@@ -40,6 +40,17 @@ if [ "${#MISSING_FONTS[@]}" -gt 0 ] && command -v apt-get &>/dev/null; then
     fi
 fi
 
+# Adwaita Sans (fuente de interfaz GNOME moderna, provista desde upstream oficial al no estar en repos de Debian)
+FONT_DIR="$HOME/.local/share/fonts"
+if ! fc-list : family 2>/dev/null | grep -qi "Adwaita Sans"; then
+    echo "==> Descargando fuente oficial Adwaita Sans (GNOME)..."
+    mkdir -p "$FONT_DIR"
+    ADWAITA_BASE_URL="https://raw.githubusercontent.com/gnome/adwaita-fonts/main/sans"
+    curl -fsSL -o "$FONT_DIR/AdwaitaSans-Regular.ttf" "$ADWAITA_BASE_URL/AdwaitaSans-Regular.ttf" || true
+    curl -fsSL -o "$FONT_DIR/AdwaitaSans-Italic.ttf" "$ADWAITA_BASE_URL/AdwaitaSans-Italic.ttf" || true
+    fc-cache -f "$FONT_DIR" 2>/dev/null || true
+fi
+
 # Interfaz: Adwaita Sans 11 (la predeterminada del sistema, legibilidad limpia y descansada)
 gsettings_set_if_needed org.gnome.desktop.interface font-name "'Adwaita Sans 11'" "Adwaita Sans 11"
 

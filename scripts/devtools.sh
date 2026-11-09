@@ -9,7 +9,7 @@ fi
 export PATH="$HOME/.local/bin:$HOME/.local/share/fnm:$PATH"
 
 echo "================================================================="
-echo "==> Instalando DevManagers (gh, uv, fnm, sdkman)..."
+echo "==> Instalando DevManagers (gh, uv, fnm, sdkman, yazi)..."
 echo "================================================================="
 
 if ! command -v gh &> /dev/null; then
@@ -70,6 +70,38 @@ if [ ! -d "$HOME/.sdkman" ]; then
     curl -fsSL "https://get.sdkman.io?rcupdate=false" | bash
 else
     echo "✔ sdkman ya está instalado"
+fi
+
+if ! command -v yazi &> /dev/null && [ ! -f "$HOME/.local/bin/yazi" ]; then
+    echo "Instalando Yazi (Terminal File Manager)..."
+    mkdir -p "$HOME/.local/bin"
+    DET_ARCH=$(dpkg --print-architecture)
+    if [ "$DET_ARCH" = "amd64" ]; then
+        YAZI_TARGET="x86_64-unknown-linux-gnu"
+    elif [ "$DET_ARCH" = "arm64" ]; then
+        YAZI_TARGET="aarch64-unknown-linux-gnu"
+    else
+        YAZI_TARGET=""
+    fi
+
+    if [ -n "$YAZI_TARGET" ]; then
+        YAZI_VERSION=$(curl -sSL https://api.github.com/repos/sxyazi/yazi/releases/latest | jq -r .tag_name)
+        TMP_DIR=$(mktemp -d)
+        curl -fsSL -o "$TMP_DIR/yazi.zip" "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-${YAZI_TARGET}.zip"
+        unzip -q "$TMP_DIR/yazi.zip" -d "$TMP_DIR"
+        mv "$TMP_DIR/yazi-${YAZI_TARGET}/yazi" "$HOME/.local/bin/yazi"
+        if [ -f "$TMP_DIR/yazi-${YAZI_TARGET}/ya" ]; then
+            mv "$TMP_DIR/yazi-${YAZI_TARGET}/ya" "$HOME/.local/bin/ya"
+            chmod +x "$HOME/.local/bin/ya"
+        fi
+        chmod +x "$HOME/.local/bin/yazi"
+        rm -rf "$TMP_DIR"
+        echo "✔ yazi instalado correctamente en ~/.local/bin/yazi"
+    else
+        echo "⚠️ Arquitectura $DET_ARCH no soportada para binario precompilado de Yazi"
+    fi
+else
+    echo "✔ yazi ya está instalado"
 fi
 
 echo "✔ DevManagers listos."

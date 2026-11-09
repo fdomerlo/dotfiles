@@ -79,10 +79,10 @@ else
 fi
 
 # 6. Tipografías del Sistema
-echo -n "Tipografías del sistema (JetBrains Mono / Fira Code / Noto Sans)... "
+echo -n "Tipografías del sistema (JetBrains Mono / Fira Code / Noto Sans / Adwaita Sans)... "
 fonts_ok=0
 INSTALLED_FONTS=$(fc-list : family 2>/dev/null || true)
-for f in "JetBrains Mono" "Fira Code" "Noto Sans"; do
+for f in "JetBrains Mono" "Fira Code" "Noto Sans" "Adwaita Sans"; do
     if ! echo "$INSTALLED_FONTS" | grep -qi "$f"; then
         fonts_ok=1
     fi
@@ -110,7 +110,7 @@ fi
 
 # 8. Herramientas CLI críticas
 echo "Disponibilidad de herramientas clave:"
-for cmd in git gh uv fnm code zed opencode antigravity agy podman; do
+for cmd in git gh uv fnm code zed opencode antigravity agy podman yazi; do
     echo -n "  -> $cmd: "
     if command -v "$cmd" &>/dev/null || [ -f "$HOME/.local/bin/$cmd" ]; then
         check_status 0 "Presente"
