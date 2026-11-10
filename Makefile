@@ -20,7 +20,7 @@ help:
 	@echo "  make refresh         - Re-sincroniza configs/scripts de Hyprland desde el repo y recarga la sesión (tras git pull)"
 	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
-	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl)"
+	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop)"
 	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi y sincroniza SSH de GitHub"
 	@echo "  make tooling         - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
@@ -82,6 +82,10 @@ shell:
 	ln -sf $(ROOT_DIR)/shell/tmux.conf $(HOME)/.tmux.conf
 	mkdir -p $(HOME)/.config/atuin
 	ln -sf $(ROOT_DIR)/shell/atuin.toml $(HOME)/.config/atuin/config.toml
+	mkdir -p $(HOME)/.config/btop/themes
+	ln -sf $(ROOT_DIR)/shell/btop/themes/neutral.theme $(HOME)/.config/btop/themes/neutral.theme
+	@# btop reescribe btop.conf al salir: se copia una sola vez, no se enlaza.
+	[ -f $(HOME)/.config/btop/btop.conf ] || cp $(ROOT_DIR)/shell/btop/btop.conf $(HOME)/.config/btop/btop.conf
 	mkdir -p $(HOME)/.local/bin
 	chmod +x shell/devctl
 	ln -sf $(ROOT_DIR)/shell/devctl $(HOME)/.local/bin/devctl

@@ -1,32 +1,28 @@
 # ==============================================================================
-# Starship - Prompt coherente con el tema Cyber-Teal del escritorio
+# Starship - Prompt minimalista de una sola línea
+# Conserva directorio, rama/estado de Git y el carácter del prompt.
 # ==============================================================================
 
 "$schema" = "https://starship.rs/config-schema.json"
 
-format = """
-[╭─](bold #0db7d4)$directory$git_branch$git_status$fill$cmd_duration
-[╰─](bold #0db7d4)$character"""
+format = "$directory$git_branch$git_status$character"
 
 add_newline = false
 
 [directory]
 style = "bold #7aa2f7"
+format = "[$path]($style) "
 truncation_length = 3
 truncate_to_repo = true
 
 [git_branch]
 style = "bold #48d7b0"
-format = " [$symbol$branch]($style)"
+format = "[$symbol$branch]($style) "
 symbol = "󰊢 "
 
 [git_status]
 style = "bold #e0af68"
-format = " [$all_status$ahead_behind]($style)"
-
-[cmd_duration]
-min_time = 2000
-format = " [took $duration](#e0af68)"
+format = "[$all_status$ahead_behind]($style) "
 
 [character]
 success_symbol = "[❯](bold #48d7b0)"

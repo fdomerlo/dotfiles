@@ -103,7 +103,7 @@ else
     vcs_info
   }
 
-  PROMPT='%F{cyan}%n%f %1~%F{yellow}${vcs_info_msg_0_}%f '
+  PROMPT='%F{blue}%1~%f%F{yellow}${vcs_info_msg_0_}%f %F{green}❯%f '
 fi
 
 # --- Aliases útiles (Podman & CLI Moderna en Debian) ---

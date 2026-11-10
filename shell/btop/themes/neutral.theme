@@ -1,0 +1,78 @@
+# ==============================================================================
+# btop - Tema neutro (acero / grises)
+#
+# Paleta monocromática de bajo contraste cromático para no competir con los
+# temas de Hyprland (mr-robot / cyber-teal). El fondo queda transparente para
+# heredar el color de la terminal activa.
+# ==============================================================================
+
+# Fondo transparente: usa el fondo de la terminal.
+theme[main_bg]=""
+
+# Texto principal
+theme[main_fg]="#c8ccd0"
+
+# Títulos de cajas
+theme[title]="#e6e9ec"
+
+# Atajos de teclado resaltados
+theme[hi_fg]="#9fb4c4"
+
+# Elemento seleccionado en la lista de procesos
+theme[selected_bg]="#2f3940"
+theme[selected_fg]="#ffffff"
+
+# Texto inactivo/deshabilitado
+theme[inactive_fg]="#6b7378"
+
+# Gráficos y detalles de procesos
+theme[proc_misc]="#9fb4c4"
+
+# Bordes de cajas
+theme[cpu_box]="#4a545a"
+theme[mem_box]="#4a545a"
+theme[net_box]="#4a545a"
+theme[proc_box]="#4a545a"
+
+# Divisores
+theme[div_line]="#3a4247"
+
+# Temperatura
+theme[temp_start]="#7f8c94"
+theme[temp_mid]=""
+theme[temp_end]="#e0e4e8"
+
+# CPU
+theme[cpu_start]="#5f6b72"
+theme[cpu_mid]=""
+theme[cpu_end]="#d5dade"
+
+# Memoria libre
+theme[free_start]="#5a646a"
+theme[free_mid]=""
+theme[free_end]="#c8ced2"
+
+# Memoria en caché
+theme[cached_start]="#4f5a60"
+theme[cached_mid]=""
+theme[cached_end]="#aeb6bb"
+
+# Memoria disponible
+theme[available_start]="#6a747a"
+theme[available_mid]=""
+theme[available_end]="#dfe3e6"
+
+# Memoria usada
+theme[used_start]="#8a949a"
+theme[used_mid]=""
+theme[used_end]="#f0f2f4"
+
+# Red: descarga
+theme[download_start]="#56646c"
+theme[download_mid]=""
+theme[download_end]="#c2cbd1"
+
+# Red: subida
+theme[upload_start]="#4e5a62"
+theme[upload_mid]=""
+theme[upload_end]="#b6c0c6"
