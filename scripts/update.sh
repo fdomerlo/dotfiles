@@ -69,7 +69,7 @@ if command -v apt-get &>/dev/null; then
         grim slurp cliphist swaybg brightnessctl playerctl
         kitty nautilus pavucontrol libnotify-bin network-manager-gnome blueman
         qt6ct qt5ct qtwayland5 xwayland adwaita-icon-theme
-        bibata-cursor-theme gnome-themes-extra
+        gnome-themes-extra
         pipewire pipewire-audio pipewire-pulse wireplumber
         fonts-font-awesome
     )

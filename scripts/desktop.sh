@@ -67,6 +67,10 @@ gsettings_set_if_needed org.gnome.desktop.wm.preferences titlebar-font "'Adwaita
 gsettings_set_if_needed org.gnome.desktop.interface color-scheme "'prefer-dark'" "prefer-dark"
 gsettings_set_if_needed org.gnome.desktop.interface gtk-theme "'Adwaita-dark'" "Adwaita-dark"
 
+# Cursor único entre GNOME y Hyprland (evita mezclas Bibata/Adwaita)
+gsettings_set_if_needed org.gnome.desktop.interface cursor-theme "'Adwaita'" "Adwaita"
+gsettings_set_if_needed org.gnome.desktop.interface cursor-size "24" "24"
+
 echo "    ✔ Interfaz:     $(gsettings get org.gnome.desktop.interface font-name 2>/dev/null || echo 'N/A')"
 echo "    ✔ Documentos:   $(gsettings get org.gnome.desktop.interface document-font-name 2>/dev/null || echo 'N/A')"
 echo "    ✔ Monoespacio:  $(gsettings get org.gnome.desktop.interface monospace-font-name 2>/dev/null || echo 'N/A')"

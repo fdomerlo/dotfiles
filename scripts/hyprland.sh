@@ -56,7 +56,6 @@ MAIN_PKGS=(
     qtwayland5
     xwayland
     adwaita-icon-theme
-    bibata-cursor-theme
     gnome-themes-extra
     fonts-jetbrains-mono
     fonts-firacode
@@ -218,21 +217,26 @@ if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
 fi
 ok "Directorio de wallpapers: $CONFIG_HOME/hypr/wallpapers"
 
-# Modo oscuro GTK3/GTK4 para aplicaciones en Hyprland
+# Modo oscuro GTK3/GTK4 y cursor Adwaita para aplicaciones en Hyprland.
 for gtk_ver in gtk-3.0 gtk-4.0; do
     mkdir -p "$CONFIG_HOME/$gtk_ver"
-    if [ ! -f "$CONFIG_HOME/$gtk_ver/settings.ini" ]; then
-        cat > "$CONFIG_HOME/$gtk_ver/settings.ini" <<EOF
+    settings="$CONFIG_HOME/$gtk_ver/settings.ini"
+    if [ ! -f "$settings" ]; then
+        cat > "$settings" <<EOF
 [Settings]
 gtk-theme-name = Adwaita-dark
 gtk-application-prefer-dark-theme = 1
+gtk-cursor-theme-name = Adwaita
+gtk-cursor-theme-size = 24
 EOF
+    else
+        # Converger también archivos existentes sin pisar otras preferencias.
+        grep -q '^gtk-cursor-theme-name' "$settings" ||
+            sed -i '/^\[Settings\]/a gtk-cursor-theme-name = Adwaita' "$settings"
+        grep -q '^gtk-cursor-theme-size' "$settings" ||
+            sed -i '/^\[Settings\]/a gtk-cursor-theme-size = 24' "$settings"
     fi
 done
-
-if [ ! -d /usr/share/icons/Bibata-Modern-Ice ]; then
-    warn "El tema de cursor 'Bibata-Modern-Ice' no está presente; Hyprland usará el cursor por defecto."
-fi
 
 # Nerd Fonts: style.css de Waybar usa "Symbols Nerd Font" para los glifos de los
 # módulos (launcher, CPU, memoria, reloj, etc.). Debian no empaqueta Nerd Fonts,

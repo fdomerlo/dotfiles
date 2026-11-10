@@ -124,6 +124,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Intercambiador de temas con dos variantes completas: `mr-robot` y `cyber-teal` (`theme-switch.sh`, `Super+Shift+T`). Cubre Hyprland, Waybar, swaync, wofi, kitty y hyprlock.
 - [ ] Evaluar generación de tema desde el wallpaper (`matugen`/`wallust`), sabiendo que no están empaquetados y hay que compilarlos.
 - [x] Neutralizar `btop` con un tema monocromático propio (`shell/btop/themes/neutral.theme`) y fondo transparente, independiente de `mr-robot` y `cyber-teal`. La config semilla se copia una sola vez porque btop la reescribe al salir.
+- [x] Unificar el cursor en `Adwaita` 24 px entre Hyprland, GTK, Qt y GNOME para evitar que el puntero alterne con Bibata según la ventana.
 - [ ] Evaluar wallpaper por tema y aplicarlo desde `theme-switch.sh`.
 
 ## P3 — Exploración / decisiones futuras
