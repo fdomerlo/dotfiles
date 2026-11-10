@@ -132,6 +132,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Neutralizar `btop` con un tema monocromático propio (`shell/btop/themes/neutral.theme`) y fondo transparente, independiente de `mr-robot` y `cyber-teal`. La config semilla se copia una sola vez porque btop la reescribe al salir.
 - [x] Unificar el cursor en `Adwaita` 24 px entre Hyprland, GTK, Qt y GNOME para evitar que el puntero alterne con Bibata según la ventana.
 - [ ] Evaluar wallpaper por tema y aplicarlo desde `theme-switch.sh`.
+- [x] Corregir el doble cambio de wallpaper con `Super+W`: el `wait` del daemon se interrumpía por `SIGUSR1` y el bucle aplicaba un segundo fondo además de la señal.
 
 ## P3 — Exploración / decisiones futuras
 

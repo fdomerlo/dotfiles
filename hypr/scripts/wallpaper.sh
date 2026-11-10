@@ -137,8 +137,11 @@ run_daemon() {
 
     while true; do
         sleep "$interval" &
-        wait $! || true
-        apply_random
+        # Si `wait` se interrumpe por SIGUSR1, el trap ya aplicó el cambio:
+        # solo se rota por temporizador cuando el sleep termina normalmente.
+        if wait $!; then
+            apply_random
+        fi
     done
 }
 
