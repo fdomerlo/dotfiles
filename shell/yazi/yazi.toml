@@ -27,8 +27,11 @@ image_filter  = "lanczos3"
 image_quality = 90
 
 [opener]
-# Edición: VS Code en ventana propia y nano como respaldo en la terminal.
+# Edición y apertura de carpetas: el primer opener de esta lista es el que
+# usa la regla `folder/*`, así que las carpetas se abren como proyecto en Zed.
+# Para cambiar la app por defecto, reordená esta lista o usá F4 (abrir con...).
 edit = [
+    { run = "zed %s", desc = "Zed", orphan = true },
     { run = "code %s", desc = "VS Code", orphan = true },
     { run = "nano %s", desc = "nano", block = true },
 ]

@@ -240,7 +240,9 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 
 | Atajo | Acción |
 | :--- | :--- |
-| `Enter` / `F3` | Abrir el archivo o entrar al directorio |
+| `Enter` | Entrar al directorio o abrir el archivo |
+| `F3` | Abrir con el opener por defecto (Zed para carpetas) |
+| `F4` | Abrir con... (elige entre Zed, VS Code, nano, etc.) |
 | `F2` | Renombrar (cursor antes de la extensión) |
 | `F5` / `F6` / `p` | Copiar / cortar / pegar |
 | `F7` / `Ctrl+N` | Nueva carpeta / nuevo archivo |
@@ -278,7 +280,8 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 * **Audio:** `start-waybar.sh` ejecuta `audio-init.sh` antes de lanzar Waybar. Si WirePlumber arrancó antes que PipeWire y dejó solo `Dummy Output` (carrera conocida con `sof-hda-dsp`), lo reinicia una vez para crear Speaker/HDMI; así el módulo `pulseaudio` sigue el sink real y el volumen responde.
 * **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva un prompt nativo mínimo con `vcs_info` como respaldo. El prompt de Starship es de una sola línea (directorio, rama y estado de Git, carácter) para no ocupar espacio vertical. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
 * **btop:** `make shell` enlaza `shell/btop/themes/neutral.theme` en `~/.config/btop/themes/` y copia una sola vez `shell/btop/btop.conf` como semilla. El tema es monocromático (acero/grises) y usa fondo transparente, así hereda el color de la terminal y no compite con `mr-robot` ni con `cyber-teal`. La config no se enlaza porque btop la reescribe al salir.
-* **Yazi:** `make shell` enlaza `shell/yazi/{yazi,keymap,theme}.toml` en `~/.config/yazi/` y crea `~/.local/bin/fd -> /usr/bin/fdfind` (Debian instala `fd-find` con ese nombre). `scripts/devtools.sh` instala `7zip` y `ffmpeg` si faltan para previews de comprimidos y video. El tema usa una paleta Nord con contraste mínimo de 4.5 : 1 sobre los fondos de `mr-robot` y `cyber-teal`: respeta el fondo de la terminal y reserva los acentos para tipos de archivo, bordes y estados. `s` requiere `fd`, `S` requiere `rg`, los PDF usan `pdftoppm` y los JSON usan `jq`.
+* **Yazi:** `make shell` enlaza `shell/yazi/{yazi,keymap,theme}.toml` en `~/.config/yazi/` y crea `~/.local/bin/fd -> /usr/bin/fdfind` (Debian instala `fd-find` con ese nombre). `scripts/devtools.sh` instala `7zip` y `ffmpeg` si faltan para previews de comprimidos y video. El tema usa una paleta Nord con contraste mínimo de 4.5 : 1 sobre los fondos de `mr-robot` y `cyber-teal`: respeta el fondo de la terminal y reserva los acentos para tipos de archivo, bordes y estados. `s` requiere `fd`, `S` requiere `rg`, los PDF usan `pdftoppm` y los JSON usan `jq`. Las carpetas usan el primer opener de `edit` en `yazi.toml` (hoy Zed); para abrirlas con otra app, reordená esa lista o usá `F4`.
+* **Wofi:** `hypr/wofi/config` define `no_actions=true`, así que las apps con acciones de `.desktop` (Chrome, Zed, Nautilus, etc.) aparecen como una sola entrada y sin el submenú de «nueva ventana». Si en algún momento querés recuperar ese submenú, poné `no_actions=false` o quitá la línea.
 
 ### Actualizar y refrescar cambios
 

@@ -5,6 +5,8 @@ height=440
 location=center
 allow_images=true
 image_size=28
+# Oculta el submenú de acciones de los .desktop (nueva ventana, etc.).
+no_actions=true
 insensitive=true
 gtk_dark=true
 term=kitty
