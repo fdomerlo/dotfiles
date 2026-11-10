@@ -104,4 +104,24 @@ else
     echo "✔ yazi ya está instalado"
 fi
 
+# Yazi busca `fd` (Debian lo instala como `fdfind`).
+if ! command -v fd &> /dev/null && [ -x /usr/bin/fdfind ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf /usr/bin/fdfind "$HOME/.local/bin/fd"
+    echo "✔ fd enlazado a /usr/bin/fdfind"
+fi
+
+# Dependencias de previews de Yazi: video (ffmpeg) y comprimidos (7zip).
+YAZI_DEPS=()
+command -v ffmpeg &> /dev/null || YAZI_DEPS+=(ffmpeg)
+if ! command -v 7z &> /dev/null && ! command -v 7zz &> /dev/null; then
+    YAZI_DEPS+=(7zip)
+fi
+if [ ${#YAZI_DEPS[@]} -gt 0 ]; then
+    echo "Instalando dependencias de Yazi: ${YAZI_DEPS[*]}..."
+    sudo apt-get install -y "${YAZI_DEPS[@]}"
+else
+    echo "✔ dependencias de previews de Yazi ya están instaladas"
+fi
+
 echo "✔ DevManagers listos."

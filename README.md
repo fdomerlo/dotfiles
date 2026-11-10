@@ -131,6 +131,10 @@ make help
     ├── btop/                      #   Config base y tema neutro de btop
     │   ├── btop.conf              #     Semilla de configuración (copia única)
     │   └── themes/neutral.theme   #     Paleta de acero/grises, fondo transparente
+    ├── yazi/                      #   Gestor de archivos en terminal
+    │   ├── yazi.toml              #     Layout de tres paneles, previews y openers
+    │   ├── keymap.toml            #     Atajos F2/F5/F6/F7/F8, pestañas y navegación
+    │   └── theme.toml             #     Paleta Nord de alto contraste para lectura
     ├── devctl                     #   CLI de diagnóstico, actualización y limpieza
     ├── gitconfig                  #   Configuración global ergonómica de Git
     ├── starship.toml              #   Prompt minimalista de una línea (directorio + Git)
@@ -191,7 +195,8 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Capturas | `grim` + `slurp` |
 | Portapapeles | `wl-clipboard` + `cliphist` |
 | Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
-| Terminal / archivos | `kitty` / `nautilus` (gráfico) + `yazi` (terminal) |
+| Terminal / archivos | `kitty` / `nautilus` (gráfico) + `yazi` (terminal, previews en Kitty) |
+| Previews de Yazi | `fd-find` (como `fd`), `7zip`, `ffmpeg`, `poppler-utils`, `jq` |
 | Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), cursor Adwaita, `qt6ct` |
 
 En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
@@ -229,6 +234,26 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `Super+Ctrl+flechas` | Redimensionar ventana |
 | `XF86Audio*` / `XF86MonBrightness*` | Volumen, mute, multimedia y brillo (con OSD) |
 
+#### Yazi (terminal)
+
+`Super+Y` abre Yazi en Kitty. Los atajos tipo GUI se suman a los nativos (`hjkl`, `s`, `S`, `d`, `r`, `w`, `t t`, `o`/`O`).
+
+| Atajo | Acción |
+| :--- | :--- |
+| `Enter` / `F3` | Abrir el archivo o entrar al directorio |
+| `F2` | Renombrar (cursor antes de la extensión) |
+| `F5` / `F6` / `p` | Copiar / cortar / pegar |
+| `F7` / `Ctrl+N` | Nueva carpeta / nuevo archivo |
+| `F8` / `d` | Mover a la papelera |
+| `Ctrl+T` / `Ctrl+W` | Nueva pestaña / cerrar pestaña |
+| `Alt+Left` / `Alt+Right` / `Alt+Up` | Atrás / adelante / carpeta padre |
+| `s` / `S` | Buscar por nombre (`fd`) / por contenido (`rg`) |
+| `z` / `Z` | Saltar con `fzf` / con `zoxide` |
+| `Ctrl+H` / `Ctrl+L` | Mostrar u ocultar ocultos / ir a una ruta |
+| `Espacio` / `v` / `r` | Seleccionar / modo visual / renombrado masivo |
+| `m s` / `m m` | Ver tamaño / fecha de modificación |
+| `w` | Gestor de tareas (copias, movimientos, extracciones) |
+
 ### Sesión, portal y theming
 
 * **Display manager:** GDM detecta automáticamente `/usr/share/wayland-sessions/hyprland.desktop`. No se instala `sddm`, `greetd` ni `uwsm`.
@@ -253,6 +278,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 * **Audio:** `start-waybar.sh` ejecuta `audio-init.sh` antes de lanzar Waybar. Si WirePlumber arrancó antes que PipeWire y dejó solo `Dummy Output` (carrera conocida con `sof-hda-dsp`), lo reinicia una vez para crear Speaker/HDMI; así el módulo `pulseaudio` sigue el sink real y el volumen responde.
 * **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva un prompt nativo mínimo con `vcs_info` como respaldo. El prompt de Starship es de una sola línea (directorio, rama y estado de Git, carácter) para no ocupar espacio vertical. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
 * **btop:** `make shell` enlaza `shell/btop/themes/neutral.theme` en `~/.config/btop/themes/` y copia una sola vez `shell/btop/btop.conf` como semilla. El tema es monocromático (acero/grises) y usa fondo transparente, así hereda el color de la terminal y no compite con `mr-robot` ni con `cyber-teal`. La config no se enlaza porque btop la reescribe al salir.
+* **Yazi:** `make shell` enlaza `shell/yazi/{yazi,keymap,theme}.toml` en `~/.config/yazi/` y crea `~/.local/bin/fd -> /usr/bin/fdfind` (Debian instala `fd-find` con ese nombre). `scripts/devtools.sh` instala `7zip` y `ffmpeg` si faltan para previews de comprimidos y video. El tema usa una paleta Nord con contraste mínimo de 4.5 : 1 sobre los fondos de `mr-robot` y `cyber-teal`: respeta el fondo de la terminal y reserva los acentos para tipos de archivo, bordes y estados. `s` requiere `fd`, `S` requiere `rg`, los PDF usan `pdftoppm` y los JSON usan `jq`.
 
 ### Actualizar y refrescar cambios
 

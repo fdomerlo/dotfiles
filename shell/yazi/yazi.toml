@@ -1,0 +1,44 @@
+# Yazi - configuración general
+# Enfoque: navegación tipo GUI dentro de Kitty/Hyprland, con tres paneles
+# (padre / actual / preview), previews de alta calidad y operaciones con progreso.
+
+[mgr]
+# Panel padre estrecho, lista central amplia y preview generosa.
+ratio          = [ 1, 4, 3 ]
+sort_by        = "alphabetical"
+sort_sensitive = false
+sort_reverse   = false
+sort_dir_first = true
+# "size" muestra el tamaño como en un gestor gráfico; "m m" alterna a fecha.
+linemode       = "size"
+show_hidden    = false
+show_symlink   = true
+scrolloff      = 5
+mouse_events   = [ "click", "scroll", "drag" ]
+
+[preview]
+wrap          = "no"
+tab_size      = 2
+max_width     = 1000
+max_height    = 1000
+image_delay   = 30
+# lanczos3 + 90 % da bordes limpios y texto legible en capturas y PDF.
+image_filter  = "lanczos3"
+image_quality = 90
+
+[opener]
+# Edición: VS Code en ventana propia y nano como respaldo en la terminal.
+edit = [
+    { run = "code %s", desc = "VS Code", orphan = true },
+    { run = "nano %s", desc = "nano", block = true },
+]
+# Reproducción y apertura delegadas al escritorio (xdg-open).
+play = [
+    { run = "xdg-open %s1", desc = "Abrir con la app del sistema", orphan = true },
+]
+open = [
+    { run = "xdg-open %s1", desc = "Abrir con la app del sistema", orphan = true },
+]
+reveal = [
+    { run = "xdg-open %d1", desc = "Abrir carpeta contenedora", orphan = true },
+]

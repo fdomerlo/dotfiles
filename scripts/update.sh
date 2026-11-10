@@ -40,7 +40,7 @@ if command -v apt-get &>/dev/null; then
     CANDIDATES=(
         git curl wget jq unzip zip ca-certificates gnupg lsb-release
         build-essential
-        ripgrep fd-find fzf bat btop direnv wl-clipboard
+        ripgrep fd-find fzf bat btop direnv wl-clipboard 7zip ffmpeg
         zoxide atuin starship tmux
         fonts-firacode fonts-jetbrains-mono fonts-noto-core
         gnome-shell-extension-dashtodock

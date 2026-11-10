@@ -1,0 +1,89 @@
+# Atajos tipo gestor de archivos GUI sobre los defaults de Yazi.
+# Se usa prepend_keymap para conservar las teclas nativas:
+#   hjkl / flechas, s (fd), S (rg), d (papelera), r (renombrar), w (tareas),
+#   t t (pestañas), o/O (abrir), c c (copiar ruta), f (filtrar), . (ocultos).
+
+[[mgr.prepend_keymap]]
+on   = "<F2>"
+run  = "rename --cursor=before_ext"
+desc = "Renombrar"
+
+[[mgr.prepend_keymap]]
+on   = "<F3>"
+run  = "open --hovered"
+desc = "Abrir / previsualizar"
+
+[[mgr.prepend_keymap]]
+on   = "<F4>"
+run  = "open --interactive --hovered"
+desc = "Abrir con..."
+
+[[mgr.prepend_keymap]]
+on   = "<F5>"
+run  = "yank"
+desc = "Copiar"
+
+[[mgr.prepend_keymap]]
+on   = "<F6>"
+run  = "yank --cut"
+desc = "Cortar"
+
+[[mgr.prepend_keymap]]
+on   = "<F7>"
+run  = "create --dir"
+desc = "Nueva carpeta"
+
+[[mgr.prepend_keymap]]
+on   = "<F8>"
+run  = "remove"
+desc = "Mover a la papelera"
+
+[[mgr.prepend_keymap]]
+on   = "<C-t>"
+run  = "tab_create --current"
+desc = "Nueva pestaña"
+
+[[mgr.prepend_keymap]]
+on   = "<C-w>"
+run  = "close"
+desc = "Cerrar pestaña"
+
+[[mgr.prepend_keymap]]
+on   = "<A-Left>"
+run  = "back"
+desc = "Atrás"
+
+[[mgr.prepend_keymap]]
+on   = "<A-Right>"
+run  = "forward"
+desc = "Adelante"
+
+[[mgr.prepend_keymap]]
+on   = "<A-Up>"
+run  = "leave"
+desc = "Subir a la carpeta padre"
+
+[[mgr.prepend_keymap]]
+on   = "<C-h>"
+run  = "hidden toggle"
+desc = "Mostrar/ocultar archivos ocultos"
+
+[[mgr.prepend_keymap]]
+on   = "<C-l>"
+run  = "cd --interactive"
+desc = "Ir a una ruta"
+
+[[mgr.prepend_keymap]]
+on   = "<C-n>"
+run  = "create"
+desc = "Nuevo archivo"
+
+[[mgr.prepend_keymap]]
+on   = "<C-p>"
+run  = "plugin fzf"
+desc = "Buscar y saltar con fzf"
+
+[[mgr.prepend_keymap]]
+on   = "<C-g>"
+run  = "plugin zoxide"
+desc = "Saltar con zoxide"

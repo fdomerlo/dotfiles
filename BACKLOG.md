@@ -82,6 +82,8 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Revisar el prompt de Starship en repos Git con cambios, ramas y comandos lentos: renderiza rama, estado y duración.
 - [x] Probar `Super+Shift+Return` y confirmar que reutiliza la sesión `main` de tmux.
 - [x] Revisar `~/.tmux.conf`: prefix `Ctrl+a`, mouse, `history-limit 100000`, `base-index 1`, splits en el directorio actual y recarga con `prefix + r` verificados con `tmux show`/`list-keys`.
+- [x] Configurar Yazi como gestor de archivos de terminal tipo GUI: layout `[1, 4, 3]`, atajos F2/F5/F6/F7/F8, pestañas, búsqueda `fd`/`rg`, tema Nord de alto contraste y enlace `fd -> fdfind`.
+- [ ] Instalar `7zip` y `ffmpeg` para previews de comprimidos y video en Yazi (requiere `sudo apt install 7zip ffmpeg`).
 
 ## P2 — Siguiente lote de productividad
 

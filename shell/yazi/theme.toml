@@ -1,0 +1,141 @@
+# Yazi - esquema de color optimizado para lectura
+#
+# Paleta Nord de bajo deslumbramiento sobre fondos oscuros. Los contrastes
+# aproximados (WCAG) contra los fondos de mr-robot (#05080b) y cyber-teal
+# (#0c1012) son:
+#
+#   Texto principal #d8dee9 .... 14.9 : 1
+#   Texto secundario #8394a3 .... 6.4 : 1
+#   Azul #81a1c1 ................ 7.5 : 1
+#   Cian #88c0d0 ................ 10.0 : 1
+#   Verde #a3be8c ............... 9.8 : 1
+#   Amarillo #ebcb8b ............ 12.9 : 1
+#   Naranja #d08770 ............. 7.1 : 1
+#   Rojo claro #d16d76 .......... 5.9 : 1
+#   Púrpura #b48ead ............. 7.1 : 1
+#
+# La regla es simple: el texto normal nunca baja de 4.5 : 1 y los acentos
+# se reservan para tipos de archivo, bordes y estados, no para párrafos.
+
+[mgr]
+cwd           = { fg = "#88c0d0", bold = true }
+find_keyword  = { fg = "#ebcb8b", bold = true, underline = true }
+find_position = { fg = "#b48ead", bold = true }
+symlink_target = { fg = "#8fbcbb", italic = true }
+
+# Marcadores de selección: color sólido y texto oscuro para máximo contraste.
+marker_copied   = { fg = "#a3be8c", bg = "#a3be8c" }
+marker_cut      = { fg = "#d16d76", bg = "#d16d76" }
+marker_marked   = { fg = "#88c0d0", bg = "#88c0d0" }
+marker_selected = { fg = "#ebcb8b", bg = "#ebcb8b" }
+marker_symbol   = "│"
+
+count_copied   = { fg = "#2e3440", bg = "#a3be8c" }
+count_cut      = { fg = "#eceff4", bg = "#8f3f47" }
+count_selected = { fg = "#2e3440", bg = "#ebcb8b" }
+
+border_symbol = "│"
+border_style  = { fg = "#3b4252" }
+
+[tabs]
+active   = { fg = "#2e3440", bg = "#88c0d0", bold = true }
+inactive = { fg = "#d8dee9", bg = "#3b4252" }
+
+[mode]
+normal_main = { fg = "#2e3440", bg = "#88c0d0", bold = true }
+normal_alt  = { fg = "#88c0d0", bg = "#3b4252" }
+
+select_main = { fg = "#eceff4", bg = "#8f3f47", bold = true }
+select_alt  = { fg = "#d16d76", bg = "#3b4252" }
+
+unset_main = { fg = "#eceff4", bg = "#8f3f47", bold = true }
+unset_alt  = { fg = "#d16d76", bg = "#3b4252" }
+
+[indicator]
+parent  = { reversed = true }
+current = { reversed = true, bold = true }
+preview = { underline = true }
+
+[status]
+perm_sep   = { fg = "#4c566a" }
+perm_type  = { fg = "#a3be8c" }
+perm_read  = { fg = "#ebcb8b" }
+perm_write = { fg = "#d16d76" }
+perm_exec  = { fg = "#88c0d0" }
+
+progress_label  = { bold = true }
+progress_normal = { fg = "#a3be8c", bg = "#2e3440" }
+progress_error  = { fg = "#eceff4", bg = "#8f3f47" }
+
+[which]
+border    = { fg = "#5e81ac" }
+cand      = { fg = "#88c0d0" }
+rest      = { fg = "#8394a3" }
+desc      = { fg = "#b48ead" }
+separator = "  "
+separator_style = { fg = "#4c566a" }
+
+[confirm]
+border  = { fg = "#5e81ac" }
+title   = { fg = "#88c0d0", bold = true }
+btn_yes = { fg = "#2e3440", bg = "#a3be8c", bold = true }
+btn_no  = { fg = "#d8dee9", bg = "#3b4252" }
+
+[spot]
+border   = { fg = "#5e81ac" }
+title    = { fg = "#88c0d0", bold = true }
+tbl_col  = { fg = "#81a1c1" }
+tbl_cell = { fg = "#ebcb8b" }
+
+[notify]
+title_info  = { fg = "#a3be8c", bold = true }
+title_warn  = { fg = "#ebcb8b", bold = true }
+title_error = { fg = "#d16d76", bold = true }
+
+[pick]
+border   = { fg = "#5e81ac" }
+active   = { fg = "#88c0d0", bold = true }
+inactive = { fg = "#d8dee9" }
+
+[input]
+border   = { fg = "#5e81ac" }
+title    = { fg = "#88c0d0", bold = true }
+value    = { fg = "#d8dee9" }
+selected = { fg = "#2e3440", bg = "#ebcb8b" }
+
+[cmp]
+border   = { fg = "#5e81ac" }
+active   = { fg = "#2e3440", bg = "#88c0d0", bold = true }
+inactive = { fg = "#d8dee9" }
+
+[tasks]
+border  = { fg = "#5e81ac" }
+title   = { fg = "#88c0d0", bold = true }
+hovered = { fg = "#ebcb8b", bold = true }
+
+[help]
+border  = { fg = "#5e81ac" }
+chord   = { fg = "#88c0d0" }
+action  = { fg = "#d8dee9" }
+hovered = { fg = "#2e3440", bg = "#ebcb8b", bold = true }
+
+[filetype]
+rules = [
+    # Imágenes: amarillo suave, buen contraste sin dominar la lista.
+    { mime = "**/image/*", fg = "#ebcb8b" },
+    # Audio y video: púrpura.
+    { mime = "**/{audio,video}/*", fg = "#b48ead" },
+    # Comprimidos: naranja.
+    { mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#d08770" },
+    # Documentos: azul.
+    { mime = "**/application/{pdf,doc,rtf}", fg = "#81a1c1" },
+    # Sistema de archivos virtual ausente o caducado.
+    { mime = "vfs/{absent,stale}", fg = "#8394a3" },
+    # Enlaces huérfanos y archivos dummy: fondo rojo oscuro con texto claro.
+    { url = "*", is = "orphan", fg = "#eceff4", bg = "#8f3f47" },
+    { url = "*", is = "exec", fg = "#a3be8c" },
+    { url = "*", is = "dummy", fg = "#eceff4", bg = "#8f3f47" },
+    { url = "*/", is = "dummy", fg = "#eceff4", bg = "#8f3f47" },
+    # Directorios: cian, el acento más legible de la paleta.
+    { url = "*/", fg = "#88c0d0" },
+]
