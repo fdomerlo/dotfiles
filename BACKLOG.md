@@ -61,19 +61,19 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 
 ### Flujo diario
 
-- [ ] Probar `Alt+Tab`, `Alt+Shift+Tab` y `Alt+\`` con varias ventanas y en multi-monitor.
+- [x] Probar `Alt+Tab`, `Alt+Shift+Tab` y `Alt+\`` con varias ventanas y en multi-monitor.
 - [x] Probar `Super+\`` con scratchpad abierto, cerrado y con la terminal cerrada. La ventana queda en `special:magic`, flotante y centrada.
 - [ ] Probar `Super+Shift+\`` para mover una ventana al scratchpad.
-- [ ] Probar grupos: `Super+G`, `Super+Tab`, `Super+Shift+Tab`, `Super+Ctrl+G`, `Super+Shift+G`.
-- [ ] Verificar que `Super+Shift+1..0` mueve la ventana sin cambiar de workspace.
+- [x] Probar grupos: `Super+G`, `Super+Tab`, `Super+Shift+Tab`, `Super+Ctrl+G`, `Super+Shift+G`.
+- [x] Verificar que `Super+Shift+1..0` mueve la ventana sin cambiar de workspace.
 - [x] Abrir `Super+F1` y confirmar que el cheatsheet lista los atajos nuevos con nombres legibles. Genera 84 entradas y el bind está cargado. Se cambió desde `Super+/` porque en latam `/` es `Shift+7` y colisiona con `movetoworkspacesilent 7`.
-- [ ] Validar `Super+M` (maximizar/restaurar) en ventanas tileadas y flotantes.
+- [x] Validar `Super+M` (maximizar/restaurar) en ventanas tileadas y flotantes.
 
 ### Multi-monitor
 
 - [x] Fijar layout de dos monitores por conector (`HDMI-A-1` izquierda, `HDMI-A-2` derecha) y rangos de workspaces `1–5` / `6–0`.
 - [x] Ajustar Waybar para mostrar cada rango solo en su salida (`all-outputs: false` + `persistent-workspaces` por monitor).
-- [ ] Validar en uso real que `Super+1..5` y `Super+6..0` enfocan siempre el monitor correcto, incluso con el foco en el otro.
+- [x] Validar en uso real que `Super+1..5` y `Super+6..0` enfocan siempre el monitor correcto, incluso con el foco en el otro.
 
 ### Shell
 
@@ -84,8 +84,9 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Revisar `~/.tmux.conf`: prefix `Ctrl+a`, mouse, `history-limit 100000`, `base-index 1`, splits en el directorio actual y recarga con `prefix + r` verificados con `tmux show`/`list-keys`.
 - [x] Configurar Yazi como gestor de archivos de terminal tipo GUI: layout `[1, 4, 3]`, atajos F2/F5/F6/F7/F8, pestañas, búsqueda `fd`/`rg`, tema Nord de alto contraste y enlace `fd -> fdfind`.
 - [x] Cambiar el opener de carpetas de Yazi a Zed (primer opener de `edit`), dejando VS Code y nano como alternativas en `F4`.
+- [x] Corregir el opener de Zed en Yazi: se lanza con `sh -c '"$HOME/.local/bin/zed" %s'` porque el proceso de Yazi no hereda `~/.local/bin` en el `PATH`. Verificado abriendo un `.md` con el `PATH` restringido.
 - [x] Ocultar el submenú de acciones de los `.desktop` en wofi con `no_actions=true` (Chrome, Zed, Nautilus, etc. aparecen como una sola entrada).
-- [ ] Instalar `7zip` y `ffmpeg` para previews de comprimidos y video en Yazi (requiere `sudo apt install 7zip ffmpeg`).
+- [x] Instalar `7zip` y `ffmpeg` para previews de comprimidos y video en Yazi (requiere `sudo apt install 7zip ffmpeg`).
 
 ## P2 — Siguiente lote de productividad
 
