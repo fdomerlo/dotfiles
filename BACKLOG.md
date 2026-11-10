@@ -74,6 +74,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Fijar layout de dos monitores por conector (`HDMI-A-1` izquierda, `HDMI-A-2` derecha) y rangos de workspaces `1–5` / `6–0`.
 - [x] Ajustar Waybar para mostrar cada rango solo en su salida (`all-outputs: false` + `persistent-workspaces` por monitor).
 - [x] Validar en uso real que `Super+1..5` y `Super+6..0` enfocan siempre el monitor correcto, incluso con el foco en el otro.
+- [x] Agregar ciclo de workspaces con `Super+Av.Pág`/`Super+Re.Pág` (`workspace-cycle.sh`): recorre solo el monitor enfocado con wrap (`5→1`, `10→6`) leyendo los rangos de `workspaces.conf`; con `Shift` mueve la ventana. Verificado por `hyprctl` en ambos monitores.
 
 ### Shell
 
