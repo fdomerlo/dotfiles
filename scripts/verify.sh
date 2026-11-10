@@ -96,7 +96,7 @@ fi
 # 7. Enlaces simbólicos de dotfiles
 echo -n "Integridad de dotfiles... "
 missing=0
-for f in "$HOME/.zshrc" "$HOME/.gitconfig" "$HOME/.local/bin/devctl"; do
+for f in "$HOME/.zshrc" "$HOME/.gitconfig" "$HOME/.local/bin/devctl" "$HOME/.config/nvim/init.lua"; do
     if [ ! -e "$f" ]; then
         missing=1
         echo -e "\n  -> Falta: $f"
@@ -110,7 +110,7 @@ fi
 
 # 8. Herramientas CLI críticas
 echo "Disponibilidad de herramientas clave:"
-for cmd in git gh uv fnm code zed opencode antigravity agy podman yazi mc; do
+for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc; do
     echo -n "  -> $cmd: "
     if command -v "$cmd" &>/dev/null || [ -f "$HOME/.local/bin/$cmd" ]; then
         check_status 0 "Presente"

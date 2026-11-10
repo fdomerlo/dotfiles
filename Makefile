@@ -20,9 +20,9 @@ help:
 	@echo "  make refresh         - Re-sincroniza configs/scripts de Hyprland desde el repo y recarga la sesión (tras git pull)"
 	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
-	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop, yazi)"
+	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop, yazi, nvim)"
 	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi y sincroniza SSH de GitHub"
-	@echo "  make tooling         - Instala navegadores y editores nativos (VS Code, Chrome, Zed)"
+	@echo "  make tooling         - Instala navegadores y editores nativos (VS Code, Chrome, Zed, Neovim)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
 	@echo "  make desktop         - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
 	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
@@ -94,8 +94,13 @@ shell:
 	ln -sf $(ROOT_DIR)/shell/mc/ini $(HOME)/.config/mc/ini
 	ln -sf $(ROOT_DIR)/shell/mc/skins/nord.ini $(HOME)/.local/share/mc/skins/nord.ini
 	@# mcedit no necesita su propia entrada en wofi: F4 abre el editor interno.
-	mkdir -p $(HOME)/.local/share/applications
+	mkdir -p $(HOME)/.local/share/applications $(HOME)/.local/share/icons/hicolor/128x128/apps
 	ln -sf $(ROOT_DIR)/shell/mc/mcedit.desktop $(HOME)/.local/share/applications/mcedit.desktop
+	ln -sf $(ROOT_DIR)/shell/nvim/nvim.desktop $(HOME)/.local/share/applications/nvim.desktop
+	@[ -f $(HOME)/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png ] && \
+		ln -sf $(HOME)/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png $(HOME)/.local/share/icons/hicolor/128x128/apps/nvim.png || true
+	mkdir -p $(HOME)/.config
+	ln -sfn $(ROOT_DIR)/shell/nvim $(HOME)/.config/nvim
 	mkdir -p $(HOME)/.local/bin
 	@# Yazi busca el binario `fd`; Debian lo instala como `fdfind`.
 	@if [ -x /usr/bin/fdfind ]; then ln -sf /usr/bin/fdfind $(HOME)/.local/bin/fd; fi

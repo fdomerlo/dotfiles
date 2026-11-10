@@ -9,7 +9,7 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 echo "================================================================="
-echo "==> Instalando navegadores y editores (VS Code, Chrome, Zed)..."
+echo "==> Instalando navegadores y editores (VS Code, Chrome, Zed, Neovim)..."
 echo "================================================================="
 
 # 1. Visual Studio Code (APT Oficial en formato canónico DEB822 para Debian)
@@ -60,6 +60,47 @@ else
     echo "✔ Zed ya está instalado"
 fi
 
+# 4. Neovim (Editor de terminal extensible en espacio de usuario / APT)
+if ! command -v nvim &> /dev/null && [ ! -f "$HOME/.local/bin/nvim" ]; then
+    echo "==> Instalando Neovim..."
+    DET_ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
+    if [ "$DET_ARCH" = "amd64" ] || [ "$DET_ARCH" = "x86_64" ]; then
+        NVIM_ARCH="x86_64"
+    elif [ "$DET_ARCH" = "arm64" ] || [ "$DET_ARCH" = "aarch64" ]; then
+        NVIM_ARCH="arm64"
+    else
+        NVIM_ARCH=""
+    fi
+
+    if [ -n "$NVIM_ARCH" ]; then
+        mkdir -p "$HOME/.local/share" "$HOME/.local/bin"
+        TMP_DIR=$(mktemp -d)
+        curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" -o "$TMP_DIR/nvim.tar.gz"
+        tar -xzf "$TMP_DIR/nvim.tar.gz" -C "$TMP_DIR"
+        rm -rf "$HOME/.local/share/neovim"
+        mv "$TMP_DIR/nvim-linux-${NVIM_ARCH}" "$HOME/.local/share/neovim"
+        ln -sf "$HOME/.local/share/neovim/bin/nvim" "$HOME/.local/bin/nvim"
+        rm -rf "$TMP_DIR"
+        echo "✔ Neovim instalado en ~/.local/bin/nvim"
+    elif sudo -n true 2>/dev/null; then
+        sudo apt-get install -y neovim
+        echo "✔ Neovim instalado vía APT"
+    else
+        echo "⚠️ No se pudo determinar arquitectura compatible para Neovim"
+    fi
+else
+    echo "✔ Neovim ya está instalado"
+fi
+
+# Integración del lanzador (.desktop e icono para Wofi / GNOME)
+if [ -f "$HOME/.local/share/neovim/share/applications/nvim.desktop" ]; then
+    mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/128x128/apps"
+    ln -sf "$HOME/.local/share/neovim/share/applications/nvim.desktop" "$HOME/.local/share/applications/nvim.desktop"
+    [ -f "$HOME/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png" ] && \
+        ln -sf "$HOME/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png" "$HOME/.local/share/icons/hicolor/128x128/apps/nvim.png"
+    update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+fi
+
 echo "================================================================="
-echo "✔ Tooling (VS Code, Chrome, Zed) completado."
+echo "✔ Tooling (VS Code, Chrome, Zed, Neovim) completado."
 echo "================================================================="

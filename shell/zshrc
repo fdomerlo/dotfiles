@@ -106,6 +106,14 @@ else
   PROMPT='%F{blue}%1~%f%F{yellow}${vcs_info_msg_0_}%f %F{green}❯%f '
 fi
 
+# --- Editor Predeterminado & Pager ---
+if command -v nvim &>/dev/null; then
+  export EDITOR="nvim"
+  export VISUAL="nvim"
+  alias v="nvim"
+  alias vim="nvim"
+fi
+
 # --- Aliases útiles (Podman & CLI Moderna en Debian) ---
 alias p="podman"
 alias pc="podman compose"

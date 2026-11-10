@@ -41,7 +41,7 @@ if command -v apt-get &>/dev/null; then
         git curl wget jq unzip zip ca-certificates gnupg lsb-release
         build-essential
         ripgrep fd-find fzf bat btop mc direnv wl-clipboard 7zip ffmpeg
-        zoxide atuin starship tmux
+        zoxide atuin starship tmux neovim
         fonts-firacode fonts-jetbrains-mono fonts-noto-core
         gnome-shell-extension-dashtodock
         flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
@@ -61,15 +61,14 @@ if command -v apt-get &>/dev/null; then
         CANDIDATES+=(google-chrome-stable)
     fi
 
-    # Perfil Hyprland (scripts/hyprland.sh). Solo se actualizan los instalados.
+    # Paquetes del perfil opcional Hyprland: si el usuario instaló el perfil,
+    # scripts/update.sh los mantiene al día en el mismo paso.
     HYPR_CANDIDATES=(
-        hyprland hyprpaper hypridle hyprlock hyprpolkitagent hyprland-guiutils
-        xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
-        waybar wofi mako-notifier sway-notification-center swayosd
-        grim slurp cliphist swaybg brightnessctl playerctl
-        kitty nautilus pavucontrol libnotify-bin network-manager-gnome blueman
-        qt6ct qt5ct qtwayland5 xwayland adwaita-icon-theme
-        gnome-themes-extra
+        hyprland waybar wofi mako-notifier kitty
+        swaync swayosd
+        hypridle hyprlock hyprpaper swaybg
+        grim slurp wl-clipboard cliphist
+        brightnessctl playerctl
         pipewire pipewire-audio pipewire-pulse wireplumber
         fonts-font-awesome
     )
@@ -156,7 +155,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Editores/navegadores nativos (APT ya cubrió code/chrome; aquí Zed)
+# 3. Editores/navegadores nativos (APT ya cubrió code/chrome/nvim; aquí Zed y user-space nvim)
 # ------------------------------------------------------------------------------
 step "Actualizando Zed editor..."
 if command -v zed &>/dev/null || [ -f "$HOME/.local/bin/zed" ]; then
@@ -164,6 +163,43 @@ if command -v zed &>/dev/null || [ -f "$HOME/.local/bin/zed" ]; then
     ok "Zed actualizado."
 else
     warn "Zed no instalado (ejecuta 'make tooling')."
+fi
+
+step "Actualizando Neovim..."
+if [ -d "$HOME/.local/share/neovim" ]; then
+    DET_ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
+    if [ "$DET_ARCH" = "amd64" ] || [ "$DET_ARCH" = "x86_64" ]; then
+        NVIM_ARCH="x86_64"
+    elif [ "$DET_ARCH" = "arm64" ] || [ "$DET_ARCH" = "aarch64" ]; then
+        NVIM_ARCH="arm64"
+    else
+        NVIM_ARCH=""
+    fi
+    if [ -n "$NVIM_ARCH" ]; then
+        TMP_DIR=$(mktemp -d)
+        if curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" -o "$TMP_DIR/nvim.tar.gz" 2>/dev/null; then
+            tar -xzf "$TMP_DIR/nvim.tar.gz" -C "$TMP_DIR"
+            rm -rf "$HOME/.local/share/neovim"
+            mv "$TMP_DIR/nvim-linux-${NVIM_ARCH}" "$HOME/.local/share/neovim"
+            ln -sf "$HOME/.local/share/neovim/bin/nvim" "$HOME/.local/bin/nvim"
+            ok "Neovim actualizado en ~/.local/bin/nvim."
+        else
+            warn "no se pudo descargar la última versión de Neovim."
+        fi
+        rm -rf "$TMP_DIR"
+    fi
+elif command -v nvim &>/dev/null; then
+    ok "Neovim gestionado por APT."
+else
+    warn "Neovim no instalado (ejecuta 'make tooling')."
+fi
+
+step "Sincronizando plugins de Neovim (lazy.nvim)..."
+if command -v nvim &>/dev/null && [ -d "$HOME/.local/share/nvim/lazy" ]; then
+    nvim --headless "+Lazy! sync" +qa 2>/dev/null || warn "no se pudieron actualizar los plugins de Neovim en modo headless."
+    ok "Plugins de Neovim sincronizados."
+else
+    ok "Neovim: plugins gestionados por lazy.nvim al iniciar."
 fi
 
 # ------------------------------------------------------------------------------

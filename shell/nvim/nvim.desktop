@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Neovim
+GenericName=Text Editor
+Comment=Edit text files in terminal
+TryExec=/home/fdomerlo/.local/bin/nvim
+Exec=kitty -e /home/fdomerlo/.local/bin/nvim %F
+Icon=/home/fdomerlo/.local/share/icons/hicolor/128x128/apps/nvim.png
+Terminal=false
+Type=Application
+Categories=Utility;TextEditor;Development;IDE;
+Keywords=Text;editor;vim;nvim;
+StartupNotify=false
+MimeType=text/plain;text/x-makefile;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-csrc;text/x-java;text/x-shellscript;

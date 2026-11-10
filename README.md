@@ -46,7 +46,7 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
   * **Java/JVM:** Administrado con [sdkman](https://sdkman.io).
 * **CLI Moderna y Shell Productiva:** `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard`, gestor de archivos en terminal [yazi](https://github.com/sxyazi/yazi) (con previews en Kitty y wrapper `y`), más `zoxide` (`z`/`zi`), `atuin` (historial con `Ctrl+R`), `starship` (prompt) y `tmux` (sesiones persistentes, `Super+Shift+Return`).
 * **Tooling de Desarrollo Nativo & DevAI:**
-  * **Editores y Navegadores:** VS Code (con repositorio oficial APT DEB822 de Microsoft), Zed editor, Google Chrome oficial.
+  * **Editores y Navegadores:** VS Code (con repositorio oficial APT DEB822 de Microsoft), Zed editor, Neovim (editor extensible en terminal con lazy.nvim, LSP y Treesitter), Google Chrome oficial.
   * **Herramientas de IA:** OpenCode CLI, Antigravity IDE (Core 2.0 en `/opt`) y Antigravity CLI (`agy` / `antigravity-cli`).
 * **Respaldos del Sistema Opcionales (`make timeshift`):** Deja preconfigurado `/etc/timeshift/timeshift.json` (modo RSYNC en EXT4 o BTRFS, excluyendo `/home`, `/swapfile` y cachés de contenedores) sin forzar snapshots automáticos iniciales.
 
@@ -122,7 +122,7 @@ make help
 │   ├── setup_agy.sh               #   Despliegue atómico de Antigravity Core/IDE en /opt (opcional)
 │   ├── setup_gh.sh                #   Configuración y autenticación SSH con GitHub CLI
 │   ├── setup_git.sh               #   Configuración idempotente de identidad global de Git
-│   ├── tooling.sh                 #   Instalación de VS Code (APT DEB822), Chrome (.deb) y Zed
+│   ├── tooling.sh                 #   Instalación de VS Code (APT DEB822), Chrome (.deb), Zed y Neovim
 │   ├── update.sh                  #   Actualización idempotente (only-upgrade incl. Hyprland + self-updates + flatpak)
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
@@ -131,6 +131,9 @@ make help
     ├── btop/                      #   Config base y tema neutro de btop
     │   ├── btop.conf              #     Semilla de configuración (copia única)
     │   └── themes/neutral.theme   #     Paleta de acero/grises, fondo transparente
+    ├── nvim/                      #   Configuración modular de Neovim (init.lua, lazy.nvim, LSP, Treesitter)
+    │   ├── init.lua               #     Bootstrap de lazy.nvim y carga de módulos
+    │   └── lua/                   #     options, keymaps, autocmds y plugins declarativos
     ├── yazi/                      #   Gestor de archivos en terminal
     │   ├── yazi.toml              #     Layout de tres paneles, previews y openers
     │   ├── keymap.toml            #     Atajos F2/F5/F6/F7/F8, pestañas y navegación
@@ -158,11 +161,11 @@ make help
 | `make host` | Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman |
 | `make timeshift` | *(Opcional)* Instala y configura `/etc/timeshift/timeshift.json` sin crear snapshots iniciales |
 | `make podman` | Configura Podman en modo Rootless con backend pasta (systemd --user) |
-| `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig`, `devctl` y la config/tema neutro de `btop` |
+| `make shell` | Instala Zsh, Oh My Zsh, plugins y enlaza `.zshrc`, `.gitconfig`, `devctl`, `btop`, `yazi` y `nvim` |
 | `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman`, `yazi`, prepara SSH con GitHub e identidad Git |
 | `make gitconfig` | Configura `user.name` y `user.email` en Git (idempotente e interactivo) |
 | `make github-auth` | Flujo interactivo oficial de autenticación en GitHub CLI (`gh auth login`) |
-| `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed) |
+| `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed, Neovim) |
 | `make devai` | Instala OpenCode CLI, Antigravity CLI y despliega Antigravity Core/IDE (opcional) |
 | `make desktop` | Aplica tipografías, botones de ventana (min/max/close), directorios de trabajo y extensiones GNOME |
 | `make hyprland` | *(Opcional)* Instala y configura el perfil Hyprland sin reemplazar GNOME (solo Debian Stable) |
@@ -249,7 +252,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | :--- | :--- |
 | `Enter` | Entrar al directorio o abrir el archivo |
 | `F3` | Abrir con el opener por defecto (Zed para carpetas) |
-| `F4` | Abrir con... (elige entre Zed, VS Code, nano, etc.) |
+| `F4` | Abrir con... (elige entre Neovim, nano, Zed, VS Code) |
 | `F2` | Renombrar (cursor antes de la extensión) |
 | `F5` / `F6` / `p` | Copiar / cortar / pegar |
 | `F7` / `Ctrl+N` | Nueva carpeta / nuevo archivo |
@@ -287,8 +290,7 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 * **`XDG_CURRENT_DESKTOP`:** se define como `Hyprland:GNOME` en `env.conf` de forma intencional, para que los portales de GNOME cubran file picker y secretos. Por eso `appearance.conf` activa `misc:disable_xdg_env_checks`, que silencia el aviso de Hyprland sobre entornos «gestionados externamente».
 * **Portal (`hyprland-portals.conf`):** como `XDG_CURRENT_DESKTOP` incluye `GNOME`, `xdg-desktop-portal` intentaba usar `gnome.portal` para las interfaces que `hyprland.portal`/`gtk.portal` no implementan. Ese backend no existe en Hyprland y el portal quedaba bloqueado esperando timeouts de D-Bus; como consecuencia `org.freedesktop.portal.Settings` no respondía y Waybar se quedaba esperando el esquema de color sin dibujarse. `hypr/xdg-desktop-portal/hyprland-portals.conf` fija `default=hyprland;gtk`, mantiene `Secret=gnome-keyring` y desactiva con `none` las interfaces exclusivas de GNOME. El nombre `hyprland-portals.conf` es intencional: xdg-desktop-portal solo lo aplica cuando `XDG_CURRENT_DESKTOP` contiene `Hyprland`; en GNOME usa `gnome-portals.conf` del sistema. Un `portals.conf` genérico también se aplicaba en GNOME y hacía que sus apps (Nautilus, Calculadora, Text Editor) esperaran timeouts de los backends equivocados.
 * **Ciclo de sesión:** `autostart.conf` inicia `graphical-session.target` y lo detiene con `exec-shutdown`. Los portales son `PartOf` de ese target, así que no sobreviven a un cambio Hyprland → GNOME con un entorno obsoleto.
-* **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.
-* **Cursor:** `Adwaita` 24 px en Hyprland, XWayland, GTK y Qt, el mismo que usa GNOME. `env.conf` fija `XCURSOR_THEME`/`HYPRCURSOR_THEME`, `settings.ini` de GTK fija `gtk-cursor-theme-name` y `scripts/desktop.sh` converge `gsettings`. Así no se mezclan temas entre ventanas nativas y aplicaciones GTK/Electron. Tras cambiar `env.conf` hace falta reiniciar la sesión de Hyprland; `hyprctl setcursor Adwaita 24` lo aplica en caliente al compositor.
+* **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.\n* **Cursor:** `Adwaita` 24 px en Hyprland, XWayland, GTK y Qt, el mismo que usa GNOME. `env.conf` fija `XCURSOR_THEME`/`HYPRCURSOR_THEME`, `settings.ini` de GTK fija `gtk-cursor-theme-name` y `scripts/desktop.sh` converge `gsettings`. Así no se mezclan temas entre ventanas nativas y aplicaciones GTK/Electron. Tras cambiar `env.conf` hace falta reiniciar la sesión de Hyprland; `hyprctl setcursor Adwaita 24` lo aplica en caliente al compositor.
 * **Monitores:** `hypr/conf/monitors.conf` fija un layout de dos pantallas por nombre de conector (no por modelo/serie): `HDMI-A-1` a la izquierda en `0x0` y `HDMI-A-2` a la derecha con `auto-right`. Se mantiene `monitor = ,preferred,auto,1` como fallback para salidas desconocidas. Si en otra PC los conectores se llaman distinto, solo hay que ajustar esas dos líneas (o intercambiarlas para invertir el orden físico). Ver salidas con `hyprctl monitors`.
 * **Workspaces:** `hypr/conf/workspaces.conf` asigna rangos fijos por monitor: `1–5` en el izquierdo (`HDMI-A-1`) y `6–0` en el derecho (`HDMI-A-2`). `Super+1..5` siempre enfoca el monitor izquierdo y `Super+6..0` el derecho, sin depender de cuál tenga el foco. Waybar muestra cada rango solo en su barra (`all-outputs: false` + `persistent-workspaces` por salida). Para recorrerlos sin memorizar números, `Super+Av.Pág`/`Super+Re.Pág` ciclan dentro del monitor enfocado con wrap (`5→1` y `10→6`) mediante `hypr/scripts/workspace-cycle.sh`, que lee los rangos de `workspaces.conf`; con `Shift` mueve la ventana en vez de cambiar de workspace.
 * **Wallpaper:** el daemon (`wallpaper.sh --daemon`, arrancado por `autostart.conf`) rota el fondo cada 30 minutos entre los `.png`/`.jpg`/`.webp` de `~/.config/hypr/wallpapers`, `~/Imágenes/Wallpapers` y el repo, sin repetir el actual. `Super+W` envía `SIGUSR1` al daemon para cambiar una sola vez; el bucle distingue la interrupción del `sleep` para no aplicar un segundo cambio. Sin imágenes se usa `swaybg -c '#0c1012'`.
@@ -303,6 +305,7 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 * **btop:** `make shell` enlaza `shell/btop/themes/neutral.theme` en `~/.config/btop/themes/` y copia una sola vez `shell/btop/btop.conf` como semilla. El tema es monocromático (acero/grises) y usa fondo transparente, así hereda el color de la terminal y no compite con `mr-robot` ni con `cyber-teal`. La config no se enlaza porque btop la reescribe al salir.
 * **Yazi:** `make shell` enlaza `shell/yazi/{yazi,keymap,theme}.toml` en `~/.config/yazi/` y crea `~/.local/bin/fd -> /usr/bin/fdfind` (Debian instala `fd-find` con ese nombre). `scripts/devtools.sh` instala `7zip` y `ffmpeg` si faltan para previews de comprimidos y video. El tema usa una paleta Nord con contraste mínimo de 4.5 : 1 sobre los fondos de `mr-robot` y `cyber-teal`: respeta el fondo de la terminal y reserva los acentos para tipos de archivo, bordes y estados. `s` requiere `fd`, `S` requiere `rg`, los PDF usan `pdftoppm` y los JSON usan `jq`. Las carpetas y los archivos de texto usan el primer opener de `edit` en `yazi.toml` (hoy Zed); para abrirlos con otra app, reordená esa lista o usá `F4`. Zed se invoca como `sh -c '"$HOME/.local/bin/zed" %s'` porque Yazi no hereda el `PATH` del login (no incluye `~/.local/bin`) y no expande `$HOME` en los openers. El reparto de columnas se ajusta con `ratio` en `yazi.toml` (hoy `[1, 4, 5]`: padre, lista y preview).
 * **Midnight Commander:** `make shell` enlaza `shell/mc/ini` en `~/.config/mc/ini` y `shell/mc/skins/nord.ini` en `~/.local/share/mc/skins/`. El skin usa truecolor y la misma paleta Nord que Yazi (respeta el fondo de la terminal y reserva los acentos por tipo de archivo). `auto_save_setup=false` evita que `mc` reescriba el `ini` enlazado al salir; los cambios se hacen en el repo. `shell/mc/mcedit.desktop` se enlaza en `~/.local/share/applications/` con `NoDisplay=true` para que wofi muestre solo «Midnight Commander» y no una segunda entrada del editor (F4 sigue abriendo el editor interno). `scripts/devtools.sh` instala `mc` si falta y `scripts/update.sh` lo mantiene actualizado.
+* **Neovim:** `make shell` enlaza `shell/nvim` en `~/.config/nvim`. Configuración modular y limpia en Lua con gestor declarativo `lazy.nvim`, tema TokyoNight Night coherente con la paleta oscura de la terminal, análisis sintáctico con `nvim-treesitter`, buscador difuso con `telescope.nvim` (`fzf`/`ripgrep`), integración LSP nativa con `mason.nvim` (`lua_ls`, `bashls`), autocompletado `nvim-cmp` e integración con Git (`gitsigns`). Enlazado automáticamente en `~/.config/nvim`, exportado como `$EDITOR`/`$VISUAL` en Zsh y configurado como opener de terminal en Yazi (`yazi.toml`). `scripts/tooling.sh` instala el binario oficial en espacio de usuario (`~/.local/share/neovim` -> `~/.local/bin/nvim`) o vía APT, y `scripts/update.sh` lo mantiene al día.
 * **Wofi:** `hypr/wofi/config` define `no_actions=true`, así que las apps con acciones de `.desktop` (Chrome, Zed, Nautilus, etc.) aparecen como una sola entrada y sin el submenú de «nueva ventana». Si en algún momento querés recuperar ese submenú, poné `no_actions=false` o quitá la línea.
 
 ### Actualizar y refrescar cambios
@@ -404,8 +407,8 @@ El script comprueba de forma automática:
 4. Estado de **Timeshift** (informativo/opcional).
 5. Estado operativo y modo rootless de **Podman Rootless**.
 6. Disponibilidad de tipografías del sistema en Fontconfig (`JetBrains Mono`, `Fira Code`, `Noto Sans`, `Adwaita Sans`).
-7. Integridad de los enlaces simbólicos de dotfiles (`~/.zshrc`, `~/.gitconfig`, `devctl`).
-8. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `zed`, `antigravity`, `podman`, `yazi`).
+7. Integridad de los enlaces simbólicos de dotfiles (`~/.zshrc`, `~/.gitconfig`, `devctl`, `~/.config/nvim/init.lua`).
+8. Presencia en el `PATH` de los binarios esenciales (`git`, `gh`, `uv`, `fnm`, `code`, `zed`, `nvim`, `antigravity`, `podman`, `yazi`, `mc`).
 9. Higiene de repositorios APT (podman-only, sin duplicados) y autenticación de GitHub (SSH y API).
 10. Personalizaciones de GNOME (botones de ventana minimizar, maximizar y cerrar).
 11. Directorio dedicado de desarrollo (`~/Proyectos` / `XDG_PROJECTS_DIR`).

@@ -5,7 +5,7 @@ Actualizado: 2026-11-09
 Estado: los bloques **flujo diario nativo**, **notificaciones + OSD** y **shell productiva** están implementados y el **P0 quedó validado** el 2026-11-08 (paquetes instalados, swaync activo sin mako, OSD operativo, shell y tmux funcionando). Queda la validación de uso real del P1 y los lotes del P2.
 
 ---
-
+  
 ## P0 — Bloqueante: instalar y activar
 
 - [x] Instalar los paquetes que requieren contraseña:
@@ -83,12 +83,12 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Revisar el prompt de Starship en repos Git con cambios, ramas y comandos lentos: renderiza rama, estado y duración.
 - [x] Probar `Super+Shift+Return` y confirmar que reutiliza la sesión `main` de tmux.
 - [x] Revisar `~/.tmux.conf`: prefix `Ctrl+a`, mouse, `history-limit 100000`, `base-index 1`, splits en el directorio actual y recarga con `prefix + r` verificados con `tmux show`/`list-keys`.
-- [x] Configurar Yazi como gestor de archivos de terminal tipo GUI: layout `[1, 4, 5]`, atajos F2/F5/F6/F7/F8, pestañas, búsqueda `fd`/`rg`, tema Nord de alto contraste y enlace `fd -> fdfind`.
+- [x] Configurar Yazi como gestor de archivos de terminal tipo GUI: layout `[1, 4, 3]`, atajos F2/F5/F6/F7/F8, pestañas, búsqueda `fd`/`rg`, tema Nord de alto contraste y enlace `fd -> fdfind`.
 - [x] Cambiar el opener de carpetas de Yazi a Zed (primer opener de `edit`), dejando VS Code y nano como alternativas en `F4`.
 - [x] Corregir el opener de Zed en Yazi: se lanza con `sh -c '"$HOME/.local/bin/zed" %s'` porque el proceso de Yazi no hereda `~/.local/bin` en el `PATH`. Verificado abriendo un `.md` con el `PATH` restringido.
 - [x] Ocultar el submenú de acciones de los `.desktop` en wofi con `no_actions=true` (Chrome, Zed, Nautilus, etc. aparecen como una sola entrada).
-- [x] Instalar y configurar Midnight Commander como alternativa a Yazi: skin Nord truecolor (`shell/mc/skins/nord.ini`), `ini` enlazado con `auto_save_setup=false`, editor interno y una sola entrada en wofi (`mcedit.desktop` oculto con `NoDisplay=true`); verificado con `mc 4.8.33` y el skin cargado sin errores.
 - [x] Instalar `7zip` y `ffmpeg` para previews de comprimidos y video en Yazi (requiere `sudo apt install 7zip ffmpeg`).
+- [x] Instalar y configurar Neovim (`shell/nvim`): configuración modular y limpia en Lua con `lazy.nvim`, Treesitter, LSP (`mason.nvim`, `lua_ls`, `bashls`), autocompletado `cmp`, statusline `lualine`, tema TokyoNight Night, exportación de `$EDITOR`/`$VISUAL` en Zsh y soporte como opener interactivo en Yazi.
 
 ## P2 — Siguiente lote de productividad
 
@@ -98,14 +98,6 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
   - Walker y Vicinae no están empaquetados en Debian; habría que compilarlos o usar *scripts* sobre `wofi`.
   - Alternativa de bajo riesgo: `Super+Ctrl+F` para buscar archivos con `fdfind` + `fzf` + `batcat`.
 - [ ] Agregar `Super+=` para `gnome-calculator` (ya instalado).
-
-### Ventanas estilo GNOME
-
-- [ ] Definir si se adopta el "modo GNOME" de ventanas:
-  - `Super+flechas` para snap/maximize, dejando el foco en `Super+hjkl`.
-  - `Super+1..9` para apps y workspaces en `Super+Ctrl+1..0`.
-- [ ] Implementar snap a mitades/cuartos con scripts o reglas si se adopta ese modo.
-- [ ] Evaluar "minimizar": Hyprland no tiene minimize nativo; opciones son workspace especial, scratchpad o `special:minimized`.
 
 ### Overview tipo Activities
 
