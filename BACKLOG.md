@@ -83,7 +83,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Revisar el prompt de Starship en repos Git con cambios, ramas y comandos lentos: renderiza rama, estado y duración.
 - [x] Probar `Super+Shift+Return` y confirmar que reutiliza la sesión `main` de tmux.
 - [x] Revisar `~/.tmux.conf`: prefix `Ctrl+a`, mouse, `history-limit 100000`, `base-index 1`, splits en el directorio actual y recarga con `prefix + r` verificados con `tmux show`/`list-keys`.
-- [x] Configurar Yazi como gestor de archivos de terminal tipo GUI: layout `[1, 4, 3]`, atajos F2/F5/F6/F7/F8, pestañas, búsqueda `fd`/`rg`, tema Nord de alto contraste y enlace `fd -> fdfind`.
+- [x] Configurar Yazi como gestor de archivos de terminal tipo GUI: layout `[1, 4, 5]`, atajos F2/F5/F6/F7/F8, pestañas, búsqueda `fd`/`rg`, tema Nord de alto contraste y enlace `fd -> fdfind`.
 - [x] Cambiar el opener de carpetas de Yazi a Zed (primer opener de `edit`), dejando VS Code y nano como alternativas en `F4`.
 - [x] Corregir el opener de Zed en Yazi: se lanza con `sh -c '"$HOME/.local/bin/zed" %s'` porque el proceso de Yazi no hereda `~/.local/bin` en el `PATH`. Verificado abriendo un `.md` con el `PATH` restringido.
 - [x] Ocultar el submenú de acciones de los `.desktop` en wofi con `no_actions=true` (Chrome, Zed, Nautilus, etc. aparecen como una sola entrada).
