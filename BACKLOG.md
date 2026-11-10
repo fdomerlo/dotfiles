@@ -87,6 +87,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Cambiar el opener de carpetas de Yazi a Zed (primer opener de `edit`), dejando VS Code y nano como alternativas en `F4`.
 - [x] Corregir el opener de Zed en Yazi: se lanza con `sh -c '"$HOME/.local/bin/zed" %s'` porque el proceso de Yazi no hereda `~/.local/bin` en el `PATH`. Verificado abriendo un `.md` con el `PATH` restringido.
 - [x] Ocultar el submenú de acciones de los `.desktop` en wofi con `no_actions=true` (Chrome, Zed, Nautilus, etc. aparecen como una sola entrada).
+- [x] Instalar y configurar Midnight Commander como alternativa a Yazi: skin Nord truecolor (`shell/mc/skins/nord.ini`), `ini` enlazado con `auto_save_setup=false`, editor interno y una sola entrada en wofi (`mcedit.desktop` oculto con `NoDisplay=true`); verificado con `mc 4.8.33` y el skin cargado sin errores.
 - [x] Instalar `7zip` y `ffmpeg` para previews de comprimidos y video en Yazi (requiere `sudo apt install 7zip ffmpeg`).
 
 ## P2 — Siguiente lote de productividad

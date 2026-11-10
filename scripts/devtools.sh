@@ -9,7 +9,7 @@ fi
 export PATH="$HOME/.local/bin:$HOME/.local/share/fnm:$PATH"
 
 echo "================================================================="
-echo "==> Instalando DevManagers (gh, uv, fnm, sdkman, yazi)..."
+echo "==> Instalando DevManagers (gh, uv, fnm, sdkman, yazi, mc)..."
 echo "================================================================="
 
 if ! command -v gh &> /dev/null; then
@@ -122,6 +122,14 @@ if [ ${#YAZI_DEPS[@]} -gt 0 ]; then
     sudo apt-get install -y "${YAZI_DEPS[@]}"
 else
     echo "✔ dependencias de previews de Yazi ya están instaladas"
+fi
+
+# Midnight Commander: alternativa TUI a Yazi, con skin Nord propio.
+if ! command -v mc &> /dev/null; then
+    echo "Instalando Midnight Commander (mc)..."
+    sudo apt-get install -y mc
+else
+    echo "✔ mc ya está instalado"
 fi
 
 echo "✔ DevManagers listos."

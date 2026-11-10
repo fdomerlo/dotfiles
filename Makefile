@@ -90,6 +90,12 @@ shell:
 	ln -sf $(ROOT_DIR)/shell/yazi/yazi.toml $(HOME)/.config/yazi/yazi.toml
 	ln -sf $(ROOT_DIR)/shell/yazi/keymap.toml $(HOME)/.config/yazi/keymap.toml
 	ln -sf $(ROOT_DIR)/shell/yazi/theme.toml $(HOME)/.config/yazi/theme.toml
+	mkdir -p $(HOME)/.config/mc $(HOME)/.local/share/mc/skins
+	ln -sf $(ROOT_DIR)/shell/mc/ini $(HOME)/.config/mc/ini
+	ln -sf $(ROOT_DIR)/shell/mc/skins/nord.ini $(HOME)/.local/share/mc/skins/nord.ini
+	@# mcedit no necesita su propia entrada en wofi: F4 abre el editor interno.
+	mkdir -p $(HOME)/.local/share/applications
+	ln -sf $(ROOT_DIR)/shell/mc/mcedit.desktop $(HOME)/.local/share/applications/mcedit.desktop
 	mkdir -p $(HOME)/.local/bin
 	@# Yazi busca el binario `fd`; Debian lo instala como `fdfind`.
 	@if [ -x /usr/bin/fdfind ]; then ln -sf /usr/bin/fdfind $(HOME)/.local/bin/fd; fi

@@ -1,0 +1,19 @@
+# Midnight Commander - configuración base
+#
+# `make shell` enlaza este archivo en ~/.config/mc/ini y el skin Nord en
+# ~/.local/share/mc/skins/nord.ini.
+#
+# auto_save_setup=false evita que mc reescriba este archivo al salir (es un
+# symlink al repo). Si querés que recuerde cambios hechos desde la interfaz,
+# ponelo en true y editá la copia del repo a mano.
+#
+# Atajos útiles: F4 editor interno, Alt+. mostrar/ocultar archivos ocultos,
+# F3 ver, F5 copiar, F6 mover, F8 borrar, F10 salir.
+
+[Midnight-Commander]
+skin=nord
+auto_save_setup=false
+use_internal_edit=true
+
+[Panels]
+auto_save_setup_panels=false

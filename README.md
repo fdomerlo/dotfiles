@@ -115,7 +115,7 @@ make help
 │   ├── clean-system.sh            #   Limpieza profunda post-upgrade (purga rc, huérfanos, cachés y logs)
 │   ├── desktop.sh                 #   Tipografías, botones ventana, carpetas Proyectos/Aplicaciones y GNOME
 │   ├── devai.sh                   #   Instalador de OpenCode CLI, Antigravity CLI y Core/IDE
-│   ├── devtools.sh                #   Instalador de gh (binario oficial), uv, fnm, sdkman y yazi
+│   ├── devtools.sh                #   Instalador de gh (binario oficial), uv, fnm, sdkman, yazi y mc
 │   ├── hyprland.sh                #   Instalador del perfil opcional Hyprland (solo Debian Stable)
 │   ├── hyprland-refresh.sh        #   Re-sincroniza configs/scripts desde el repo y recarga la sesión
 │   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
@@ -135,6 +135,10 @@ make help
     │   ├── yazi.toml              #     Layout de tres paneles, previews y openers
     │   ├── keymap.toml            #     Atajos F2/F5/F6/F7/F8, pestañas y navegación
     │   └── theme.toml             #     Paleta Nord de alto contraste para lectura
+    ├── mc/                        #   Midnight Commander (alternativa de dos paneles)
+    │   ├── ini                    #     Config base: skin Nord y sin autoguardado
+    │   ├── mcedit.desktop         #     Override para ocultar el editor duplicado en wofi
+    │   └── skins/nord.ini         #     Skin truecolor Nord (misma paleta que Yazi)
     ├── devctl                     #   CLI de diagnóstico, actualización y limpieza
     ├── gitconfig                  #   Configuración global ergonómica de Git
     ├── starship.toml              #   Prompt minimalista de una línea (directorio + Git)
@@ -195,7 +199,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Capturas | `grim` + `slurp` |
 | Portapapeles | `wl-clipboard` + `cliphist` |
 | Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
-| Terminal / archivos | `kitty` / `nautilus` (gráfico) + `yazi` (terminal, previews en Kitty) |
+| Terminal / archivos | `kitty` / `nautilus` (gráfico) + `yazi` (terminal, previews en Kitty) + `mc` (dos paneles) |
 | Previews de Yazi | `fd-find` (como `fd`), `7zip`, `ffmpeg`, `poppler-utils`, `jq` |
 | Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), cursor Adwaita, `qt6ct` |
 
@@ -259,6 +263,20 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `m s` / `m m` | Ver tamaño / fecha de modificación |
 | `w` | Gestor de tareas (copias, movimientos, extracciones) |
 
+#### Midnight Commander (terminal)
+
+Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier terminal. Usa el skin Nord (`shell/mc/skins/nord.ini`) y el editor interno.
+
+| Atajo | Acción |
+| :--- | :--- |
+| `F3` / `F4` | Ver / editar con el editor interno |
+| `F5` / `F6` / `F8` | Copiar / mover / borrar |
+| `F7` / `Alt+F7` | Crear directorio / buscar archivos |
+| `F9` / `F10` | Menú superior / salir |
+| `Alt+.` | Mostrar u ocultar archivos ocultos |
+| `Tab` / `Insert` | Cambiar de panel / seleccionar |
+| `Ctrl+O` | Mostrar la terminal y volver |
+
 ### Sesión, portal y theming
 
 * **Display manager:** GDM detecta automáticamente `/usr/share/wayland-sessions/hyprland.desktop`. No se instala `sddm`, `greetd` ni `uwsm`.
@@ -284,6 +302,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 * **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva un prompt nativo mínimo con `vcs_info` como respaldo. El prompt de Starship es de una sola línea (directorio, rama y estado de Git, carácter) para no ocupar espacio vertical. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
 * **btop:** `make shell` enlaza `shell/btop/themes/neutral.theme` en `~/.config/btop/themes/` y copia una sola vez `shell/btop/btop.conf` como semilla. El tema es monocromático (acero/grises) y usa fondo transparente, así hereda el color de la terminal y no compite con `mr-robot` ni con `cyber-teal`. La config no se enlaza porque btop la reescribe al salir.
 * **Yazi:** `make shell` enlaza `shell/yazi/{yazi,keymap,theme}.toml` en `~/.config/yazi/` y crea `~/.local/bin/fd -> /usr/bin/fdfind` (Debian instala `fd-find` con ese nombre). `scripts/devtools.sh` instala `7zip` y `ffmpeg` si faltan para previews de comprimidos y video. El tema usa una paleta Nord con contraste mínimo de 4.5 : 1 sobre los fondos de `mr-robot` y `cyber-teal`: respeta el fondo de la terminal y reserva los acentos para tipos de archivo, bordes y estados. `s` requiere `fd`, `S` requiere `rg`, los PDF usan `pdftoppm` y los JSON usan `jq`. Las carpetas y los archivos de texto usan el primer opener de `edit` en `yazi.toml` (hoy Zed); para abrirlos con otra app, reordená esa lista o usá `F4`. Zed se invoca como `sh -c '"$HOME/.local/bin/zed" %s'` porque Yazi no hereda el `PATH` del login (no incluye `~/.local/bin`) y no expande `$HOME` en los openers.
+* **Midnight Commander:** `make shell` enlaza `shell/mc/ini` en `~/.config/mc/ini` y `shell/mc/skins/nord.ini` en `~/.local/share/mc/skins/`. El skin usa truecolor y la misma paleta Nord que Yazi (respeta el fondo de la terminal y reserva los acentos por tipo de archivo). `auto_save_setup=false` evita que `mc` reescriba el `ini` enlazado al salir; los cambios se hacen en el repo. `shell/mc/mcedit.desktop` se enlaza en `~/.local/share/applications/` con `NoDisplay=true` para que wofi muestre solo «Midnight Commander» y no una segunda entrada del editor (F4 sigue abriendo el editor interno). `scripts/devtools.sh` instala `mc` si falta y `scripts/update.sh` lo mantiene actualizado.
 * **Wofi:** `hypr/wofi/config` define `no_actions=true`, así que las apps con acciones de `.desktop` (Chrome, Zed, Nautilus, etc.) aparecen como una sola entrada y sin el submenú de «nueva ventana». Si en algún momento querés recuperar ese submenú, poné `no_actions=false` o quitá la línea.
 
 ### Actualizar y refrescar cambios
