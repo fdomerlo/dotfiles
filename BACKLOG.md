@@ -69,6 +69,12 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Abrir `Super+F1` y confirmar que el cheatsheet lista los atajos nuevos con nombres legibles. Genera 84 entradas y el bind está cargado. Se cambió desde `Super+/` porque en latam `/` es `Shift+7` y colisiona con `movetoworkspacesilent 7`.
 - [ ] Validar `Super+M` (maximizar/restaurar) en ventanas tileadas y flotantes.
 
+### Multi-monitor
+
+- [x] Fijar layout de dos monitores por conector (`HDMI-A-1` izquierda, `HDMI-A-2` derecha) y rangos de workspaces `1–5` / `6–0`.
+- [x] Ajustar Waybar para mostrar cada rango solo en su salida (`all-outputs: false` + `persistent-workspaces` por monitor).
+- [ ] Validar en uso real que `Super+1..5` y `Super+6..0` enfocan siempre el monitor correcto, incluso con el foco en el otro.
+
 ### Shell
 
 - [x] Probar `z` y `zi` con directorios recientes: las funciones existen y `zoxide query` responde.
@@ -117,7 +123,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 
 - [x] Intercambiador de temas con dos variantes completas: `mr-robot` y `cyber-teal` (`theme-switch.sh`, `Super+Shift+T`). Cubre Hyprland, Waybar, swaync, wofi, kitty y hyprlock.
 - [ ] Evaluar generación de tema desde el wallpaper (`matugen`/`wallust`), sabiendo que no están empaquetados y hay que compilarlos.
-- [ ] Tematizar `btop` para que combine con el tema activo (hoy usa su paleta por defecto).
+- [x] Neutralizar `btop` con un tema monocromático propio (`shell/btop/themes/neutral.theme`) y fondo transparente, independiente de `mr-robot` y `cyber-teal`. La config semilla se copia una sola vez porque btop la reescribe al salir.
 - [ ] Evaluar wallpaper por tema y aplicarlo desde `theme-switch.sh`.
 
 ## P3 — Exploración / decisiones futuras
