@@ -4,14 +4,17 @@
 #
 # Uso: workspace-cycle.sh next|prev [--move]
 #
-# Recorre solo los workspaces asignados al monitor enfocado, según
-# ~/.config/hypr/conf/workspaces.conf (1-5 en HDMI-A-1, 6-10 en HDMI-A-2) y
-# vuelve al primero/último al llegar al extremo.
+# Recorre los WS_PER_MONITOR workspaces del monitor enfocado, calculados igual
+# que en workspaces-init.sh: el monitor i (ordenado por x) usa
+# i*5+1 .. i*5+5, es decir 1-5 en el primero, 6-10 en el segundo, y así.
+# Vuelve al primero/último al llegar al extremo (5→1 y 10→6).
 #
-# --move mueve la ventana activa al workspace destino sin seguirlas (igual que
+# --move mueve la ventana activa al workspace destino sin seguirla (igual que
 # Super+Shift+N). Sin --move solo cambia de workspace.
 # ==============================================================================
 set -euo pipefail
+
+WS_PER_MONITOR=5
 
 direction="${1:-next}"
 mode="${2:-}"
@@ -28,60 +31,41 @@ for bin in hyprctl jq; do
     command -v "$bin" >/dev/null 2>&1 || exit 1
 done
 
-read -r monitor current < <(
+# Índice (0-based, ordenado por x) y workspace activo del monitor enfocado.
+read -r index current < <(
     hyprctl monitors -j |
-        jq -r '.[] | select(.focused) | "\(.name) \(.activeWorkspace.id)"'
+        jq -r '
+            map(select(.disabled | not)) | sort_by(.x)
+            | to_entries[] | select(.value.focused)
+            | "\(.key) \(.value.activeWorkspace.id)"
+        '
 )
 
-if [ -z "${monitor:-}" ] || [ -z "${current:-}" ]; then
+if [ -z "${index:-}" ] || [ -z "${current:-}" ]; then
     exit 1
 fi
 
-conf="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/conf/workspaces.conf"
+first=$((index * WS_PER_MONITOR + 1))
+target=""
 
-# Extrae los IDs numéricos que workspaces.conf asigna a este monitor.
-mapfile -t ids < <(
-    awk -F',' -v mon="$monitor" '
-        /^[[:space:]]*workspace[[:space:]]*=/ {
-            id = $1
-            sub(/^[^=]*=[[:space:]]*/, "", id)
-            gsub(/[[:space:]]/, "", id)
-            m = $2
-            sub(/^[[:space:]]*monitor:[[:space:]]*/, "", m)
-            gsub(/[[:space:]].*/, "", m)
-            if (m == mon && id ~ /^[0-9]+$/) print id
-        }
-    ' "$conf" | sort -n
-)
-
-# Fallback si el monitor no tiene reglas propias: 1..10.
-if [ "${#ids[@]}" -eq 0 ]; then
-    ids=(1 2 3 4 5 6 7 8 9 10)
-fi
-
-count="${#ids[@]}"
-target="${ids[0]}"
-found=0
-
-for i in "${!ids[@]}"; do
-    if [ "${ids[$i]}" = "$current" ]; then
-        found=1
+for ((i = 0; i < WS_PER_MONITOR; i++)); do
+    if [ "$((first + i))" = "$current" ]; then
         if [ "$direction" = "next" ]; then
-            target="${ids[$(((i + 1) % count))]}"
+            target=$((first + (i + 1) % WS_PER_MONITOR))
         else
-            target="${ids[$(((i - 1 + count) % count))]}"
+            target=$((first + (i - 1 + WS_PER_MONITOR) % WS_PER_MONITOR))
         fi
         break
     fi
 done
 
-# Si el workspace actual no pertenece al monitor (p. ej. uno especial),
-# next va al primero y prev al último.
-if [ "$found" -eq 0 ]; then
+# Si el workspace actual no pertenece al rango del monitor (p. ej. uno especial
+# o uno fuera de rango), next va al primero y prev al último.
+if [ -z "$target" ]; then
     if [ "$direction" = "next" ]; then
-        target="${ids[0]}"
+        target="$first"
     else
-        target="${ids[$((count - 1))]}"
+        target=$((first + WS_PER_MONITOR - 1))
     fi
 fi
 

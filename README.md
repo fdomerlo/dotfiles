@@ -98,13 +98,13 @@ make help
 │
 ├── hypr/                          # Perfil opcional Hyprland (no reemplaza GNOME)
 │   ├── hyprland.conf              #   Entrada principal; incluye conf/*.conf
-│   ├── conf/                      #   env, monitors, appearance, keybinds, windowrules, autostart
+│   ├── conf/                      #   env, monitors, workspaces, appearance, keybinds, windowrules, autostart
 │   ├── hypridle.conf              #   Bloqueo y apagado de pantalla por inactividad
 │   ├── hyprlock.conf              #   Pantalla de bloqueo
 │   ├── hyprpaper.conf             #   Wallpaper (fallback a swaybg)
 │   ├── mako/config                #   Notificaciones (respaldo)
 │   ├── swaync/                    #   Centro de notificaciones (config.json + style.css)
-│   ├── scripts/                   #   wallpaper, screenshots, portapapeles, scratchpad, atajos y OSD
+│   ├── scripts/                   #   wallpaper, workspaces, screenshots, portapapeles, scratchpad, atajos y OSD
 │   ├── waybar/                    #   Barra (config.jsonc + style.css)
 │   ├── wofi/                      #   Lanzador (config + style.css)
 │   └── xdg-desktop-portal/        #   Portal específico de Hyprland (hyprland-portals.conf)
@@ -237,7 +237,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `Super+V` / `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`, alterna) |
 | `Print` | Captura de región a archivo + portapapeles |
 | `Shift+Print` | Captura de pantalla completa a archivo + portapapeles |
-| `Super+1..0` / `Super+Shift+1..0` | Ir al workspace / mover ventana sin seguirla (también con el teclado numérico) |
+| `Super+1..0` / `Super+Shift+1..0` | Ir al workspace / mover ventana sin seguirla (también con el teclado numérico); `1-5` en el primer monitor y `6-0` en el segundo |
 | `Super+Av.Pág` / `Super+Re.Pág` | Ciclar al workspace siguiente/anterior del monitor (con wrap) |
 | `Super+Shift+Av.Pág` / `Super+Shift+Re.Pág` | Mover la ventana al workspace siguiente/anterior del monitor (con wrap) |
 | `Super+flechas` / `Super+Shift+flechas` | Foco / mover ventana |
@@ -292,7 +292,7 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 * **Ciclo de sesión:** `autostart.conf` inicia `graphical-session.target` y lo detiene con `exec-shutdown`. Los portales son `PartOf` de ese target, así que no sobreviven a un cambio Hyprland → GNOME con un entorno obsoleto.
 * **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.\n* **Cursor:** `Adwaita` 24 px en Hyprland, XWayland, GTK y Qt, el mismo que usa GNOME. `env.conf` fija `XCURSOR_THEME`/`HYPRCURSOR_THEME`, `settings.ini` de GTK fija `gtk-cursor-theme-name` y `scripts/desktop.sh` converge `gsettings`. Así no se mezclan temas entre ventanas nativas y aplicaciones GTK/Electron. Tras cambiar `env.conf` hace falta reiniciar la sesión de Hyprland; `hyprctl setcursor Adwaita 24` lo aplica en caliente al compositor.
 * **Monitores:** `hypr/conf/monitors.conf` fija un layout de dos pantallas por nombre de conector (no por modelo/serie): `HDMI-A-1` a la izquierda en `0x0` y `HDMI-A-2` a la derecha con `auto-right`. Se mantiene `monitor = ,preferred,auto,1` como fallback para salidas desconocidas. Si en otra PC los conectores se llaman distinto, solo hay que ajustar esas dos líneas (o intercambiarlas para invertir el orden físico). Ver salidas con `hyprctl monitors`.
-* **Workspaces:** `hypr/conf/workspaces.conf` asigna rangos fijos por monitor: `1–5` en el izquierdo (`HDMI-A-1`) y `6–0` en el derecho (`HDMI-A-2`). `Super+1..5` siempre enfoca el monitor izquierdo y `Super+6..0` el derecho, sin depender de cuál tenga el foco. Waybar muestra cada rango solo en su barra (`all-outputs: false` + `persistent-workspaces` por salida). Para recorrerlos sin memorizar números, `Super+Av.Pág`/`Super+Re.Pág` ciclan dentro del monitor enfocado con wrap (`5→1` y `10→6`) mediante `hypr/scripts/workspace-cycle.sh`, que lee los rangos de `workspaces.conf`; con `Shift` mueve la ventana en vez de cambiar de workspace.
+* **Workspaces:** `hypr/scripts/workspaces-init.sh` (lanzado por `autostart.conf` con `--watch`) asigna **5 workspaces por salida conectada**, en orden izquierda→derecha según su `x`: `1–5` al primero y `6–10` al segundo. Con un solo monitor eso da `1–5` en `eDP-1`; con dos, `1–5` en `HDMI-A-1` y `6–10` en `HDMI-A-2`. Los aplica en caliente con `hyprctl keyword workspace` y `persistent:true`, así Hyprland los mantiene vivos y Waybar muestra solo los de su salida (`all-outputs: false`) sin `persistent-workspaces`. `hypr/conf/workspaces.conf` queda solo como documentación: **no** conviene atar workspaces a un monitor en el config, porque Hyprland reserva esos IDs aunque el monitor esté desconectado (`CMonitor::findAvailableDefaultWS()`) y en la notebook el primer workspace libre terminaba siendo `11`. Para recorrerlos, `Super+Av.Pág`/`Super+Re.Pág` ciclan dentro del monitor enfocado con wrap (`5→1`, `10→6`) mediante `hypr/scripts/workspace-cycle.sh`, que calcula el rango con el mismo criterio; con `Shift` mueve la ventana en vez de cambiar de workspace. La cantidad por monitor se ajusta con `WS_PER_MONITOR` en ambos scripts. Con un solo monitor, `Super+6..0` crea workspaces sueltos fuera del rango: para moverse dentro de la pantalla conviene `Super+1..5` o el ciclo con `Av.Pág`/`Re.Pág`.
 * **Wallpaper:** el daemon (`wallpaper.sh --daemon`, arrancado por `autostart.conf`) rota el fondo cada 30 minutos entre los `.png`/`.jpg`/`.webp` de `~/.config/hypr/wallpapers`, `~/Imágenes/Wallpapers` y el repo, sin repetir el actual. `Super+W` envía `SIGUSR1` al daemon para cambiar una sola vez; el bucle distingue la interrupción del `sleep` para no aplicar un segundo cambio. Sin imágenes se usa `swaybg -c '#0c1012'`.
 * **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi`, `~/.config/mako` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
 * **Notificaciones y OSD:** `swaync` reemplaza a `mako` como demonio de notificaciones (historial, No molestar y panel de control); si no está instalado, `autostart.conf` arranca `mako` como respaldo. `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.

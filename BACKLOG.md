@@ -72,9 +72,11 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 ### Multi-monitor
 
 - [x] Fijar layout de dos monitores por conector (`HDMI-A-1` izquierda, `HDMI-A-2` derecha) y rangos de workspaces `1–5` / `6–0`.
-- [x] Ajustar Waybar para mostrar cada rango solo en su salida (`all-outputs: false` + `persistent-workspaces` por monitor).
+- [x] Ajustar Waybar para mostrar cada rango solo en su salida (`all-outputs: false`).
 - [x] Validar en uso real que `Super+1..5` y `Super+6..0` enfocan siempre el monitor correcto, incluso con el foco en el otro.
-- [x] Agregar ciclo de workspaces con `Super+Av.Pág`/`Super+Re.Pág` (`workspace-cycle.sh`): recorre solo el monitor enfocado con wrap (`5→1`, `10→6`) leyendo los rangos de `workspaces.conf`; con `Shift` mueve la ventana. Verificado por `hyprctl` en ambos monitores.
+- [x] Pasar el mapeo a `hypr/scripts/workspaces-init.sh`: 5 workspaces por monitor calculados por orden de `x`, aplicados con `persistent:true` y re-aplicados con `--watch` al conectar/desconectar. Corrige el workspace `11` que aparecía en la notebook: las reglas `workspace = N, monitor:…` reservaban los IDs 1-10 aunque `HDMI-A-1`/`HDMI-A-2` no estuvieran conectados y `CMonitor::findAvailableDefaultWS()` elegía el 11.
+- [x] Quitar `persistent-workspaces` de Waybar: los workspaces persistentes de Hyprland ya alcanzan y no hardcodean conectores.
+- [x] Agregar ciclo de workspaces con `Super+Av.Pág`/`Super+Re.Pág` (`workspace-cycle.sh`): recorre solo el monitor enfocado con wrap (`5→1`, `10→6`) calculando su rango con el mismo criterio que `workspaces-init.sh`; con `Shift` mueve la ventana. Verificado por `hyprctl` en ambos monitores.
 
 ### Shell
 
@@ -121,7 +123,7 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 ### Estética
 
 - [x] Intercambiador de temas con dos variantes completas: `mr-robot` y `cyber-teal` (`theme-switch.sh`, `Super+Shift+T`). Cubre Hyprland, Waybar, swaync, wofi, kitty y hyprlock.
-- [ ] Evaluar generación de tema desde el wallpaper (`matugen`/`wallust`), sabiendo que no están empaquetados y hay que compilarlos.
+- [x] Evaluar generación de tema desde el wallpaper (`matugen`/`wallust`), sabiendo que no están empaquetados y hay que compilarlos.
 - [x] Neutralizar `btop` con un tema monocromático propio (`shell/btop/themes/neutral.theme`) y fondo transparente, independiente de `mr-robot` y `cyber-teal`. La config semilla se copia una sola vez porque btop la reescribe al salir.
 - [x] Unificar el cursor en `Adwaita` 24 px entre Hyprland, GTK, Qt y GNOME para evitar que el puntero alterne con Bibata según la ventana.
 - [ ] Evaluar wallpaper por tema y aplicarlo desde `theme-switch.sh`.
@@ -140,9 +142,9 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 - [x] Revisar y commitear los cambios actuales (hay archivos modificados y nuevos sin commit).
 - [x] `scripts/update.sh` actualiza también los paquetes del perfil Hyprland (`hyprland`, `waybar`, `swaync`, `swayosd`, etc.), filtrando solo los instalados.
 - [x] Agregar `make refresh` (`scripts/hyprland-refresh.sh`) para re-sincronizar configs/scripts tras `git pull` y recargar Hyprland, Waybar, swaync e hypridle sin reinstalar.
-- [ ] Revisar si `verify.sh` debe tratar `swaync`/`swayosd` como obligatorios o como opcionales con aviso.
+- [x] Revisar si `verify.sh` debe tratar `swaync`/`swayosd` como obligatorios o como opcionales con aviso.
 - [x] Quitar `papirus-icon-theme` del sistema (opcional, requiere sudo): Hyprland ya no lo instala ni lo fuerza y usa el tema de iconos del sistema.
-- [ ] Documentar en README el flujo de rollback de notificaciones: volver a `mako` si `swaync` falla.
+- [x] Documentar en README el flujo de rollback de notificaciones: volver a `mako` si `swaync` falla.
 - [x] Agregar una captura del escritorio al README (`assets/hyprland-desktop.png`).
 - [x] Separar la configuración de portales por sesión (`hyprland-portals.conf`) y cerrar `graphical-session.target` al salir de Hyprland: evita que GNOME herede un `xdg-desktop-portal` con el entorno de Hyprland y que sus apps queden esperando timeouts de D-Bus.
 

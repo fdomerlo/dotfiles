@@ -37,11 +37,7 @@
     "format": "[{name}]",
     "on-click": "activate",
     "disable-scroll": false,
-    "all-outputs": false,
-    "persistent-workspaces": {
-      "HDMI-A-1": [1, 2, 3, 4, 5],
-      "HDMI-A-2": [6, 7, 8, 9, 10]
-    }
+    "all-outputs": false
   },
 
   "custom/media": {
