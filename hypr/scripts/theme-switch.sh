@@ -10,7 +10,7 @@
 # Uso:
 #   theme-switch.sh                 # muestra el tema activo
 #   theme-switch.sh list            # lista los temas disponibles
-#   theme-switch.sh menu            # selector con fuzzel (o wofi)
+#   theme-switch.sh menu            # selector con fuzzel
 #   theme-switch.sh toggle          # alterna al siguiente tema
 #   theme-switch.sh <tema>          # aplica un tema
 #   theme-switch.sh --no-reload <tema>
@@ -84,8 +84,6 @@ show_menu() {
     current="$(current_theme || true)"
     if command -v fuzzel >/dev/null 2>&1; then
         choice="$(list_themes | fuzzel --dmenu --prompt "Temas (actual: ${current:-ninguno}): " --width 36 --lines 4 2>/dev/null || true)"
-    elif command -v wofi >/dev/null 2>&1; then
-        choice="$(list_themes | wofi --show dmenu --prompt "Temas (actual: ${current:-ninguno})" --width 320 2>/dev/null || true)"
     else
         die "fuzzel no está instalado"
     fi

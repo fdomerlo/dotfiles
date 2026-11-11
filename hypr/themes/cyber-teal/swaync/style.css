@@ -40,8 +40,8 @@
   text-shadow: none;
   padding: 0;
   border-radius: 100%;
-  margin-top: 5px;
-  margin-right: 5px;
+  margin-top: 8px;
+  margin-right: 8px;
   box-shadow: none;
   border: none;
   min-width: 24px;
@@ -105,7 +105,7 @@
 .notification-row .notification-background .notification .notification-default-action .notification-content {
   background: transparent;
   border-radius: 12px;
-  padding: 4px;
+  padding: 10px 14px;
 }
 
 .notification-row .notification-background .notification .notification-default-action .notification-content .image {
@@ -113,7 +113,7 @@
   -gtk-icon-effect: none;
   border-radius: 100px;
   /* Size in px */
-  margin: 4px;
+  margin: 4px 10px 4px 2px;
 }
 
 .notification-row .notification-background .notification .notification-default-action .notification-content .app-icon {
@@ -123,9 +123,13 @@
   margin: 6px;
 }
 
+.notification-row .notification-background .notification .notification-default-action .notification-content .text-box {
+  padding: 2px 4px;
+}
+
 .notification-row .notification-background .notification .notification-default-action .notification-content .text-box .summary {
   /* Notification summary/title */
-  font-size: 16px;
+  font-size: 13px;
   font-weight: bold;
   background: transparent;
   color: @text-color;
@@ -134,21 +138,22 @@
 
 .notification-row .notification-background .notification .notification-default-action .notification-content .text-box .time {
   /* Notification time-ago */
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 11px;
+  font-weight: normal;
   background: transparent;
-  color: @text-color;
+  color: @text-color-disabled;
   text-shadow: none;
-  margin-right: 30px;
+  margin-right: 28px;
 }
 
 .notification-row .notification-background .notification .notification-default-action .notification-content .text-box .body {
   /* Notification body */
-  font-size: 15px;
+  font-size: 12px;
   font-weight: normal;
   background: transparent;
   color: @text-color;
   text-shadow: none;
+  margin-top: 4px;
 }
 
 .notification-row .notification-background .notification .notification-default-action .notification-content progressbar {
@@ -317,17 +322,18 @@
 .widget-title {
   color: @text-color;
   margin: 8px;
-  font-size: 1.5rem;
+  font-size: 13.5px;
 }
 
 .widget-title > button {
-  font-size: initial;
+  font-size: 11.5px;
+  padding: 4px 10px;
   color: @text-color;
   text-shadow: none;
   background: @noti-bg;
   border: 1px solid @noti-border-color;
   box-shadow: none;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .widget-title > button:hover {
@@ -338,7 +344,7 @@
 .widget-dnd {
   color: @text-color;
   margin: 8px;
-  font-size: 1.1rem;
+  font-size: 12.5px;
 }
 
 .widget-dnd > switch {
@@ -364,7 +370,7 @@
 }
 
 .widget-label > label {
-  font-size: 1.1rem;
+  font-size: 12.5px;
 }
 
 /* Mpris widget */
@@ -375,9 +381,8 @@
 }
 
 .widget-mpris .widget-mpris-player {
-  padding: 8px;
-  padding: 16px;
-  margin: 16px 20px;
+  padding: 12px 14px;
+  margin: 10px 12px;
   background-color: @mpris-album-art-overlay;
   border-radius: 12px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.75);
@@ -395,11 +400,11 @@
 
 .widget-mpris .widget-mpris-player .widget-mpris-title {
   font-weight: bold;
-  font-size: 1.25rem;
+  font-size: 13px;
 }
 
 .widget-mpris .widget-mpris-player .widget-mpris-subtitle {
-  font-size: 1.1rem;
+  font-size: 11.5px;
 }
 
 .widget-mpris .widget-mpris-player > box > button {
@@ -493,17 +498,18 @@
 /* Inhibitors widget */
 .widget-inhibitors {
   margin: 8px;
-  font-size: 1.5rem;
+  font-size: 12.5px;
 }
 
 .widget-inhibitors > button {
-  font-size: initial;
+  font-size: 11.5px;
+  padding: 4px 10px;
   color: @text-color;
   text-shadow: none;
   background: @noti-bg;
   border: 1px solid @noti-border-color;
   box-shadow: none;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .widget-inhibitors > button:hover {

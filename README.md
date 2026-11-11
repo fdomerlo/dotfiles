@@ -44,7 +44,7 @@ Combina la estabilidad del sistema base con capas modernas desacopladas: **Backp
   * **Python:** Administrado exclusivamente con [uv](https://astral.sh/uv) (rápido, compatible con PEP 668 y sin riesgo de corromper paquetes de Debian).
   * **Node.js:** Administrado con [fnm](https://github.com/Schniz/fnm) (Fast Node Manager escrito en Rust).
   * **Java/JVM:** Administrado con [sdkman](https://sdkman.io).
-* **CLI Moderna y Shell Productiva:** `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard`, gestor de archivos en terminal [yazi](https://github.com/sxyazi/yazi) (con previews en Kitty y wrapper `y`), más `zoxide` (`z`/`zi`), `atuin` (historial con `Ctrl+R`), `starship` (prompt) y `tmux` (sesiones persistentes, `Super+Shift+Return`).
+* **CLI Moderna y Shell Productiva:** `ripgrep` (`rg`), `fd-find` (`fd`), `fzf`, `bat`, `btop`, `direnv` y `wl-clipboard`, gestor de archivos en terminal [yazi](https://github.com/sxyazi/yazi) (con previews Sixel en Foot y wrapper `y`), más `zoxide` (`z`/`zi`), `atuin` (historial con `Ctrl+R`), `starship` (prompt) y `tmux` (sesiones persistentes, `Super+Shift+Return`).
 * **Tooling de Desarrollo Nativo & DevAI:**
   * **Editores y Navegadores:** VS Code (con repositorio oficial APT DEB822 de Microsoft), Zed editor, Neovim (editor extensible en terminal con lazy.nvim, LSP y Treesitter), Google Chrome oficial.
   * **Herramientas de IA:** OpenCode CLI, Antigravity IDE (Core 2.0 en `/opt`) y Antigravity CLI (`agy` / `antigravity-cli`).
@@ -101,12 +101,12 @@ make help
 │   ├── conf/                      #   env, monitors, workspaces, appearance, keybinds, windowrules, autostart
 │   ├── hypridle.conf              #   Bloqueo y apagado de pantalla por inactividad
 │   ├── hyprlock.conf              #   Pantalla de bloqueo
-│   ├── hyprpaper.conf             #   Wallpaper (fallback a swaybg)
-│   ├── mako/config                #   Notificaciones (respaldo)
+│   ├── foot/                      #   Emulador de terminal Wayland (foot.ini)
+│   ├── fuzzel/                    #   Lanzador y selector dmenu nativo (fuzzel.ini)
+│   ├── swappy/                    #   Anotador rápido de capturas (config)
 │   ├── swaync/                    #   Centro de notificaciones (config.json + style.css)
 │   ├── scripts/                   #   wallpaper, workspaces, screenshots, portapapeles, scratchpad, atajos y OSD
 │   ├── waybar/                    #   Barra (config.jsonc + style.css)
-│   ├── wofi/                      #   Lanzador (config + style.css)
 │   └── xdg-desktop-portal/        #   Portal específico de Hyprland (hyprland-portals.conf)
 │
 ├── scripts/                       # Instaladores y configuración de usuario
@@ -140,8 +140,10 @@ make help
     │   └── theme.toml             #     Paleta Nord de alto contraste para lectura
     ├── mc/                        #   Midnight Commander (alternativa de dos paneles)
     │   ├── ini                    #     Config base: skin Nord y sin autoguardado
-    │   ├── mcedit.desktop         #     Override para ocultar el editor duplicado en wofi
+    │   ├── mcedit.desktop         #     Override para ocultar el editor duplicado en fuzzel
     │   └── skins/nord.ini         #     Skin truecolor Nord (misma paleta que Yazi)
+    ├── zathura/                   #   Visor de documentos PDF minimalista (zathurarc)
+    ├── lazydocker/                #   TUI de contenedores Podman/Docker (config.yml + .desktop)
     ├── devctl                     #   CLI de diagnóstico, actualización y limpieza
     ├── gitconfig                  #   Configuración global ergonómica de Git
     ├── starship.toml              #   Prompt minimalista de una línea (directorio + Git)
@@ -192,11 +194,11 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | :--- | :--- |
 | Compositor | `hyprland` (desde `stable-backports`) |
 | Barra | `waybar` |
-| Lanzador | `fuzzel` (nativo Wayland, tematizado en `mr-robot` y `cyber-teal`; `wofi` como fallback) |
-| Notificaciones | `sway-notification-center` (`swaync`) con historial y No molestar; `mako` queda como respaldo |
+| Lanzador | `fuzzel` (nativo Wayland, tematizado en `mr-robot` y `cyber-teal`) |
+| Notificaciones | `sway-notification-center` (`swaync`) con historial y No molestar |
 | OSD | `swayosd` para volumen y brillo (respaldo directo con `wpctl`/`brightnessctl`) |
 | Idle / bloqueo | `hypridle` + `hyprlock` |
-| Wallpaper | `swaybg` (con rotación vía `wallpaper.sh` y respaldo en `hyprpaper`) |
+| Wallpaper | `swaybg` (con rotación vía `wallpaper.sh`) |
 | Agente polkit | `hyprpolkitagent` |
 | Keyring / Secretos | `gnome-keyring` + `seahorse` |
 | Portales | `xdg-desktop-portal-hyprland` + `xdg-desktop-portal-gtk` (fallback) |
@@ -210,7 +212,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Previews de Yazi | `fd-find` (como `fd`), `7zip`, `ffmpeg`, `chafa`, `poppler-utils`, `jq` |
 | Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), cursor Adwaita, `qt6ct` |
 
-En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
+En Stable, `hyprland`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
 
 ### Atajos principales
 
@@ -251,7 +253,7 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 
 #### Yazi (terminal)
 
-`Super+Y` abre Yazi en Kitty. Los atajos tipo GUI se suman a los nativos (`hjkl`, `s`, `S`, `d`, `r`, `w`, `t t`, `o`/`O`).
+`Super+Y` abre Yazi en Foot. Los atajos tipo GUI se suman a los nativos (`hjkl`, `s`, `S`, `d`, `r`, `w`, `t t`, `o`/`O`).
 
 | Atajo | Acción |
 | :--- | :--- |
@@ -299,23 +301,23 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 * **Monitores:** `hypr/conf/monitors.conf` fija un layout de dos pantallas por nombre de conector (no por modelo/serie): `HDMI-A-1` a la izquierda en `0x0` y `HDMI-A-2` a la derecha con `auto-right`. Se mantiene `monitor = ,preferred,auto,1` como fallback para salidas desconocidas. Si en otra PC los conectores se llaman distinto, solo hay que ajustar esas dos líneas (o intercambiarlas para invertir el orden físico). Ver salidas con `hyprctl monitors`.
 * **Workspaces:** `hypr/scripts/workspaces-init.sh` (lanzado por `autostart.conf` con `--watch`) asigna **5 workspaces por salida conectada**, en orden izquierda→derecha según su `x`: `1–5` al primero y `6–10` al segundo. Con un solo monitor eso da `1–5` en `eDP-1`; con dos, `1–5` en `HDMI-A-1` y `6–10` en `HDMI-A-2`. Los aplica en caliente con `hyprctl keyword workspace` y `persistent:true`, así Hyprland los mantiene vivos y Waybar muestra solo los de su salida (`all-outputs: false`) sin `persistent-workspaces`. `hypr/conf/workspaces.conf` queda solo como documentación: **no** conviene atar workspaces a un monitor en el config, porque Hyprland reserva esos IDs aunque el monitor esté desconectado (`CMonitor::findAvailableDefaultWS()`) y en la notebook el primer workspace libre terminaba siendo `11`. Para recorrerlos, `Super+Av.Pág`/`Super+Re.Pág` ciclan dentro del monitor enfocado con wrap (`5→1`, `10→6`) mediante `hypr/scripts/workspace-cycle.sh`, que calcula el rango con el mismo criterio; con `Shift` mueve la ventana en vez de cambiar de workspace. La cantidad por monitor se ajusta con `WS_PER_MONITOR` en ambos scripts. Con un solo monitor, `Super+6..0` crea workspaces sueltos fuera del rango: para moverse dentro de la pantalla conviene `Super+1..5` o el ciclo con `Av.Pág`/`Re.Pág`.
 * **Wallpaper:** el daemon (`wallpaper.sh --daemon`, arrancado por `autostart.conf`) rota el fondo cada 30 minutos entre los `.png`/`.jpg`/`.webp` de `~/.config/hypr/wallpapers`, `~/Imágenes/Wallpapers` y el repo, sin repetir el actual. `Super+W` envía `SIGUSR1` al daemon para cambiar una sola vez; el bucle distingue la interrupción del `sleep` para no aplicar un segundo cambio. Sin imágenes se usa `swaybg -c '#0c1012'`.
-* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/wofi`, `~/.config/mako` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
-* **Notificaciones y OSD:** `swaync` reemplaza a `mako` como demonio de notificaciones (historial, No molestar y panel de control); si no está instalado, `autostart.conf` arranca `mako` como respaldo. `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.
+* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/fuzzel`, `~/.config/foot`, `~/.config/swappy` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
+* **Notificaciones y OSD:** `swaync` actúa como demonio de notificaciones (historial, No molestar y panel de control). `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.
 * **Red y reloj:** el estado de red se muestra solo en el módulo `network` de Waybar; no se inicia `nm-applet` para evitar el icono duplicado en la bandeja. Las conexiones nuevas se gestionan con `nm-connection-editor` o `nmcli`. El reloj muestra solo la hora local (con `locale` y `timezone` explícitos) y la fecha completa en el tooltip.
 * **Bluetooth:** el estado se muestra solo en el módulo `bluetooth` de Waybar; no se inicia `blueman-applet` para evitar el icono duplicado en la bandeja. El clic abre `blueman-manager`, y el paquete `blueman` se mantiene instalado.
 * **Panel de notificaciones:** `swaync` corre con `keyboard-shortcuts: false` para no quedarse con el teclado/foco, y con `layer-shell-cover-screen: true` para cerrar al hacer clic fuera. Una `layerrule` mantiene Waybar por encima del panel, y el icono de la campana usa `notifications-toggle.sh` con caché de estado. Trade-off: ESC y la navegación por teclado dentro del panel no están disponibles; se cierra con clic en la campana, clic afuera o `Super+N`.
-* **Indicadores CPU/MEM:** un clic abre `btop` en kitty.
+* **Indicadores CPU/MEM:** un clic abre `btop` en `foot`.
 * **Audio:** `start-waybar.sh` ejecuta `audio-init.sh` antes de lanzar Waybar. Si WirePlumber arrancó antes que PipeWire y dejó solo `Dummy Output` (carrera conocida con `sof-hda-dsp`), lo reinicia una vez para crear Speaker/HDMI; así el módulo `pulseaudio` sigue el sink real y el volumen responde.
 * **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva un prompt nativo mínimo con `vcs_info` como respaldo. El prompt de Starship es de una sola línea (directorio, rama y estado de Git, carácter) para no ocupar espacio vertical. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
-* **btop:** `make shell` enlaza `shell/btop/themes/neutral.theme` en `~/.config/btop/themes/` y copia una sola vez `shell/btop/btop.conf` como semilla. El tema es monocromático (acero/grises) y usa fondo transparente, así hereda el color de la terminal y no compite con `mr-robot` ni con `cyber-teal`. La config no se enlaza porque btop la reescribe al salir.
-* **Yazi:** `make shell` enlaza `shell/yazi/{yazi,keymap,theme}.toml` en `~/.config/yazi/` y crea `~/.local/bin/fd -> /usr/bin/fdfind` (Debian instala `fd-find` con ese nombre). `scripts/devtools.sh` instala `7zip` y `ffmpeg` si faltan para previews de comprimidos y video. El tema usa una paleta Nord con contraste mínimo de 4.5 : 1 sobre los fondos de `mr-robot` y `cyber-teal`: respeta el fondo de la terminal y reserva los acentos para tipos de archivo, bordes y estados. `s` requiere `fd`, `S` requiere `rg`, los PDF usan `pdftoppm` y los JSON usan `jq`. Las carpetas y los archivos de texto usan el primer opener de `edit` en `yazi.toml` (hoy Zed); para abrirlos con otra app, reordená esa lista o usá `F4`. Zed se invoca como `sh -c '"$HOME/.local/bin/zed" %s'` porque Yazi no hereda el `PATH` del login (no incluye `~/.local/bin`) y no expande `$HOME` en los openers. El reparto de columnas se ajusta con `ratio` en `yazi.toml` (hoy `[1, 4, 5]`: padre, lista y preview).
-* **Midnight Commander:** `make shell` enlaza `shell/mc/ini` en `~/.config/mc/ini` y `shell/mc/skins/nord.ini` en `~/.local/share/mc/skins/`. El skin usa truecolor y la misma paleta Nord que Yazi (respeta el fondo de la terminal y reserva los acentos por tipo de archivo). `auto_save_setup=false` evita que `mc` reescriba el `ini` enlazado al salir; los cambios se hacen en el repo. `shell/mc/mcedit.desktop` se enlaza en `~/.local/share/applications/` con `NoDisplay=true` para que wofi muestre solo «Midnight Commander» y no una segunda entrada del editor (F4 sigue abriendo el editor interno). `scripts/devtools.sh` instala `mc` si falta y `scripts/update.sh` lo mantiene actualizado.
+* **btop:** `make shell` enlaza `shell/btop/themes/neutral.theme` en `~/.config/btop/themes/` y asegura el tema `neutral` en `~/.config/btop/btop.conf`. El tema es monocromático (acero/grises) y usa fondo transparente, así hereda el color de la terminal y no compite con `mr-robot` ni con `cyber-teal`. La config no se enlaza porque btop la reescribe al salir.
+* **Yazi:** `make shell` enlaza `shell/yazi/{yazi,keymap,theme}.toml` en `~/.config/yazi/` y crea `~/.local/bin/fd -> /usr/bin/fdfind` (Debian instala `fd-find` con ese nombre). `scripts/devtools.sh` instala `7zip`, `ffmpeg` y `chafa` si faltan para previews de comprimidos, video e imágenes Sixel en Foot. El tema usa una paleta Nord con contraste mínimo de 4.5 : 1 sobre los fondos de `mr-robot` y `cyber-teal`: respeta el fondo de la terminal y reserva los acentos para tipos de archivo, bordes y estados. `s` requiere `fd`, `S` requiere `rg`, los PDF usan `pdftoppm` (y abren con `zathura`) y los JSON usan `jq`. Las carpetas y los archivos de texto usan el primer opener de `edit` en `yazi.toml` (hoy Zed); para abrirlos con otra app, reordená esa lista o usá `F4`. Zed se invoca como `sh -c '"$HOME/.local/bin/zed" %s'` porque Yazi no hereda el `PATH` del login (no incluye `~/.local/bin`) y no expande `$HOME` en los openers. El reparto de columnas se ajusta con `ratio` en `yazi.toml` (hoy `[2, 3, 5]`: padre, lista y preview).
+* **Midnight Commander:** `make shell` enlaza `shell/mc/ini` en `~/.config/mc/ini` y `shell/mc/skins/nord.ini` en `~/.local/share/mc/skins/`. El skin usa truecolor y la misma paleta Nord que Yazi (respeta el fondo de la terminal y reserva los acentos por tipo de archivo). `auto_save_setup=false` evita que `mc` reescriba el `ini` enlazado al salir; los cambios se hacen en el repo. `shell/mc/mcedit.desktop` se enlaza en `~/.local/share/applications/` con `NoDisplay=true` para que `fuzzel` muestre solo «Midnight Commander» y no una segunda entrada del editor (F4 sigue abriendo el editor interno). `scripts/devtools.sh` instala `mc` si falta y `scripts/update.sh` lo mantiene actualizado.
 * **Neovim:** `make shell` enlaza `shell/nvim` en `~/.config/nvim`. Configuración modular y limpia en Lua con gestor declarativo `lazy.nvim`, tema TokyoNight Night coherente con la paleta oscura de la terminal, análisis sintáctico con `nvim-treesitter`, buscador difuso con `telescope.nvim` (`fzf`/`ripgrep`), integración LSP nativa con `mason.nvim` (`lua_ls`, `bashls`), autocompletado `nvim-cmp` e integración con Git (`gitsigns`). Enlazado automáticamente en `~/.config/nvim`, exportado como `$EDITOR`/`$VISUAL` en Zsh y configurado como opener de terminal en Yazi (`yazi.toml`). `scripts/tooling.sh` instala el binario oficial en espacio de usuario (`~/.local/share/neovim` -> `~/.local/bin/nvim`) o vía APT, y `scripts/update.sh` lo mantiene al día.
-* **Wofi:** `hypr/wofi/config` define `no_actions=true`, así que las apps con acciones de `.desktop` (Chrome, Zed, Nautilus, etc.) aparecen como una sola entrada y sin el submenú de «nueva ventana». Si en algún momento querés recuperar ese submenú, poné `no_actions=false` o quitá la línea.
+* **Fuzzel:** `hypr/fuzzel/fuzzel.ini` apunta al tema activo (`mr-robot` o `cyber-teal`), filtra acciones por `XDG_CURRENT_DESKTOP=Hyprland:GNOME` y se alterna con una sola tecla mediante `hypr/scripts/toggle-menu.sh`.
 
 ### Actualizar y refrescar cambios
 
-`make update` mantiene los paquetes al día, incluidos los del perfil Hyprland (`hyprland`, `waybar`, `swaync`, `swayosd`, `hypridle`, portales, PipeWire, etc.). Solo actualiza los que estén instalados, así que es seguro ejecutarlo también en equipos sin Hyprland.
+`make update` mantiene los paquetes al día, incluidos los del perfil Hyprland (`hyprland`, `waybar`, `fuzzel`, `foot`, `swaync`, `swayosd`, `hypridle`, portales, PipeWire, etc.). Solo actualiza los que estén instalados, así que es seguro ejecutarlo también en equipos sin Hyprland.
 
 Cuando edites configs o scripts en un equipo y los traigas al otro con `git pull`, no hace falta reinstalar el perfil ni cerrar sesión:
 
@@ -326,9 +328,9 @@ make refresh
 
 `scripts/hyprland-refresh.sh`:
 
-1. Re-enlaza los mismos destinos que `make hyprland` (`hypr/`, `waybar/`, `wofi/`, `kitty/`, `mako/`, `swaync/`, portal y wallpapers) en `~/.config`. Si encuentra un archivo real, lo conserva como `.bak.<timestamp>`.
+1. Re-enlaza los mismos destinos que `make hyprland` (`hypr/`, `waybar/`, `fuzzel/`, `foot/`, `swappy/`, `swaync/`, portal y wallpapers) en `~/.config`. Si encuentra un archivo real, lo conserva como `.bak.<timestamp>`.
 2. Elimina symlinks rotos que apunten al repo (scripts o configs retirados).
-3. Recarga `hyprctl`, reinicia Waybar, relee config/CSS de `swaync` (o `mako`) y reinicia `hypridle`.
+3. Recarga `hyprctl`, asegura `workspaces-init.sh --watch`, reinicia Waybar, relee config/CSS de `swaync` y reinicia `hypridle`.
 4. Informa errores de `hyprctl configerrors` si los hubiera.
 
 Si solo querés sincronizar archivos sin tocar la sesión activa:
@@ -337,13 +339,13 @@ Si solo querés sincronizar archivos sin tocar la sesión activa:
 bash scripts/hyprland-refresh.sh --no-reload
 ```
 
-`kitty`, `wofi` y `hyprlock` toman los cambios en su próxima apertura; el resto se aplica al instante. `hypr/themes/active` es estado runtime (gitignored): si no existe, el script lo recrea apuntando a `mr-robot`.
+`foot`, `fuzzel` e `hyprlock` toman los cambios en su próxima apertura; el resto se aplica al instante. `hypr/themes/active` es estado runtime (gitignored): si no existe, el script lo recrea apuntando a `mr-robot`.
 
 Si `make refresh` se ejecuta desde GNOME, sincroniza los archivos y reinicia `xdg-desktop-portal` para que tome `hyprland-portals.conf` (Hyprland) o `gnome-portals.conf` (GNOME); no intenta recargar Hyprland. Al cerrar Hyprland, `exec-shutdown` detiene `graphical-session.target`, así que los portales no quedan vivos con el entorno de la sesión anterior.
 
 ### Temas
 
-Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths clásicos (`hypr/conf/appearance.conf`, `hypr/waybar/*`, `hypr/swaync/style.css`, `hypr/wofi/style.css`, `hypr/kitty/kitty.conf` y `hypr/hyprlock.conf`) son symlinks a `hypr/themes/active/…`. Cambiar de tema solo mueve el symlink `active`, así que no se modifican archivos versionados ni queda el working tree sucio.
+Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths clásicos (`hypr/conf/appearance.conf`, `hypr/waybar/*`, `hypr/swaync/style.css`, `hypr/fuzzel/fuzzel.ini`, `hypr/foot/foot.ini` y `hypr/hyprlock.conf`) son symlinks a `hypr/themes/active/…`. Cambiar de tema solo mueve el symlink `active`, así que no se modifican archivos versionados ni queda el working tree sucio.
 
 | Tema | Estilo |
 | :--- | :--- |
@@ -353,26 +355,24 @@ Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths c
 ```bash
 ~/.config/hypr/scripts/theme-switch.sh            # tema activo
 ~/.config/hypr/scripts/theme-switch.sh list       # temas disponibles
-~/.config/hypr/scripts/theme-switch.sh menu       # selector con wofi
+~/.config/hypr/scripts/theme-switch.sh menu       # selector con fuzzel
 ~/.config/hypr/scripts/theme-switch.sh toggle     # alterna al siguiente
 ~/.config/hypr/scripts/theme-switch.sh mr-robot   # aplica un tema
 ```
 
-`Super+Shift+T` abre el selector. El script recarga Hyprland, reinicia Waybar y relee el CSS de swaync; `wofi`, `kitty` e `hyprlock` toman el tema en su próxima apertura. `hypr/themes/active` es estado runtime y está en `.gitignore`; `make hyprland` lo recrea con `mr-robot` si no existe.
+`Super+Shift+T` abre el selector. El script recarga Hyprland, reinicia Waybar y relee el CSS de swaync; `fuzzel`, `foot` e `hyprlock` toman el tema en su próxima apertura. `hypr/themes/active` es estado runtime y está en `.gitignore`; `make hyprland` lo recrea con `mr-robot` si no existe.
 
-`kitty` usa `font_size` en **puntos**, no en píxeles: `9.0` pt ≈ `12` px a 96 DPI. Una ventana ya abierta recarga el archivo con `Ctrl+Shift+F5`; una nueva lo toma automáticamente.
-
-Para agregar un tema, crear `hypr/themes/<nombre>/` con la misma estructura (`appearance.conf`, `hyprlock.conf`, `kitty/kitty.conf`, `swaync/style.css`, `waybar/config.jsonc`, `waybar/style.css`, `wofi/style.css`) y usar `theme-switch.sh <nombre>`.
+Para agregar un tema, crear `hypr/themes/<nombre>/` con la misma estructura (`appearance.conf`, `hyprlock.conf`, `foot/foot.ini`, `fuzzel/fuzzel.ini`, `swaync/style.css`, `waybar/config.jsonc`, `waybar/style.css`) y usar `theme-switch.sh <nombre>`.
 
 ### Rollback
 
 1. En GDM, elegir **GNOME** (o **GNOME on Xorg**) y volver a iniciar sesión.
 2. Opcionalmente, quitar solo los enlaces creados por el perfil (los archivos propios y backups se conservan):
    ```bash
-   find ~/.config/hypr ~/.config/waybar ~/.config/wofi ~/.config/mako \
+   find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/swappy ~/.config/swaync \
      -maxdepth 2 -type l -lname '*/.dotfiles/hypr/*' -delete 2>/dev/null || true
-   sudo apt-get remove --purge hyprland hyprpaper hypridle hyprlock hyprpolkitagent \
-       xdg-desktop-portal-hyprland waybar wofi mako-notifier grim slurp cliphist swaybg
+   sudo apt-get remove --purge hyprland hypridle hyprlock hyprpolkitagent \
+       xdg-desktop-portal-hyprland waybar fuzzel foot sway-notification-center grim slurp swappy cliphist swaybg
    ```
 3. Restaurar los backups `.bak.<timestamp>` si se habían personalizado archivos previos.
 

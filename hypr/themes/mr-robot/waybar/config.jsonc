@@ -28,7 +28,7 @@
 
   "custom/launcher": {
     "format": ">_",
-    "on-click": "~/.config/hypr/scripts/toggle-wofi.sh 'Buscar aplicaciones' env XDG_CURRENT_DESKTOP=Hyprland:GNOME fuzzel --placeholder 'Buscar aplicaciones...'",
+    "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Buscar aplicaciones' env XDG_CURRENT_DESKTOP=Hyprland:GNOME fuzzel --placeholder 'Buscar aplicaciones...'",
     "tooltip": true,
     "tooltip-format": "Lanzador de aplicaciones (Super + D)"
   },
@@ -140,6 +140,6 @@
     "format": "󰐥",
     "tooltip": true,
     "tooltip-format": "Menú del sistema (Apagar / Cerrar sesión)",
-    "on-click": "~/.config/hypr/scripts/toggle-wofi.sh 'Sistema:' ~/.config/hypr/scripts/powermenu.sh"
+    "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Sistema:' ~/.config/hypr/scripts/powermenu.sh"
   }
 }

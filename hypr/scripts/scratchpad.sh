@@ -24,11 +24,7 @@ count_scratchpads() {
 }
 
 if [ "$(count_scratchpads)" = "0" ]; then
-    if command -v foot >/dev/null 2>&1; then
-        foot --app-id="$CLASS" >/dev/null 2>&1 &
-    else
-        kitty --class "$CLASS" >/dev/null 2>&1 &
-    fi
+    foot --app-id="$CLASS" >/dev/null 2>&1 &
     for _ in $(seq 1 40); do
         [ "$(count_scratchpads)" != "0" ] && break
         sleep 0.05

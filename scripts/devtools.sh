@@ -28,8 +28,9 @@ if ! command -v gh &> /dev/null; then
         ARCH="386"
     fi
     
-    # 3. Obtener la última etiqueta de versión limpia (ej. v2.40.0) de la API de GitHub
-    GH_VERSION=$(curl -sSL https://api.github.com/repos/cli/cli/releases/latest | jq -r .tag_name)
+    # 3. Obtener la última etiqueta de versión limpia (ej. v2.40.0) vía redirección HTTP (sin rate-limit de API)
+    GH_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/cli/cli/releases/latest)
+    GH_VERSION="${GH_LATEST_URL##*/}"
     # Quitarle la 'v' inicial para que coincida con el nombre de las carpetas internas
     VERSION_NUM="${GH_VERSION#v}"
     
@@ -85,7 +86,8 @@ if ! command -v yazi &> /dev/null && [ ! -f "$HOME/.local/bin/yazi" ]; then
     fi
 
     if [ -n "$YAZI_TARGET" ]; then
-        YAZI_VERSION=$(curl -sSL https://api.github.com/repos/sxyazi/yazi/releases/latest | jq -r .tag_name)
+        YAZI_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/sxyazi/yazi/releases/latest)
+        YAZI_VERSION="${YAZI_LATEST_URL##*/}"
         TMP_DIR=$(mktemp -d)
         curl -fsSL -o "$TMP_DIR/yazi.zip" "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-${YAZI_TARGET}.zip"
         unzip -q "$TMP_DIR/yazi.zip" -d "$TMP_DIR"

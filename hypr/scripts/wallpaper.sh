@@ -54,21 +54,6 @@ apply_wallpaper() {
             kill $old_pids 2>/dev/null || true
         fi
         return 0
-    elif command -v hyprpaper >/dev/null 2>&1; then
-        local conf_dir="${XDG_RUNTIME_DIR:-$HOME/.cache}"
-        mkdir -p "$conf_dir"
-        local conf="$conf_dir/hyprpaper-runtime.conf"
-        cat > "$conf" <<EOF
-splash = false
-wallpaper {
-    monitor =
-    path = $wall
-    fit_mode = cover
-}
-EOF
-        pkill -x hyprpaper 2>/dev/null || true
-        hyprpaper -c "$conf" >/dev/null 2>&1 &
-        return 0
     fi
 
     return 1

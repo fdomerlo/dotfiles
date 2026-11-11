@@ -68,9 +68,9 @@ if command -v apt-get &>/dev/null; then
     # Paquetes del perfil opcional Hyprland: si el usuario instaló el perfil,
     # scripts/update.sh los mantiene al día en el mismo paso.
     HYPR_CANDIDATES=(
-        hyprland waybar fuzzel wofi mako-notifier foot kitty
+        hyprland waybar fuzzel foot
         sway-notification-center swayosd
-        hypridle hyprlock hyprpaper swaybg
+        hypridle hyprlock swaybg
         grim slurp swappy wl-clipboard cliphist
         brightnessctl playerctl socat
         pipewire pipewire-audio pipewire-pulse wireplumber
@@ -139,8 +139,9 @@ if command -v yazi &>/dev/null || [ -f "$HOME/.local/bin/yazi" ]; then
         YAZI_TARGET=""
     fi
     if [ -n "$YAZI_TARGET" ]; then
-        YAZI_VERSION=$(curl -sSL https://api.github.com/repos/sxyazi/yazi/releases/latest 2>/dev/null | jq -r .tag_name || echo "")
-        if [ -n "$YAZI_VERSION" ] && [ "$YAZI_VERSION" != "null" ]; then
+        YAZI_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/sxyazi/yazi/releases/latest 2>/dev/null || echo "")
+        YAZI_VERSION="${YAZI_LATEST_URL##*/}"
+        if [ -n "$YAZI_VERSION" ] && [ "$YAZI_VERSION" != "latest" ]; then
             TMP_DIR=$(mktemp -d)
             if curl -fsSL -o "$TMP_DIR/yazi.zip" "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-${YAZI_TARGET}.zip" 2>/dev/null; then
                 unzip -q "$TMP_DIR/yazi.zip" -d "$TMP_DIR"

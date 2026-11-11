@@ -117,7 +117,7 @@ USER_EXT_DIR="$HOME/.local/share/gnome-shell/extensions"
 SYS_EXT_DIR="/usr/share/gnome-shell/extensions"
 mkdir -p "$USER_EXT_DIR"
 
-GNOME_VER=$(gnome-shell --version 2>/dev/null | grep -oP '[0-9]+' | head -1 || echo "47")
+GNOME_VER=$(gnome-shell --version 2>/dev/null | grep -oP '[0-9]+' | head -1 || echo "48")
 echo "==> Versión detectada de GNOME Shell: $GNOME_VER"
 
 install_extension() {
@@ -234,13 +234,6 @@ except Exception:
 
 updated = list(current)
 
-if "pop-shell@system76.com" in updated:
-    updated.remove("pop-shell@system76.com")
-
-# Tiling Shell fue reemplazada por Tiling Assistant: sacarla de la lista
-if "tilingshell@ferrarodomenico.com" in updated:
-    updated.remove("tilingshell@ferrarodomenico.com")
-
 for ext in required:
     if ext not in updated:
         updated.append(ext)
@@ -252,15 +245,6 @@ if updated != current:
 else:
     print(f"    ✔ Todas las extensiones ya estaban registradas en GSettings.")
 EOF
-
-gnome-extensions disable "pop-shell@system76.com" 2>/dev/null || true
-gnome-extensions disable "tilingshell@ferrarodomenico.com" 2>/dev/null || true
-
-# Purgar resto de Tiling Shell en user-space para evitar conflictos con Tiling Assistant
-if [ -d "$USER_EXT_DIR/tilingshell@ferrarodomenico.com" ]; then
-    echo "  Eliminando extensión reemplazada: tilingshell@ferrarodomenico.com..."
-    rm -rf "$USER_EXT_DIR/tilingshell@ferrarodomenico.com"
-fi
 
 for uuid in "AlphabeticalAppGrid@stuarthayhurst" "Vitals@CoreCoding.com" "dash-to-dock@micxgx.gmail.com" "tiling-assistant@leleat-on-github"; do
     gnome-extensions enable "$uuid" 2>/dev/null || true

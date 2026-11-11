@@ -20,7 +20,6 @@ BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
 BACKPORTS_PKGS=(
     hyprland
     xdg-desktop-portal-hyprland
-    hyprpaper
     hypridle
     hyprlock
     hyprpolkitagent
@@ -31,8 +30,6 @@ BACKPORTS_PKGS=(
 MAIN_PKGS=(
     waybar
     fuzzel
-    wofi
-    mako-notifier
     sway-notification-center
     swayosd
     grim
@@ -47,7 +44,6 @@ MAIN_PKGS=(
     pipewire-pulse
     wireplumber
     foot
-    kitty
     chafa
     zathura
     zathura-pdf-poppler
@@ -144,8 +140,8 @@ sudo apt-get install -y "${MAIN_PKGS[@]}"
 # ------------------------------------------------------------------------------
 echo "==> Verificando instalación..."
 REQUIRED_BINS=(
-    Hyprland hyprctl hyprpaper hypridle hyprlock
-    waybar fuzzel mako grim slurp swappy wl-copy cliphist swaybg
+    Hyprland hyprctl hypridle hyprlock
+    waybar fuzzel grim slurp swappy wl-copy cliphist swaybg
     swaync swaync-client swayosd-server swayosd-client
     brightnessctl playerctl wpctl foot zathura imv-wayland seahorse nautilus pavucontrol
     nm-applet blueman-applet qt6ct socat
@@ -201,7 +197,7 @@ fi
 for f in "$HYPR_SRC"/conf/*.conf; do
     link_file "$f" "$CONFIG_HOME/hypr/conf/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf "$HYPR_SRC"/hyprpaper.conf; do
+for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf; do
     link_file "$f" "$CONFIG_HOME/hypr/$(basename "$f")"
 done
 for f in "$HYPR_SRC"/scripts/*.sh; do
@@ -219,13 +215,6 @@ done
 for f in "$HYPR_SRC"/swappy/*; do
     link_file "$f" "$CONFIG_HOME/swappy/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/wofi/*; do
-    link_file "$f" "$CONFIG_HOME/wofi/$(basename "$f")"
-done
-for f in "$HYPR_SRC"/kitty/*; do
-    link_file "$f" "$CONFIG_HOME/kitty/$(basename "$f")"
-done
-link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
 done
@@ -291,15 +280,7 @@ else
     warn "No se encontró la unidad hyprpolkitagent.service; el agente podría no iniciarse."
 fi
 
-# El paquete Debian habilita hyprpaper.service como servicio systemd de usuario,
-# lo que provoca que intente arrancar en GNOME y falle en bucle. El wallpaper se
-# gestiona directamente vía wallpaper.sh desde autostart.conf en Hyprland.
-if systemctl --user is-enabled hyprpaper.service 2>/dev/null | grep -qv "masked"; then
-    systemctl --user disable --now hyprpaper.service 2>/dev/null || true
-    systemctl --user mask hyprpaper.service 2>/dev/null || true
-fi
-
-# El paquete Debian también habilita waybar.service, que arranca con
+# El paquete Debian habilita waybar.service, que arranca con
 # graphical-session.target (GNOME) y falla en bucle porque GNOME no soporta
 # wlr-layer-shell. Waybar se inicia solo desde autostart.conf en Hyprland,
 # esperando los sockets IPC con scripts/start-waybar.sh.

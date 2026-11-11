@@ -4,7 +4,7 @@
 #
 # Re-enlaza los mismos destinos que scripts/hyprland.sh en ~/.config, elimina
 # symlinks rotos que apunten al repo y, si hay una sesión Hyprland activa,
-# recarga Hyprland, Waybar, swaync/mako e hypridle.
+# recarga Hyprland, Waybar, swaync e hypridle.
 #
 # Uso:
 #   make refresh
@@ -69,7 +69,7 @@ link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
 for f in "$HYPR_SRC"/conf/*.conf; do
     link_file "$f" "$CONFIG_HOME/hypr/conf/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf "$HYPR_SRC"/hyprpaper.conf; do
+for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf; do
     link_file "$f" "$CONFIG_HOME/hypr/$(basename "$f")"
 done
 for f in "$HYPR_SRC"/scripts/*.sh; do
@@ -87,13 +87,6 @@ done
 for f in "$HYPR_SRC"/swappy/*; do
     link_file "$f" "$CONFIG_HOME/swappy/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/wofi/*; do
-    link_file "$f" "$CONFIG_HOME/wofi/$(basename "$f")"
-done
-for f in "$HYPR_SRC"/kitty/*; do
-    link_file "$f" "$CONFIG_HOME/kitty/$(basename "$f")"
-done
-link_file "$HYPR_SRC/mako/config" "$CONFIG_HOME/mako/config"
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
 done
@@ -169,14 +162,11 @@ sleep 0.3
 setsid "$CONFIG_HOME/hypr/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 ok "Waybar reiniciado."
 
-# Notificaciones: recargar config/CSS (swaync) o mako como respaldo.
+# Notificaciones: recargar config y CSS de swaync.
 if pgrep -x swaync >/dev/null 2>&1 && command -v swaync-client >/dev/null 2>&1; then
     swaync-client -R >/dev/null 2>&1 || true
     swaync-client -rs >/dev/null 2>&1 || true
     ok "swaync recargado (config + CSS)."
-elif pgrep -x mako >/dev/null 2>&1 && command -v makoctl >/dev/null 2>&1; then
-    makoctl reload >/dev/null 2>&1 || true
-    ok "mako recargado."
 fi
 
 # hypridle: reiniciar para releer hypridle.conf.

@@ -2,8 +2,8 @@
 Name=Lazydocker
 GenericName=Container Manager
 Comment=TUI for Podman and Docker containers
-TryExec=/home/fdomerlo/.local/bin/lazydocker
-Exec=foot -e /home/fdomerlo/.local/bin/lazydocker
+TryExec=foot
+Exec=sh -c 'PATH="$HOME/.local/bin:$PATH" exec foot -e lazydocker'
 Icon=utilities-terminal
 Terminal=false
 Type=Application

@@ -249,15 +249,10 @@ else
     echo -n "Componentes del escritorio Hyprland... "
     hypr_missing=()
     for cmd in Hyprland hyprctl waybar fuzzel foot swappy zathura imv-wayland seahorse \
-               hypridle hyprlock swaync swaync-client swayosd-server swayosd-client \
+               hypridle hyprlock swaybg swaync swaync-client swayosd-server swayosd-client \
                grim slurp wl-copy cliphist brightnessctl playerctl wpctl; do
         command -v "$cmd" &>/dev/null || hypr_missing+=("$cmd")
     done
-    if command -v hyprpaper &>/dev/null || command -v swaybg &>/dev/null; then
-        :
-    else
-        hypr_missing+=("hyprpaper|swaybg")
-    fi
     if [ -x /usr/libexec/hyprpolkitagent ]; then
         :
     else
@@ -294,7 +289,6 @@ else
              "$HOME/.config/fuzzel/fuzzel.ini" \
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
-             "$HOME/.config/mako/config" \
              "$HOME/.config/swaync/config.json"; do
         [ -e "$f" ] || cfg_missing+=("$f")
     done

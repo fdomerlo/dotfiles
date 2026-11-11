@@ -2,9 +2,9 @@
 Name=Neovim
 GenericName=Text Editor
 Comment=Edit text files in terminal
-TryExec=/home/fdomerlo/.local/bin/nvim
-Exec=foot -e /home/fdomerlo/.local/bin/nvim %F
-Icon=/home/fdomerlo/.local/share/icons/hicolor/128x128/apps/nvim.png
+TryExec=foot
+Exec=sh -c 'PATH="$HOME/.local/bin:$PATH" exec foot -e nvim "$@"' -- %F
+Icon=nvim
 Terminal=false
 Type=Application
 Categories=Utility;TextEditor;Development;IDE;

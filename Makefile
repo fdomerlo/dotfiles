@@ -9,7 +9,7 @@ export CHSH=no
 export KEEP_ZSHRC=yes
 export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install full-install update refresh host timeshift podman docker shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
+.PHONY: help install full-install update refresh host timeshift podman shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
@@ -65,9 +65,6 @@ timeshift:
 podman:
 	@echo "==> Configurando Podman Rootless..."
 	bash host/podman.sh
-
-# Alias retrocompatible
-docker: podman
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
