@@ -141,6 +141,18 @@ fi
 echo "==> Recargando Hyprland..."
 hyprctl reload >/dev/null 2>&1 || warn "hyprctl reload falló."
 
+# Workspaces dinámicos: asegurar que el watcher esté activo y re-aplicar
+# antes de reiniciar Waybar para que los workspaces persistentes existan.
+if [ -x "$CONFIG_HOME/hypr/scripts/workspaces-init.sh" ]; then
+    if ! pgrep -f "workspaces-init.sh.*--watch" >/dev/null 2>&1; then
+        setsid "$CONFIG_HOME/hypr/scripts/workspaces-init.sh" --watch >/dev/null 2>&1 </dev/null &
+        ok "workspaces-init iniciado en segundo plano (--watch)."
+    else
+        "$CONFIG_HOME/hypr/scripts/workspaces-init.sh" --once >/dev/null 2>&1 || true
+        ok "workspaces-init re-aplicado."
+    fi
+fi
+
 # Waybar: reiniciar para releer config.jsonc y style.css.
 pkill -x waybar 2>/dev/null || true
 sleep 0.3

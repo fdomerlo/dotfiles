@@ -84,8 +84,13 @@ shell:
 	ln -sf $(ROOT_DIR)/shell/atuin.toml $(HOME)/.config/atuin/config.toml
 	mkdir -p $(HOME)/.config/btop/themes
 	ln -sf $(ROOT_DIR)/shell/btop/themes/neutral.theme $(HOME)/.config/btop/themes/neutral.theme
-	@# btop reescribe btop.conf al salir: se copia una sola vez, no se enlaza.
-	[ -f $(HOME)/.config/btop/btop.conf ] || cp $(ROOT_DIR)/shell/btop/btop.conf $(HOME)/.config/btop/btop.conf
+	@# btop reescribe btop.conf al salir: se inicializa si no existe o se asegura el tema neutral si ya existe.
+	@if [ ! -f $(HOME)/.config/btop/btop.conf ]; then \
+		cp $(ROOT_DIR)/shell/btop/btop.conf $(HOME)/.config/btop/btop.conf; \
+	else \
+		sed -i 's/^color_theme = .*/color_theme = "neutral"/' $(HOME)/.config/btop/btop.conf; \
+		sed -i 's/^theme_background = .*/theme_background = False/' $(HOME)/.config/btop/btop.conf; \
+	fi
 	mkdir -p $(HOME)/.config/yazi
 	ln -sf $(ROOT_DIR)/shell/yazi/yazi.toml $(HOME)/.config/yazi/yazi.toml
 	ln -sf $(ROOT_DIR)/shell/yazi/keymap.toml $(HOME)/.config/yazi/keymap.toml

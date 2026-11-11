@@ -66,7 +66,13 @@ focused_monitor() {
 
 apply() {
     local names=() focused="" idx name base n id rule current
-    mapfile -t names < <(monitors)
+    local retries=10
+    while [ "$retries" -gt 0 ]; do
+        mapfile -t names < <(monitors)
+        [ "${#names[@]}" -gt 0 ] && break
+        sleep 0.1
+        retries=$((retries - 1))
+    done
     [ "${#names[@]}" -gt 0 ] || return 1
 
     focused="$(focused_monitor)"
