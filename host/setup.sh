@@ -117,6 +117,7 @@ apt-get install -y \
   gnome-keyring seahorse libsecret-tools \
   remmina remmina-plugin-rdp remmina-plugin-vnc remmina-plugin-secret \
   wireshark tshark \
+  network-manager-openvpn network-manager-openvpn-gnome \
   fonts-firacode fonts-jetbrains-mono fonts-noto-core \
   flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
   libglib2.0-bin \

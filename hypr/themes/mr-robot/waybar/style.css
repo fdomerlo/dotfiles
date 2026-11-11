@@ -118,6 +118,7 @@ window#waybar.empty #window {
 #memory,
 #pulseaudio,
 #network,
+#custom-vpn,
 #bluetooth,
 #custom-notification,
 #clock,
@@ -150,6 +151,11 @@ window#waybar.empty #window {
 
 #network.disconnected {
     color: #c83434;
+}
+
+#custom-vpn {
+    color: #4cd97b;
+    font-weight: bold;
 }
 
 #bluetooth {

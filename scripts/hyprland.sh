@@ -55,6 +55,8 @@ MAIN_PKGS=(
     pavucontrol
     libnotify-bin
     network-manager-gnome
+    network-manager-openvpn
+    network-manager-openvpn-gnome
     blueman
     xdg-desktop-portal-gtk
     qt6ct

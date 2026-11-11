@@ -19,6 +19,7 @@
     "memory",
     "pulseaudio",
     "network",
+    "custom/vpn",
     "bluetooth",
     "custom/notification",
     "clock",
@@ -88,7 +89,17 @@
     "format-ethernet": "󰈀 LAN",
     "format-disconnected": "󰪎 Sin red",
     "tooltip-format": "{ifname} via {gwaddr}",
-    "on-click": "nm-connection-editor"
+    "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Red:' ~/.config/hypr/scripts/network-menu.sh",
+    "on-click-right": "nm-connection-editor"
+  },
+
+  "custom/vpn": {
+    "format": "{}",
+    "exec": "~/.config/hypr/scripts/vpn-status.sh",
+    "interval": 2,
+    "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Red:' ~/.config/hypr/scripts/network-menu.sh",
+    "tooltip": true,
+    "return-type": "json"
   },
 
   "bluetooth": {
