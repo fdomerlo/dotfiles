@@ -159,9 +159,28 @@
 
   "clock": {
     "format": "󰃭 {:%H:%M}",
-    "tooltip-format": "󰃭 {:L%A, %d de %B de %Y}",
+    "tooltip-format": "󰃭 {:L%A, %d de %B de %Y}\n\n<tt><small>{calendar}</small></tt>",
     "locale": "es_AR.UTF-8",
-    "timezone": "America/Argentina/Buenos_Aires"
+    "timezone": "America/Argentina/Buenos_Aires",
+    "on-click": "gnome-calendar",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#0db7d4'><b>{}</b></span>",
+        "weekdays": "<span color='#91a39a'><b>{}</b></span>",
+        "days": "<span color='#e6ece8'>{}</span>",
+        "weeks": "<span color='#6f8179'>W{}</span>",
+        "today": "<span color='#e56b72'><b><u>{}</u></b></span>"
+      }
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
   },
 
   "tray": {

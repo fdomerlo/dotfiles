@@ -247,3 +247,17 @@ window#waybar.empty #window {
     background: #e56b72;
     color: #0c1012;
 }
+
+/* --- Tooltip --- */
+
+tooltip {
+    background: rgba(12, 16, 18, 0.98);
+    border: 1px solid rgba(13, 183, 212, 0.35);
+    border-radius: 8px;
+}
+
+tooltip label {
+    color: #e6ece8;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+}
