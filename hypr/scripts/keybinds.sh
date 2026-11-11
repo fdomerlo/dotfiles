@@ -25,6 +25,7 @@ keyname() {
     case "$1" in
         grave)              printf '`' ;;
         slash)              printf '/' ;;
+        equal)              printf '=' ;;
         Return)             printf 'Enter' ;;
         Escape)             printf 'Esc' ;;
         Print)              printf 'Print' ;;

@@ -22,6 +22,8 @@
     "custom/vpn",
     "bluetooth",
     "custom/notification",
+    "custom/nightlight",
+    "custom/recording",
     "clock",
     "tray",
     "custom/power"
@@ -133,6 +135,26 @@
     "on-click": "~/.config/hypr/scripts/notifications-toggle.sh",
     "on-click-right": "swaync-client -d -sw",
     "escape": true
+  },
+
+  "custom/nightlight": {
+    "format": "{}",
+    "exec": "~/.config/hypr/scripts/nightlight-status.sh",
+    "return-type": "json",
+    "interval": 2,
+    "hide-empty-text": true,
+    "on-click": "~/.config/hypr/scripts/nightlight-toggle.sh",
+    "tooltip": true
+  },
+
+  "custom/recording": {
+    "format": "{}",
+    "exec": "~/.config/hypr/scripts/recording-status.sh",
+    "return-type": "json",
+    "interval": 1,
+    "hide-empty-text": true,
+    "on-click": "~/.config/hypr/scripts/screen-record.sh",
+    "tooltip": true
   },
 
   "clock": {

@@ -203,6 +203,11 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Keyring / Secretos | `gnome-keyring` + `seahorse` |
 | Portales | `xdg-desktop-portal-hyprland` + `xdg-desktop-portal-gtk` (fallback) |
 | Capturas y anotación | `grim` + `slurp` + `swappy` |
+| Grabación de pantalla | `wf-recorder` (indicador `REC` en Waybar) |
+| Búsqueda de archivos | `fd-find` + `fuzzel --dmenu` (abre el elegido con `xdg-open`) |
+| Selector de color | `hyprpicker` (copia el color del píxel al portapapeles) |
+| Luz nocturna | `hyprsunset` (filtro de luz azul, toggle + indicador) |
+| Calculadora | `gnome-calculator` |
 | Visores nativos | `zathura` + `zathura-pdf-poppler` (PDFs) + `imv` (imágenes Wayland) |
 | Portapapeles | `wl-clipboard` + `cliphist` |
 | Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
@@ -225,6 +230,11 @@ En Stable, `hyprland`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-
 | `Super+E` | Gestor de archivos gráfico (`nautilus`) |
 | `Super+Y` | Gestor de archivos en terminal (`yazi` en `foot`) |
 | `Super+W` | Cambiar el wallpaper (aleatorio, sin repetir el actual) |
+| `Super+=` | Calculadora (`gnome-calculator`) |
+| `Super+Ctrl+F` | Buscar archivos (`fd` + `fuzzel`, abre el elegido con `xdg-open`) |
+| `Super+Shift+P` | Selector de color (`hyprpicker` copia el HEX al portapapeles) |
+| `Super+Ctrl+N` | Luz nocturna on/off (filtro de luz azul de `hyprsunset`) |
+| `Super+Shift+R` | Grabar/detener la pantalla (`wf-recorder`, indicador `REC` en Waybar) |
 | `Super+Q` | Cerrar ventana |
 | `Super+F` | Pantalla completa |
 | `Super+M` | Maximizar / restaurar |

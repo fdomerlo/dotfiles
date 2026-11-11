@@ -121,7 +121,9 @@ if ! command -v 7z &> /dev/null && ! command -v 7zz &> /dev/null; then
     YAZI_DEPS+=(7zip)
 fi
 if [ ${#YAZI_DEPS[@]} -gt 0 ]; then
-    if sudo -n true 2>/dev/null; then
+    # Con sudo cacheado instala sin preguntar; si hay terminal interactiva lo
+    # deja pedir la contraseña. Solo se omite en ejecuciones desatendidas.
+    if sudo -n true 2>/dev/null || [ -t 0 ]; then
         echo "Instalando dependencias de Yazi: ${YAZI_DEPS[*]}..."
         sudo apt-get install -y "${YAZI_DEPS[@]}"
     else
@@ -133,9 +135,11 @@ fi
 
 # Midnight Commander: alternativa TUI a Yazi, con skin Nord propio.
 if ! command -v mc &> /dev/null; then
-    if sudo -n true 2>/dev/null; then
+    if sudo -n true 2>/dev/null || [ -t 0 ]; then
         echo "Instalando Midnight Commander (mc)..."
         sudo apt-get install -y mc
+    else
+        echo "  (Pendiente sudo apt install mc)"
     fi
 else
     echo "✔ mc ya está instalado"

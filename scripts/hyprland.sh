@@ -24,6 +24,8 @@ BACKPORTS_PKGS=(
     hyprlock
     hyprpolkitagent
     hyprland-guiutils
+    hyprpicker
+    hyprsunset
 )
 
 # Paquetes disponibles en Stable main.
@@ -52,6 +54,9 @@ MAIN_PKGS=(
     seahorse
     libsecret-tools
     nautilus
+    gnome-calculator
+    fd-find
+    wf-recorder
     pavucontrol
     libnotify-bin
     network-manager-gnome
@@ -142,11 +147,11 @@ sudo apt-get install -y "${MAIN_PKGS[@]}"
 # ------------------------------------------------------------------------------
 echo "==> Verificando instalación..."
 REQUIRED_BINS=(
-    Hyprland hyprctl hypridle hyprlock
-    waybar fuzzel grim slurp swappy wl-copy cliphist swaybg
+    Hyprland hyprctl hypridle hyprlock hyprpicker hyprsunset
+    waybar fuzzel grim slurp swappy wf-recorder wl-copy cliphist swaybg
     swaync swaync-client swayosd-server swayosd-client
     brightnessctl playerctl wpctl foot zathura imv-wayland seahorse nautilus pavucontrol
-    nm-applet blueman-applet qt6ct socat
+    nm-applet blueman-applet qt6ct socat fdfind gnome-calculator
 )
 missing=()
 for bin in "${REQUIRED_BINS[@]}"; do

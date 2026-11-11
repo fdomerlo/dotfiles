@@ -121,6 +121,8 @@ window#waybar.empty #window {
 #custom-vpn,
 #bluetooth,
 #custom-notification,
+#custom-nightlight,
+#custom-recording,
 #clock,
 #tray,
 #custom-power {
@@ -189,6 +191,39 @@ window#waybar.empty #window {
 #custom-notification:hover {
     color: #d8e4ec;
     border-color: #2e7491;
+}
+
+/* Luz nocturna: solo aparece mientras el filtro está activo. */
+#custom-nightlight {
+    color: #c9a227;
+    padding: 0 9px;
+    transition: all 0.12s ease;
+}
+
+#custom-nightlight:hover {
+    background: #c9a227;
+    color: #05080b;
+    border-color: #c9a227;
+}
+
+/* Grabación de pantalla: parpadea como un indicador REC. */
+#custom-recording {
+    color: #c83434;
+    border-color: rgba(200, 52, 52, 0.45);
+    padding: 0 9px;
+    font-weight: bold;
+    animation: recording-pulse 1.2s ease-in-out infinite alternate;
+}
+
+#custom-recording:hover {
+    background: #c83434;
+    color: #05080b;
+    border-color: #c83434;
+}
+
+@keyframes recording-pulse {
+    from { opacity: 1; }
+    to   { opacity: 0.45; }
 }
 
 #clock {
