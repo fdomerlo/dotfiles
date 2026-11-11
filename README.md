@@ -192,18 +192,22 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | :--- | :--- |
 | Compositor | `hyprland` (desde `stable-backports`) |
 | Barra | `waybar` |
-| Lanzador | `wofi` (`rofi` queda como alternativa manual) |
+| Lanzador | `fuzzel` (nativo Wayland, tematizado en `mr-robot` y `cyber-teal`; `wofi` como fallback) |
 | Notificaciones | `sway-notification-center` (`swaync`) con historial y No molestar; `mako` queda como respaldo |
 | OSD | `swayosd` para volumen y brillo (respaldo directo con `wpctl`/`brightnessctl`) |
 | Idle / bloqueo | `hypridle` + `hyprlock` |
-| Wallpaper | `hyprpaper` si existe `~/.config/hypr/wallpapers/default.png`; si no, `swaybg` con color sólido |
+| Wallpaper | `swaybg` (con rotación vía `wallpaper.sh` y respaldo en `hyprpaper`) |
 | Agente polkit | `hyprpolkitagent` |
+| Keyring / Secretos | `gnome-keyring` + `seahorse` |
 | Portales | `xdg-desktop-portal-hyprland` + `xdg-desktop-portal-gtk` (fallback) |
-| Capturas | `grim` + `slurp` |
+| Capturas y anotación | `grim` + `slurp` + `swappy` |
+| Visores nativos | `zathura` + `zathura-pdf-poppler` (PDFs) + `imv` (imágenes Wayland) |
 | Portapapeles | `wl-clipboard` + `cliphist` |
 | Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
-| Terminal / archivos | `kitty` / `nautilus` (gráfico) + `yazi` (terminal, previews en Kitty) + `mc` (dos paneles) |
-| Previews de Yazi | `fd-find` (como `fd`), `7zip`, `ffmpeg`, `poppler-utils`, `jq` |
+| Terminal / archivos | `foot` (con `foot --server`) / `nautilus` (gráfico) + `yazi` (terminal, Sixel vía `chafa`) + `mc` |
+| Contenedores / Sysadmin | `lazydocker` (TUI sobre socket Podman), `remmina` (RDP/VNC), `wireshark` (sin root) |
+| Suite Flatpak | `Firefox` (navegador predeterminado), `DBeaver Community`, `Bruno`, `Obsidian`, `Super Productivity` |
+| Previews de Yazi | `fd-find` (como `fd`), `7zip`, `ffmpeg`, `chafa`, `poppler-utils`, `jq` |
 | Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), cursor Adwaita, `qt6ct` |
 
 En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
@@ -212,12 +216,12 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 
 | Atajo | Acción |
 | :--- | :--- |
-| `Super+Return` | Terminal (`kitty`) |
+| `Super+Return` | Terminal (`foot`) |
 | `Super+Shift+Return` | Terminal con `tmux` (sesión `main` persistente) |
-| `Super` | Abrir/cerrar el lanzador (`wofi`) |
-| `Super+D` / `Super+Space` | Lanzador de aplicaciones (`wofi`, alterna) |
+| `Super` | Abrir/cerrar el lanzador (`fuzzel`) |
+| `Super+D` / `Super+Space` | Lanzador de aplicaciones (`fuzzel`, alterna) |
 | `Super+E` | Gestor de archivos gráfico (`nautilus`) |
-| `Super+Y` | Gestor de archivos en terminal (`yazi` con previews nativas en Kitty) |
+| `Super+Y` | Gestor de archivos en terminal (`yazi` en `foot`) |
 | `Super+W` | Cambiar el wallpaper (aleatorio, sin repetir el actual) |
 | `Super+Q` | Cerrar ventana |
 | `Super+F` | Pantalla completa |
@@ -234,8 +238,9 @@ En Stable, `hyprland`, `hyprpaper`, `hypridle`, `hyprlock`, `hyprpolkitagent` y 
 | `Super+N` / `Super+Shift+N` | Centro de notificaciones / No molestar |
 | `Super+Shift+T` | Intercambiador de temas (Mr. Robot / Cyber-Teal) |
 | `Super+F1` | Cheatsheet de atajos activos |
-| `Super+V` / `Super+Shift+V` | Historial de portapapeles (`cliphist` + `wofi`, alterna) |
-| `Print` | Captura de región a archivo + portapapeles |
+| `Super+V` / `Super+Shift+V` | Historial de portapapeles (`cliphist` + `fuzzel`, alterna) |
+| `Print` | Captura de región + anotación rápida en `swappy` + portapapeles |
+| `Ctrl+Print` | Captura de región directa a archivo + portapapeles (sin abrir `swappy`) |
 | `Shift+Print` | Captura de pantalla completa a archivo + portapapeles |
 | `Super+1..0` / `Super+Shift+1..0` | Ir al workspace / mover ventana sin seguirla (también con el teclado numérico); `1-5` en el primer monitor y `6-0` en el segundo |
 | `Super+Av.Pág` / `Super+Re.Pág` | Ciclar al workspace siguiente/anterior del monitor (con wrap) |

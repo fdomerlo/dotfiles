@@ -78,6 +78,11 @@ doctor() {
   check opencode
   check antigravity
   check_opt agy
+  check_opt lazydocker
+  check_opt remmina
+  check_opt wireshark
+  check_opt zathura
+  check_opt imv
   check_opt timeshift
 
   echo ""
@@ -165,8 +170,9 @@ doctor() {
   if command -v Hyprland &>/dev/null; then
     check hyprctl
     check waybar
-    check wofi
-    check mako
+    check fuzzel
+    check foot
+    check swappy
     check hypridle
     check hyprlock
     check grim
@@ -176,7 +182,6 @@ doctor() {
     check brightnessctl
     check playerctl
     check wpctl
-    check kitty
     if command -v hyprpaper &>/dev/null || command -v swaybg &>/dev/null; then
       echo -e "  \033[32m✔\033[0m hyprpaper/swaybg"
     else

@@ -20,9 +20,9 @@ help:
 	@echo "  make refresh         - Re-sincroniza configs/scripts de Hyprland desde el repo y recarga la sesión (tras git pull)"
 	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
-	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop, yazi, nvim)"
-	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi y sincroniza SSH de GitHub"
-	@echo "  make tooling         - Instala navegadores y editores nativos (VS Code, Chrome, Zed, Neovim)"
+	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop, yazi, nvim, zathura, lazydocker)"
+	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi, lazydocker y sincroniza SSH de GitHub"
+	@echo "  make tooling         - Instala navegadores, editores y suite sysadmin/productividad (Firefox, Chrome, VS Code, Zed, Neovim, Remmina, Wireshark, DBeaver, Bruno, Obsidian, Super Productivity)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
 	@echo "  make desktop         - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
 	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
@@ -98,17 +98,28 @@ shell:
 	mkdir -p $(HOME)/.config/mc $(HOME)/.local/share/mc/skins
 	ln -sf $(ROOT_DIR)/shell/mc/ini $(HOME)/.config/mc/ini
 	ln -sf $(ROOT_DIR)/shell/mc/skins/nord.ini $(HOME)/.local/share/mc/skins/nord.ini
-	@# mcedit no necesita su propia entrada en wofi: F4 abre el editor interno.
+	@# mcedit no necesita su propia entrada en el lanzador: F4 abre el editor interno.
 	mkdir -p $(HOME)/.local/share/applications $(HOME)/.local/share/icons/hicolor/128x128/apps
 	ln -sf $(ROOT_DIR)/shell/mc/mcedit.desktop $(HOME)/.local/share/applications/mcedit.desktop
 	ln -sf $(ROOT_DIR)/shell/nvim/nvim.desktop $(HOME)/.local/share/applications/nvim.desktop
+	ln -sf $(ROOT_DIR)/shell/lazydocker/lazydocker.desktop $(HOME)/.local/share/applications/lazydocker.desktop
 	@[ -f $(HOME)/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png ] && \
 		ln -sf $(HOME)/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png $(HOME)/.local/share/icons/hicolor/128x128/apps/nvim.png || true
+	mkdir -p $(HOME)/.config/zathura $(HOME)/.config/lazydocker
+	ln -sf $(ROOT_DIR)/shell/zathura/zathurarc $(HOME)/.config/zathura/zathurarc
+	ln -sf $(ROOT_DIR)/shell/lazydocker/config.yml $(HOME)/.config/lazydocker/config.yml
 	mkdir -p $(HOME)/.config
 	ln -sfn $(ROOT_DIR)/shell/nvim $(HOME)/.config/nvim
 	mkdir -p $(HOME)/.local/bin
 	@# Yazi busca el binario `fd`; Debian lo instala como `fdfind`.
 	@if [ -x /usr/bin/fdfind ]; then ln -sf /usr/bin/fdfind $(HOME)/.local/bin/fd; fi
+	@# Debian instala el wrapper `imv` en /usr/libexec/imv/imv por colisión de nombre con renameutils.
+	@if [ -x /usr/libexec/imv/imv ]; then ln -sf /usr/libexec/imv/imv $(HOME)/.local/bin/imv; fi
+	@# Asociación XDG de visores por defecto (PDF -> Zathura, Imágenes -> imv) si xdg-mime está presente.
+	@if command -v xdg-mime >/dev/null 2>&1; then \
+		xdg-mime default org.pwmt.zathura.desktop application/pdf 2>/dev/null || true; \
+		xdg-mime default imv.desktop image/png image/jpeg image/webp image/gif image/bmp image/svg+xml 2>/dev/null || true; \
+	fi
 	chmod +x shell/devctl
 	ln -sf $(ROOT_DIR)/shell/devctl $(HOME)/.local/bin/devctl
 	@echo "devctl enlazado en ~/.local/bin/devctl"

@@ -1,0 +1,51 @@
+# ==============================================================================
+# Lazydocker - Configuración TUI para Podman Rootless
+# Se conecta vía DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+# ==============================================================================
+
+gui:
+  scrollHeight: 2
+  language: "auto"
+  border: "rounded"
+  theme:
+    activeBorderColor:
+      - cyan
+      - bold
+    inactiveBorderColor:
+      - white
+    optionsTextColor:
+      - cyan
+  returnImmediately: true
+  wrapMainPanel: true
+
+commandTemplates:
+  dockerCompose: "podman compose"
+  restartService: "{{ .DockerCompose }} restart {{ .Service.Name }}"
+  up: "{{ .DockerCompose }} up -d"
+  down: "{{ .DockerCompose }} down"
+  downWithVolumes: "{{ .DockerCompose }} down --volumes"
+  upService: "{{ .DockerCompose }} up -d {{ .Service.Name }}"
+  startService: "{{ .DockerCompose }} start {{ .Service.Name }}"
+  stopService: "{{ .DockerCompose }} stop {{ .Service.Name }}"
+  serviceLogs: "{{ .DockerCompose }} logs --tail=60 --follow {{ .Service.Name }}"
+  viewServiceLogs: "{{ .DockerCompose }} logs --follow {{ .Service.Name }}"
+  rebuildService: "{{ .DockerCompose }} up -d --build {{ .Service.Name }}"
+  recreateService: "{{ .DockerCompose }} up -d --force-recreate {{ .Service.Name }}"
+  allLogs: "{{ .DockerCompose }} logs --tail=300 --follow"
+  viewAlLogs: "{{ .DockerCompose }} logs"
+  dockerComposeConfig: "{{ .DockerCompose }} config"
+  checkDockerComposeConfig: "{{ .DockerCompose }} config --quiet"
+  serviceTop: "{{ .DockerCompose }} top {{ .Service.Name }}"
+
+oS:
+  openCommand: "xdg-open {{filename}}"
+  openLinkCommand: "xdg-open {{link}}"
+
+stats:
+  graphs:
+    - caption: "CPU (%)"
+      statPath: "DerivedStats.CPUPercentage"
+      color: "cyan"
+    - caption: "Memoria (%)"
+      statPath: "DerivedStats.MemoryPercentage"
+      color: "green"

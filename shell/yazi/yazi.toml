@@ -1,5 +1,5 @@
 # Yazi - configuración general
-# Enfoque: navegación tipo GUI dentro de Kitty/Hyprland, con tres paneles
+# Enfoque: navegación tipo GUI dentro de Foot/Hyprland, con tres paneles
 # (padre / actual / preview), previews de alta calidad y operaciones con progreso.
 
 [mgr]
@@ -41,7 +41,16 @@ edit = [
     { run = "code %s", desc = "VS Code", orphan = true },
     { run = "nvim %s", desc = "Neovim", block = true },
 ]
-# Reproducción y apertura delegadas al escritorio (xdg-open).
+# Reproducción y apertura delegadas a visores nativos Wayland (zathura, imv) y xdg-open.
+pdf = [
+    { run = "zathura %s1", desc = "Zathura (PDF)", orphan = true },
+    { run = "xdg-open %s1", desc = "Abrir con la app del sistema", orphan = true },
+]
+image = [
+    { run = "sh -c 'if command -v imv-wayland >/dev/null 2>&1; then imv-wayland \"$@\"; elif [ -x /usr/libexec/imv/imv ]; then /usr/libexec/imv/imv \"$@\"; else xdg-open \"$1\"; fi' -- %s", desc = "imv (Wayland)", orphan = true },
+    { run = "swappy -f %s1 -o %s1", desc = "Anotar con Swappy", orphan = true },
+    { run = "xdg-open %s1", desc = "Abrir con la app del sistema", orphan = true },
+]
 play = [
     { run = "xdg-open %s1", desc = "Abrir con la app del sistema", orphan = true },
 ]
@@ -50,4 +59,10 @@ open = [
 ]
 reveal = [
     { run = "xdg-open %d1", desc = "Abrir carpeta contenedora", orphan = true },
+]
+
+[open]
+prepend_rules = [
+    { mime = "application/pdf", use = [ "pdf", "reveal" ] },
+    { mime = "image/*", use = [ "image", "reveal" ] },
 ]

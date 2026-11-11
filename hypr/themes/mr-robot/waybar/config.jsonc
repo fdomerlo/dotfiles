@@ -28,7 +28,7 @@
 
   "custom/launcher": {
     "format": ">_",
-    "on-click": "env XDG_CURRENT_DESKTOP=Hyprland:GNOME wofi --show drun",
+    "on-click": "~/.config/hypr/scripts/toggle-wofi.sh 'Buscar aplicaciones' env XDG_CURRENT_DESKTOP=Hyprland:GNOME fuzzel --placeholder 'Buscar aplicaciones...'",
     "tooltip": true,
     "tooltip-format": "Lanzador de aplicaciones (Super + D)"
   },
@@ -61,14 +61,14 @@
     "format": "CPU {usage}%",
     "interval": 2,
     "tooltip": true,
-    "on-click": "kitty -e btop"
+    "on-click": "foot -e btop"
   },
 
   "memory": {
     "format": "MEM {used:0.1f}G",
     "interval": 2,
     "tooltip-format": "Memoria en uso: {used:0.2f}GiB de {total:0.2f}GiB",
-    "on-click": "kitty -e btop"
+    "on-click": "foot -e btop"
   },
 
   "pulseaudio": {

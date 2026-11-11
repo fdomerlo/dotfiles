@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Cheatsheet de atajos: lee los binds activos de Hyprland y los muestra en wofi.
+# Cheatsheet de atajos: lee los binds activos de Hyprland y los muestra en fuzzel.
 #
 # El texto "Atajos" se pasa como --prompt para que toggle-wofi.sh pueda
 # reconocer el menú y cerrarlo con la misma tecla.
 # ==============================================================================
 set -euo pipefail
 
-for bin in hyprctl jq wofi; do
+for bin in hyprctl jq; do
     command -v "$bin" >/dev/null 2>&1 || exit 1
 done
+
+if ! command -v fuzzel >/dev/null 2>&1 && ! command -v wofi >/dev/null 2>&1; then
+    exit 1
+fi
 
 mods() {
     local mask="$1" out=()
@@ -63,20 +67,27 @@ format_binds() {
     '
 }
 
-while IFS=$'\t' read -r modmask key dispatcher arg; do
-    [ -n "$key" ] || continue
-    combo="$(mods "$modmask")"
-    # Un toque de Super se muestra como "Super", sin repetir la tecla física.
-    if [[ "$key" != SUPER_* ]]; then
-        name="$(keyname "$key")"
-        if [ -n "$combo" ]; then
-            combo="$combo+$name"
-        else
-            combo="$name"
+generate_table() {
+    while IFS=$'\t' read -r modmask key dispatcher arg; do
+        [ -n "$key" ] || continue
+        combo="$(mods "$modmask")"
+        # Un toque de Super se muestra como "Super", sin repetir la tecla física.
+        if [[ "$key" != SUPER_* ]]; then
+            name="$(keyname "$key")"
+            if [ -n "$combo" ]; then
+                combo="$combo+$name"
+            else
+                combo="$name"
+            fi
         fi
-    fi
-    action="$dispatcher"
-    [ -n "$arg" ] && action="$action $arg"
-    printf '%s\t%s\n' "$combo" "$action"
-done < <(format_binds) | sort -u -f | column -t -s $'\t' -o '   ' |
-    wofi --dmenu --insensitive --prompt 'Atajos' --width 900 --height 700
+        action="$dispatcher"
+        [ -n "$arg" ] && action="$action $arg"
+        printf '%s\t%s\n' "$combo" "$action"
+    done < <(format_binds) | sort -u -f | column -t -s $'\t' -o '   '
+}
+
+if command -v fuzzel >/dev/null 2>&1; then
+    generate_table | fuzzel --dmenu --prompt 'Atajos: ' --width 90 --lines 22
+else
+    generate_table | wofi --dmenu --insensitive --prompt 'Atajos' --width 900 --height 700
+fi

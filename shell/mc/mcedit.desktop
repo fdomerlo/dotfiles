@@ -1,6 +1,6 @@
 # Override de la entrada del editor de Midnight Commander.
 # `mcedit` sigue disponible desde la terminal y con F4 dentro de mc, pero no
-# necesita una segunda entrada en wofi: alcanza con «Midnight Commander».
+# necesita una segunda entrada en el lanzador (fuzzel): alcanza con «Midnight Commander».
 [Desktop Entry]
 Type=Application
 Name=Midnight Commander editor

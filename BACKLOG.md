@@ -112,17 +112,22 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 
 ### Sistema y quick settings
 
-- [ ] Agregar `wlogout` para el menú de apagado en grilla (o mantener el menú wofi actual).
+- [ ] Agregar `wlogout` para el menú de apagado en grilla (o mantener el menú fuzzel actual).
 - [ ] Evaluar módulos de Waybar para batería, brillo, perfil de energía e inhibidor de idle.
 - [ ] Luz nocturna: `hyprsunset` (backports) o `gammastep`, con toggle y módulo de Waybar.
 - [ ] Grabación de pantalla: `wf-recorder` + indicador en Waybar.
-- [ ] Capturas con anotación: `swappy` (disponible en trixie).
+- [x] Capturas con anotación: `swappy` integrado en `screenshot-region.sh` (`Print` abre Swappy, `Ctrl+Print` copia directo).
 - [ ] OCR de capturas: `tesseract` + `grim`/`slurp` + `wl-copy`.
 - [ ] Selector de color: `hyprpicker` (backports).
+- [x] Migración de lanzador a `fuzzel` (nativo Wayland, tematizado en `mr-robot` y `cyber-teal`).
+- [x] Migración de terminal a `foot` (nativo Wayland con `foot --server`, tematizado en `mr-robot` y `cyber-teal` y soporte Sixel en Yazi vía `chafa`).
+- [x] Visores nativos Wayland: `zathura` + `zathura-pdf-poppler` (PDFs con tema oscuro neutro y atajos Vim) e `imv` (visor de imágenes).
+- [x] Keyring y secretos: `gnome-keyring` + `seahorse` integrados en `autostart.conf`.
+- [x] Suite Sysadmin y Productividad: `lazydocker` (sobre socket Podman Rootless), `remmina` (RDP/VNC), `wireshark` (captura sin root vía grupo `wireshark`), `Firefox` (Flatpak como navegador por defecto) + `DBeaver Community`, `Bruno`, `Obsidian` y `Super Productivity` vía Flatpak.
 
 ### Estética
 
-- [x] Intercambiador de temas con dos variantes completas: `mr-robot` y `cyber-teal` (`theme-switch.sh`, `Super+Shift+T`). Cubre Hyprland, Waybar, swaync, wofi, kitty y hyprlock.
+- [x] Intercambiador de temas con dos variantes completas: `mr-robot` y `cyber-teal` (`theme-switch.sh`, `Super+Shift+T`). Cubre Hyprland, Waybar, swaync, fuzzel, foot e hyprlock.
 - [x] Evaluar generación de tema desde el wallpaper (`matugen`/`wallust`), sabiendo que no están empaquetados y hay que compilarlos.
 - [x] Neutralizar `btop` con un tema monocromático propio (`shell/btop/themes/neutral.theme`) y fondo transparente, independiente de `mr-robot` y `cyber-teal`. La config semilla se copia una sola vez porque btop la reescribe al salir.
 - [x] Unificar el cursor en `Adwaita` 24 px entre Hyprland, GTK, Qt y GNOME para evitar que el puntero alterne con Bibata según la ventana.
@@ -131,9 +136,9 @@ Evidencia del login del 2026-11-08 10:30:48: `swaync` y `swayosd-server` fueron 
 
 ## P3 — Exploración / decisiones futuras
 
-- [ ] Si se migra a Debian Testing/Forky, evaluar `rofi 2.0` (Wayland nativo) en paralelo a `wofi`.
-  - Adaptar `toggle-wofi.sh` a `pgrep -x rofi` y probar `combi`, `window`, `filebrowser`.
-  - `rofi-calc` y `rofi-emoji` siguen sin empaquetar en Debian.
+- [ ] Evaluar migración de Display Manager a `greetd + tuigreet` (login TUI minimalista) para instalaciones dedicadas sin GDM/GNOME.
+- [ ] Evaluar `thunar + gvfs-backends` como alternativa ultraliviana a `nautilus` si se prescinde de `gnome-core`.
+- [ ] Si se migra a Debian Testing/Forky, evaluar `rofi 2.0` (Wayland nativo) en paralelo a `fuzzel`.
 - [ ] Evaluar `Quickshell` para widgets propios (OSD, overview, quick settings) si el stack actual queda corto.
 - [ ] Evaluar `hyprland-plugin-xtra-dispatchers` solo cuando exista una versión compatible con la ABI instalada.
 

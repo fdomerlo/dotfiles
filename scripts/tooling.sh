@@ -92,15 +92,66 @@ else
     echo "✔ Neovim ya está instalado"
 fi
 
-# Integración del lanzador (.desktop e icono para Wofi / GNOME)
+# Integración del lanzador (.desktop e icono para Fuzzel / GNOME)
 if [ -f "$HOME/.local/share/neovim/share/applications/nvim.desktop" ]; then
     mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/128x128/apps"
-    ln -sf "$HOME/.local/share/neovim/share/applications/nvim.desktop" "$HOME/.local/share/applications/nvim.desktop"
     [ -f "$HOME/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png" ] && \
         ln -sf "$HOME/.local/share/neovim/share/icons/hicolor/128x128/apps/nvim.png" "$HOME/.local/share/icons/hicolor/128x128/apps/nvim.png"
     update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
 fi
 
+# 5. Herramientas Sysadmin APT (Remmina RDP/VNC + Wireshark sin root)
+SYSADMIN_APT=()
+for spkg in remmina remmina-plugin-rdp remmina-plugin-vnc remmina-plugin-secret wireshark tshark; do
+    if ! dpkg -s "$spkg" &>/dev/null; then
+        SYSADMIN_APT+=("$spkg")
+    fi
+done
+if [ "${#SYSADMIN_APT[@]}" -gt 0 ]; then
+    if sudo -n true 2>/dev/null; then
+        echo "==> Instalando herramientas Sysadmin vía APT: ${SYSADMIN_APT[*]}..."
+        echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${SYSADMIN_APT[@]}"
+        if getent group wireshark >/dev/null 2>&1; then
+            sudo usermod -aG wireshark "$USER" || true
+        fi
+    else
+        echo "  (Pendiente sudo apt install ${SYSADMIN_APT[*]} o ejecutar 'make host')"
+    fi
+else
+    echo "✔ Remmina y Wireshark ya están instalados"
+fi
+
+# 6. Suite de Aplicaciones Flatpak (Firefox estándar, DBeaver, Bruno, Obsidian, Super Productivity)
+if command -v flatpak &> /dev/null; then
+    FLATPAK_APPS=(
+        org.mozilla.firefox
+        io.dbeaver.DBeaverCommunity
+        com.usebruno.Bruno
+        md.obsidian.Obsidian
+        com.super_productivity.SuperProductivity
+    )
+    for app_id in "${FLATPAK_APPS[@]}"; do
+        if flatpak info "$app_id" &> /dev/null; then
+            echo "✔ Flatpak ya instalado: $app_id"
+        else
+            echo "==> Instalando Flatpak: $app_id..."
+            flatpak install -y --noninteractive flathub "$app_id" 2>/dev/null || \
+                flatpak install --user -y --noninteractive flathub "$app_id" 2>/dev/null || \
+                echo "  ⚠️ No se pudo instalar $app_id en modo no interactivo"
+        fi
+    done
+
+    # Configurar Firefox (Flatpak) como navegador predeterminado del sistema
+    if flatpak info org.mozilla.firefox &> /dev/null && command -v xdg-settings &> /dev/null; then
+        xdg-settings set default-web-browser org.mozilla.firefox.desktop 2>/dev/null || true
+        if command -v xdg-mime &> /dev/null; then
+            xdg-mime default org.mozilla.firefox.desktop x-scheme-handler/http x-scheme-handler/https text/html application/xhtml+xml 2>/dev/null || true
+        fi
+        echo "✔ Firefox (Flatpak) configurado como navegador predeterminado (Chrome disponible para pruebas)"
+    fi
+fi
+
 echo "================================================================="
-echo "✔ Tooling (VS Code, Chrome, Zed, Neovim) completado."
+echo "✔ Tooling (Firefox, Chrome, VS Code, Zed, Neovim, Sysadmin & Productividad) completado."
 echo "================================================================="

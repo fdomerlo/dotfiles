@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Captura una región, la guarda y la copia al portapapeles.
+# Captura una región, la copia al portapapeles y abre swappy para anotar/ofuscar.
+# Con --raw guarda y copia directamente sin abrir swappy.
 set -euo pipefail
 
 DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
@@ -11,6 +12,12 @@ REGION="$(slurp)" || exit 0
 grim -g "$REGION" "$FILE" || exit 0
 
 wl-copy < "$FILE" || true
+
+if [ "${1:-}" != "--raw" ] && command -v swappy >/dev/null 2>&1; then
+    swappy -f "$FILE" -o "$FILE" || true
+    wl-copy < "$FILE" || true
+fi
+
 if command -v notify-send >/dev/null 2>&1; then
     notify-send -a Hyprland "Captura guardada" "$FILE" 2>/dev/null || true
 fi

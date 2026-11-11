@@ -103,18 +103,29 @@ if [ "$FUSE2_DISPONIBLE" = false ]; then
     fi
 fi
 
-echo "==> Instalando paquetes base, CLI moderna, soporte Flatpak y AppImage..."
+echo "==> Preconfigurando Wireshark para captura de paquetes sin root..."
+echo "wireshark-common wireshark-common/install-setuid boolean true" | debconf-set-selections
+
+echo "==> Instalando paquetes base, CLI moderna, sysadmin, soporte Flatpak y AppImage..."
 apt-get install -y \
   git curl wget jq unzip zip \
   ca-certificates gnupg lsb-release \
   build-essential \
-  ripgrep fd-find fzf bat btop direnv wl-clipboard \
+  ripgrep fd-find fzf bat btop direnv wl-clipboard chafa \
   zoxide atuin starship tmux \
+  zathura zathura-pdf-poppler imv \
+  gnome-keyring seahorse libsecret-tools \
+  remmina remmina-plugin-rdp remmina-plugin-vnc remmina-plugin-secret \
+  wireshark tshark \
   fonts-firacode fonts-jetbrains-mono fonts-noto-core \
   flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
   libglib2.0-bin \
   fuse3 "${APPIMAGE_FUSE_PKGS[@]}" \
   uidmap dbus-user-session iptables
+
+if getent group wireshark >/dev/null 2>&1; then
+    usermod -aG wireshark "$TARGET_USER" || true
+fi
 
 # ------------------------------------------------------------------------------
 # 3. Configuración de Flathub para Aplicaciones de Escritorio

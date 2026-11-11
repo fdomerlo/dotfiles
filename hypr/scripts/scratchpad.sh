@@ -4,7 +4,7 @@
 #
 # Si la terminal del scratchpad no existe, la lanza y espera a que Hyprland la
 # registre; luego alterna la visibilidad del workspace especial. Así una sola
-# tecla abre y cierra, y la primera pulsación no se pierde si kitty tarda.
+# tecla abre y cierra, y la primera pulsación no se pierde al iniciar.
 # ==============================================================================
 set -euo pipefail
 
@@ -24,7 +24,11 @@ count_scratchpads() {
 }
 
 if [ "$(count_scratchpads)" = "0" ]; then
-    kitty --class "$CLASS" >/dev/null 2>&1 &
+    if command -v foot >/dev/null 2>&1; then
+        foot --app-id="$CLASS" >/dev/null 2>&1 &
+    else
+        kitty --class "$CLASS" >/dev/null 2>&1 &
+    fi
     for _ in $(seq 1 40); do
         [ "$(count_scratchpads)" != "0" ] && break
         sleep 0.05

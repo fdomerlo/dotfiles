@@ -10,7 +10,7 @@
 # Uso:
 #   theme-switch.sh                 # muestra el tema activo
 #   theme-switch.sh list            # lista los temas disponibles
-#   theme-switch.sh menu            # selector con wofi
+#   theme-switch.sh menu            # selector con fuzzel (o wofi)
 #   theme-switch.sh toggle          # alterna al siguiente tema
 #   theme-switch.sh <tema>          # aplica un tema
 #   theme-switch.sh --no-reload <tema>
@@ -62,8 +62,8 @@ apply_theme() {
     # Verificar que el tema tenga todos los archivos esperados.
     local missing=()
     local f
-    for f in appearance.conf hyprlock.conf kitty/kitty.conf swaync/style.css \
-             waybar/config.jsonc waybar/style.css wofi/style.css; do
+    for f in appearance.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini \
+             swaync/style.css waybar/config.jsonc waybar/style.css; do
         [ -e "$theme_dir/$f" ] || missing+=("$f")
     done
     if [ "${#missing[@]}" -gt 0 ]; then
@@ -80,10 +80,15 @@ apply_theme() {
 }
 
 show_menu() {
-    command -v wofi >/dev/null 2>&1 || die "wofi no está instalado"
     local current choice
     current="$(current_theme || true)"
-    choice="$(list_themes | wofi --show dmenu --prompt "Temas (actual: ${current:-ninguno})" --width 320 2>/dev/null || true)"
+    if command -v fuzzel >/dev/null 2>&1; then
+        choice="$(list_themes | fuzzel --dmenu --prompt "Temas (actual: ${current:-ninguno}): " --width 36 --lines 4 2>/dev/null || true)"
+    elif command -v wofi >/dev/null 2>&1; then
+        choice="$(list_themes | wofi --show dmenu --prompt "Temas (actual: ${current:-ninguno})" --width 320 2>/dev/null || true)"
+    else
+        die "fuzzel no está instalado"
+    fi
     [ -n "$choice" ] || exit 0
     apply_theme "$choice" "${1:-1}"
 }

@@ -30,12 +30,14 @@ BACKPORTS_PKGS=(
 # Paquetes disponibles en Stable main.
 MAIN_PKGS=(
     waybar
+    fuzzel
     wofi
     mako-notifier
     sway-notification-center
     swayosd
     grim
     slurp
+    swappy
     wl-clipboard
     cliphist
     swaybg
@@ -44,7 +46,15 @@ MAIN_PKGS=(
     pipewire-audio
     pipewire-pulse
     wireplumber
+    foot
     kitty
+    chafa
+    zathura
+    zathura-pdf-poppler
+    imv
+    gnome-keyring
+    seahorse
+    libsecret-tools
     nautilus
     pavucontrol
     libnotify-bin
@@ -61,6 +71,7 @@ MAIN_PKGS=(
     fonts-firacode
     fonts-noto-core
     fonts-font-awesome
+    socat
     curl
     unzip
 )
@@ -134,10 +145,10 @@ sudo apt-get install -y "${MAIN_PKGS[@]}"
 echo "==> Verificando instalación..."
 REQUIRED_BINS=(
     Hyprland hyprctl hyprpaper hypridle hyprlock
-    waybar wofi mako grim slurp wl-copy cliphist swaybg
+    waybar fuzzel mako grim slurp swappy wl-copy cliphist swaybg
     swaync swaync-client swayosd-server swayosd-client
-    brightnessctl playerctl wpctl kitty nautilus pavucontrol
-    nm-applet blueman-applet qt6ct
+    brightnessctl playerctl wpctl foot zathura imv-wayland seahorse nautilus pavucontrol
+    nm-applet blueman-applet qt6ct socat
 )
 missing=()
 for bin in "${REQUIRED_BINS[@]}"; do
@@ -198,6 +209,15 @@ for f in "$HYPR_SRC"/scripts/*.sh; do
 done
 for f in "$HYPR_SRC"/waybar/*; do
     link_file "$f" "$CONFIG_HOME/waybar/$(basename "$f")"
+done
+for f in "$HYPR_SRC"/fuzzel/*; do
+    link_file "$f" "$CONFIG_HOME/fuzzel/$(basename "$f")"
+done
+for f in "$HYPR_SRC"/foot/*; do
+    link_file "$f" "$CONFIG_HOME/foot/$(basename "$f")"
+done
+for f in "$HYPR_SRC"/swappy/*; do
+    link_file "$f" "$CONFIG_HOME/swappy/$(basename "$f")"
 done
 for f in "$HYPR_SRC"/wofi/*; do
     link_file "$f" "$CONFIG_HOME/wofi/$(basename "$f")"
@@ -306,13 +326,12 @@ Próximos pasos:
      y recargá con $CONFIG_HOME/hypr/scripts/wallpaper.sh
 
 Atajos y gestos principales:
-  Super                abrir/cerrar lanzador     Super+D       lanzador (wofi)
-  Super+Return         terminal (kitty)           Super+L       bloquear (hyprlock)
+  Super                abrir/cerrar lanzador     Super+D       lanzador (fuzzel)
+  Super+Return         terminal (foot)           Super+L       bloquear (hyprlock)
   Super+Shift+Return   terminal con tmux         Super+Q       cerrar ventana
-  Alt+Tab              cambiar de ventana         Super+N       notificaciones (swaync)
-  Super+grave          scratchpad (terminal)      Super+F1      cheatsheet de atajos
-  Super+Shift+V        historial portapapeles (alterna)
-  3 dedos horizontal   cambiar workspace     3 dedos arriba lanzador (wofi)
-  Print                captura de región     Shift+Print   captura completa
+  Alt+Tab              cambiar de ventana        Super+N       notificaciones (swaync)
+  Super+grave          scratchpad (terminal)     Super+F1      cheatsheet de atajos
+  Super+Shift+V        historial portapapeles    Print         captura + swappy
+  3 dedos horizontal   cambiar workspace         3 dedos arriba lanzador (fuzzel)
 
 EOF

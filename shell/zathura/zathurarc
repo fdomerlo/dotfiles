@@ -1,0 +1,44 @@
+# ==============================================================================
+# Zathura - Visor de documentos PDF minimalista con atajos tipo Vim
+# Paleta oscura neutra coherente con el entorno Hyprland / btop
+# ==============================================================================
+
+set selection-clipboard clipboard
+set window-title-basename true
+set statusbar-home-tilde true
+set adjust-open "best-fit"
+set pages-per-row 1
+set scroll-page-aware "true"
+set scroll-step 50
+set font "JetBrains Mono 10"
+
+# Paleta neutra oscura
+set default-bg "#0c1012"
+set default-fg "#c8ccd0"
+
+set statusbar-bg "#141a1e"
+set statusbar-fg "#c8ccd0"
+
+set inputbar-bg "#0c1012"
+set inputbar-fg "#e6e9ec"
+
+set notification-bg "#141a1e"
+set notification-fg "#c8ccd0"
+set notification-error-bg "#c83434"
+set notification-error-fg "#ffffff"
+set notification-warning-bg "#c9a227"
+set notification-warning-fg "#0c1012"
+
+set highlight-color "#2e7491"
+set highlight-active-color "#0db7d4"
+
+set completion-bg "#141a1e"
+set completion-fg "#c8ccd0"
+set completion-highlight-bg "#2e7491"
+set completion-highlight-fg "#ffffff"
+
+# Modo oscuro para PDFs (alternable en caliente con Ctrl+r)
+set recolor "false"
+set recolor-lightcolor "#0c1012"
+set recolor-darkcolor "#d8dee3"
+set recolor-keephue "true"

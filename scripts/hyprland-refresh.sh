@@ -78,6 +78,15 @@ done
 for f in "$HYPR_SRC"/waybar/*; do
     link_file "$f" "$CONFIG_HOME/waybar/$(basename "$f")"
 done
+for f in "$HYPR_SRC"/fuzzel/*; do
+    link_file "$f" "$CONFIG_HOME/fuzzel/$(basename "$f")"
+done
+for f in "$HYPR_SRC"/foot/*; do
+    link_file "$f" "$CONFIG_HOME/foot/$(basename "$f")"
+done
+for f in "$HYPR_SRC"/swappy/*; do
+    link_file "$f" "$CONFIG_HOME/swappy/$(basename "$f")"
+done
 for f in "$HYPR_SRC"/wofi/*; do
     link_file "$f" "$CONFIG_HOME/wofi/$(basename "$f")"
 done
@@ -110,7 +119,8 @@ done
 prune_stale_links() {
     local dir link
     for dir in "$CONFIG_HOME/hypr" "$CONFIG_HOME/hypr/conf" "$CONFIG_HOME/hypr/scripts" \
-               "$CONFIG_HOME/waybar" "$CONFIG_HOME/wofi" "$CONFIG_HOME/kitty" \
+               "$CONFIG_HOME/waybar" "$CONFIG_HOME/fuzzel" "$CONFIG_HOME/foot" \
+               "$CONFIG_HOME/swappy" "$CONFIG_HOME/wofi" "$CONFIG_HOME/kitty" \
                "$CONFIG_HOME/mako" "$CONFIG_HOME/swaync" "$CONFIG_HOME/xdg-desktop-portal"; do
         [ -d "$dir" ] || continue
         while IFS= read -r -d '' link; do
@@ -184,4 +194,4 @@ if [ -n "$config_errors" ] && ! printf '%s\n' "$config_errors" | grep -qiE '^no 
 fi
 
 echo "✔ Configuración y sesión refrescadas."
-echo "  Nota: hyprlock, kitty y wofi toman los cambios en su próxima apertura."
+echo "  Nota: hyprlock, foot y fuzzel toman los cambios en su próxima apertura."

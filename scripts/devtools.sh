@@ -9,7 +9,7 @@ fi
 export PATH="$HOME/.local/bin:$HOME/.local/share/fnm:$PATH"
 
 echo "================================================================="
-echo "==> Instalando DevManagers (gh, uv, fnm, sdkman, yazi, mc)..."
+echo "==> Instalando DevManagers (gh, uv, fnm, sdkman, yazi, mc, lazydocker)..."
 echo "================================================================="
 
 if ! command -v gh &> /dev/null; then
@@ -111,25 +111,69 @@ if ! command -v fd &> /dev/null && [ -x /usr/bin/fdfind ]; then
     echo "✔ fd enlazado a /usr/bin/fdfind"
 fi
 
-# Dependencias de previews de Yazi: video (ffmpeg) y comprimidos (7zip).
+# Dependencias de previews de Yazi: video (ffmpeg), comprimidos (7zip) e imágenes Sixel en Foot (chafa).
 YAZI_DEPS=()
 command -v ffmpeg &> /dev/null || YAZI_DEPS+=(ffmpeg)
+command -v chafa &> /dev/null || YAZI_DEPS+=(chafa)
 if ! command -v 7z &> /dev/null && ! command -v 7zz &> /dev/null; then
     YAZI_DEPS+=(7zip)
 fi
 if [ ${#YAZI_DEPS[@]} -gt 0 ]; then
-    echo "Instalando dependencias de Yazi: ${YAZI_DEPS[*]}..."
-    sudo apt-get install -y "${YAZI_DEPS[@]}"
+    if sudo -n true 2>/dev/null; then
+        echo "Instalando dependencias de Yazi: ${YAZI_DEPS[*]}..."
+        sudo apt-get install -y "${YAZI_DEPS[@]}"
+    else
+        echo "  (Pendiente sudo apt install ${YAZI_DEPS[*]} para previews extendidos de Yazi)"
+    fi
 else
     echo "✔ dependencias de previews de Yazi ya están instaladas"
 fi
 
 # Midnight Commander: alternativa TUI a Yazi, con skin Nord propio.
 if ! command -v mc &> /dev/null; then
-    echo "Instalando Midnight Commander (mc)..."
-    sudo apt-get install -y mc
+    if sudo -n true 2>/dev/null; then
+        echo "Instalando Midnight Commander (mc)..."
+        sudo apt-get install -y mc
+    fi
 else
     echo "✔ mc ya está instalado"
+fi
+
+# Lazydocker: TUI para gestión de contenedores Podman/Docker.
+if ! command -v lazydocker &> /dev/null && [ ! -f "$HOME/.local/bin/lazydocker" ]; then
+    echo "Instalando Lazydocker (TUI para Podman/Docker)..."
+    mkdir -p "$HOME/.local/bin"
+    DET_ARCH=$(dpkg --print-architecture)
+    if [ "$DET_ARCH" = "amd64" ]; then
+        LZD_ARCH="x86_64"
+    elif [ "$DET_ARCH" = "arm64" ]; then
+        LZD_ARCH="arm64"
+    else
+        LZD_ARCH=""
+    fi
+
+    if [ -n "$LZD_ARCH" ]; then
+        LZD_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/jesseduffield/lazydocker/releases/latest)
+        LZD_VERSION="${LZD_LATEST_URL##*/}"
+        LZD_VER_NUM="${LZD_VERSION#v}"
+        TMP_DIR=$(mktemp -d)
+        curl -fsSL "https://github.com/jesseduffield/lazydocker/releases/download/${LZD_VERSION}/lazydocker_${LZD_VER_NUM}_Linux_${LZD_ARCH}.tar.gz" | tar -xz -C "$TMP_DIR"
+        mv "$TMP_DIR/lazydocker" "$HOME/.local/bin/lazydocker"
+        chmod +x "$HOME/.local/bin/lazydocker"
+        rm -rf "$TMP_DIR"
+        echo "✔ lazydocker ($LZD_VERSION) instalado correctamente en ~/.local/bin/lazydocker"
+    else
+        echo "⚠️ Arquitectura $DET_ARCH no soportada para binario de Lazydocker"
+    fi
+else
+    echo "✔ lazydocker ya está instalado"
+fi
+
+# Enlazar wrapper de imv si el paquete de Debian está instalado
+if [ -x /usr/libexec/imv/imv ] && [ ! -e "$HOME/.local/bin/imv" ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf /usr/libexec/imv/imv "$HOME/.local/bin/imv"
+    echo "✔ imv enlazado a /usr/libexec/imv/imv"
 fi
 
 echo "✔ DevManagers listos."

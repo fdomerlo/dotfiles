@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Lazydocker
+GenericName=Container Manager
+Comment=TUI for Podman and Docker containers
+TryExec=/home/fdomerlo/.local/bin/lazydocker
+Exec=foot -e /home/fdomerlo/.local/bin/lazydocker
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=System;Monitor;Development;
+Keywords=podman;docker;containers;lazydocker;devops;
+StartupNotify=false

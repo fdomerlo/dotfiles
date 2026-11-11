@@ -96,7 +96,9 @@ fi
 # 7. Enlaces simbólicos de dotfiles
 echo -n "Integridad de dotfiles... "
 missing=0
-for f in "$HOME/.zshrc" "$HOME/.gitconfig" "$HOME/.local/bin/devctl" "$HOME/.config/nvim/init.lua"; do
+for f in "$HOME/.zshrc" "$HOME/.gitconfig" "$HOME/.local/bin/devctl" \
+         "$HOME/.config/nvim/init.lua" "$HOME/.config/zathura/zathurarc" \
+         "$HOME/.config/lazydocker/config.yml"; do
     if [ ! -e "$f" ]; then
         missing=1
         echo -e "\n  -> Falta: $f"
@@ -110,7 +112,7 @@ fi
 
 # 8. Herramientas CLI críticas
 echo "Disponibilidad de herramientas clave:"
-for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc; do
+for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc lazydocker; do
     echo -n "  -> $cmd: "
     if command -v "$cmd" &>/dev/null || [ -f "$HOME/.local/bin/$cmd" ]; then
         check_status 0 "Presente"
@@ -246,8 +248,8 @@ else
 
     echo -n "Componentes del escritorio Hyprland... "
     hypr_missing=()
-    for cmd in Hyprland hyprctl waybar wofi mako hypridle hyprlock \
-               swaync swaync-client swayosd-server swayosd-client \
+    for cmd in Hyprland hyprctl waybar fuzzel foot swappy zathura imv-wayland seahorse \
+               hypridle hyprlock swaync swaync-client swayosd-server swayosd-client \
                grim slurp wl-copy cliphist brightnessctl playerctl wpctl; do
         command -v "$cmd" &>/dev/null || hypr_missing+=("$cmd")
     done
@@ -289,7 +291,9 @@ else
     cfg_missing=()
     for f in "$HOME/.config/hypr/hyprland.conf" \
              "$HOME/.config/waybar/config.jsonc" \
-             "$HOME/.config/wofi/config" \
+             "$HOME/.config/fuzzel/fuzzel.ini" \
+             "$HOME/.config/foot/foot.ini" \
+             "$HOME/.config/swappy/config" \
              "$HOME/.config/mako/config" \
              "$HOME/.config/swaync/config.json"; do
         [ -e "$f" ] || cfg_missing+=("$f")

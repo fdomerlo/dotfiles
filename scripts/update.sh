@@ -40,8 +40,12 @@ if command -v apt-get &>/dev/null; then
     CANDIDATES=(
         git curl wget jq unzip zip ca-certificates gnupg lsb-release
         build-essential
-        ripgrep fd-find fzf bat btop mc direnv wl-clipboard 7zip ffmpeg
+        ripgrep fd-find fzf bat btop mc direnv wl-clipboard 7zip ffmpeg chafa
         zoxide atuin starship tmux neovim
+        zathura zathura-pdf-poppler imv
+        gnome-keyring seahorse libsecret-tools
+        remmina remmina-plugin-rdp remmina-plugin-vnc remmina-plugin-secret
+        wireshark tshark
         fonts-firacode fonts-jetbrains-mono fonts-noto-core
         gnome-shell-extension-dashtodock
         flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
@@ -64,11 +68,11 @@ if command -v apt-get &>/dev/null; then
     # Paquetes del perfil opcional Hyprland: si el usuario instaló el perfil,
     # scripts/update.sh los mantiene al día en el mismo paso.
     HYPR_CANDIDATES=(
-        hyprland waybar wofi mako-notifier kitty
-        swaync swayosd
+        hyprland waybar fuzzel wofi mako-notifier foot kitty
+        sway-notification-center swayosd
         hypridle hyprlock hyprpaper swaybg
-        grim slurp wl-clipboard cliphist
-        brightnessctl playerctl
+        grim slurp swappy wl-clipboard cliphist
+        brightnessctl playerctl socat
         pipewire pipewire-audio pipewire-pulse wireplumber
         fonts-font-awesome
     )
@@ -152,6 +156,36 @@ if command -v yazi &>/dev/null || [ -f "$HOME/.local/bin/yazi" ]; then
     fi
 else
     warn "yazi no instalado (ejecuta 'make devtools')."
+fi
+
+step "Actualizando Lazydocker (TUI Contenedores)..."
+if command -v lazydocker &>/dev/null || [ -f "$HOME/.local/bin/lazydocker" ]; then
+    DET_ARCH=$(dpkg --print-architecture)
+    if [ "$DET_ARCH" = "amd64" ]; then
+        LZD_ARCH="x86_64"
+    elif [ "$DET_ARCH" = "arm64" ]; then
+        LZD_ARCH="arm64"
+    else
+        LZD_ARCH=""
+    fi
+    if [ -n "$LZD_ARCH" ]; then
+        LZD_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/jesseduffield/lazydocker/releases/latest 2>/dev/null || echo "")
+        LZD_VERSION="${LZD_LATEST_URL##*/}"
+        if [ -n "$LZD_VERSION" ] && [ "$LZD_VERSION" != "latest" ]; then
+            LZD_VER_NUM="${LZD_VERSION#v}"
+            TMP_DIR=$(mktemp -d)
+            if curl -fsSL "https://github.com/jesseduffield/lazydocker/releases/download/${LZD_VERSION}/lazydocker_${LZD_VER_NUM}_Linux_${LZD_ARCH}.tar.gz" | tar -xz -C "$TMP_DIR" 2>/dev/null; then
+                mv "$TMP_DIR/lazydocker" "$HOME/.local/bin/lazydocker"
+                chmod +x "$HOME/.local/bin/lazydocker"
+                ok "Lazydocker actualizado ($LZD_VERSION)."
+            else
+                warn "no se pudo descargar actualización de Lazydocker."
+            fi
+            rm -rf "$TMP_DIR"
+        fi
+    fi
+else
+    warn "lazydocker no instalado (ejecuta 'make devtools')."
 fi
 
 # ------------------------------------------------------------------------------
