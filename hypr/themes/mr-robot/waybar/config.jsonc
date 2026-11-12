@@ -158,8 +158,8 @@
   },
 
   "clock": {
-    "format": "{:%H:%M}",
-    "tooltip-format": "{:L%A, %d de %B de %Y}\n\n<tt><small>{calendar}</small></tt>",
+    "format": "{:L%A, %d de %B %H:%M}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
     "locale": "es_AR.UTF-8",
     "timezone": "America/Argentina/Buenos_Aires",
     "on-click": "gnome-calendar",
