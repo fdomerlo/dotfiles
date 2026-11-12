@@ -1,8 +1,8 @@
 # Backlog — Hyprland productivo
 
-Actualizado: 2026-11-11
+Actualizado: 2026-11-12
 
-Estado: los bloques **flujo diario nativo**, **notificaciones + OSD**, **shell productiva**, **migración a Foot + Fuzzel** y la **suite Sysadmin / Productividad (Debian 13 Trixie)** están implementados y validados. El **Lote 1** (calculadora, búsqueda de archivos y selector de color) y el **Lote 2** (luz nocturna y grabación de pantalla) también están implementados. Quedan los ítems de exploración futura y próximos lotes de productividad.
+Estado: los bloques **flujo diario nativo**, **notificaciones + OSD**, **shell productiva**, **migración a Foot + Fuzzel** y la **suite Sysadmin / Productividad (Debian 13 Trixie)** están implementados y validados. El **Lote 1** (calculadora, búsqueda de archivos y selector de color), el **Lote 2** (luz nocturna y grabación de pantalla) y el **Lote 3 / Ola 2** (OCR, módulos Waybar de energía/portátil e inhibidor de idle, y wallpaper por tema) también están implementados. Quedan los ítems de exploración futura y el Overview tipo Activities.
 
 ---
 
@@ -26,12 +26,12 @@ Estado: los bloques **flujo diario nativo**, **notificaciones + OSD**, **shell p
 ### Sistema y quick settings
 
 - [ ] Agregar `wlogout` para el menú de apagado en grilla (o mantener el menú `fuzzel` actual).
-- [ ] Evaluar módulos de Waybar para batería, brillo, perfil de energía e inhibidor de idle.
+- [x] Módulos de Waybar para batería (`battery`), brillo (`backlight`), perfil de energía (`power-profiles-daemon`) e inhibidor de idle (`idle_inhibitor`) configurados y estilizados en `mr-robot` y `cyber-teal`.
 - [x] Luz nocturna: `hyprsunset` (backports) con toggle (`Super+Ctrl+N`) y módulo de Waybar; se controla por IPC con `hyprctl hyprsunset temperature 4000|6500`.
-- [x] Grabación de pantalla: `wf-recorder` con toggle (`Super+Shift+R`), notificación al guardar y indicador `REC` en Waybar.
-- [ ] OCR de capturas: `tesseract` + `grim`/`slurp` + `wl-copy`.
+- [x] Grabación de pantalla: `wf-recorder` con toggle (`Super+Shift+R`), detección del monitor enfocado, notificación al guardar e indicador `REC` en Waybar.
+- [x] OCR de capturas: `tesseract-ocr` (`spa+eng`) + `grim`/`slurp` + `wl-copy` en `Super+Ctrl+O` (`hypr/scripts/ocr-region.sh`).
 - [x] Selector de color: `hyprpicker` (backports) en `Super+Shift+P`; copia el color del píxel al portapapeles.
-- [ ] Evaluar wallpaper por tema y aplicarlo desde `theme-switch.sh`.
+- [x] Wallpaper por tema: `wallpaper.sh` prioriza subcarpetas `<tema>/` (`~/.config/hypr/wallpapers/<tema>`, `~/Imágenes/Wallpapers/<tema>`, `hypr/themes/<tema>/wallpapers`) con fallback global, y `theme-switch.sh` rota el fondo al cambiar de tema.
 
 ## P3 — Exploración / decisiones futuras
 

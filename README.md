@@ -117,6 +117,7 @@ make help
 │   ├── devai.sh                   #   Instalador de OpenCode CLI, Antigravity CLI y Core/IDE
 │   ├── devtools.sh                #   Instalador de gh (binario oficial), uv, fnm, sdkman, yazi y mc
 │   ├── hyprland.sh                #   Instalador del perfil opcional Hyprland (solo Debian Stable)
+│   ├── hyprland-packages.sh       #   Lista canónica de paquetes y binarios de Hyprland (SSOT)
 │   ├── hyprland-refresh.sh        #   Re-sincroniza configs/scripts desde el repo y recarga la sesión
 │   ├── ohmyzsh.sh                 #   Instalación de Zsh, Oh My Zsh y plugins
 │   ├── setup_agy.sh               #   Despliegue atómico de Antigravity Core/IDE en /opt (opcional)
@@ -206,6 +207,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Grabación de pantalla | `wf-recorder` (indicador `REC` en Waybar) |
 | Búsqueda de archivos | `fd-find` + `fuzzel --dmenu` (abre el elegido con `xdg-open`) |
 | Selector de color | `hyprpicker` (copia el color del píxel al portapapeles) |
+| OCR de pantalla | `tesseract-ocr` + `tesseract-ocr-spa` + `grim` + `slurp` + `wl-copy` |
 | Luz nocturna | `hyprsunset` (filtro de luz azul, toggle + indicador) |
 | Calculadora | `gnome-calculator` |
 | Visores nativos | `zathura` + `zathura-pdf-poppler` (PDFs) + `imv` (imágenes Wayland) |
@@ -233,8 +235,9 @@ En Stable, `hyprland`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-
 | `Super+=` | Calculadora (`gnome-calculator`) |
 | `Super+Ctrl+F` | Buscar archivos (`fd` + `fuzzel`, abre el elegido con `xdg-open`) |
 | `Super+Shift+P` | Selector de color (`hyprpicker` copia el HEX al portapapeles) |
+| `Super+Ctrl+O` | OCR de región (`slurp` + `tesseract` copia el texto al portapapeles) |
 | `Super+Ctrl+N` | Luz nocturna on/off (filtro de luz azul de `hyprsunset`) |
-| `Super+Shift+R` | Grabar/detener la pantalla (`wf-recorder`, indicador `REC` en Waybar) |
+| `Super+Shift+R` | Grabar/detener el monitor enfocado (`wf-recorder`, indicador `REC` en Waybar) |
 | `Super+Q` | Cerrar ventana |
 | `Super+F` | Pantalla completa |
 | `Super+M` | Maximizar / restaurar |
@@ -255,8 +258,8 @@ En Stable, `hyprland`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-
 | `Ctrl+Print` | Captura de región directa a archivo + portapapeles (sin abrir `swappy`) |
 | `Shift+Print` | Captura de pantalla completa a archivo + portapapeles |
 | `Super+1..0` / `Super+Shift+1..0` | Ir al workspace / mover ventana sin seguirla (también con el teclado numérico); `1-5` en el primer monitor y `6-0` en el segundo |
-| `Super+Av.Pág` / `Super+Re.Pág` | Ciclar al workspace siguiente/anterior del monitor (con wrap) |
-| `Super+Shift+Av.Pág` / `Super+Shift+Re.Pág` | Mover la ventana al workspace siguiente/anterior del monitor (con wrap) |
+| `Super+Av.Pág` / `Super+Re.Pág` | Ciclar al workspace siguiente/anterior cubriendo todos los monitores (con wrap) |
+| `Super+Shift+Av.Pág` / `Super+Shift+Re.Pág` | Mover la ventana al workspace siguiente/anterior cubriendo todos los monitores (con wrap) |
 | `Super+flechas` / `Super+Shift+flechas` | Foco / mover ventana |
 | `Super+Ctrl+flechas` | Redimensionar ventana |
 | `XF86Audio*` / `XF86MonBrightness*` | Volumen, mute, multimedia y brillo (con OSD) |
@@ -312,13 +315,14 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 * **Monitores:** `hypr/conf/monitors.conf` fija un layout de dos pantallas por nombre de conector (no por modelo/serie): `HDMI-A-1` a la izquierda en `0x0` y `HDMI-A-2` a la derecha con `auto-right`. Todas las salidas usan escala `1`: los equipos de escritorio son 1080p de 92-96 PPI y así se ven iguales entre sí, mientras que la ThinkPad E15 Gen 2 (15.6" 1080p, ~141 PPI) conserva el texto más chico que el usuario usa como referencia. El monitor de 24" (Hexium Ltd. L23) debe conectarse por **VGA**: por HDMI aplica overscan y recorta los bordes, y no expone la opción en el OSD porque su EDID se anuncia como entrada de video CEA-861; por VGA aparece como `DP-1` (la placa lo cuelga de un puente DP→VGA) y se muestra 1:1. Se mantiene `monitor = ,preferred,auto,1` como fallback para salidas desconocidas. Si en otra PC los conectores se llaman distinto, solo hay que ajustar esas líneas (o intercambiarlas para invertir el orden físico). Ver salidas con `hyprctl monitors`.
 * **Escalado por monitor (DPI):** la escala de Hyprland es un zoom lógico por salida, no un ajuste automático de densidad. El tamaño físico del texto depende del PPI lógico (`PPI físico / scale`), así que bajar la escala de un panel de PPI bajo lo acerca al de uno de PPI alto. Se desaconseja para este repo porque no todos los toolkits respetan las escalas < 1: `fuzzel` las ignora y dimensiona su fuente en puntos, y Waybar las dibuja con menos píxeles (texto suave). Como las fuentes son globales, cualquier ajuste de escala obliga a recalibrarlas y después quedan mal en las otras máquinas. La configuración portable es escala `1` en todas las salidas. `hypr/scripts/monitor-scale.sh` sigue disponible para casos puntuales: calcula el PPI de cada salida con `hyprctl monitors -j` y sugiere la escala para igualar el PPI lógico, tomando como referencia el monitor enfocado (`--ref` y `--logical-ppi` permiten cambiarla), y el valor va en el cuarto campo de `monitor = …`. `foot` respeta la escala con su `dpi-aware=no` por defecto; `dpi-aware=yes` desacopla la terminal del zoom global y mantiene el tamaño físico del texto al mover la ventana entre monitores, a costa de no coincidir con el resto de la UI. No conviene fijar `GDK_SCALE`, `GDK_DPI_SCALE` ni `QT_SCALE_FACTOR` globales: pisan el escalado por salida.
 * **Workspaces:** `hypr/scripts/workspaces-init.sh` (lanzado por `autostart.conf` con `--watch`) asigna **5 workspaces por salida conectada**, en orden izquierda→derecha según su `x`: `1–5` al primero y `6–10` al segundo. Con un solo monitor eso da `1–5` en `eDP-1`; con dos, `1–5` en `HDMI-A-1` y `6–10` en `HDMI-A-2`. Los aplica en caliente con `hyprctl keyword workspace` y `persistent:true`, así Hyprland los mantiene vivos y Waybar muestra solo los de su salida (`all-outputs: false`) sin `persistent-workspaces`. `hypr/conf/workspaces.conf` queda solo como documentación: **no** conviene atar workspaces a un monitor en el config, porque Hyprland reserva esos IDs aunque el monitor esté desconectado (`CMonitor::findAvailableDefaultWS()`) y en la notebook el primer workspace libre terminaba siendo `11`. Para recorrerlos, `Super+Av.Pág`/`Super+Re.Pág` ciclan a través de todos los monitores con wrap (`1..10→1`) mediante `hypr/scripts/workspace-cycle.sh`; con `Shift` mueve la ventana en vez de cambiar de workspace. La cantidad por monitor se ajusta con `WS_PER_MONITOR` en ambos scripts. Con un solo monitor, `Super+6..0` crea workspaces sueltos fuera del rango: para moverse dentro de la pantalla conviene `Super+1..5` o el ciclo con `Av.Pág`/`Re.Pág`.
-* **Wallpaper:** el daemon (`wallpaper.sh --daemon`, arrancado por `autostart.conf`) rota el fondo cada 30 minutos entre los `.png`/`.jpg`/`.webp` de `~/.config/hypr/wallpapers`, `~/Imágenes/Wallpapers` y el repo, sin repetir el actual. `Super+W` envía `SIGUSR1` al daemon para cambiar una sola vez; el bucle distingue la interrupción del `sleep` para no aplicar un segundo cambio. Sin imágenes se usa `swaybg -c '#0c1012'`.
+* **Wallpaper:** el daemon (`wallpaper.sh --daemon`, arrancado por `autostart.conf`) rota el fondo cada 30 minutos entre los `.png`/`.jpg`/`.webp` del tema activo (`~/.config/hypr/wallpapers/<tema>/`, `~/Imágenes/Wallpapers/<tema>/`, `hypr/themes/<tema>/wallpapers/`) y, si están vacías, cae a las carpetas globales (`~/.config/hypr/wallpapers`, `~/Imágenes/Wallpapers` y el repo), sin repetir el actual. `Super+W` envía `SIGUSR1` al daemon para cambiar una sola vez y `theme-switch.sh` dispara el cambio al alternar tema; el bucle distingue la interrupción del `sleep` para no aplicar un segundo cambio. Sin imágenes se usa `swaybg -c '#0c1012'`.
 * **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/fuzzel`, `~/.config/foot`, `~/.config/swappy` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
 * **Notificaciones y OSD:** `swaync` actúa como demonio de notificaciones (historial, No molestar y panel de control). `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.
 * **Red y reloj:** el estado de red se muestra solo en el módulo `network` de Waybar; no se inicia `nm-applet` para evitar el icono duplicado en la bandeja. Las conexiones nuevas y perfiles VPN (`.ovpn`) se gestionan con `nm-connection-editor` (soporte OpenVPN integrado) o `nmcli`. El reloj muestra solo la hora local (con `locale` y `timezone` explícitos) y la fecha completa en el tooltip.
 * **Bluetooth:** el estado se muestra solo en el módulo `bluetooth` de Waybar; no se inicia `blueman-applet` para evitar el icono duplicado en la bandeja. El clic abre `blueman-manager`, y el paquete `blueman` se mantiene instalado.
 * **Panel de notificaciones:** `swaync` corre con `keyboard-shortcuts: false` para no quedarse con el teclado/foco, y con `layer-shell-cover-screen: true` para cerrar al hacer clic fuera. Una `layerrule` mantiene Waybar por encima del panel, y el icono de la campana usa `notifications-toggle.sh` con caché de estado. Trade-off: ESC y la navegación por teclado dentro del panel no están disponibles; se cierra con clic en la campana, clic afuera o `Super+N`.
 * **Indicadores CPU/MEM:** un clic abre `btop` en `foot`.
+* **Energía, brillo e inhibidor en Waybar:** `power-profiles-daemon` alterna `performance` / `balanced` / `power-saver` con un clic; `idle_inhibitor` evita bloqueo/DPMS durante presentaciones o builds; `battery` y `backlight` se muestran automáticamente en portátiles (como la ThinkPad E15) y Waybar los oculta en escritorios.
 * **Audio:** `start-waybar.sh` ejecuta `audio-init.sh` antes de lanzar Waybar. Si WirePlumber arrancó antes que PipeWire y dejó solo `Dummy Output` (carrera conocida con `sof-hda-dsp`), lo reinicia una vez para crear Speaker/HDMI; así el módulo `pulseaudio` sigue el sink real y el volumen responde.
 * **Shell:** `shell/zshrc` inicializa `zoxide`, `atuin` y `starship` solo si están instalados, y conserva un prompt nativo mínimo con `vcs_info` como respaldo. El prompt de Starship es de una sola línea (directorio, rama y estado de Git, carácter) para no ocupar espacio vertical. `make shell` enlaza además `~/.config/starship.toml`, `~/.config/atuin/config.toml` y `~/.tmux.conf`.
 * **btop:** `make shell` enlaza `shell/btop/themes/neutral.theme` en `~/.config/btop/themes/` y asegura el tema `neutral` en `~/.config/btop/btop.conf`. El tema es monocromático (acero/grises) y usa fondo transparente, así hereda el color de la terminal y no compite con `mr-robot` ni con `cyber-teal`. La config no se enlaza porque btop la reescribe al salir.
@@ -362,7 +366,7 @@ Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths c
 
 | Tema | Estilo |
 | :--- | :--- |
-| `mr-robot` | Negro azulado, bordes acero de 1 px, transparencia pareja, foco solo por borde, acento rojo `fsociety`, reloj con segundos. |
+| `mr-robot` | Negro azulado, bordes acero de 2 px, transparencia pareja, foco solo por borde, acento rojo `fsociety`, fecha y hora en el reloj. |
 | `cyber-teal` | Glass cian/turquesa, bordes degradados, esquinas redondeadas, blur y sombras. |
 
 ```bash
