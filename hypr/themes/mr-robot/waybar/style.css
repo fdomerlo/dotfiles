@@ -116,6 +116,10 @@ window#waybar.empty #window {
 
 #cpu,
 #memory,
+#power-profiles-daemon,
+#idle_inhibitor,
+#backlight,
+#battery,
 #pulseaudio,
 #network,
 #custom-vpn,
@@ -137,6 +141,52 @@ window#waybar.empty #window {
 #cpu,
 #memory {
     color: #8fb3c7;
+}
+
+#power-profiles-daemon {
+    color: #4f9fbf;
+}
+
+#power-profiles-daemon.performance {
+    color: #c83434;
+}
+
+#power-profiles-daemon.power-saver {
+    color: #6fae8f;
+}
+
+#idle_inhibitor {
+    color: #5f7684;
+    padding: 0 9px;
+    font-size: 14px;
+    transition: all 0.12s ease;
+}
+
+#idle_inhibitor.activated {
+    color: #4f9fbf;
+    border-color: #2e7491;
+}
+
+#backlight {
+    color: #c9a227;
+}
+
+#battery {
+    color: #6fae8f;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #4f9fbf;
+}
+
+#battery.warning:not(.charging) {
+    color: #c9a227;
+}
+
+#battery.critical:not(.charging) {
+    color: #c83434;
+    border-color: rgba(200, 52, 52, 0.50);
 }
 
 #pulseaudio {

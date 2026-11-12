@@ -17,6 +17,10 @@
   "modules-right": [
     "cpu",
     "memory",
+    "power-profiles-daemon",
+    "idle_inhibitor",
+    "backlight",
+    "battery",
     "pulseaudio",
     "network",
     "custom/vpn",
@@ -72,6 +76,46 @@
     "interval": 2,
     "tooltip-format": "Memoria en uso: {used:0.2f}GiB de {total:0.2f}GiB",
     "on-click": "foot -e btop"
+  },
+
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Perfil de energía: {profile}\nDriver: {driver}\nClick para alternar",
+    "tooltip": true,
+    "format-icons": {
+      "default": "BAL",
+      "performance": "PERF",
+      "balanced": "BAL",
+      "power-saver": "SAVE"
+    }
+  },
+
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "󰅶",
+      "deactivated": "󰾪"
+    },
+    "tooltip-format-activated": "Inhibidor de reposo: ACTIVO\nLa pantalla no se bloqueará por inactividad",
+    "tooltip-format-deactivated": "Inhibidor de reposo: inactivo\nClick para evitar bloqueo/apagado de pantalla"
+  },
+
+  "backlight": {
+    "format": "BRI {percent}%",
+    "on-scroll-up": "~/.config/hypr/scripts/osd.sh brightness raise",
+    "on-scroll-down": "~/.config/hypr/scripts/osd.sh brightness lower",
+    "tooltip-format": "Brillo: {percent}%"
+  },
+
+  "battery": {
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "BAT {capacity}%",
+    "format-charging": "CHG {capacity}%",
+    "format-plugged": "AC {capacity}%",
+    "tooltip-format": "{timeTo}\nConsumo: {power} W"
   },
 
   "pulseaudio": {

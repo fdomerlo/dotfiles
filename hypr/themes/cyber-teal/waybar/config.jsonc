@@ -17,6 +17,10 @@
   "modules-right": [
     "cpu",
     "memory",
+    "power-profiles-daemon",
+    "idle_inhibitor",
+    "backlight",
+    "battery",
     "pulseaudio",
     "network",
     "custom/vpn",
@@ -72,6 +76,48 @@
     "interval": 2,
     "tooltip-format": "Memoria en uso: {used:0.2f}GiB de {total:0.2f}GiB",
     "on-click": "foot -e btop"
+  },
+
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Perfil de energía: {profile}\nDriver: {driver}\nClick para alternar",
+    "tooltip": true,
+    "format-icons": {
+      "default": "󰾅",
+      "performance": "󰓅",
+      "balanced": "󰾅",
+      "power-saver": "󰌪"
+    }
+  },
+
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "󰅶",
+      "deactivated": "󰾪"
+    },
+    "tooltip-format-activated": "Inhibidor de reposo: ACTIVO\nLa pantalla no se bloqueará por inactividad",
+    "tooltip-format-deactivated": "Inhibidor de reposo: inactivo\nClick para evitar bloqueo/apagado de pantalla"
+  },
+
+  "backlight": {
+    "format": "{icon} {percent}%",
+    "format-icons": ["󰃞", "󰃟", "󰃠"],
+    "on-scroll-up": "~/.config/hypr/scripts/osd.sh brightness raise",
+    "on-scroll-down": "~/.config/hypr/scripts/osd.sh brightness lower",
+    "tooltip-format": "Brillo: {percent}%"
+  },
+
+  "battery": {
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-plugged": "󰚥 {capacity}%",
+    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "tooltip-format": "{timeTo}\nConsumo: {power} W"
   },
 
   "pulseaudio": {
@@ -158,8 +204,8 @@
   },
 
   "clock": {
-    "format": "󰃭 {:%H:%M}",
-    "tooltip-format": "󰃭 {:L%A, %d de %B de %Y}\n\n<tt><small>{calendar}</small></tt>",
+    "format": "󰃭 {:L%A, %d de %B %H:%M}",
+    "tooltip-format": "<tt>{calendar}</tt>",
     "locale": "es_AR.UTF-8",
     "timezone": "America/Argentina/Buenos_Aires",
     "on-click": "gnome-calendar",
