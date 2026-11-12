@@ -2,14 +2,18 @@
 # ==============================================================================
 # Gestor y cambiador automático de Wallpaper para Hyprland / Wayland
 # - Selecciona wallpapers aleatorios (.png, .jpg, .jpeg, .webp)
+# - Prioriza carpetas específicas del tema activo (<dir>/<tema>/); si están
+#   vacías o no existen, cae a las carpetas globales
 # - Modo daemon: rota periódicamente (por defecto cada 30 min / 1800 seg)
 # - Transición suave sin parpadeo negro
 # - Admite cambio a demanda con --next o enviando señal SIGUSR1
 # ==============================================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_WALLPAPERS="$(cd "$SCRIPT_DIR/.." && pwd)/wallpapers"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+HYPR_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_WALLPAPERS="$HYPR_DIR/wallpapers"
 USER_WALLPAPERS="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpapers"
 PICTURES_ES="$HOME/Imágenes/Wallpapers"
 PICTURES_EN="$HOME/Pictures/Wallpapers"
@@ -19,11 +23,18 @@ PID_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr_wallpaper_daemon.pid"
 
 DEFAULT_INTERVAL=1800 # 30 minutos
 
-# Obtener lista de todos los wallpapers disponibles en las carpetas
-get_wallpapers() {
-    local dirs=("$USER_WALLPAPERS" "$PICTURES_ES" "$PICTURES_EN" "$REPO_WALLPAPERS")
+active_theme() {
+    local active_link="$HYPR_DIR/themes/active"
+    local resolved
+    resolved="$(readlink -f "$active_link" 2>/dev/null || true)"
+    [ -d "$resolved" ] || return 0
+    basename "$resolved"
+}
+
+collect_from_dirs() {
     local found=()
-    for d in "${dirs[@]}"; do
+    local d file
+    for d in "$@"; do
         if [ -d "$d" ]; then
             while IFS= read -r -d '' file; do
                 found+=("$file")
@@ -33,6 +44,26 @@ get_wallpapers() {
     if [ ${#found[@]} -gt 0 ]; then
         printf "%s\n" "${found[@]}" | sort -u
     fi
+}
+
+# Obtener lista de todos los wallpapers disponibles (por tema primero, luego globales)
+get_wallpapers() {
+    local theme
+    theme="$(active_theme || true)"
+    if [ -n "$theme" ]; then
+        local themed=""
+        themed="$(collect_from_dirs \
+            "$USER_WALLPAPERS/$theme" \
+            "$PICTURES_ES/$theme" \
+            "$PICTURES_EN/$theme" \
+            "$HYPR_DIR/themes/$theme/wallpapers")"
+        if [ -n "$themed" ]; then
+            printf '%s\n' "$themed"
+            return 0
+        fi
+    fi
+
+    collect_from_dirs "$USER_WALLPAPERS" "$PICTURES_ES" "$PICTURES_EN" "$REPO_WALLPAPERS"
 }
 
 # Aplica una imagen de fondo específica

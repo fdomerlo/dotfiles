@@ -49,6 +49,9 @@ reload_desktop() {
     # swaync relee el CSS del tema activo.
     swaync-client -rs >/dev/null 2>&1 || true
 
+    # Si el tema tiene fondos propios (o al cambiar de tema), actualizar wallpaper.
+    "$HYPR_DIR/scripts/wallpaper.sh" --next >/dev/null 2>&1 || true
+
     # Aviso breve (si el daemon de notificaciones está disponible).
     notify-send -a "Temas" -t 2000 "Tema aplicado" "$1" >/dev/null 2>&1 || true
 }
