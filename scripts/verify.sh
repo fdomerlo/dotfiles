@@ -285,11 +285,13 @@ else
     echo -n "Configuración de Hyprland desplegada... "
     cfg_missing=()
     for f in "$HOME/.config/hypr/hyprland.conf" \
+             "$HOME/.config/hypr/conf/local.conf" \
              "$HOME/.config/waybar/config.jsonc" \
              "$HOME/.config/fuzzel/fuzzel.ini" \
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
-             "$HOME/.config/swaync/config.json"; do
+             "$HOME/.config/swaync/config.json" \
+             "$HOME/.config/quickshell/shell.qml"; do
         [ -e "$f" ] || cfg_missing+=("$f")
     done
     if [ "${#cfg_missing[@]}" -eq 0 ]; then

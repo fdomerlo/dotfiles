@@ -1,0 +1,1 @@
+../themes/active/quickshell/Theme.qml

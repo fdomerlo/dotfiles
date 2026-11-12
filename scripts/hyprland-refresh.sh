@@ -4,7 +4,7 @@
 #
 # Re-enlaza los mismos destinos que scripts/hyprland.sh en ~/.config, elimina
 # symlinks rotos que apunten al repo y, si hay una sesión Hyprland activa,
-# recarga Hyprland, Waybar, swaync e hypridle.
+# recarga Hyprland, Waybar, Quickshell, swaync e hypridle.
 #
 # Uso:
 #   make refresh
@@ -67,8 +67,23 @@ link_file() {
 
 link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
 for f in "$HYPR_SRC"/conf/*.conf; do
+    [ "$(basename "$f")" = "local.conf" ] && continue
     link_file "$f" "$CONFIG_HOME/hypr/conf/$(basename "$f")"
 done
+
+LOCAL_CONF="$CONFIG_HOME/hypr/conf/local.conf"
+if [ ! -e "$LOCAL_CONF" ] && [ ! -L "$LOCAL_CONF" ]; then
+    mkdir -p "$(dirname "$LOCAL_CONF")"
+    cat >"$LOCAL_CONF" <<'EOF'
+# ==============================================================================
+# Overrides locales por máquina (no versionado).
+# Se carga al final de hyprland.conf; sirve para monitores, sensibilidad o
+# variables específicas de este equipo sin ensuciar el repositorio.
+# ==============================================================================
+EOF
+    ok "$LOCAL_CONF (plantilla local)"
+fi
+
 for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf; do
     link_file "$f" "$CONFIG_HOME/hypr/$(basename "$f")"
 done
@@ -89,6 +104,9 @@ for f in "$HYPR_SRC"/swappy/*; do
 done
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
+done
+for f in "$HYPR_SRC"/quickshell/*; do
+    link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
 link_file "$HYPR_SRC/xdg-desktop-portal/hyprland-portals.conf" "$CONFIG_HOME/xdg-desktop-portal/hyprland-portals.conf"
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
@@ -125,7 +143,8 @@ prune_stale_links() {
     for dir in "$CONFIG_HOME/hypr" "$CONFIG_HOME/hypr/conf" "$CONFIG_HOME/hypr/scripts" \
                "$CONFIG_HOME/waybar" "$CONFIG_HOME/fuzzel" "$CONFIG_HOME/foot" \
                "$CONFIG_HOME/swappy" "$CONFIG_HOME/wofi" "$CONFIG_HOME/kitty" \
-               "$CONFIG_HOME/mako" "$CONFIG_HOME/swaync" "$CONFIG_HOME/xdg-desktop-portal"; do
+               "$CONFIG_HOME/mako" "$CONFIG_HOME/swaync" "$CONFIG_HOME/quickshell" \
+               "$CONFIG_HOME/xdg-desktop-portal"; do
         [ -d "$dir" ] || continue
         while IFS= read -r -d '' link; do
             rm -f "$link"
@@ -172,6 +191,15 @@ pkill -x waybar 2>/dev/null || true
 sleep 0.3
 setsid "$CONFIG_HOME/hypr/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 ok "Waybar reiniciado."
+
+# Quickshell: iniciar o reiniciar para releer QML y Theme.qml.
+if command -v qs >/dev/null 2>&1; then
+    qs kill >/dev/null 2>&1 || true
+    pkill -x quickshell 2>/dev/null || true
+    sleep 0.2
+    setsid qs -n -d >/dev/null 2>&1 </dev/null &
+    ok "Quickshell (re)iniciado."
+fi
 
 # Notificaciones: recargar config y CSS de swaync.
 if pgrep -x swaync >/dev/null 2>&1 && command -v swaync-client >/dev/null 2>&1; then

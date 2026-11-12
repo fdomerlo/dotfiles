@@ -46,6 +46,14 @@ reload_desktop() {
     sleep 0.4
     setsid "$HYPR_DIR/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 
+    # Quickshell relee Theme.qml al reiniciar el daemon.
+    if command -v qs >/dev/null 2>&1 && { pgrep -x quickshell >/dev/null 2>&1 || pgrep -x qs >/dev/null 2>&1; }; then
+        qs kill >/dev/null 2>&1 || true
+        pkill -x quickshell 2>/dev/null || true
+        sleep 0.2
+        setsid qs -n -d >/dev/null 2>&1 </dev/null &
+    fi
+
     # swaync relee el CSS del tema activo.
     swaync-client -rs >/dev/null 2>&1 || true
 
@@ -66,7 +74,7 @@ apply_theme() {
     local missing=()
     local f
     for f in appearance.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini \
-             swaync/style.css waybar/config.jsonc waybar/style.css; do
+             quickshell/Theme.qml swaync/style.css waybar/config.jsonc waybar/style.css; do
         [ -e "$theme_dir/$f" ] || missing+=("$f")
     done
     if [ "${#missing[@]}" -gt 0 ]; then

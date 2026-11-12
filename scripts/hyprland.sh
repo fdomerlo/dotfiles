@@ -128,7 +128,7 @@ link_file() {
 link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
 
 # Los paths clásicos son symlinks a hypr/themes/active/…; asegurar un tema
-# válido antes de desplegar para que readlink -f no encuentre enlaces roto
+# válido antes de desplegar para que readlink -f no encuentre enlaces rotos
 # (por ejemplo, en un clon nuevo o después de un git clean).
 THEMES_DIR="$HYPR_SRC/themes"
 ACTIVE_THEME_LINK="$THEMES_DIR/active"
@@ -138,8 +138,23 @@ if [ ! -d "$ACTIVE_THEME_LINK" ]; then
 fi
 
 for f in "$HYPR_SRC"/conf/*.conf; do
+    [ "$(basename "$f")" = "local.conf" ] && continue
     link_file "$f" "$CONFIG_HOME/hypr/conf/$(basename "$f")"
 done
+
+LOCAL_CONF="$CONFIG_HOME/hypr/conf/local.conf"
+if [ ! -e "$LOCAL_CONF" ] && [ ! -L "$LOCAL_CONF" ]; then
+    mkdir -p "$(dirname "$LOCAL_CONF")"
+    cat >"$LOCAL_CONF" <<'EOF'
+# ==============================================================================
+# Overrides locales por máquina (no versionado).
+# Se carga al final de hyprland.conf; sirve para monitores, sensibilidad o
+# variables específicas de este equipo sin ensuciar el repositorio.
+# ==============================================================================
+EOF
+    ok "$LOCAL_CONF (plantilla local)"
+fi
+
 for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf; do
     link_file "$f" "$CONFIG_HOME/hypr/$(basename "$f")"
 done
@@ -160,6 +175,9 @@ for f in "$HYPR_SRC"/swappy/*; do
 done
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
+done
+for f in "$HYPR_SRC"/quickshell/*; do
+    link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
 link_file "$HYPR_SRC/xdg-desktop-portal/hyprland-portals.conf" "$CONFIG_HOME/xdg-desktop-portal/hyprland-portals.conf"
 
@@ -251,14 +269,15 @@ Próximos pasos:
   4. Wallpaper opcional: colocá una imagen en
      $CONFIG_HOME/hypr/wallpapers/default.png
      y recargá con $CONFIG_HOME/hypr/scripts/wallpaper.sh
+  5. Overrides locales por equipo: editá $LOCAL_CONF
 
 Atajos y gestos principales:
-  Super                abrir/cerrar lanzador     Super+D       lanzador (fuzzel)
+  Super                abrir/cerrar lanzador     Super+A       overview (Quickshell)
   Super+Return         terminal (foot)           Super+L       bloquear (hyprlock)
   Super+Shift+Return   terminal con tmux         Super+Q       cerrar ventana
   Alt+Tab              cambiar de ventana        Super+N       notificaciones (swaync)
   Super+grave          scratchpad (terminal)     Super+F1      cheatsheet de atajos
   Super+Shift+V        historial portapapeles    Print         captura + swappy
-  3 dedos horizontal   cambiar workspace         3 dedos arriba lanzador (fuzzel)
+  3 dedos horizontal   cambiar workspace         3 dedos arriba/abajo lanzador / overview
 
 EOF

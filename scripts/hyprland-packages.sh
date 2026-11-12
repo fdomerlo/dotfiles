@@ -15,6 +15,7 @@ HYPR_BACKPORTS_PKGS=(
     hyprland-guiutils
     hyprpicker
     hyprsunset
+    quickshell
 )
 
 # Paquetes disponibles en Stable main.
@@ -76,5 +77,5 @@ HYPR_REQUIRED_BINS=(
     waybar fuzzel grim slurp swappy wf-recorder wl-copy cliphist swaybg
     swaync swaync-client swayosd-server swayosd-client
     brightnessctl playerctl wpctl foot zathura imv-wayland seahorse nautilus pavucontrol
-    nm-applet blueman-applet qt6ct socat fdfind gnome-calculator tesseract
+    nm-applet blueman-applet qt6ct socat fdfind gnome-calculator tesseract qs
 )
