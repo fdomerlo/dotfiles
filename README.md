@@ -97,15 +97,17 @@ make help
 │   └── timeshift.sh               #   Configuración opcional de snapshots Timeshift
 │
 ├── hypr/                          # Perfil opcional Hyprland (no reemplaza GNOME)
-│   ├── hyprland.conf              #   Entrada principal; incluye conf/*.conf
+│   ├── hyprland.conf              #   Entrada principal; incluye conf/*.conf y local.conf opcional
 │   ├── conf/                      #   env, monitors, workspaces, appearance, keybinds, windowrules, autostart
 │   ├── hypridle.conf              #   Bloqueo y apagado de pantalla por inactividad
 │   ├── hyprlock.conf              #   Pantalla de bloqueo
 │   ├── foot/                      #   Emulador de terminal Wayland (foot.ini)
 │   ├── fuzzel/                    #   Lanzador y selector dmenu nativo (fuzzel.ini)
+│   ├── quickshell/                #   Overview tipo Activities (shell.qml, OverviewWindow.qml, qmldir)
 │   ├── swappy/                    #   Anotador rápido de capturas (config)
 │   ├── swaync/                    #   Centro de notificaciones (config.json + style.css)
-│   ├── scripts/                   #   wallpaper, workspaces, screenshots, portapapeles, scratchpad, atajos y OSD
+│   ├── scripts/                   #   wallpaper, workspaces, overview, screenshots, portapapeles, scratchpad, atajos y OSD
+│   ├── themes/                    #   Variantes visuales (mr-robot, cyber-teal) + symlink active
 │   ├── waybar/                    #   Barra (config.jsonc + style.css)
 │   └── xdg-desktop-portal/        #   Portal específico de Hyprland (hyprland-portals.conf)
 │
@@ -160,7 +162,7 @@ make help
 | :--- | :--- |
 | `make install` | Aprovisionamiento completo (host + podman + shell + devtools + tooling + devai + desktop) |
 | `make update` | Actualización idempotente (higiene APT + only-upgrade incl. perfil Hyprland + user-space + flatpak, sin tocar SSH/`gh auth`) |
-| `make refresh` | Re-sincroniza configs/scripts de Hyprland desde el repo y recarga Hyprland, Waybar, swaync e hypridle (sin instalar paquetes) |
+| `make refresh` | Re-sincroniza configs/scripts de Hyprland desde el repo y recarga Hyprland, Waybar, Quickshell, swaync e hypridle (sin instalar paquetes) |
 | `make host` | Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman |
 | `make timeshift` | *(Opcional)* Instala y configura `/etc/timeshift/timeshift.json` sin crear snapshots iniciales |
 | `make podman` | Configura Podman en modo Rootless con backend pasta (systemd --user) |
@@ -196,6 +198,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Compositor | `hyprland` (desde `stable-backports`) |
 | Barra | `waybar` |
 | Lanzador | `fuzzel` (nativo Wayland, tematizado en `mr-robot` y `cyber-teal`) |
+| Overview (Activities) | `quickshell` (desde `stable-backports`: grilla de workspaces + previews en vivo + filtro) |
 | Notificaciones | `sway-notification-center` (`swaync`) con historial y No molestar |
 | OSD | `swayosd` para volumen y brillo (respaldo directo con `wpctl`/`brightnessctl`) |
 | Idle / bloqueo | `hypridle` + `hyprlock` |
@@ -219,7 +222,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Previews de Yazi | `fd-find` (como `fd`), `7zip`, `ffmpeg`, `chafa`, `poppler-utils`, `jq` |
 | Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), cursor Adwaita, `qt6ct` |
 
-En Stable, `hyprland`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-portal-hyprland` se instalan con `-t stable-backports`; el resto proviene de Stable main.
+En Stable, `hyprland`, `xdg-desktop-portal-hyprland`, `hypridle`, `hyprlock`, `hyprpolkitagent`, `hyprland-guiutils`, `hyprpicker`, `hyprsunset` y `quickshell` se instalan con `-t stable-backports`; el resto proviene de Stable main.
 
 ### Atajos principales
 
@@ -229,6 +232,7 @@ En Stable, `hyprland`, `hypridle`, `hyprlock`, `hyprpolkitagent` y `xdg-desktop-
 | `Super+Shift+Return` | Terminal con `tmux` (sesión `main` persistente) |
 | `Super` | Abrir/cerrar el lanzador (`fuzzel`) |
 | `Super+D` / `Super+Space` | Lanzador de aplicaciones (`fuzzel`, alterna) |
+| `Super+A` | Overview tipo Activities (`quickshell`, grilla de workspaces + previews en vivo + filtro) |
 | `Super+E` | Gestor de archivos gráfico (`nautilus`) |
 | `Super+Y` | Gestor de archivos en terminal (`yazi` en `foot`) |
 | `Super+W` | Cambiar el wallpaper (aleatorio, sin repetir el actual) |
@@ -306,17 +310,18 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 * **Agente polkit:** `hyprpolkitagent` se inicia desde `autostart.conf` solo dentro de Hyprland; no se habilita globalmente para no interferir con el agente de GNOME.
 * **Waybar:** se lanza con `hypr/scripts/start-waybar.sh`, que espera los sockets IPC de Hyprland antes de iniciar la barra para evitar la carrera de arranque de `exec-once`. El `waybar.service` que Debian habilita por defecto se enmascara porque `graphical-session.target` lo arranca en GNOME, donde falla al no existir `wlr-layer-shell`.
 * **Iconos de Waybar:** `style.css` usa `Symbols Nerd Font` para los glifos de los módulos. Debian no empaqueta Nerd Fonts, así que `scripts/hyprland.sh` descarga el release oficial `NerdFontsSymbolsOnly` en `~/.local/share/fonts` si la fuente no está presente. Sin ella los iconos se ven como cuadros.
+* **Overview (Quickshell):** `autostart.conf` inicia `qs -n -d` en segundo plano con la configuración en `~/.config/quickshell/` (`hypr/quickshell/`). `Super+A` (y el gesto de 3 dedos hacia abajo en touchpad) llama a `hypr/scripts/overview-toggle.sh`, que abre/cierra la vista por IPC (`qs ipc call overview toggle`). Muestra una grilla por monitor con los workspaces, miniaturas en vivo (`ScreencopyView`) y barra de búsqueda de ventanas abiertas en el monitor enfocado (`Enter` salta a la primera coincidencia, `Esc` o clic afuera cierra).
 * **Screen sharing:** `xdg-desktop-portal-hyprland` provee `hyprland.portal` con `UseIn=Hyprland`, por lo que se selecciona solo dentro de la sesión. `xdg-desktop-portal-gtk` cubre el file picker y aplicaciones GTK.
 * **`XDG_CURRENT_DESKTOP`:** se define como `Hyprland:GNOME` en `env.conf` de forma intencional, para que los portales de GNOME cubran file picker y secretos. Por eso `appearance.conf` activa `misc:disable_xdg_env_checks`, que silencia el aviso de Hyprland sobre entornos «gestionados externamente».
 * **Portal (`hyprland-portals.conf`):** como `XDG_CURRENT_DESKTOP` incluye `GNOME`, `xdg-desktop-portal` intentaba usar `gnome.portal` para las interfaces que `hyprland.portal`/`gtk.portal` no implementan. Ese backend no existe en Hyprland y el portal quedaba bloqueado esperando timeouts de D-Bus; como consecuencia `org.freedesktop.portal.Settings` no respondía y Waybar se quedaba esperando el esquema de color sin dibujarse. `hypr/xdg-desktop-portal/hyprland-portals.conf` fija `default=hyprland;gtk`, mantiene `Secret=gnome-keyring` y desactiva con `none` las interfaces exclusivas de GNOME. El nombre `hyprland-portals.conf` es intencional: xdg-desktop-portal solo lo aplica cuando `XDG_CURRENT_DESKTOP` contiene `Hyprland`; en GNOME usa `gnome-portals.conf` del sistema. Un `portals.conf` genérico también se aplicaba en GNOME y hacía que sus apps (Nautilus, Calculadora, Text Editor) esperaran timeouts de los backends equivocados.
 * **Ciclo de sesión:** `autostart.conf` inicia `graphical-session.target` y lo detiene con `exec-shutdown`. Los portales son `PartOf` de ese target, así que no sobreviven a un cambio Hyprland → GNOME con un entorno obsoleto.
 * **Teclado:** layout `latam` (`pc105`), consistente con `preseed.cfg`.
 * **Cursor:** `Adwaita` 24 px en Hyprland, XWayland, GTK y Qt, el mismo que usa GNOME. `env.conf` fija `XCURSOR_THEME`/`HYPRCURSOR_THEME`, `settings.ini` de GTK fija `gtk-cursor-theme-name` y `scripts/desktop.sh` converge `gsettings`. Así no se mezclan temas entre ventanas nativas y aplicaciones GTK/Electron. Tras cambiar `env.conf` hace falta reiniciar la sesión de Hyprland; `hyprctl setcursor Adwaita 24` lo aplica en caliente al compositor.
-* **Monitores:** `hypr/conf/monitors.conf` fija un layout de dos pantallas por nombre de conector (no por modelo/serie): `HDMI-A-1` a la izquierda en `0x0` y `HDMI-A-2` a la derecha con `auto-right`. Todas las salidas usan escala `1`: los equipos de escritorio son 1080p de 92-96 PPI y así se ven iguales entre sí, mientras que la ThinkPad E15 Gen 2 (15.6" 1080p, ~141 PPI) conserva el texto más chico que el usuario usa como referencia. El monitor de 24" (Hexium Ltd. L23) debe conectarse por **VGA**: por HDMI aplica overscan y recorta los bordes, y no expone la opción en el OSD porque su EDID se anuncia como entrada de video CEA-861; por VGA aparece como `DP-1` (la placa lo cuelga de un puente DP→VGA) y se muestra 1:1. Se mantiene `monitor = ,preferred,auto,1` como fallback para salidas desconocidas. Si en otra PC los conectores se llaman distinto, solo hay que ajustar esas líneas (o intercambiarlas para invertir el orden físico). Ver salidas con `hyprctl monitors`.
+* **Monitores y overrides locales (`local.conf`):** `hypr/conf/monitors.conf` fija un layout de dos pantallas por nombre de conector (no por modelo/serie): `HDMI-A-1` a la izquierda en `0x0` y `HDMI-A-2` a la derecha con `auto-right`. Todas las salidas usan escala `1`: los equipos de escritorio son 1080p de 92-96 PPI y así se ven iguales entre sí, mientras que la ThinkPad E15 Gen 2 (15.6" 1080p, ~141 PPI) conserva el texto más chico que el usuario usa como referencia. El monitor de 24" (Hexium Ltd. L23) debe conectarse por **VGA**: por HDMI aplica overscan y recorta los bordes, y no expone la opción en el OSD porque su EDID se anuncia como entrada de video CEA-861; por VGA aparece como `DP-1` (la placa lo cuelga de un puente DP→VGA) y se muestra 1:1. Se mantiene `monitor = ,preferred,auto,1` como fallback para salidas desconocidas. Para ajustes específicos por máquina sin ensuciar el repositorio, `hyprland.conf` carga al final `~/.config/hypr/conf/local.conf` (no versionado; `make hyprland` y `make refresh` lo inicializan vacío si no existe y nunca lo sobrescriben). Ver salidas con `hyprctl monitors`.
 * **Escalado por monitor (DPI):** la escala de Hyprland es un zoom lógico por salida, no un ajuste automático de densidad. El tamaño físico del texto depende del PPI lógico (`PPI físico / scale`), así que bajar la escala de un panel de PPI bajo lo acerca al de uno de PPI alto. Se desaconseja para este repo porque no todos los toolkits respetan las escalas < 1: `fuzzel` las ignora y dimensiona su fuente en puntos, y Waybar las dibuja con menos píxeles (texto suave). Como las fuentes son globales, cualquier ajuste de escala obliga a recalibrarlas y después quedan mal en las otras máquinas. La configuración portable es escala `1` en todas las salidas. `hypr/scripts/monitor-scale.sh` sigue disponible para casos puntuales: calcula el PPI de cada salida con `hyprctl monitors -j` y sugiere la escala para igualar el PPI lógico, tomando como referencia el monitor enfocado (`--ref` y `--logical-ppi` permiten cambiarla), y el valor va en el cuarto campo de `monitor = …`. `foot` respeta la escala con su `dpi-aware=no` por defecto; `dpi-aware=yes` desacopla la terminal del zoom global y mantiene el tamaño físico del texto al mover la ventana entre monitores, a costa de no coincidir con el resto de la UI. No conviene fijar `GDK_SCALE`, `GDK_DPI_SCALE` ni `QT_SCALE_FACTOR` globales: pisan el escalado por salida.
 * **Workspaces:** `hypr/scripts/workspaces-init.sh` (lanzado por `autostart.conf` con `--watch`) asigna **5 workspaces por salida conectada**, en orden izquierda→derecha según su `x`: `1–5` al primero y `6–10` al segundo. Con un solo monitor eso da `1–5` en `eDP-1`; con dos, `1–5` en `HDMI-A-1` y `6–10` en `HDMI-A-2`. Los aplica en caliente con `hyprctl keyword workspace` y `persistent:true`, así Hyprland los mantiene vivos y Waybar muestra solo los de su salida (`all-outputs: false`) sin `persistent-workspaces`. `hypr/conf/workspaces.conf` queda solo como documentación: **no** conviene atar workspaces a un monitor en el config, porque Hyprland reserva esos IDs aunque el monitor esté desconectado (`CMonitor::findAvailableDefaultWS()`) y en la notebook el primer workspace libre terminaba siendo `11`. Para recorrerlos, `Super+Av.Pág`/`Super+Re.Pág` ciclan a través de todos los monitores con wrap (`1..10→1`) mediante `hypr/scripts/workspace-cycle.sh`; con `Shift` mueve la ventana en vez de cambiar de workspace. La cantidad por monitor se ajusta con `WS_PER_MONITOR` en ambos scripts. Con un solo monitor, `Super+6..0` crea workspaces sueltos fuera del rango: para moverse dentro de la pantalla conviene `Super+1..5` o el ciclo con `Av.Pág`/`Re.Pág`.
 * **Wallpaper:** el daemon (`wallpaper.sh --daemon`, arrancado por `autostart.conf`) rota el fondo cada 30 minutos entre los `.png`/`.jpg`/`.webp` del tema activo (`~/.config/hypr/wallpapers/<tema>/`, `~/Imágenes/Wallpapers/<tema>/`, `hypr/themes/<tema>/wallpapers/`) y, si están vacías, cae a las carpetas globales (`~/.config/hypr/wallpapers`, `~/Imágenes/Wallpapers` y el repo), sin repetir el actual. `Super+W` envía `SIGUSR1` al daemon para cambiar una sola vez y `theme-switch.sh` dispara el cambio al alternar tema; el bucle distingue la interrupción del `sleep` para no aplicar un segundo cambio. Sin imágenes se usa `swaybg -c '#0c1012'`.
-* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/fuzzel`, `~/.config/foot`, `~/.config/swappy` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
+* **Configuración:** los archivos de `hypr/` se enlazan uno por uno en `~/.config/hypr`, `~/.config/waybar`, `~/.config/fuzzel`, `~/.config/foot`, `~/.config/quickshell`, `~/.config/swappy` y `~/.config/swaync`. Si ya existía un archivo real, se conserva como `.bak.<timestamp>`; reejecutar `make hyprland` es idempotente. `~/.config/hypr/conf/local.conf` se crea como archivo real vacío (no symlink) si no existe y nunca se sobrescribe. Los archivos que dependen del tema son symlinks a `hypr/themes/active/…` (ver **Temas**).
 * **Notificaciones y OSD:** `swaync` actúa como demonio de notificaciones (historial, No molestar y panel de control). `swayosd-server` muestra el OSD de volumen y brillo; `~/.config/hypr/scripts/osd.sh` cae a `wpctl`/`brightnessctl` si `swayosd` no está presente.
 * **Red y reloj:** el estado de red se muestra solo en el módulo `network` de Waybar; no se inicia `nm-applet` para evitar el icono duplicado en la bandeja. Las conexiones nuevas y perfiles VPN (`.ovpn`) se gestionan con `nm-connection-editor` (soporte OpenVPN integrado) o `nmcli`. El reloj muestra solo la hora local (con `locale` y `timezone` explícitos) y la fecha completa en el tooltip.
 * **Bluetooth:** el estado se muestra solo en el módulo `bluetooth` de Waybar; no se inicia `blueman-applet` para evitar el icono duplicado en la bandeja. El clic abre `blueman-manager`, y el paquete `blueman` se mantiene instalado.
@@ -334,7 +339,7 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 
 ### Actualizar y refrescar cambios
 
-`make update` mantiene los paquetes al día, incluidos los del perfil Hyprland (`hyprland`, `waybar`, `fuzzel`, `foot`, `swaync`, `swayosd`, `hypridle`, portales, PipeWire, etc.). Solo actualiza los que estén instalados, así que es seguro ejecutarlo también en equipos sin Hyprland.
+`make update` mantiene los paquetes al día, incluidos los del perfil Hyprland (`hyprland`, `waybar`, `fuzzel`, `foot`, `quickshell`, `swaync`, `swayosd`, `hypridle`, portales, PipeWire, etc.). Solo actualiza los que estén instalados, así que es seguro ejecutarlo también en equipos sin Hyprland.
 
 Cuando edites configs o scripts en un equipo y los traigas al otro con `git pull`, no hace falta reinstalar el perfil ni cerrar sesión:
 
@@ -345,9 +350,9 @@ make refresh
 
 `scripts/hyprland-refresh.sh`:
 
-1. Re-enlaza los mismos destinos que `make hyprland` (`hypr/`, `waybar/`, `fuzzel/`, `foot/`, `swappy/`, `swaync/`, portal y wallpapers) en `~/.config`. Si encuentra un archivo real, lo conserva como `.bak.<timestamp>`.
+1. Re-enlaza los mismos destinos que `make hyprland` (`hypr/`, `waybar/`, `fuzzel/`, `foot/`, `quickshell/`, `swappy/`, `swaync/`, portal y wallpapers) en `~/.config`, e inicializa `~/.config/hypr/conf/local.conf` si no existe. Si encuentra un archivo real en una ruta enlazada, lo conserva como `.bak.<timestamp>`.
 2. Elimina symlinks rotos que apunten al repo (scripts o configs retirados).
-3. Recarga `hyprctl`, asegura `workspaces-init.sh --watch`, reinicia Waybar, relee config/CSS de `swaync` y reinicia `hypridle`.
+3. Recarga `hyprctl`, asegura `workspaces-init.sh --watch`, reinicia Waybar y Quickshell, relee config/CSS de `swaync` y reinicia `hypridle`.
 4. Informa errores de `hyprctl configerrors` si los hubiera.
 
 Si solo querés sincronizar archivos sin tocar la sesión activa:
@@ -362,7 +367,7 @@ Si `make refresh` se ejecuta desde GNOME, sincroniza los archivos y reinicia `xd
 
 ### Temas
 
-Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths clásicos (`hypr/conf/appearance.conf`, `hypr/waybar/*`, `hypr/swaync/style.css`, `hypr/fuzzel/fuzzel.ini`, `hypr/foot/foot.ini` y `hypr/hyprlock.conf`) son symlinks a `hypr/themes/active/…`. Cambiar de tema solo mueve el symlink `active`, así que no se modifican archivos versionados ni queda el working tree sucio.
+Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths clásicos (`hypr/conf/appearance.conf`, `hypr/waybar/*`, `hypr/quickshell/Theme.qml`, `hypr/swaync/style.css`, `hypr/fuzzel/fuzzel.ini`, `hypr/foot/foot.ini` y `hypr/hyprlock.conf`) son symlinks a `hypr/themes/active/…`. Cambiar de tema solo mueve el symlink `active`, así que no se modifican archivos versionados ni queda el working tree sucio.
 
 | Tema | Estilo |
 | :--- | :--- |
@@ -377,19 +382,19 @@ Los archivos con variantes visuales viven en `hypr/themes/<tema>/` y los paths c
 ~/.config/hypr/scripts/theme-switch.sh mr-robot   # aplica un tema
 ```
 
-`Super+Shift+T` abre el selector. El script recarga Hyprland, reinicia Waybar y relee el CSS de swaync; `fuzzel`, `foot` e `hyprlock` toman el tema en su próxima apertura. `hypr/themes/active` es estado runtime y está en `.gitignore`; `make hyprland` lo recrea con `mr-robot` si no existe.
+`Super+Shift+T` abre el selector. El script recarga Hyprland, reinicia Waybar y Quickshell, y relee el CSS de swaync; `fuzzel`, `foot` e `hyprlock` toman el tema en su próxima apertura. `hypr/themes/active` es estado runtime y está en `.gitignore`; `make hyprland` lo recrea con `mr-robot` si no existe.
 
-Para agregar un tema, crear `hypr/themes/<nombre>/` con la misma estructura (`appearance.conf`, `hyprlock.conf`, `foot/foot.ini`, `fuzzel/fuzzel.ini`, `swaync/style.css`, `waybar/config.jsonc`, `waybar/style.css`) y usar `theme-switch.sh <nombre>`.
+Para agregar un tema, crear `hypr/themes/<nombre>/` con la misma estructura (`appearance.conf`, `hyprlock.conf`, `foot/foot.ini`, `fuzzel/fuzzel.ini`, `quickshell/Theme.qml`, `swaync/style.css`, `waybar/config.jsonc`, `waybar/style.css`) y usar `theme-switch.sh <nombre>`.
 
 ### Rollback
 
 1. En GDM, elegir **GNOME** (o **GNOME on Xorg**) y volver a iniciar sesión.
 2. Opcionalmente, quitar solo los enlaces creados por el perfil (los archivos propios y backups se conservan):
    ```bash
-   find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/swappy ~/.config/swaync \
+   find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/quickshell ~/.config/swappy ~/.config/swaync \
      -maxdepth 2 -type l -lname '*/.dotfiles/hypr/*' -delete 2>/dev/null || true
    sudo apt-get remove --purge hyprland hypridle hyprlock hyprpolkitagent \
-       xdg-desktop-portal-hyprland waybar fuzzel foot sway-notification-center grim slurp swappy cliphist swaybg
+       xdg-desktop-portal-hyprland quickshell waybar fuzzel foot sway-notification-center grim slurp swappy cliphist swaybg
    ```
 3. Restaurar los backups `.bak.<timestamp>` si se habían personalizado archivos previos.
 
