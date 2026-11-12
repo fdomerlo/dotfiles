@@ -65,16 +65,13 @@ if command -v apt-get &>/dev/null; then
         CANDIDATES+=(google-chrome-stable)
     fi
 
-    # Paquetes del perfil opcional Hyprland: si el usuario instaló el perfil,
-    # scripts/update.sh los mantiene al día en el mismo paso.
+    # Paquetes del perfil opcional Hyprland: compartidos con scripts/hyprland.sh.
+    # shellcheck source=scripts/hyprland-packages.sh
+    source "$SCRIPT_DIR/hyprland-packages.sh"
     HYPR_CANDIDATES=(
-        hyprland waybar fuzzel foot
-        sway-notification-center swayosd
-        hypridle hyprlock swaybg
-        grim slurp swappy wl-clipboard cliphist
-        brightnessctl playerctl socat
-        pipewire pipewire-audio pipewire-pulse wireplumber
-        fonts-font-awesome
+        "${HYPR_BACKPORTS_PKGS[@]}"
+        "${HYPR_MAIN_PKGS[@]}"
+        pipewire
     )
     CANDIDATES+=("${HYPR_CANDIDATES[@]}")
 

@@ -25,7 +25,7 @@ check_optional() {
 # 0. Validación de sintaxis de scripts del repositorio
 echo -n "Sintaxis Bash de scripts del repositorio... "
 syntax_fail=0
-for s in "$REPO_DIR"/host/*.sh "$REPO_DIR"/scripts/*.sh "$REPO_DIR"/shell/devctl; do
+for s in "$REPO_DIR"/host/*.sh "$REPO_DIR"/scripts/*.sh "$REPO_DIR"/hypr/scripts/*.sh "$REPO_DIR"/shell/devctl; do
     if [ -f "$s" ] && ! bash -n "$s" &>/dev/null; then
         syntax_fail=1
         echo -e "\n  -> Error de sintaxis en: ${s#"$REPO_DIR/"}"
@@ -247,10 +247,10 @@ else
     check_status 0 "Instalado"
 
     echo -n "Componentes del escritorio Hyprland... "
+    # shellcheck source=scripts/hyprland-packages.sh
+    source "$REPO_DIR/scripts/hyprland-packages.sh"
     hypr_missing=()
-    for cmd in Hyprland hyprctl waybar fuzzel foot swappy zathura imv-wayland seahorse \
-               hypridle hyprlock swaybg swaync swaync-client swayosd-server swayosd-client \
-               grim slurp wl-copy cliphist brightnessctl playerctl wpctl; do
+    for cmd in "${HYPR_REQUIRED_BINS[@]}"; do
         command -v "$cmd" &>/dev/null || hypr_missing+=("$cmd")
     done
     if [ -x /usr/libexec/hyprpolkitagent ]; then

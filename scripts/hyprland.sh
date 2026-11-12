@@ -16,68 +16,10 @@ CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
 BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
 
-# Paquetes que en Debian Stable viven en stable-backports.
-BACKPORTS_PKGS=(
-    hyprland
-    xdg-desktop-portal-hyprland
-    hypridle
-    hyprlock
-    hyprpolkitagent
-    hyprland-guiutils
-    hyprpicker
-    hyprsunset
-)
-
-# Paquetes disponibles en Stable main.
-MAIN_PKGS=(
-    waybar
-    fuzzel
-    sway-notification-center
-    swayosd
-    grim
-    slurp
-    swappy
-    wl-clipboard
-    cliphist
-    swaybg
-    brightnessctl
-    playerctl
-    pipewire-audio
-    pipewire-pulse
-    wireplumber
-    foot
-    chafa
-    zathura
-    zathura-pdf-poppler
-    imv
-    gnome-keyring
-    seahorse
-    libsecret-tools
-    nautilus
-    gnome-calculator
-    fd-find
-    wf-recorder
-    pavucontrol
-    libnotify-bin
-    network-manager-gnome
-    network-manager-openvpn
-    network-manager-openvpn-gnome
-    blueman
-    xdg-desktop-portal-gtk
-    qt6ct
-    qt5ct
-    qtwayland5
-    xwayland
-    adwaita-icon-theme
-    gnome-themes-extra
-    fonts-jetbrains-mono
-    fonts-firacode
-    fonts-noto-core
-    fonts-font-awesome
-    socat
-    curl
-    unzip
-)
+# shellcheck source=scripts/hyprland-packages.sh
+source "$REPO_DIR/scripts/hyprland-packages.sh"
+BACKPORTS_PKGS=("${HYPR_BACKPORTS_PKGS[@]}")
+MAIN_PKGS=("${HYPR_MAIN_PKGS[@]}")
 
 die() { echo -e "\n\033[31m✘ $*\033[0m" >&2; exit 1; }
 ok()  { echo -e "  \033[32m✔\033[0m $*"; }
@@ -146,13 +88,7 @@ sudo apt-get install -y "${MAIN_PKGS[@]}"
 # 4. Verificación de binarios y archivos de sesión
 # ------------------------------------------------------------------------------
 echo "==> Verificando instalación..."
-REQUIRED_BINS=(
-    Hyprland hyprctl hypridle hyprlock hyprpicker hyprsunset
-    waybar fuzzel grim slurp swappy wf-recorder wl-copy cliphist swaybg
-    swaync swaync-client swayosd-server swayosd-client
-    brightnessctl playerctl wpctl foot zathura imv-wayland seahorse nautilus pavucontrol
-    nm-applet blueman-applet qt6ct socat fdfind gnome-calculator
-)
+REQUIRED_BINS=("${HYPR_REQUIRED_BINS[@]}")
 missing=()
 for bin in "${REQUIRED_BINS[@]}"; do
     command -v "$bin" >/dev/null 2>&1 || missing+=("$bin")

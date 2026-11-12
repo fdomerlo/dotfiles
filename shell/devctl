@@ -168,21 +168,18 @@ doctor() {
   echo ""
   echo "Hyprland (opcional):"
   if command -v Hyprland &>/dev/null; then
-    check hyprctl
-    check waybar
-    check fuzzel
-    check foot
-    check swappy
-    check hypridle
-    check hyprlock
-    check grim
-    check slurp
-    check wl-copy
-    check cliphist
-    check brightnessctl
-    check playerctl
-    check wpctl
-    check swaybg
+    if [ -r "$BASE_DIR/scripts/hyprland-packages.sh" ]; then
+      # shellcheck source=scripts/hyprland-packages.sh
+      source "$BASE_DIR/scripts/hyprland-packages.sh"
+      for cmd in "${HYPR_REQUIRED_BINS[@]}"; do
+        [ "$cmd" = "Hyprland" ] && continue
+        check "$cmd"
+      done
+    else
+      for cmd in hyprctl hypridle hyprlock hyprpicker hyprsunset waybar fuzzel foot swappy wf-recorder; do
+        check "$cmd"
+      done
+    fi
     if [ -x /usr/libexec/hyprpolkitagent ]; then
       echo -e "  \033[32m✔\033[0m hyprpolkitagent"
     else
