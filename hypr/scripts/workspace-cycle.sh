@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Ciclo de workspaces por monitor, con wrap.
+# Ciclo de workspaces entre todos los monitores conectados, con wrap.
 #
 # Uso: workspace-cycle.sh next|prev [--move]
 #
-# Recorre los WS_PER_MONITOR workspaces del monitor enfocado, calculados igual
-# que en workspaces-init.sh: el monitor i (ordenado por x) usa
-# i*5+1 .. i*5+5, es decir 1-5 en el primero, 6-10 en el segundo, y así.
-# Vuelve al primero/último al llegar al extremo (5→1 y 10→6).
+# Recorre los workspaces de todas las salidas activas: con WS_PER_MONITOR=5 y
+# N monitores, recorre 1 .. N*5 (p. ej. 1-10 con dos monitores: 1-5 en el
+# primero, 6-10 en el segundo). Al llegar al final vuelve al inicio (10→1 y 1→10).
 #
 # --move mueve la ventana activa al workspace destino sin seguirla (igual que
 # Super+Shift+N). Sin --move solo cambia de workspace.
@@ -31,41 +30,29 @@ for bin in hyprctl jq; do
     command -v "$bin" >/dev/null 2>&1 || exit 1
 done
 
-# Índice (0-based, ordenado por x) y workspace activo del monitor enfocado.
-read -r index current < <(
-    hyprctl monitors -j |
-        jq -r '
-            map(select(.disabled | not)) | sort_by(.x)
-            | to_entries[] | select(.value.focused)
-            | "\(.key) \(.value.activeWorkspace.id)"
-        '
-)
+# Cantidad de monitores activos (no deshabilitados) y workspace activo actual.
+monitors_count=$(hyprctl monitors -j | jq 'map(select(.disabled | not)) | length')
+current=$(hyprctl activeworkspace -j | jq -r '.id')
 
-if [ -z "${index:-}" ] || [ -z "${current:-}" ]; then
-    exit 1
+if [ -z "${monitors_count:-}" ] || [ "$monitors_count" -le 0 ]; then
+    monitors_count=1
 fi
 
-first=$((index * WS_PER_MONITOR + 1))
+total_workspaces=$((monitors_count * WS_PER_MONITOR))
+
 target=""
-
-for ((i = 0; i < WS_PER_MONITOR; i++)); do
-    if [ "$((first + i))" = "$current" ]; then
-        if [ "$direction" = "next" ]; then
-            target=$((first + (i + 1) % WS_PER_MONITOR))
-        else
-            target=$((first + (i - 1 + WS_PER_MONITOR) % WS_PER_MONITOR))
-        fi
-        break
-    fi
-done
-
-# Si el workspace actual no pertenece al rango del monitor (p. ej. uno especial
-# o uno fuera de rango), next va al primero y prev al último.
-if [ -z "$target" ]; then
+if [[ "$current" =~ ^[0-9]+$ ]] && [ "$current" -ge 1 ] && [ "$current" -le "$total_workspaces" ]; then
     if [ "$direction" = "next" ]; then
-        target="$first"
+        target=$(( (current % total_workspaces) + 1 ))
     else
-        target=$((first + WS_PER_MONITOR - 1))
+        target=$(( (current - 2 + total_workspaces) % total_workspaces + 1 ))
+    fi
+else
+    # Si el workspace actual está fuera del rango (p. ej. especial o creado a mano):
+    if [ "$direction" = "next" ]; then
+        target=1
+    else
+        target="$total_workspaces"
     fi
 fi
 
