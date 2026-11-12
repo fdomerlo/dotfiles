@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Grabación de pantalla completa con `wf-recorder` (alterna inicio/parada).
+# Grabación de pantalla con `wf-recorder` (alterna inicio/parada).
 #
 # Uso:
-#   screen-record.sh          # alterna: si graba, detiene; si no, empieza
-#   screen-record.sh stop     # detiene si está grabando
+#   screen-record.sh             # alterna: si graba, detiene; si no, graba el monitor enfocado
+#   screen-record.sh --region    # graba una región seleccionada con slurp
+#   screen-record.sh stop        # detiene si está grabando
+#
+# En multi-monitor `wf-recorder` sin `-o` ni `-g` pide elegir salida por stdin
+# y falla en segundo plano; por eso se resuelve automáticamente el monitor
+# enfocado vía `hyprctl monitors -j`.
 #
 # Guarda en la carpeta Vídeos del usuario (XDG) + /Grabaciones. La parada usa
 # SIGINT para que wf-recorder cierre el contenedor y deje el archivo válido.
@@ -21,6 +26,13 @@ notify() {
 }
 
 is_recording() { pgrep -x wf-recorder >/dev/null 2>&1; }
+
+focused_monitor() {
+    if command -v hyprctl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+        hyprctl monitors -j 2>/dev/null |
+            jq -r 'map(select(.disabled | not)) | (map(select(.focused)) | .[0].name) // .[0].name // empty'
+    fi
+}
 
 stop_recording() {
     local file=""
@@ -42,12 +54,28 @@ stop_recording() {
 }
 
 start_recording() {
+    local region_mode="${1:-0}"
     if ! command -v wf-recorder >/dev/null 2>&1; then
         notify "Grabación de pantalla" "Falta wf-recorder"
         exit 1
     fi
 
-    local dir file
+    local dir file output="" region=""
+    local rec_args=()
+
+    if [ "$region_mode" = "1" ]; then
+        if ! command -v slurp >/dev/null 2>&1; then
+            notify "Grabación de pantalla" "Falta slurp para seleccionar región"
+            exit 1
+        fi
+        region="$(slurp 2>/dev/null)" || exit 0
+        [ -n "$region" ] || exit 0
+        rec_args+=(-g "$region")
+    else
+        output="$(focused_monitor || true)"
+        [ -n "$output" ] && rec_args+=(-o "$output")
+    fi
+
     dir="$(xdg-user-dir VIDEOS 2>/dev/null || true)"
     [ -n "$dir" ] || dir="$HOME/Vídeos"
     dir="$dir/Grabaciones"
@@ -56,7 +84,7 @@ start_recording() {
     file="$dir/$(date +%Y-%m-%d_%H-%M-%S)_grabacion.mp4"
     printf '%s\n' "$file" >"$STATE"
 
-    setsid wf-recorder -f "$file" --pixel-format yuv420p \
+    setsid wf-recorder "${rec_args[@]}" -f "$file" --pixel-format yuv420p \
         >/dev/null 2>&1 </dev/null &
 
     sleep 0.6
@@ -66,22 +94,33 @@ start_recording() {
         exit 1
     fi
 
-    notify "Grabación iniciada" "$file"
+    if [ -n "$output" ]; then
+        notify "Grabación iniciada ($output)" "$file"
+    else
+        notify "Grabación iniciada" "$file"
+    fi
 }
 
 case "${1:-toggle}" in
     stop)
         is_recording && stop_recording || true
         ;;
+    --region | region)
+        if is_recording; then
+            stop_recording
+        else
+            start_recording 1
+        fi
+        ;;
     toggle | start)
         if is_recording; then
             stop_recording
         else
-            start_recording
+            start_recording 0
         fi
         ;;
     *)
-        echo "Uso: $0 [toggle|start|stop]" >&2
+        echo "Uso: $0 [toggle|start|stop|--region]" >&2
         exit 2
         ;;
 esac

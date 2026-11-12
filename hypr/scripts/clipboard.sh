@@ -16,7 +16,19 @@ if ! command -v fuzzel >/dev/null 2>&1; then
     exit 1
 fi
 
-SELECTION="$(cliphist list | fuzzel --dmenu --prompt 'Portapapeles: ' --width 70)" || exit 0
+WIPE_LABEL="󰃢  Limpiar historial"
+ITEMS="$(cliphist list || true)"
+[ -n "$ITEMS" ] || exit 0
 
+SELECTION="$(printf '%s\n%s\n' "$ITEMS" "$WIPE_LABEL" | fuzzel --dmenu --prompt 'Portapapeles: ' --width 70)" || exit 0
 [ -n "$SELECTION" ] || exit 0
+
+if [ "$SELECTION" = "$WIPE_LABEL" ]; then
+    cliphist wipe
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -a Hyprland "Portapapeles" "Historial vaciado" 2>/dev/null || true
+    fi
+    exit 0
+fi
+
 printf '%s\n' "$SELECTION" | cliphist decode | wl-copy

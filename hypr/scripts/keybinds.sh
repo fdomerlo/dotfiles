@@ -28,6 +28,13 @@ keyname() {
         equal)              printf '=' ;;
         Return)             printf 'Enter' ;;
         Escape)             printf 'Esc' ;;
+        Space)              printf 'Espacio' ;;
+        Page_Down)          printf 'Av.Pág' ;;
+        Page_Up)            printf 'Re.Pág' ;;
+        left)               printf '←' ;;
+        right)              printf '→' ;;
+        up)                 printf '↑' ;;
+        down)               printf '↓' ;;
         Print)              printf 'Print' ;;
         XF86AudioRaiseVolume) printf 'Volumen +' ;;
         XF86AudioLowerVolume) printf 'Volumen -' ;;
