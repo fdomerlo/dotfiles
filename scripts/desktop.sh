@@ -63,9 +63,12 @@ gsettings_set_if_needed org.gnome.desktop.interface monospace-font-name "'JetBra
 # Título de ventanas
 gsettings_set_if_needed org.gnome.desktop.wm.preferences titlebar-font "'Adwaita Sans Bold 11'" "Adwaita Sans Bold 11"
 
-# Modo oscuro predeterminado
+# Modo oscuro predeterminado. Se usa el tema «Adwaita» (no «Adwaita-dark»):
+# desde GNOME 42 el oscuro se expresa con color-scheme=prefer-dark, y así lo
+# resuelven GTK3, GTK4 y libadwaita por igual. El nombre «Adwaita-dark» es del
+# modelo viejo y confunde a las apps que esperan el tema base con variante.
 gsettings_set_if_needed org.gnome.desktop.interface color-scheme "'prefer-dark'" "prefer-dark"
-gsettings_set_if_needed org.gnome.desktop.interface gtk-theme "'Adwaita-dark'" "Adwaita-dark"
+gsettings_set_if_needed org.gnome.desktop.interface gtk-theme "'Adwaita'" "Adwaita"
 
 # Cursor único entre GNOME y Hyprland (evita mezclas Bibata/Adwaita)
 gsettings_set_if_needed org.gnome.desktop.interface cursor-theme "'Adwaita'" "Adwaita"

@@ -234,24 +234,27 @@ fi
 ok "Directorio de wallpapers: $CONFIG_HOME/hypr/wallpapers"
 
 # Modo oscuro GTK3/GTK4 y cursor Adwaita para aplicaciones en Hyprland.
+# Se converge el archivo existente en lugar de solo agregar claves: así una
+# instalación previa con «Adwaita-dark» o «prefer-dark-theme=0» (modelo viejo)
+# queda alineada con el actual, «Adwaita» + color-scheme prefer-dark.
+set_gtk_setting() {
+    local file="$1" key="$2" value="$3"
+    if grep -qE "^[[:space:]]*${key}[[:space:]]*=" "$file"; then
+        sed -i -E "s|^[[:space:]]*${key}[[:space:]]*=.*|${key} = ${value}|" "$file"
+    else
+        grep -q '^\[Settings\]' "$file" || sed -i '1i [Settings]' "$file"
+        sed -i "/^\[Settings\]/a ${key} = ${value}" "$file"
+    fi
+}
+
 for gtk_ver in gtk-3.0 gtk-4.0; do
     mkdir -p "$CONFIG_HOME/$gtk_ver"
     settings="$CONFIG_HOME/$gtk_ver/settings.ini"
-    if [ ! -f "$settings" ]; then
-        cat > "$settings" <<EOF
-[Settings]
-gtk-theme-name = Adwaita-dark
-gtk-application-prefer-dark-theme = 1
-gtk-cursor-theme-name = Adwaita
-gtk-cursor-theme-size = 24
-EOF
-    else
-        # Converger también archivos existentes sin pisar otras preferencias.
-        grep -q '^gtk-cursor-theme-name' "$settings" ||
-            sed -i '/^\[Settings\]/a gtk-cursor-theme-name = Adwaita' "$settings"
-        grep -q '^gtk-cursor-theme-size' "$settings" ||
-            sed -i '/^\[Settings\]/a gtk-cursor-theme-size = 24' "$settings"
-    fi
+    [ -f "$settings" ] || printf '[Settings]\n' >"$settings"
+    set_gtk_setting "$settings" gtk-theme-name Adwaita
+    set_gtk_setting "$settings" gtk-application-prefer-dark-theme 1
+    set_gtk_setting "$settings" gtk-cursor-theme-name Adwaita
+    set_gtk_setting "$settings" gtk-cursor-theme-size 24
 done
 
 # Nerd Fonts: style.css de Waybar usa "Symbols Nerd Font" para los glifos de los

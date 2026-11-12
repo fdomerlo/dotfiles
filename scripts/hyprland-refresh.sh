@@ -96,16 +96,27 @@ if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
     link_file "$HYPR_SRC/wallpapers/default.png" "$CONFIG_HOME/hypr/wallpapers/default.png"
 fi
 
-# Mantener el modo oscuro GTK si no existe (no sobrescribe personalizaciones).
+# Modo oscuro GTK3/GTK4 y cursor Adwaita. Se converge el valor de las claves
+# (no solo se crean si faltan): una instalación previa con «Adwaita-dark» o
+# «prefer-dark-theme=0» quedaría con un modelo de tema distinto al actual.
+set_gtk_setting() {
+    local file="$1" key="$2" value="$3"
+    if grep -qE "^[[:space:]]*${key}[[:space:]]*=" "$file"; then
+        sed -i -E "s|^[[:space:]]*${key}[[:space:]]*=.*|${key} = ${value}|" "$file"
+    else
+        grep -q '^\[Settings\]' "$file" || sed -i '1i [Settings]' "$file"
+        sed -i "/^\[Settings\]/a ${key} = ${value}" "$file"
+    fi
+}
+
 for gtk_ver in gtk-3.0 gtk-4.0; do
     mkdir -p "$CONFIG_HOME/$gtk_ver"
-    if [ ! -f "$CONFIG_HOME/$gtk_ver/settings.ini" ]; then
-        cat > "$CONFIG_HOME/$gtk_ver/settings.ini" <<EOF
-[Settings]
-gtk-theme-name = Adwaita-dark
-gtk-application-prefer-dark-theme = 1
-EOF
-    fi
+    settings="$CONFIG_HOME/$gtk_ver/settings.ini"
+    [ -f "$settings" ] || printf '[Settings]\n' >"$settings"
+    set_gtk_setting "$settings" gtk-theme-name Adwaita
+    set_gtk_setting "$settings" gtk-application-prefer-dark-theme 1
+    set_gtk_setting "$settings" gtk-cursor-theme-name Adwaita
+    set_gtk_setting "$settings" gtk-cursor-theme-size 24
 done
 
 # Eliminar symlinks rotos que apunten al repo (scripts/configs retirados).
