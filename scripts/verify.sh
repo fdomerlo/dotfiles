@@ -83,7 +83,7 @@ echo -n "Tipografías del sistema (JetBrains Mono / Fira Code / Noto Sans / Adwa
 fonts_ok=0
 INSTALLED_FONTS=$(fc-list : family 2>/dev/null || true)
 for f in "JetBrains Mono" "Fira Code" "Noto Sans" "Adwaita Sans"; do
-    if ! echo "$INSTALLED_FONTS" | grep -qi "$f"; then
+    if ! printf '%s\n' "$INSTALLED_FONTS" | grep -i "$f" >/dev/null; then
         fonts_ok=1
     fi
 done
@@ -148,7 +148,7 @@ for pkg in docker-ce docker-ce-cli containerd.io docker.io; do
     fi
 done
 if [ -e /etc/apt/keyrings/docker.asc ]; then
-    if ! grep -rh 'docker\.asc' "$SOURCES_D" --include='*.list' --include='*.sources' 2>/dev/null | grep -qv '^[[:space:]]*\(#\|$\)'; then
+    if ! grep -rh 'docker\.asc' "$SOURCES_D" --include='*.list' --include='*.sources' 2>/dev/null | grep -v '^[[:space:]]*\(#\|$\)' >/dev/null; then
         echo -e "\n  -> Keyring huérfano: /etc/apt/keyrings/docker.asc"
         apt_ok=1
     fi
@@ -164,7 +164,7 @@ echo -n "Login GitHub (SSH)... "
 KEY_ARGS=()
 [ -f "$HOME/.ssh/id_ed25519" ] && KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
 SSH_REPLY=$(ssh -T "${KEY_ARGS[@]}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
-if echo "$SSH_REPLY" | grep -q "successfully authenticated"; then
+if printf '%s\n' "$SSH_REPLY" | grep "successfully authenticated" >/dev/null; then
     SSH_USER=$(echo "$SSH_REPLY" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
     check_status 0 "SSH autenticado como ${SSH_USER:-usuario}"
 else
@@ -202,7 +202,7 @@ fi
 # 12. Ecosistema de Aplicaciones (Flatpak, AppImage y Repositorios Oficiales)
 echo -n "Soporte Flatpak & Flathub... "
 if command -v flatpak &>/dev/null; then
-    if flatpak remotes 2>/dev/null | grep -q "flathub"; then
+    if flatpak remotes 2>/dev/null | grep "flathub" >/dev/null; then
         check_status 0 "Flatpak instalado con repositorio Flathub activo"
     else
         check_optional "Flatpak presente pero Flathub no registrado (ejecuta 'make host')"
@@ -291,7 +291,8 @@ else
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
              "$HOME/.config/swaync/config.json" \
-             "$HOME/.config/quickshell/shell.qml"; do
+             "$HOME/.config/quickshell/shell.qml" \
+             "$HOME/.config/quickshell/WallpaperBadge.qml"; do
         [ -e "$f" ] || cfg_missing+=("$f")
     done
     if [ "${#cfg_missing[@]}" -eq 0 ]; then
@@ -303,7 +304,7 @@ else
     if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v hyprctl &>/dev/null; then
         echo -n "Errores de configuración de Hyprland... "
         HYPR_ERRORS="$(hyprctl configerrors 2>/dev/null || true)"
-        if [ -z "$HYPR_ERRORS" ] || echo "$HYPR_ERRORS" | grep -qiE '^no errors|config ok'; then
+        if [ -z "$HYPR_ERRORS" ] || printf '%s\n' "$HYPR_ERRORS" | grep -iE '^no errors|config ok' >/dev/null; then
             check_status 0 "Sin errores de configuración"
         else
             check_status 1 "hyprctl reportó errores: $HYPR_ERRORS"

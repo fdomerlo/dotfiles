@@ -9,6 +9,34 @@ ShellRoot {
     property bool overviewOpen: false
     property string searchQuery: ""
 
+    readonly property string wallpaperStatePath: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/hypr_current_wallpaper"
+    readonly property string wallpaperName: {
+        if (!wallpaperStateFile.loaded)
+            return "";
+        const raw = String(wallpaperStateFile.text() || "").trim();
+        if (!raw)
+            return "";
+        const slash = raw.lastIndexOf("/");
+        return slash >= 0 ? raw.slice(slash + 1) : raw;
+    }
+
+    FileView {
+        id: wallpaperStateFile
+        path: root.wallpaperStatePath
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoadFailed: wallpaperRetryTimer.restart()
+    }
+
+    Timer {
+        id: wallpaperRetryTimer
+        interval: 1500
+        repeat: false
+        onTriggered: wallpaperStateFile.reload()
+    }
+
     function openOverview() {
         searchQuery = "";
         Hyprland.refreshMonitors();
@@ -64,6 +92,14 @@ ShellRoot {
         }
     }
 
+    IpcHandler {
+        target: "wallpaper"
+
+        function refresh(): void {
+            wallpaperStateFile.reload();
+        }
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -76,6 +112,16 @@ ShellRoot {
             onCloseRequested: root.closeOverview()
             onWindowSelected: toplevel => root.focusWindow(toplevel)
             onWorkspaceSelected: wsId => root.switchWorkspace(wsId)
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        WallpaperBadge {
+            required property var modelData
+            screen: modelData
+            wallpaperName: root.wallpaperName
         }
     }
 }
