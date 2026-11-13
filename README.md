@@ -124,7 +124,7 @@ make help
 │   ├── setup_agy.sh               #   Despliegue atómico de Antigravity Core/IDE en /opt (opcional)
 │   ├── setup_gh.sh                #   Configuración y autenticación SSH con GitHub CLI
 │   ├── setup_git.sh               #   Configuración idempotente de identidad global de Git
-│   ├── tooling.sh                 #   Instalación de VS Code (APT DEB822), Chrome (.deb), Zed y Neovim
+│   ├── tooling.sh                 #   Instalación de VS Code (APT DEB822), Chrome (.deb), Zed, Neovim y suite Flatpak
 │   ├── update.sh                  #   Actualización idempotente (only-upgrade incl. Hyprland + self-updates + flatpak)
 │   └── verify.sh                  #   Diagnóstico y validación post-instalación
 │
@@ -169,7 +169,7 @@ make help
 | `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman`, `yazi`, prepara SSH con GitHub e identidad Git |
 | `make gitconfig` | Configura `user.name` y `user.email` en Git (idempotente e interactivo) |
 | `make github-auth` | Flujo interactivo oficial de autenticación en GitHub CLI (`gh auth login`) |
-| `make tooling` | Instala navegadores y editores nativos (VS Code, Chrome, Zed, Neovim) |
+| `make tooling` | Instala navegadores, editores y suite sysadmin/productividad (Firefox, Chrome, LibreOffice, VS Code, Zed, Neovim, Remmina, Wireshark, DBeaver, Bruno, Obsidian, Super Productivity) |
 | `make devai` | Instala OpenCode CLI, Antigravity CLI y despliega Antigravity Core/IDE (opcional) |
 | `make desktop` | Aplica tipografías, botones de ventana (min/max/close), directorios de trabajo y extensiones GNOME |
 | `make hyprland` | *(Opcional)* Instala y configura el perfil Hyprland sin reemplazar GNOME (solo Debian Stable) |
@@ -217,7 +217,7 @@ El script aborta si el sistema no es Debian Stable o si falta `/etc/apt/sources.
 | Audio / brillo / media | `wpctl` (PipeWire/WirePlumber), `brightnessctl`, `playerctl` |
 | Terminal / archivos | `foot` (con `foot --server`) / `nautilus` (gráfico) + `yazi` (terminal, Sixel vía `chafa`) + `mc` |
 | Contenedores / Sysadmin | `lazydocker` (TUI sobre socket Podman), `remmina` (RDP/VNC), `wireshark` (sin root), OpenVPN (`network-manager-openvpn`) |
-| Suite Flatpak | `Firefox` (navegador predeterminado), `DBeaver Community`, `Bruno`, `Obsidian`, `Super Productivity` |
+| Suite Flatpak | `Firefox` (navegador predeterminado), `LibreOffice`, `DBeaver Community`, `Bruno`, `Obsidian`, `Super Productivity` |
 | Previews de Yazi | `fd-find` (como `fd`), `7zip`, `ffmpeg`, `chafa`, `poppler-utils`, `jq` |
 | Tema | JetBrains Mono, Fira Code, Noto, iconos del sistema (GNOME/KDE), cursor Adwaita, `qt6ct` |
 
@@ -231,7 +231,7 @@ En Stable, `hyprland`, `xdg-desktop-portal-hyprland`, `hypridle`, `hyprlock`, `h
 | `Super+Shift+Return` | Terminal con `tmux` (sesión `main` persistente) |
 | `Super` | Abrir/cerrar el lanzador (`fuzzel`) |
 | `Super+D` / `Super+Space` | Lanzador de aplicaciones (`fuzzel`, alterna) |
-| `Super+A` | Overview tipo Activities (`quickshell`, grilla de workspaces + previews en vivo + filtro) |
+| `Super+A` | Overview tipo Activities (`quickshell`, grilla de workspaces + previews en vivo + filtro + navegación con `Tab`/`Shift+Tab`) |
 | `Super+E` | Gestor de archivos gráfico (`nautilus`) |
 | `Super+Y` | Gestor de archivos en terminal (`yazi` en `foot`) |
 | `Super+W` | Cambiar el wallpaper (aleatorio, sin repetir el actual) |
@@ -309,7 +309,7 @@ Alternativa clásica de dos paneles. Se abre escribiendo `mc` en cualquier termi
 * **Agente polkit:** `hyprpolkitagent` se inicia desde `autostart.conf` solo dentro de Hyprland; no se habilita globalmente para no interferir con el agente de GNOME.
 * **Waybar:** se lanza con `hypr/scripts/start-waybar.sh`, que espera los sockets IPC de Hyprland antes de iniciar la barra para evitar la carrera de arranque de `exec-once`. El `waybar.service` que Debian habilita por defecto se enmascara porque `graphical-session.target` lo arranca en GNOME, donde falla al no existir `wlr-layer-shell`.
 * **Iconos de Waybar:** `style.css` usa `Symbols Nerd Font` para los glifos de los módulos. Debian no empaqueta Nerd Fonts, así que `scripts/hyprland.sh` descarga el release oficial `NerdFontsSymbolsOnly` en `~/.local/share/fonts` si la fuente no está presente. Sin ella los iconos se ven como cuadros.
-* **Overview (Quickshell):** `autostart.conf` inicia `qs -n -d` en segundo plano con la configuración en `~/.config/quickshell/` (`hypr/quickshell/`). `Super+A` (y el gesto de 3 dedos hacia abajo en touchpad) llama a `hypr/scripts/overview-toggle.sh`, que abre/cierra la vista por IPC (`qs ipc call overview toggle`). Muestra una grilla por monitor con los workspaces, miniaturas en vivo (`ScreencopyView`) y barra de búsqueda de ventanas abiertas en el monitor enfocado (`Enter` salta a la primera coincidencia, `Esc` o clic afuera cierra).
+* **Overview (Quickshell):** `autostart.conf` inicia `qs -n -d` en segundo plano con la configuración en `~/.config/quickshell/` (`hypr/quickshell/`). `Super+A` (y el gesto de 3 dedos hacia abajo en touchpad) llama a `hypr/scripts/overview-toggle.sh`, que abre/cierra la vista por IPC (`qs ipc call overview toggle`). Muestra una grilla por monitor con los workspaces, miniaturas en vivo (`ScreencopyView`) y barra de búsqueda de ventanas abiertas en el monitor enfocado: `Tab` / `Shift+Tab` recorre cíclicamente los workspaces de todos los monitores (y `Enter` salta al seleccionado); si escribís un filtro sin usar `Tab`, `Enter` salta a la primera ventana coincidente; `Esc` o clic afuera cierra.
 * **Screen sharing:** `xdg-desktop-portal-hyprland` provee `hyprland.portal` con `UseIn=Hyprland`, por lo que se selecciona solo dentro de la sesión. `xdg-desktop-portal-gtk` cubre el file picker y aplicaciones GTK.
 * **`XDG_CURRENT_DESKTOP`:** se define como `Hyprland:GNOME` en `env.conf` de forma intencional, para que los portales de GNOME cubran file picker y secretos. Por eso `appearance.conf` activa `misc:disable_xdg_env_checks`, que silencia el aviso de Hyprland sobre entornos «gestionados externamente».
 * **Portal (`hyprland-portals.conf`):** como `XDG_CURRENT_DESKTOP` incluye `GNOME`, `xdg-desktop-portal` intentaba usar `gnome.portal` para las interfaces que `hyprland.portal`/`gtk.portal` no implementan. Ese backend no existe en Hyprland y el portal quedaba bloqueado esperando timeouts de D-Bus; como consecuencia `org.freedesktop.portal.Settings` no respondía y Waybar se quedaba esperando el esquema de color sin dibujarse. `hypr/xdg-desktop-portal/hyprland-portals.conf` fija `default=hyprland;gtk`, mantiene `Secret=gnome-keyring` y desactiva con `none` las interfaces exclusivas de GNOME. El nombre `hyprland-portals.conf` es intencional: xdg-desktop-portal solo lo aplica cuando `XDG_CURRENT_DESKTOP` contiene `Hyprland`; en GNOME usa `gnome-portals.conf` del sistema. Un `portals.conf` genérico también se aplicaba en GNOME y hacía que sus apps (Nautilus, Calculadora, Text Editor) esperaran timeouts de los backends equivocados.

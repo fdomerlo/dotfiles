@@ -9,9 +9,12 @@ PanelWindow {
 
     required property bool overviewOpen
     required property string searchQuery
+    required property int selectedWorkspaceId
+    required property bool tabNavigated
 
     signal searchUpdated(string text)
     signal closeRequested()
+    signal cycleWorkspaceRequested(int delta)
     signal windowSelected(var toplevel)
     signal workspaceSelected(int wsId)
 
@@ -81,6 +84,21 @@ PanelWindow {
         return null;
     }
 
+    function confirmSelection() {
+        if (!win.tabNavigated && win.searchQuery.trim().length > 0) {
+            const first = win.firstMatchingWindow();
+            if (first) {
+                win.windowSelected(first);
+                return;
+            }
+        }
+        if (win.selectedWorkspaceId > 0) {
+            win.workspaceSelected(win.selectedWorkspaceId);
+        } else {
+            win.closeRequested();
+        }
+    }
+
     anchors {
         top: true
         bottom: true
@@ -128,7 +146,7 @@ PanelWindow {
 
                 Rectangle {
                     visible: win.isFocusedMonitor
-                    Layout.preferredWidth: Math.min(540, win.width * 0.5)
+                    Layout.preferredWidth: Math.min(580, win.width * 0.55)
                     Layout.preferredHeight: 42
                     color: Theme.panelBg
                     radius: Theme.radius
@@ -162,6 +180,7 @@ PanelWindow {
                             font.pixelSize: 14
                             clip: true
                             selectByMouse: true
+                            activeFocusOnTab: false
                             verticalAlignment: TextInput.AlignVCenter
 
                             onTextChanged: {
@@ -171,19 +190,25 @@ PanelWindow {
                             }
 
                             Keys.onEscapePressed: win.closeRequested()
-                            Keys.onReturnPressed: {
-                                const first = win.firstMatchingWindow();
-                                if (first)
-                                    win.windowSelected(first);
+                            Keys.onReturnPressed: win.confirmSelection()
+                            Keys.onEnterPressed: win.confirmSelection()
+                            Keys.onTabPressed: event => {
+                                event.accepted = true;
+                                win.cycleWorkspaceRequested((event.modifiers & Qt.ShiftModifier) ? -1 : 1);
+                            }
+                            Keys.onBacktabPressed: event => {
+                                event.accepted = true;
+                                win.cycleWorkspaceRequested(-1);
                             }
 
                             Text {
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
-                                text: "Buscar ventana abierta... (Esc para cerrar)"
+                                text: "Buscar ventana... (Tab: actividades · Enter: ir · Esc: cerrar)"
                                 color: Theme.muted
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 13
+                                font.pixelSize: 12
+                                elide: Text.ElideRight
                                 visible: !searchInput.text
                             }
                         }
@@ -232,15 +257,18 @@ PanelWindow {
                         readonly property bool isCurrentWs: Boolean(
                             win.hyprMonitor && win.hyprMonitor.activeWorkspace && win.hyprMonitor.activeWorkspace.id === ws.id
                         )
+                        readonly property bool isSelectedWs: win.selectedWorkspaceId > 0 && ws.id === win.selectedWorkspaceId
 
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        color: Theme.panelBg
+                        color: (isSelectedWs && win.tabNavigated) ? Theme.cardHoverBg : Theme.panelBg
                         radius: Theme.radius
-                        border.width: isCurrentWs ? 2 : Theme.borderWidth
+                        border.width: (isSelectedWs || wsHover.containsMouse) ? 2 : Theme.borderWidth
                         border.color: ws.urgent
                             ? Theme.urgent
-                            : (wsHover.containsMouse || isCurrentWs ? Theme.activeBorder : Theme.border)
+                            : ((isSelectedWs || wsHover.containsMouse)
+                                ? Theme.activeBorder
+                                : (isCurrentWs ? Theme.accent : Theme.border))
 
                         MouseArea {
                             id: wsHover
@@ -263,14 +291,14 @@ PanelWindow {
                                     width: 28
                                     height: 24
                                     radius: Theme.cardRadius
-                                    color: wsCard.isCurrentWs ? Theme.accent : Theme.cardBg
+                                    color: (wsCard.isCurrentWs || wsCard.isSelectedWs) ? Theme.accent : Theme.cardBg
                                     border.width: Theme.borderWidth
-                                    border.color: wsCard.isCurrentWs ? Theme.accent : Theme.border
+                                    border.color: (wsCard.isCurrentWs || wsCard.isSelectedWs) ? Theme.accent : Theme.border
 
                                     Text {
                                         anchors.centerIn: parent
                                         text: ws.name
-                                        color: wsCard.isCurrentWs ? "#05080b" : Theme.textBright
+                                        color: (wsCard.isCurrentWs || wsCard.isSelectedWs) ? "#05080b" : Theme.textBright
                                         font.family: Theme.fontFamily
                                         font.pixelSize: 12
                                         font.bold: true
@@ -287,6 +315,26 @@ PanelWindow {
                                 }
 
                                 Item { Layout.fillWidth: true }
+
+                                Rectangle {
+                                    visible: wsCard.isSelectedWs && win.tabNavigated
+                                    width: enterHint.implicitWidth + 12
+                                    height: 20
+                                    radius: Theme.cardRadius
+                                    color: Theme.cardBg
+                                    border.width: Theme.borderWidth
+                                    border.color: Theme.activeBorder
+
+                                    Text {
+                                        id: enterHint
+                                        anchors.centerIn: parent
+                                        text: "Enter ↵"
+                                        color: Theme.activeBorder
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                    }
+                                }
                             }
 
                             // Ventanas dentro del workspace

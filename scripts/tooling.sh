@@ -122,10 +122,11 @@ else
     echo "✔ Remmina y Wireshark ya están instalados"
 fi
 
-# 6. Suite de Aplicaciones Flatpak (Firefox estándar, DBeaver, Bruno, Obsidian, Super Productivity)
+# 6. Suite de Aplicaciones Flatpak (Firefox estándar, LibreOffice, DBeaver, Bruno, Obsidian, Super Productivity)
 if command -v flatpak &> /dev/null; then
     FLATPAK_APPS=(
         org.mozilla.firefox
+        org.libreoffice.LibreOffice
         io.dbeaver.DBeaverCommunity
         com.usebruno.Bruno
         md.obsidian.Obsidian
@@ -153,5 +154,5 @@ if command -v flatpak &> /dev/null; then
 fi
 
 echo "================================================================="
-echo "✔ Tooling (Firefox, Chrome, VS Code, Zed, Neovim, Sysadmin & Productividad) completado."
+echo "✔ Tooling (Firefox, Chrome, LibreOffice, VS Code, Zed, Neovim, Sysadmin & Productividad) completado."
 echo "================================================================="

@@ -22,7 +22,7 @@ help:
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
 	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop, yazi, nvim, zathura, lazydocker)"
 	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi, lazydocker y sincroniza SSH de GitHub"
-	@echo "  make tooling         - Instala navegadores, editores y suite sysadmin/productividad (Firefox, Chrome, VS Code, Zed, Neovim, Remmina, Wireshark, DBeaver, Bruno, Obsidian, Super Productivity)"
+	@echo "  make tooling         - Instala navegadores, editores y suite sysadmin/productividad (Firefox, Chrome, LibreOffice, VS Code, Zed, Neovim, Remmina, Wireshark, DBeaver, Bruno, Obsidian, Super Productivity)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
 	@echo "  make desktop         - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
 	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
