@@ -1,0 +1,20 @@
+# ==============================================================================
+# Inventario canónico de herramientas y recursos externos (fuera de Debian main/backports).
+# Formato: id | categoria | destino | origen | politica_update
+# ==============================================================================
+
+gh|devtools|~/.local/bin/gh|https://github.com/cli/cli/releases/latest|auto
+uv|devtools|~/.local/bin/uv|https://astral.sh/uv/install.sh|auto
+fnm|devtools|~/.local/share/fnm|https://fnm.vercel.app/install|auto
+sdkman|devtools|~/.sdkman|https://get.sdkman.io|auto
+yazi|devtools|~/.local/bin/yazi|https://github.com/sxyazi/yazi/releases/latest|auto
+lazydocker|devtools|~/.local/bin/lazydocker|https://github.com/jesseduffield/lazydocker/releases/latest|auto
+code|tooling|/usr/bin/code|https://packages.microsoft.com/repos/code|apt
+brave-browser|tooling|/usr/bin/brave-browser|https://brave-browser-apt-release.s3.brave.com|apt
+google-chrome|tooling|/usr/bin/google-chrome|https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb|apt
+zed|tooling|~/.local/bin/zed|https://zed.dev/install.sh|auto
+nvim|tooling|~/.local/bin/nvim|https://github.com/neovim/neovim/releases/latest|auto
+opencode|devai|~/.opencode/bin/opencode|https://opencode.ai/v2/install|auto
+agy|devai|~/.local/bin/agy|https://antigravity.google/cli/install.sh|auto
+antigravity|devai|/opt/Antigravity|Downloads/Antigravity-*.tar.gz|manual
+nerd-fonts-symbols|hyprland|~/.local/share/fonts/SymbolsNerdFont-Regular.ttf|https://github.com/ryanoasis/nerd-fonts/releases/latest|install-once

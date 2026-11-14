@@ -38,3 +38,6 @@ hypr/themes/active
 
 # Configuración local por máquina (monitores/hardware específico)
 hypr/conf/local.conf
+
+# Reglas de Web Apps generadas por máquina (webapp-install.sh)
+hypr/conf/webapps.conf

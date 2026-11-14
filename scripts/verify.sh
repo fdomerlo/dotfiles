@@ -6,6 +6,9 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/local/bin:$PATH"
 
+# shellcheck source=scripts/lib/packages.sh
+source "$REPO_DIR/scripts/lib/packages.sh"
+
 echo "================================================================="
 echo "       Debian Stable Workstation - Verificación de Estado          "
 echo "================================================================="
@@ -22,10 +25,10 @@ check_optional() {
     echo -e " [ \033[33mINFO\033[0m ] $1"
 }
 
-# 0. Validación de sintaxis de scripts del repositorio
+# 0. Validación de sintaxis de scripts del repositorio y manifiestos
 echo -n "Sintaxis Bash de scripts del repositorio... "
 syntax_fail=0
-for s in "$REPO_DIR"/host/*.sh "$REPO_DIR"/scripts/*.sh "$REPO_DIR"/hypr/scripts/*.sh "$REPO_DIR"/shell/devctl; do
+for s in "$REPO_DIR"/host/*.sh "$REPO_DIR"/scripts/*.sh "$REPO_DIR"/scripts/lib/*.sh "$REPO_DIR"/hypr/scripts/*.sh "$REPO_DIR"/shell/devctl; do
     if [ -f "$s" ] && ! bash -n "$s" &>/dev/null; then
         syntax_fail=1
         echo -e "\n  -> Error de sintaxis en: ${s#"$REPO_DIR/"}"
@@ -35,6 +38,22 @@ if [ $syntax_fail -eq 0 ]; then
     check_status 0 "Todos los scripts pasaron 'bash -n' correctamente"
 else
     check_status 1 "Se detectaron errores de sintaxis en scripts"
+fi
+
+echo -n "Manifiestos de paquetes (packages/)... "
+manifest_fail=0
+for m in apt-base.txt apt-optional.txt apt-backports.txt apt-hyprland.txt flatpak.txt external.txt; do
+    mpath="$REPO_DIR/packages/$m"
+    _tmp_items=()
+    if ! read_manifest "$mpath" _tmp_items 2>/dev/null || [ "${#_tmp_items[@]}" -eq 0 ]; then
+        manifest_fail=1
+        echo -e "\n  -> Inválido o vacío: packages/$m"
+    fi
+done
+if [ $manifest_fail -eq 0 ]; then
+    check_status 0 "6 manifiestos válidos en packages/"
+else
+    check_status 1 "Faltan o fallaron manifiestos en packages/"
 fi
 
 # 1. Controlador de Gráficos (AMD / Intel)
@@ -78,22 +97,22 @@ else
     check_status 1 "Podman Rootless no disponible o sin modo rootless"
 fi
 
-# 6. Tipografías del Sistema
-echo -n "Tipografías del sistema (JetBrains Mono / Fira Code / Noto Sans / Adwaita Sans)... "
+# 6. Tipografías Base (paquetes Debian)
+echo -n "Tipografías base (JetBrains Mono / Noto Sans)... "
 fonts_ok=0
 INSTALLED_FONTS=$(fc-list : family 2>/dev/null || true)
-for f in "JetBrains Mono" "Fira Code" "Noto Sans" "Adwaita Sans"; do
-    if ! printf '%s\n' "$INSTALLED_FONTS" | grep -i "$f" >/dev/null; then
+for f in "JetBrains Mono" "Noto Sans"; do
+    if ! grep -iq "$f" <<<"$INSTALLED_FONTS"; then
         fonts_ok=1
     fi
 done
 if [ $fonts_ok -eq 0 ]; then
-    check_status 0 "Fuentes reconocidas por fontconfig"
+    check_status 0 "Fuentes base reconocidas por fontconfig"
 else
-    check_status 1 "Faltan fuentes esenciales en fontconfig"
+    check_status 1 "Faltan fuentes base en fontconfig (ejecuta 'make host')"
 fi
 
-# 7. Enlaces simbólicos de dotfiles
+# 7. Enlaces simbólicos de dotfiles e identidad Git local
 echo -n "Integridad de dotfiles... "
 missing=0
 for f in "$HOME/.zshrc" "$HOME/.gitconfig" "$HOME/.local/bin/devctl" \
@@ -110,6 +129,15 @@ else
     check_status 1 "Faltan dotfiles requeridos"
 fi
 
+echo -n "Identidad Git local (user.name / user.email)... "
+GIT_NAME=$(git config --includes --global --get user.name 2>/dev/null || true)
+GIT_EMAIL=$(git config --includes --global --get user.email 2>/dev/null || true)
+if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
+    check_status 0 "$GIT_NAME <$GIT_EMAIL>"
+else
+    check_status 1 "Falta user.name o user.email (ejecuta 'make gitconfig')"
+fi
+
 # 8. Herramientas CLI críticas
 echo "Disponibilidad de herramientas clave:"
 for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc lazydocker; do
@@ -120,6 +148,20 @@ for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc l
         check_status 1 "No encontrado en PATH"
     fi
 done
+
+echo -n "  -> brave-browser (navegador default): "
+if command -v brave-browser &>/dev/null; then
+    check_status 0 "Presente"
+else
+    check_optional "No instalado aún (ejecuta 'make tooling' para instalar Brave como default)"
+fi
+
+echo -n "  -> google-chrome: "
+if command -v google-chrome &>/dev/null; then
+    check_status 0 "Presente"
+else
+    check_optional "No instalado"
+fi
 
 echo "Herramientas de shell productiva:"
 for cmd in zoxide atuin starship tmux; do
@@ -139,6 +181,10 @@ SOURCES_D="/etc/apt/sources.list.d"
 [ -e "$SOURCES_D/docker.sources" ] && { echo -e "\n  -> Persiste fuente activa: docker.sources"; apt_ok=1; }
 if [ -f "$SOURCES_D/vscode.list" ] && [ -f "$SOURCES_D/vscode.sources" ]; then
     echo -e "\n  -> VS Code duplicado (vscode.list + vscode.sources)"
+    apt_ok=1
+fi
+if [ -f "$SOURCES_D/brave-browser-release.list" ] && [ -f "$SOURCES_D/brave-browser-release.sources" ]; then
+    echo -e "\n  -> Brave duplicado (brave-browser-release.list + brave-browser-release.sources)"
     apt_ok=1
 fi
 for pkg in docker-ce docker-ce-cli containerd.io docker.io; do
@@ -164,7 +210,7 @@ echo -n "Login GitHub (SSH)... "
 KEY_ARGS=()
 [ -f "$HOME/.ssh/id_ed25519" ] && KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
 SSH_REPLY=$(ssh -T "${KEY_ARGS[@]}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
-if printf '%s\n' "$SSH_REPLY" | grep "successfully authenticated" >/dev/null; then
+if grep -q "successfully authenticated" <<<"$SSH_REPLY"; then
     SSH_USER=$(echo "$SSH_REPLY" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
     check_status 0 "SSH autenticado como ${SSH_USER:-usuario}"
 else
@@ -182,15 +228,7 @@ else
     check_status 1 "gh CLI sin sesión activa (ejecuta 'gh auth login -h github.com -p ssh -w')"
 fi
 
-# 11. Personalizaciones de GNOME y Directorios de Trabajo
-echo -n "Botones de control en ventanas (minimizar, maximizar, cerrar)... "
-BTN_LAYOUT=$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo "''")
-if [[ "$BTN_LAYOUT" == *"minimize"* && "$BTN_LAYOUT" == *"maximize"* && "$BTN_LAYOUT" == *"close"* ]]; then
-    check_status 0 "Configurados correctamente ($BTN_LAYOUT)"
-else
-    check_optional "Layout actual: $BTN_LAYOUT (ejecuta 'make desktop' para aplicar appmenu:minimize,maximize,close)"
-fi
-
+# 11. Directorios de Trabajo y GNOME Fallback estándar
 echo -n "Directorio dedicado de proyectos (XDG_PROJECTS_DIR)... "
 PROJECTS_DIR="${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
 if [ -d "$PROJECTS_DIR" ]; then
@@ -199,13 +237,35 @@ else
     check_status 1 "No encontrado en $PROJECTS_DIR"
 fi
 
+if dpkg -s gnome-shell-extension-dashtodock &>/dev/null; then
+    echo -n "GNOME estándar (fallback limpio)... "
+    check_optional "Paquete residual gnome-shell-extension-dashtodock instalado (purgar con: sudo apt-get purge -y gnome-shell-extension-dashtodock)"
+fi
+
 # 12. Ecosistema de Aplicaciones (Flatpak, AppImage y Repositorios Oficiales)
 echo -n "Soporte Flatpak & Flathub... "
 if command -v flatpak &>/dev/null; then
-    if flatpak remotes 2>/dev/null | grep "flathub" >/dev/null; then
+    if flatpak remotes 2>/dev/null | grep -q "flathub"; then
         check_status 0 "Flatpak instalado con repositorio Flathub activo"
     else
         check_optional "Flatpak presente pero Flathub no registrado (ejecuta 'make host')"
+    fi
+    echo -n "Aplicaciones Flatpak (packages/flatpak.txt)... "
+    FLATPAK_APPS=()
+    read_manifest "$REPO_DIR/packages/flatpak.txt" FLATPAK_APPS
+    fp_installed=0
+    fp_missing=()
+    for app_id in "${FLATPAK_APPS[@]}"; do
+        if flatpak info "$app_id" &>/dev/null; then
+            fp_installed=$((fp_installed + 1))
+        else
+            fp_missing+=("$app_id")
+        fi
+    done
+    if [ "${#fp_missing[@]}" -eq 0 ]; then
+        check_status 0 "${fp_installed}/${#FLATPAK_APPS[@]} instaladas"
+    else
+        check_optional "${fp_installed}/${#FLATPAK_APPS[@]} instaladas (ausentes: ${fp_missing[*]})"
     fi
 else
     check_status 1 "Flatpak no instalado"
@@ -264,6 +324,26 @@ else
         check_status 1 "Faltan: ${hypr_missing[*]} (ejecuta 'make hyprland')"
     fi
 
+    echo -n "Tipografías Debian para Hyprland (Inter / Atkinson Hyperlegible / JetBrains Mono)... "
+    hypr_fonts_missing=()
+    for f in "Inter" "Atkinson Hyperlegible" "JetBrains Mono"; do
+        if ! grep -iqE "(^|,)${f}(,|$)" <<<"$INSTALLED_FONTS"; then
+            hypr_fonts_missing+=("$f")
+        fi
+    done
+    if [ "${#hypr_fonts_missing[@]}" -eq 0 ]; then
+        check_status 0 "Presentes en fontconfig"
+    else
+        check_optional "Faltan: ${hypr_fonts_missing[*]} (ejecuta 'make hyprland' o 'sudo apt-get install -y fonts-inter fonts-atkinson-hyperlegible fonts-jetbrains-mono')"
+    fi
+
+    echo -n "Cursor Bibata para Hyprland (bibata-cursor-theme)... "
+    if [ -d /usr/share/icons/Bibata-Modern-Classic ] || [ -d "$HOME/.local/share/icons/Bibata-Modern-Classic" ]; then
+        check_status 0 "Bibata-Modern-Classic presente"
+    else
+        check_optional "Bibata-Modern-Classic no encontrado (ejecuta 'make hyprland' o 'sudo apt-get install -y bibata-cursor-theme')"
+    fi
+
     echo -n "Sesión de Hyprland en el display manager... "
     if [ -f /usr/share/wayland-sessions/hyprland.desktop ]; then
         check_status 0 "hyprland.desktop presente (GDM la detecta automáticamente)"
@@ -285,8 +365,13 @@ else
     echo -n "Configuración de Hyprland desplegada... "
     cfg_missing=()
     for f in "$HOME/.config/hypr/hyprland.conf" \
+             "$HOME/.config/hypr/conf/plugins.conf" \
              "$HOME/.config/hypr/conf/local.conf" \
+             "$HOME/.config/hypr/conf/webapps.conf" \
+             "$HOME/.config/fontconfig/conf.d/10-hyprland-fonts.conf" \
+             "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
              "$HOME/.config/waybar/config.jsonc" \
+             "$HOME/.config/waybar/local.jsonc" \
              "$HOME/.config/fuzzel/fuzzel.ini" \
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
@@ -304,10 +389,20 @@ else
     if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v hyprctl &>/dev/null; then
         echo -n "Errores de configuración de Hyprland... "
         HYPR_ERRORS="$(hyprctl configerrors 2>/dev/null || true)"
-        if [ -z "$HYPR_ERRORS" ] || printf '%s\n' "$HYPR_ERRORS" | grep -iE '^no errors|config ok' >/dev/null; then
+        if [ -z "$HYPR_ERRORS" ] || grep -iqE '^no errors|config ok' <<<"$HYPR_ERRORS"; then
             check_status 0 "Sin errores de configuración"
         else
             check_status 1 "hyprctl reportó errores: $HYPR_ERRORS"
+        fi
+
+        echo -n "Agente SSH y Keyring en sesión... "
+        KEYRING_COUNT=$(pgrep -u "$USER" -f '(^|/)gnome-keyring-daemon([[:space:]]|$)' 2>/dev/null | wc -l || echo 0)
+        if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "$SSH_AUTH_SOCK" ] && [ "$KEYRING_COUNT" -le 1 ]; then
+            check_status 0 "SSH_AUTH_SOCK activo (${SSH_AUTH_SOCK}), keyring=${KEYRING_COUNT}"
+        elif [ "$KEYRING_COUNT" -gt 1 ]; then
+            check_optional "Instancias duplicadas de gnome-keyring-daemon ($KEYRING_COUNT); se normalizará al reiniciar sesión"
+        else
+            check_optional "SSH_AUTH_SOCK no apunta a un socket activo (${SSH_AUTH_SOCK:-unset})"
         fi
     fi
 fi

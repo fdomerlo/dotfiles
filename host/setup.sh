@@ -7,6 +7,9 @@ TARGET_USER="${SUDO_USER:-$(logname)}"
 USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# shellcheck source=scripts/lib/packages.sh
+source "$REPO_DIR/scripts/lib/packages.sh"
+
 echo "================================================================="
 echo "==> [Debian Stable] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
@@ -91,7 +94,6 @@ done
 
 # 2. Si no hay FUSE 2, dependemos de fuse3 y del fallback de extracción
 if [ "$FUSE2_DISPONIBLE" = false ]; then
-    # Verificamos si existe fuse3 (estándar moderno)
     if has_apt_candidate "fuse3"; then
         APPIMAGE_FUSE_PKGS+=("fuse3")
     fi
@@ -106,23 +108,11 @@ fi
 echo "==> Preconfigurando Wireshark para captura de paquetes sin root..."
 echo "wireshark-common wireshark-common/install-setuid boolean true" | debconf-set-selections
 
-echo "==> Instalando paquetes base, CLI moderna, sysadmin, soporte Flatpak y AppImage..."
-apt-get install -y \
-  git curl wget jq unzip zip \
-  ca-certificates gnupg lsb-release \
-  build-essential \
-  ripgrep fd-find fzf bat btop direnv wl-clipboard chafa \
-  zoxide atuin starship tmux \
-  zathura zathura-pdf-poppler imv \
-  gnome-keyring seahorse libsecret-tools \
-  remmina remmina-plugin-rdp remmina-plugin-vnc remmina-plugin-secret \
-  wireshark tshark \
-  network-manager-openvpn network-manager-openvpn-gnome \
-  fonts-firacode fonts-jetbrains-mono fonts-noto-core \
-  flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome \
-  libglib2.0-bin \
-  fuse3 "${APPIMAGE_FUSE_PKGS[@]}" \
-  uidmap dbus-user-session iptables
+BASE_APT_PKGS=()
+read_manifest "$REPO_DIR/packages/apt-base.txt" BASE_APT_PKGS
+
+echo "==> Instalando paquetes base, CLI moderna, sysadmin, Flatpak, AppImage y Podman..."
+apt-get install -y "${BASE_APT_PKGS[@]}" "${APPIMAGE_FUSE_PKGS[@]}"
 
 if getent group wireshark >/dev/null 2>&1; then
     usermod -aG wireshark "$TARGET_USER" || true
@@ -144,19 +134,8 @@ chown "$TARGET_USER:$TARGET_USER" "$APPIMAGE_DIR"
 chmod 755 "$APPIMAGE_DIR"
 
 # ------------------------------------------------------------------------------
-# 5. Podman y Contenedores Rootless (crun + pasta/passt)
+# 5. Podman Rootless: rangos subuid/subgid y systemd linger
 # ------------------------------------------------------------------------------
-echo "==> Instalando Podman y herramientas de contenedores (crun + passt/pasta)..."
-apt-get install -y \
-  podman \
-  crun \
-  buildah \
-  skopeo \
-  podman-compose \
-  passt \
-  slirp4netns \
-  catatonit
-
 echo "==> Verificando rangos subuid y subgid para $TARGET_USER..."
 if ! grep -q "^${TARGET_USER}:" /etc/subuid 2>/dev/null; then
     echo "${TARGET_USER}:100000:65536" >> /etc/subuid

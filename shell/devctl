@@ -38,6 +38,16 @@ clean_deep() {
 }
 
 # --------------------------------------------------
+# WEB APPS (PWAs)
+# --------------------------------------------------
+
+webapp() {
+  local script="$BASE_DIR/hypr/scripts/webapp-install.sh"
+  [ -x "$script" ] || [ -f "$script" ] || { echo "No se encontró $script"; exit 1; }
+  bash "$script" "$@"
+}
+
+# --------------------------------------------------
 # DIAGNÓSTICO
 # --------------------------------------------------
 
@@ -77,6 +87,8 @@ doctor() {
   check zed
   check opencode
   check antigravity
+  check_opt brave-browser
+  check_opt google-chrome
   check_opt agy
   check_opt lazydocker
   check_opt remmina
@@ -117,11 +129,16 @@ doctor() {
   KEY_ARGS=()
   [ -f "$HOME/.ssh/id_ed25519" ] && KEY_ARGS=(-i "$HOME/.ssh/id_ed25519")
   SSH_REPLY=$(ssh -T "${KEY_ARGS[@]}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5 git@github.com 2>&1 || true)
-  if echo "$SSH_REPLY" | grep -q "successfully authenticated"; then
+  if grep -q "successfully authenticated" <<<"$SSH_REPLY"; then
     SSH_USER=$(echo "$SSH_REPLY" | sed -n 's/^Hi \([^!]*\)!.*/\1/p')
     echo -e "  \033[32m✔\033[0m SSH autenticado como ${SSH_USER:-usuario}"
   else
     echo -e "  \033[31m✘\033[0m SSH con GitHub no autenticado"
+  fi
+  if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "$SSH_AUTH_SOCK" ]; then
+    echo -e "  \033[32m✔\033[0m SSH_AUTH_SOCK activo ($SSH_AUTH_SOCK)"
+  else
+    echo -e "  \033[33m○\033[0m SSH_AUTH_SOCK inactivo (${SSH_AUTH_SOCK:-unset})"
   fi
   # `gh auth status` puede devolver 0 con un token muerto; validar contra la API.
   GH_USER=""
@@ -145,12 +162,6 @@ doctor() {
     echo -e "  \033[32m✔\033[0m Directorio de aplicaciones portables: ${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}"
   else
     echo -e "  \033[33m○\033[0m Directorio de aplicaciones portables (${XDG_APPLICATIONS_DIR:-$HOME/Aplicaciones}) no creado"
-  fi
-  BTN_LAYOUT=$(gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo "''")
-  if [[ "$BTN_LAYOUT" == *"minimize"* && "$BTN_LAYOUT" == *"maximize"* && "$BTN_LAYOUT" == *"close"* ]]; then
-    echo -e "  \033[32m✔\033[0m Botones de ventana configurados ($BTN_LAYOUT)"
-  else
-    echo -e "  \033[33m○\033[0m Botones de ventana sin layout completo ($BTN_LAYOUT)"
   fi
   if command -v flatpak &>/dev/null && flatpak remotes 2>/dev/null | grep -q "flathub"; then
     echo -e "  \033[32m✔\033[0m Flatpak con Flathub activo"
@@ -195,10 +206,24 @@ doctor() {
     else
       echo -e "  \033[31m✘\033[0m Portal xdg-desktop-portal-hyprland no encontrado"
     fi
-    if [ -e "$HOME/.config/hypr/hyprland.conf" ]; then
-      echo -e "  \033[32m✔\033[0m Configuración desplegada en ~/.config"
+    if [ -e "$HOME/.config/hypr/hyprland.conf" ] && [ -e "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" ]; then
+      echo -e "  \033[32m✔\033[0m Configuración y portales desplegados en ~/.config"
     else
-      echo -e "  \033[33m○\033[0m Configuración no desplegada (ejecuta 'make hyprland')"
+      echo -e "  \033[33m○\033[0m Configuración/portales incompletos (ejecuta 'make hyprland')"
+    fi
+    if [ -d /usr/share/icons/Bibata-Modern-Classic ] || [ -d "$HOME/.local/share/icons/Bibata-Modern-Classic" ]; then
+      echo -e "  \033[32m✔\033[0m Cursor Bibata-Modern-Classic"
+    else
+      echo -e "  \033[33m○\033[0m Cursor Bibata-Modern-Classic pendiente ('sudo apt-get install -y bibata-cursor-theme')"
+    fi
+    local fc_fonts
+    fc_fonts="$(fc-list : family 2>/dev/null || true)"
+    if grep -iqE '(^|,)Inter(,|$)' <<<"$fc_fonts" \
+        && grep -iqE '(^|,)Atkinson Hyperlegible(,|$)' <<<"$fc_fonts" \
+        && grep -iqE '(^|,)JetBrains Mono(,|$)' <<<"$fc_fonts"; then
+      echo -e "  \033[32m✔\033[0m Tipografías Debian (Inter / Atkinson Hyperlegible / JetBrains Mono)"
+    else
+      echo -e "  \033[33m○\033[0m Faltan tipografías Debian Hyprland ('sudo apt-get install -y fonts-inter fonts-atkinson-hyperlegible fonts-jetbrains-mono')"
     fi
   else
     echo -e "  \033[33m○\033[0m Hyprland no instalado (opcional: make hyprland)"
@@ -240,6 +265,11 @@ update) update ;;
 
 clean) clean_deep ;;
 
+webapp)
+  shift
+  webapp "$@"
+  ;;
+
 *)
   echo "devctl - Workstation CLI para Debian"
   echo ""
@@ -247,5 +277,6 @@ clean) clean_deep ;;
   echo "  devctl doctor                # Diagnóstico del entorno y servicios"
   echo "  devctl update                # Actualiza estación (APT only-upgrade + user-space)"
   echo "  devctl clean                 # Limpieza profunda post-upgrade (purga rc, huérfanos, logs)"
+  echo "  devctl webapp <subcomando>   # Gestiona Web Apps/PWAs (install, list, remove, menu)"
   ;;
 esac

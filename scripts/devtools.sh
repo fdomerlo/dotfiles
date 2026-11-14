@@ -65,10 +65,16 @@ fi
 if [ ! -d "$HOME/.sdkman" ]; then
     echo "Instalando sdkman..."
     if ! command -v unzip &> /dev/null || ! command -v zip &> /dev/null; then
-        sudo apt-get install -y zip unzip
+        if sudo -n true 2>/dev/null || [ -t 0 ]; then
+            sudo apt-get install -y zip unzip
+        else
+            echo "  ⚠️ Faltan zip/unzip y no hay sudo disponible; ejecuta 'make host' antes de instalar sdkman."
+        fi
     fi
-    export SDKMAN_DIR="$HOME/.sdkman"
-    curl -fsSL "https://get.sdkman.io?rcupdate=false" | bash
+    if command -v unzip &> /dev/null && command -v zip &> /dev/null; then
+        export SDKMAN_DIR="$HOME/.sdkman"
+        curl -fsSL "https://get.sdkman.io?rcupdate=false" | bash
+    fi
 else
     echo "✔ sdkman ya está instalado"
 fi

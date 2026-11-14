@@ -1,0 +1,56 @@
+# ==============================================================================
+# Paquetes APT del perfil opcional Hyprland disponibles en Debian Stable main.
+# Consumido por scripts/hyprland-packages.sh, scripts/hyprland.sh y update.sh.
+# ==============================================================================
+
+waybar
+fuzzel
+sway-notification-center
+swayosd
+grim
+slurp
+swappy
+wl-clipboard
+cliphist
+swaybg
+brightnessctl
+playerctl
+pipewire-audio
+pipewire-pulse
+wireplumber
+foot
+chafa
+zathura
+zathura-pdf-poppler
+imv
+gnome-keyring
+seahorse
+libsecret-tools
+nautilus
+gnome-calculator
+fd-find
+tesseract-ocr
+tesseract-ocr-spa
+wf-recorder
+pavucontrol
+libnotify-bin
+network-manager-gnome
+network-manager-openvpn
+network-manager-openvpn-gnome
+blueman
+xdg-desktop-portal-gtk
+qt6ct
+qt5ct
+qtwayland5
+xwayland
+adwaita-icon-theme
+bibata-cursor-theme
+gnome-themes-extra
+fonts-inter
+fonts-atkinson-hyperlegible
+fonts-jetbrains-mono
+fonts-noto-core
+fonts-font-awesome
+socat
+curl
+unzip

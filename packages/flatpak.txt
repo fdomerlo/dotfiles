@@ -1,0 +1,10 @@
+# ==============================================================================
+# Aplicaciones Flatpak (Flathub) gestionadas por scripts/tooling.sh.
+# ==============================================================================
+
+org.mozilla.firefox
+org.libreoffice.LibreOffice
+io.dbeaver.DBeaverCommunity
+com.usebruno.Bruno
+md.obsidian.Obsidian
+com.super_productivity.SuperProductivity

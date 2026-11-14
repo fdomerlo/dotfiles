@@ -138,21 +138,38 @@ if [ ! -d "$ACTIVE_THEME_LINK" ]; then
 fi
 
 for f in "$HYPR_SRC"/conf/*.conf; do
-    [ "$(basename "$f")" = "local.conf" ] && continue
-    link_file "$f" "$CONFIG_HOME/hypr/conf/$(basename "$f")"
+    base_f="$(basename "$f")"
+    [ "$base_f" = "local.conf" ] || [ "$base_f" = "webapps.conf" ] && continue
+    link_file "$f" "$CONFIG_HOME/hypr/conf/$base_f"
 done
 
 LOCAL_CONF="$CONFIG_HOME/hypr/conf/local.conf"
 if [ ! -e "$LOCAL_CONF" ] && [ ! -L "$LOCAL_CONF" ]; then
-    mkdir -p "$(dirname "$LOCAL_CONF")"
-    cat >"$LOCAL_CONF" <<'EOF'
+    if [ -x "$HYPR_SRC/scripts/station-profile.sh" ]; then
+        bash "$HYPR_SRC/scripts/station-profile.sh" apply auto
+    else
+        mkdir -p "$(dirname "$LOCAL_CONF")"
+        cat >"$LOCAL_CONF" <<'EOF'
 # ==============================================================================
 # Overrides locales por máquina (no versionado).
 # Se carga al final de hyprland.conf; sirve para monitores, sensibilidad o
 # variables específicas de este equipo sin ensuciar el repositorio.
 # ==============================================================================
 EOF
-    ok "$LOCAL_CONF (plantilla local)"
+        ok "$LOCAL_CONF (plantilla local)"
+    fi
+fi
+
+WEBAPPS_CONF="$CONFIG_HOME/hypr/conf/webapps.conf"
+if [ ! -e "$WEBAPPS_CONF" ] && [ ! -L "$WEBAPPS_CONF" ]; then
+    mkdir -p "$(dirname "$WEBAPPS_CONF")"
+    cat >"$WEBAPPS_CONF" <<'EOF'
+# ==============================================================================
+# Reglas de Web Apps (PWAs) generadas localmente por webapp-install.sh.
+# No versionado; incluido al final de hypr/conf/windowrules.conf.
+# ==============================================================================
+EOF
+    ok "$WEBAPPS_CONF (semilla vacía)"
 fi
 
 for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf; do
@@ -162,8 +179,17 @@ for f in "$HYPR_SRC"/scripts/*.sh; do
     link_file "$f" "$CONFIG_HOME/hypr/scripts/$(basename "$f")"
 done
 for f in "$HYPR_SRC"/waybar/*; do
+    [ "$(basename "$f")" = "local.jsonc" ] && continue
     link_file "$f" "$CONFIG_HOME/waybar/$(basename "$f")"
 done
+
+WAYBAR_LOCAL="$CONFIG_HOME/waybar/local.jsonc"
+if [ ! -e "$WAYBAR_LOCAL" ] && [ ! -L "$WAYBAR_LOCAL" ]; then
+    mkdir -p "$(dirname "$WAYBAR_LOCAL")"
+    printf '{}\n' >"$WAYBAR_LOCAL"
+    ok "$WAYBAR_LOCAL (override local vacío)"
+fi
+
 for f in "$HYPR_SRC"/fuzzel/*; do
     link_file "$f" "$CONFIG_HOME/fuzzel/$(basename "$f")"
 done
@@ -179,7 +205,20 @@ done
 for f in "$HYPR_SRC"/quickshell/*; do
     link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
+for f in "$HYPR_SRC"/fontconfig/*.conf; do
+    link_file "$f" "$CONFIG_HOME/fontconfig/conf.d/$(basename "$f")"
+done
 link_file "$HYPR_SRC/xdg-desktop-portal/hyprland-portals.conf" "$CONFIG_HOME/xdg-desktop-portal/hyprland-portals.conf"
+
+# Semilla inicial de qt6ct si no existe (qt6ct escribe cambios propios en este archivo).
+if [ -f "$HYPR_SRC/qt6ct/qt6ct.conf" ] && [ ! -e "$CONFIG_HOME/qt6ct/qt6ct.conf" ]; then
+    mkdir -p "$CONFIG_HOME/qt6ct"
+    cp "$HYPR_SRC/qt6ct/qt6ct.conf" "$CONFIG_HOME/qt6ct/qt6ct.conf"
+    ok "$CONFIG_HOME/qt6ct/qt6ct.conf (semilla inicial)"
+elif [ -f "$CONFIG_HOME/qt6ct/qt6ct.conf" ] && grep -q 'Adwaita Sans' "$CONFIG_HOME/qt6ct/qt6ct.conf"; then
+    sed -i 's/Adwaita Sans/Inter/g' "$CONFIG_HOME/qt6ct/qt6ct.conf"
+    ok "$CONFIG_HOME/qt6ct/qt6ct.conf (fuente migrada a Inter)"
+fi
 
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
 if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
@@ -187,10 +226,7 @@ if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
 fi
 ok "Directorio de wallpapers: $CONFIG_HOME/hypr/wallpapers"
 
-# Modo oscuro GTK3/GTK4 y cursor Adwaita para aplicaciones en Hyprland.
-# Se converge el archivo existente en lugar de solo agregar claves: así una
-# instalación previa con «Adwaita-dark» o «prefer-dark-theme=0» (modelo viejo)
-# queda alineada con el actual, «Adwaita» + color-scheme prefer-dark.
+# Modo oscuro GTK3/GTK4, fuente Inter y cursor Bibata-Modern-Classic para apps en Hyprland.
 set_gtk_setting() {
     local file="$1" key="$2" value="$3"
     if grep -qE "^[[:space:]]*${key}[[:space:]]*=" "$file"; then
@@ -207,13 +243,17 @@ for gtk_ver in gtk-3.0 gtk-4.0; do
     [ -f "$settings" ] || printf '[Settings]\n' >"$settings"
     set_gtk_setting "$settings" gtk-theme-name Adwaita
     set_gtk_setting "$settings" gtk-application-prefer-dark-theme 1
-    set_gtk_setting "$settings" gtk-cursor-theme-name Adwaita
+    set_gtk_setting "$settings" gtk-font-name "Inter 11"
+    set_gtk_setting "$settings" gtk-cursor-theme-name Bibata-Modern-Classic
     set_gtk_setting "$settings" gtk-cursor-theme-size 24
 done
 
-# Nerd Fonts: style.css de Waybar usa "Symbols Nerd Font" para los glifos de los
-# módulos (launcher, CPU, memoria, reloj, etc.). Debian no empaqueta Nerd Fonts,
-# así que se descarga el paquete oficial de símbolos si no está instalado.
+# Refrescar caché de fontconfig tras desplegar las reglas del perfil
+command -v fc-cache >/dev/null 2>&1 && fc-cache -f >/dev/null 2>&1 || true
+
+# Nerd Fonts (solo glifos/iconos): style.css de Waybar y main-menu.sh usan
+# "Symbols Nerd Font" para sus iconos. Debian no empaqueta Nerd Fonts, así que
+# se descarga el paquete oficial de símbolos si no está instalado (no es fuente de texto).
 NERD_FONT_DIR="$HOME/.local/share/fonts"
 if fc-list : family 2>/dev/null | grep -qi "Symbols Nerd Font"; then
     ok "Symbols Nerd Font ya está instalada."
@@ -270,6 +310,7 @@ Próximos pasos:
      $CONFIG_HOME/hypr/wallpapers/default.png
      y recargá con $CONFIG_HOME/hypr/scripts/wallpaper.sh
   5. Overrides locales por equipo: editá $LOCAL_CONF
+     (o aplicá perfil base con 'make hypr-desktop' / 'make hypr-laptop')
 
 Atajos y gestos principales:
   Super                abrir/cerrar lanzador     Super+A       overview (Quickshell)

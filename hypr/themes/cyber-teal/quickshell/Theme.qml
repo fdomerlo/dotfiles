@@ -14,7 +14,7 @@ Singleton {
     readonly property color text: "#e6ece8"
     readonly property color textBright: "#ffffff"
     readonly property color muted: "#91a39a"
-    readonly property string fontFamily: "JetBrains Mono"
+    readonly property string fontFamily: "Inter"
     readonly property int radius: 12
     readonly property int cardRadius: 8
     readonly property int borderWidth: 1

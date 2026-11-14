@@ -1,0 +1,20 @@
+# ==============================================================================
+# Paquetes APT opcionales o instalados bajo demanda por scripts específicos.
+# No se fuerzan en host/setup.sh; scripts/update.sh los actualiza con
+# --only-upgrade únicamente si ya están instalados en el sistema.
+# ==============================================================================
+
+# Backups opcionales (host/timeshift.sh)
+timeshift
+cron
+
+# Fallback Neovim APT / Runtime FUSE2 dinámico / Audio base
+neovim
+libfuse2t64
+libfuse2
+pipewire
+
+# Repositorios externos / paquetes .deb de terceros (scripts/tooling.sh)
+code
+brave-browser
+google-chrome-stable

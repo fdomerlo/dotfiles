@@ -3,12 +3,12 @@
    Basado en el style.css oficial de SwayNC, con la paleta del escritorio.
    ============================================================================== */
 
-@define-color cc-bg rgba(12, 16, 18, 0.96);
+@define-color cc-bg rgba(12, 16, 18, 0.88);
 @define-color noti-border-color rgba(13, 183, 212, 0.35);
-@define-color noti-bg rgba(24, 34, 36, 0.96);
+@define-color noti-bg rgba(24, 34, 36, 0.86);
 @define-color noti-bg-opaque rgb(24, 34, 36);
 @define-color noti-bg-darker rgb(16, 24, 26);
-@define-color noti-bg-hover rgba(32, 46, 48, 0.98);
+@define-color noti-bg-hover rgba(32, 46, 48, 0.94);
 @define-color noti-bg-hover-opaque rgb(32, 46, 48);
 @define-color noti-bg-focus rgba(13, 183, 212, 0.22);
 @define-color noti-close-bg rgba(230, 236, 232, 0.10);
@@ -519,7 +519,7 @@
 /* --- Ajustes del escritorio (fuente, acentos y bordes) --- */
 
 * {
-    font-family: "JetBrains Mono", "Symbols Nerd Font", sans-serif;
+    font-family: "Inter", "Symbols Nerd Font", sans-serif;
     font-size: 13px;
 }
 

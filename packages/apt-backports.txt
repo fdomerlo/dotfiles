@@ -1,0 +1,14 @@
+# ==============================================================================
+# Paquetes APT del perfil opcional Hyprland provistos por stable-backports.
+# Consumido por scripts/hyprland-packages.sh, scripts/hyprland.sh y update.sh.
+# ==============================================================================
+
+hyprland
+xdg-desktop-portal-hyprland
+hypridle
+hyprlock
+hyprpolkitagent
+hyprland-guiutils
+hyprpicker
+hyprsunset
+quickshell

@@ -26,7 +26,7 @@ else
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
 
-    USER_EMAIL=$(git config --global user.email 2>/dev/null || true)
+    USER_EMAIL=$(git config --includes --global --get user.email 2>/dev/null || true)
     if [ -z "$USER_EMAIL" ] && command -v gh &>/dev/null && gh auth status &>/dev/null; then
         GH_USER=$(gh api user --jq '.login' 2>/dev/null || true)
         USER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null || true)
@@ -40,25 +40,38 @@ else
     ssh-keygen -t ed25519 -C "$USER_EMAIL" -f "$KEY_PATH" -N "" >/dev/null
 fi
 
-# 2. Asegurar que la clave esté cargada localmente en ssh-agent
-if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-    eval "$(ssh-agent -s)" >/dev/null
+# 2. Asegurar que la clave esté cargada en el agente SSH de sesión (systemd o fallback)
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [ -z "${SSH_AUTH_SOCK:-}" ] || [ ! -S "$SSH_AUTH_SOCK" ]; then
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user start ssh-agent.socket >/dev/null 2>&1 || true
+    fi
+    if [ -S "$RUNTIME_DIR/openssh_agent" ]; then
+        export SSH_AUTH_SOCK="$RUNTIME_DIR/openssh_agent"
+    elif [ -S "$RUNTIME_DIR/gcr/ssh" ]; then
+        export SSH_AUTH_SOCK="$RUNTIME_DIR/gcr/ssh"
+    elif ! pgrep -u "$USER" ssh-agent > /dev/null; then
+        eval "$(ssh-agent -s)" >/dev/null
+    fi
 fi
 ssh-add "$KEY_PATH" 2>/dev/null || true
 
-# Función auxiliar: sincroniza user.name y user.email solo si están vacíos
+# Función auxiliar: sincroniza user.name y user.email en ~/.config/git/local.gitconfig
 ensure_git_identity() {
     local gh_user="${1:-}"
     local gh_email="${2:-}"
+    local local_gitconfig="${XDG_CONFIG_HOME:-$HOME/.config}/git/local.gitconfig"
     local current_name current_email
-    current_name=$(git config --global user.name 2>/dev/null || true)
-    current_email=$(git config --global user.email 2>/dev/null || true)
+
+    mkdir -p "$(dirname "$local_gitconfig")"
+    current_name=$(git config --includes --global --get user.name 2>/dev/null || true)
+    current_email=$(git config --includes --global --get user.email 2>/dev/null || true)
 
     if [ -z "$current_name" ] && [ -n "$gh_user" ]; then
-        git config --global user.name "$gh_user"
+        git config --file "$local_gitconfig" user.name "$gh_user"
     fi
     if [ -z "$current_email" ] && [ -n "$gh_email" ]; then
-        git config --global user.email "$gh_email"
+        git config --file "$local_gitconfig" user.email "$gh_email"
     fi
 }
 

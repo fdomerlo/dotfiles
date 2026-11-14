@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Menú de red y VPN interactivo para Hyprland (Fuzzel)
+# Menú de red y VPN (OpenVPN / WireGuard) interactivo para Hyprland (Fuzzel)
 # ==============================================================================
 set -euo pipefail
 
@@ -8,12 +8,12 @@ set -euo pipefail
 all_vpns=()
 while IFS= read -r line; do
     [ -n "$line" ] && all_vpns+=("$line")
-done < <(nmcli -t -f NAME,TYPE connection show 2>/dev/null | grep ':vpn$' | cut -d: -f1 || true)
+done < <(nmcli -t -f NAME,TYPE connection show 2>/dev/null | grep -E ':(vpn|wireguard)$' | sed -E 's/:(vpn|wireguard)$//' || true)
 
 active_vpns=()
 while IFS= read -r line; do
     [ -n "$line" ] && active_vpns+=("$line")
-done < <(nmcli -t -f NAME,TYPE connection show --active 2>/dev/null | grep ':vpn$' | cut -d: -f1 || true)
+done < <(nmcli -t -f NAME,TYPE connection show --active 2>/dev/null | grep -E ':(vpn|wireguard)$' | sed -E 's/:(vpn|wireguard)$//' || true)
 
 is_vpn_active() {
     local target="$1"
@@ -25,7 +25,7 @@ is_vpn_active() {
 
 # 2. Detectar estado de Wi-Fi y conexión activa
 wifi_radio=$(nmcli radio wifi 2>/dev/null || echo "disabled")
-active_wifi=$(nmcli -t -f NAME,TYPE connection show --active 2>/dev/null | grep ':802-11-wireless$' | cut -d: -f1 | head -n1 || true)
+active_wifi=$(nmcli -t -f NAME,TYPE connection show --active 2>/dev/null | grep ':802-11-wireless$' | sed 's/:802-11-wireless$//' | head -n1 || true)
 
 options=()
 
@@ -64,7 +64,7 @@ CHOSEN=$(printf '%s\n' "${options[@]}" | fuzzel --dmenu \
 
 case "$CHOSEN" in
     "󰌆 Desconectar VPN:"*)
-        vpn_name=$(echo "$CHOSEN" | sed -E 's/󰌆 Desconectar VPN: (.*) \[CONECTADA\]/\1/')
+        vpn_name=$(printf '%s' "$CHOSEN" | sed -E 's/^󰌆 Desconectar VPN: (.*) \[CONECTADA\]$/\1/')
         if nmcli connection down "$vpn_name" >/dev/null 2>&1; then
             notify-send -a "NetworkManager" -i network-vpn "VPN Desconectada" "Se ha desconectado de $vpn_name."
         else
@@ -72,10 +72,17 @@ case "$CHOSEN" in
         fi
         ;;
     "󰌆 Conectar VPN:"*)
-        vpn_name=$(echo "$CHOSEN" | sed -E 's/󰌆 Conectar VPN: (.*) \[DESCONECTADA\]/\1/')
+        vpn_name=$(printf '%s' "$CHOSEN" | sed -E 's/^󰌆 Conectar VPN: (.*) \[DESCONECTADA\]$/\1/')
         notify-send -a "NetworkManager" -i network-vpn "VPN" "Conectando a $vpn_name..."
         if nmcli connection up "$vpn_name" >/dev/null 2>&1; then
             notify-send -a "NetworkManager" -i network-vpn "VPN Conectada" "Conexión establecida con $vpn_name."
+        elif command -v foot >/dev/null 2>&1; then
+            # Si la VPN requiere contraseña o 2FA interactivo, solicitar en terminal.
+            if foot -T "VPN: $vpn_name" nmcli --ask connection up "$vpn_name"; then
+                notify-send -a "NetworkManager" -i network-vpn "VPN Conectada" "Conexión establecida con $vpn_name."
+            else
+                notify-send -a "NetworkManager" -u critical -i dialog-error "Error VPN" "No se pudo conectar a $vpn_name. Revisa tus credenciales o conexión."
+            fi
         else
             notify-send -a "NetworkManager" -u critical -i dialog-error "Error VPN" "No se pudo conectar a $vpn_name. Revisa tus certificados o conexión."
         fi

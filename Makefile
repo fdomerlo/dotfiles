@@ -9,7 +9,7 @@ export CHSH=no
 export KEEP_ZSHRC=yes
 export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install full-install update refresh host timeshift podman shell devtools tooling devai desktop hyprland verify clean clean-deep gitconfig github-auth
+.PHONY: help install full-install update refresh host timeshift podman shell devtools tooling devai desktop hyprland hypr-desktop hypr-laptop verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
@@ -22,11 +22,13 @@ help:
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
 	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop, yazi, nvim, zathura, lazydocker)"
 	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi, lazydocker y sincroniza SSH de GitHub"
-	@echo "  make tooling         - Instala navegadores, editores y suite sysadmin/productividad (Firefox, Chrome, LibreOffice, VS Code, Zed, Neovim, Remmina, Wireshark, DBeaver, Bruno, Obsidian, Super Productivity)"
+	@echo "  make tooling         - Instala navegadores, editores y suite sysadmin/productividad (Brave default, Chrome, Firefox, LibreOffice, VS Code, Zed, Neovim, Remmina, Wireshark, DBeaver, Bruno, Obsidian, Super Productivity)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
-	@echo "  make desktop         - Configura tipografías, botones de ventana, directorios de trabajo y extensiones GNOME"
+	@echo "  make desktop         - Mantiene GNOME Shell estándar (sin extensiones/extras) y directorios de trabajo"
 	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
 	@echo "  make hyprland        - (Opcional) Instala y configura el perfil Hyprland sin reemplazar GNOME"
+	@echo "  make hypr-desktop    - Aplica plantilla local de estación desktop en ~/.config/hypr/conf/local.conf (con backup)"
+	@echo "  make hypr-laptop     - Aplica plantilla local de estación notebook en ~/.config/hypr/conf/local.conf (con backup)"
 	@echo "  make verify          - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean           - Limpia paquetes residuales de APT y temporales"
 	@echo "  make clean-deep      - Limpieza profunda post-upgrade: purga configs residuales (rc), dependencias, logs y cachés"
@@ -72,7 +74,17 @@ ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 shell:
 	@echo "==> Configurando Zsh y Dotfiles..."
 	bash scripts/ohmyzsh.sh
-	mkdir -p $(HOME)/Proyectos $(HOME)/Aplicaciones
+	mkdir -p $(HOME)/Proyectos $(HOME)/Aplicaciones $(HOME)/.config/git
+	@# Si ~/.gitconfig es un archivo previo (no symlink al repo), migrar identidad y respaldar antes de enlazar.
+	@if [ -e $(HOME)/.gitconfig ] && [ ! -L $(HOME)/.gitconfig ]; then \
+		if [ ! -f $(HOME)/.config/git/local.gitconfig ]; then \
+			cur_name="$$(git config --file $(HOME)/.gitconfig --get user.name 2>/dev/null || true)"; \
+			cur_email="$$(git config --file $(HOME)/.gitconfig --get user.email 2>/dev/null || true)"; \
+			[ -n "$$cur_name" ] && git config --file $(HOME)/.config/git/local.gitconfig user.name "$$cur_name"; \
+			[ -n "$$cur_email" ] && git config --file $(HOME)/.config/git/local.gitconfig user.email "$$cur_email"; \
+		fi; \
+		[ -f $(HOME)/.gitconfig.pre-dotfiles ] || mv $(HOME)/.gitconfig $(HOME)/.gitconfig.pre-dotfiles; \
+	fi
 	ln -sf $(ROOT_DIR)/shell/zshrc $(HOME)/.zshrc
 	ln -sf $(ROOT_DIR)/shell/gitconfig $(HOME)/.gitconfig
 	ln -sf $(ROOT_DIR)/shell/starship.toml $(HOME)/.config/starship.toml
@@ -148,15 +160,24 @@ devai:
 	@echo "==> Instalando herramientas de IA..."
 	bash scripts/devai.sh
 
-# 7. Entorno de Escritorio (GNOME)
+# 7. Entorno de Escritorio (GNOME fallback estándar)
 desktop:
-	@echo "==> Configurando escritorio GNOME..."
+	@echo "==> Manteniendo escritorio GNOME estándar y directorios de trabajo..."
 	bash scripts/desktop.sh
 
 # 7b. Perfil opcional Hyprland (no reemplaza GNOME; solo Debian Stable)
 hyprland:
 	@echo "==> Configurando perfil opcional Hyprland..."
 	bash scripts/hyprland.sh
+
+# 7c. Perfiles locales de estación (no versionados; generan respaldo previo)
+hypr-desktop:
+	@echo "==> Aplicando perfil local de estación desktop..."
+	bash hypr/scripts/station-profile.sh apply desktop --force
+
+hypr-laptop:
+	@echo "==> Aplicando perfil local de estación notebook..."
+	bash hypr/scripts/station-profile.sh apply laptop --force
 
 # 8. Verificación de salud
 verify:

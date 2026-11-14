@@ -36,6 +36,11 @@ keyname() {
         up)                 printf '↑' ;;
         down)               printf '↓' ;;
         Print)              printf 'Print' ;;
+        mouse:272)          printf 'Click Izq.' ;;
+        mouse:273)          printf 'Click Der.' ;;
+        mouse:274)          printf 'Click Medio' ;;
+        mouse_down)         printf 'Rueda ↓' ;;
+        mouse_up)           printf 'Rueda ↑' ;;
         XF86AudioRaiseVolume) printf 'Volumen +' ;;
         XF86AudioLowerVolume) printf 'Volumen -' ;;
         XF86AudioMute)      printf 'Mute' ;;
@@ -65,7 +70,7 @@ keyname() {
 format_binds() {
     hyprctl binds -j 2>/dev/null | jq -r '
         .[]
-        | select(.mouse == false and .key != "")
+        | select(.key != "")
         | [ (.modmask | tostring), .key, (.dispatcher // ""), (.arg // "") ]
         | @tsv
     '

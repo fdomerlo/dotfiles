@@ -4,7 +4,7 @@
 # Filosofía: NO rompe la idempotencia de install. Es seguro ejecutarlo N veces.
 #   - `make install`  -> converge todo desde cero (re-ejecutable).
 #   - `make update`   -> higiene APT (apt-maintenance.sh) + fast-forward:
-#     APT only-upgrade + self-updates user-space.
+#     APT only-upgrade (desde manifiestos en packages/) + self-updates user-space.
 # No toca: claves SSH, `gh auth`, `/opt/Antigravity` (requiere tarball manual),
 #   shell por defecto (chsh), linger, ni registros de Podman.
 set -euo pipefail
@@ -12,10 +12,34 @@ set -euo pipefail
 export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/local/bin:$PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ZSHRC_REPO="$REPO_DIR/shell/zshrc"
+
+# shellcheck source=scripts/lib/packages.sh
+source "$REPO_DIR/scripts/lib/packages.sh"
 
 warn() { echo "  ⚠️ $1"; }
 ok()   { echo "  ✔ $1"; }
 step() { echo; echo "==> $1"; }
+
+# Guarda para evitar que instaladores remotos ensucien shell/zshrc versionado
+run_with_zshrc_guard() {
+    local snapshot="" rc=0
+    if [[ -f "$ZSHRC_REPO" ]]; then
+        snapshot="$(mktemp)"
+        cp "$ZSHRC_REPO" "$snapshot"
+    fi
+
+    "$@" || rc=$?
+
+    if [[ -n "$snapshot" ]]; then
+        if [[ -f "$ZSHRC_REPO" ]] && ! cmp -s "$snapshot" "$ZSHRC_REPO"; then
+            cp "$snapshot" "$ZSHRC_REPO"
+        fi
+        rm -f "$snapshot"
+    fi
+    return "$rc"
+}
 
 # ------------------------------------------------------------------------------
 # 0. Pre-vuelos (no fatal)
@@ -35,53 +59,32 @@ step "Actualizando paquetes APT gestionados (--only-upgrade)..."
 if command -v apt-get &>/dev/null; then
     sudo apt-get update -y || warn "apt-get update falló, continúo con caché local."
 
-    # Candidatos gestionados por host/setup.sh, host/timeshift.sh, ohmyzsh.sh,
-    # devtools.sh, tooling.sh y scripts/hyprland.sh.
-    CANDIDATES=(
-        git curl wget jq unzip zip ca-certificates gnupg lsb-release
-        build-essential
-        ripgrep fd-find fzf bat btop mc direnv wl-clipboard 7zip ffmpeg chafa
-        zoxide atuin starship tmux neovim
-        zathura zathura-pdf-poppler imv
-        gnome-keyring seahorse libsecret-tools
-        remmina remmina-plugin-rdp remmina-plugin-vnc remmina-plugin-secret
-        wireshark tshark
-        fonts-firacode fonts-jetbrains-mono fonts-noto-core
-        gnome-shell-extension-dashtodock
-        flatpak gnome-software-plugin-flatpak xdg-desktop-portal-gnome
-        libglib2.0-bin
-        fuse3 libfuse2t64 libfuse2
-        uidmap dbus-user-session iptables
-        podman crun buildah skopeo podman-compose passt slirp4netns catatonit
-        timeshift cron
-        zsh gh
-    )
-    # VS Code si su repo está configurado (legacy .list o DEB822 .sources);
-    # Chrome solo si está instalado.
-    if [ -f /etc/apt/sources.list.d/vscode.list ] || [ -f /etc/apt/sources.list.d/vscode.sources ]; then
-        CANDIDATES+=(code)
-    fi
-    if dpkg -s google-chrome-stable &>/dev/null; then
-        CANDIDATES+=(google-chrome-stable)
-    fi
+    BASE_APT_PKGS=()
+    OPT_APT_PKGS=()
+    read_manifest "$REPO_DIR/packages/apt-base.txt" BASE_APT_PKGS
+    read_manifest "$REPO_DIR/packages/apt-optional.txt" OPT_APT_PKGS
 
     # Paquetes del perfil opcional Hyprland: compartidos con scripts/hyprland.sh.
     # shellcheck source=scripts/hyprland-packages.sh
     source "$SCRIPT_DIR/hyprland-packages.sh"
-    HYPR_CANDIDATES=(
+
+    CANDIDATES=(
+        "${BASE_APT_PKGS[@]}"
+        "${OPT_APT_PKGS[@]}"
         "${HYPR_BACKPORTS_PKGS[@]}"
         "${HYPR_MAIN_PKGS[@]}"
-        pipewire
     )
-    CANDIDATES+=("${HYPR_CANDIDATES[@]}")
 
-    # Deduplicar preservando el orden: hay paquetes compartidos con la base.
+    # Deduplicar preservando el orden: hay paquetes compartidos entre manifiestos.
     mapfile -t CANDIDATES < <(printf '%s\n' "${CANDIDATES[@]}" | awk '!seen[$0]++')
 
     # Filtrar a paquetes realmente instalados (--only-upgrade no instala nuevos,
     # pero filtrar evita ruido y errores si el repo de un candidato falta).
     TO_UPGRADE=()
     for pkg in "${CANDIDATES[@]}"; do
+        if [ "$pkg" = "code" ] && [ ! -f /etc/apt/sources.list.d/vscode.list ] && [ ! -f /etc/apt/sources.list.d/vscode.sources ]; then
+            continue
+        fi
         if dpkg -s "$pkg" &>/dev/null; then
             TO_UPGRADE+=("$pkg")
         fi
@@ -98,11 +101,50 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 2. Managers user-space: uv, fnm, sdkman, yazi
+# 2. Managers user-space: gh, uv, fnm, sdkman, yazi, lazydocker
 # ------------------------------------------------------------------------------
+step "Actualizando GitHub CLI (gh user-space)..."
+if [ -x "$HOME/.local/bin/gh" ]; then
+    DET_ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
+    if [ "$DET_ARCH" = "amd64" ] || [ "$DET_ARCH" = "x86_64" ]; then
+        GH_ARCH="amd64"
+    elif [ "$DET_ARCH" = "arm64" ] || [ "$DET_ARCH" = "aarch64" ]; then
+        GH_ARCH="arm64"
+    else
+        GH_ARCH=""
+    fi
+    if [ -n "$GH_ARCH" ]; then
+        GH_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/cli/cli/releases/latest 2>/dev/null || echo "")
+        GH_VERSION="${GH_LATEST_URL##*/}"
+        GH_CUR_VER="$("$HOME/.local/bin/gh" --version 2>/dev/null | awk '/^gh version / {print $3; exit}' || true)"
+        if [ -n "$GH_VERSION" ] && [ "$GH_VERSION" != "latest" ]; then
+            if [ -n "$GH_CUR_VER" ] && [ "$GH_CUR_VER" = "${GH_VERSION#v}" ]; then
+                ok "gh ya está al día ($GH_VERSION)."
+            else
+                TMP_DIR=$(mktemp -d)
+                GH_VER_NUM="${GH_VERSION#v}"
+                if curl -fsSL "https://github.com/cli/cli/releases/download/${GH_VERSION}/gh_${GH_VER_NUM}_linux_${GH_ARCH}.tar.gz" -o "$TMP_DIR/gh.tar.gz" 2>/dev/null \
+                    && tar -xzf "$TMP_DIR/gh.tar.gz" -C "$TMP_DIR" --strip-components=1 2>/dev/null \
+                    && [ -f "$TMP_DIR/bin/gh" ]; then
+                    mv "$TMP_DIR/bin/gh" "$HOME/.local/bin/gh"
+                    chmod +x "$HOME/.local/bin/gh"
+                    ok "gh actualizado ($GH_VERSION)."
+                else
+                    warn "no se pudo descargar actualización de gh."
+                fi
+                rm -rf "$TMP_DIR"
+            fi
+        fi
+    fi
+elif command -v gh &>/dev/null; then
+    ok "gh gestionado fuera de ~/.local/bin."
+else
+    warn "gh no instalado (ejecuta 'make devtools')."
+fi
+
 step "Actualizando uv (Python)..."
 if command -v uv &>/dev/null || [ -x "$HOME/.local/bin/uv" ]; then
-    (uv self update 2>/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh) || warn "no se pudo actualizar uv."
+    (uv self update 2>/dev/null || curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh) || warn "no se pudo actualizar uv."
     ok "uv: $("$HOME/.local/bin/uv" --version 2>/dev/null || uv --version 2>/dev/null || echo presente)"
 else
     warn "uv no instalado (ejecuta 'make devtools')."
@@ -138,18 +180,24 @@ if command -v yazi &>/dev/null || [ -f "$HOME/.local/bin/yazi" ]; then
     if [ -n "$YAZI_TARGET" ]; then
         YAZI_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/sxyazi/yazi/releases/latest 2>/dev/null || echo "")
         YAZI_VERSION="${YAZI_LATEST_URL##*/}"
+        YAZI_CUR_VER="$(yazi --version 2>/dev/null | awk '/Version:/ {print $2; exit} /^Yazi [0-9]/ {print $2; exit}' || true)"
         if [ -n "$YAZI_VERSION" ] && [ "$YAZI_VERSION" != "latest" ]; then
-            TMP_DIR=$(mktemp -d)
-            if curl -fsSL -o "$TMP_DIR/yazi.zip" "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-${YAZI_TARGET}.zip" 2>/dev/null; then
-                unzip -q "$TMP_DIR/yazi.zip" -d "$TMP_DIR"
-                mv "$TMP_DIR/yazi-${YAZI_TARGET}/yazi" "$HOME/.local/bin/yazi"
-                [ -f "$TMP_DIR/yazi-${YAZI_TARGET}/ya" ] && mv "$TMP_DIR/yazi-${YAZI_TARGET}/ya" "$HOME/.local/bin/ya" && chmod +x "$HOME/.local/bin/ya"
-                chmod +x "$HOME/.local/bin/yazi"
-                ok "Yazi actualizado ($YAZI_VERSION)."
+            if [ -n "$YAZI_CUR_VER" ] && [ "$YAZI_CUR_VER" = "${YAZI_VERSION#v}" ]; then
+                ok "Yazi ya está al día ($YAZI_VERSION)."
             else
-                warn "no se pudo descargar actualización de Yazi."
+                TMP_DIR=$(mktemp -d)
+                if curl -fsSL -o "$TMP_DIR/yazi.zip" "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-${YAZI_TARGET}.zip" 2>/dev/null \
+                    && unzip -tq "$TMP_DIR/yazi.zip" >/dev/null 2>&1; then
+                    unzip -q "$TMP_DIR/yazi.zip" -d "$TMP_DIR"
+                    mv "$TMP_DIR/yazi-${YAZI_TARGET}/yazi" "$HOME/.local/bin/yazi"
+                    [ -f "$TMP_DIR/yazi-${YAZI_TARGET}/ya" ] && mv "$TMP_DIR/yazi-${YAZI_TARGET}/ya" "$HOME/.local/bin/ya" && chmod +x "$HOME/.local/bin/ya"
+                    chmod +x "$HOME/.local/bin/yazi"
+                    ok "Yazi actualizado ($YAZI_VERSION)."
+                else
+                    warn "no se pudo descargar actualización de Yazi."
+                fi
+                rm -rf "$TMP_DIR"
             fi
-            rm -rf "$TMP_DIR"
         fi
     fi
 else
@@ -169,17 +217,22 @@ if command -v lazydocker &>/dev/null || [ -f "$HOME/.local/bin/lazydocker" ]; th
     if [ -n "$LZD_ARCH" ]; then
         LZD_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/jesseduffield/lazydocker/releases/latest 2>/dev/null || echo "")
         LZD_VERSION="${LZD_LATEST_URL##*/}"
+        LZD_CUR_VER="$(lazydocker --version 2>/dev/null | awk -F': ' '/^Version:/ {print $2; exit}' || true)"
         if [ -n "$LZD_VERSION" ] && [ "$LZD_VERSION" != "latest" ]; then
-            LZD_VER_NUM="${LZD_VERSION#v}"
-            TMP_DIR=$(mktemp -d)
-            if curl -fsSL "https://github.com/jesseduffield/lazydocker/releases/download/${LZD_VERSION}/lazydocker_${LZD_VER_NUM}_Linux_${LZD_ARCH}.tar.gz" | tar -xz -C "$TMP_DIR" 2>/dev/null; then
-                mv "$TMP_DIR/lazydocker" "$HOME/.local/bin/lazydocker"
-                chmod +x "$HOME/.local/bin/lazydocker"
-                ok "Lazydocker actualizado ($LZD_VERSION)."
+            if [ -n "$LZD_CUR_VER" ] && [ "$LZD_CUR_VER" = "${LZD_VERSION#v}" ]; then
+                ok "Lazydocker ya está al día ($LZD_VERSION)."
             else
-                warn "no se pudo descargar actualización de Lazydocker."
+                LZD_VER_NUM="${LZD_VERSION#v}"
+                TMP_DIR=$(mktemp -d)
+                if curl -fsSL "https://github.com/jesseduffield/lazydocker/releases/download/${LZD_VERSION}/lazydocker_${LZD_VER_NUM}_Linux_${LZD_ARCH}.tar.gz" | tar -xz -C "$TMP_DIR" 2>/dev/null; then
+                    mv "$TMP_DIR/lazydocker" "$HOME/.local/bin/lazydocker"
+                    chmod +x "$HOME/.local/bin/lazydocker"
+                    ok "Lazydocker actualizado ($LZD_VERSION)."
+                else
+                    warn "no se pudo descargar actualización de Lazydocker."
+                fi
+                rm -rf "$TMP_DIR"
             fi
-            rm -rf "$TMP_DIR"
         fi
     fi
 else
@@ -191,7 +244,7 @@ fi
 # ------------------------------------------------------------------------------
 step "Actualizando Zed editor..."
 if command -v zed &>/dev/null || [ -f "$HOME/.local/bin/zed" ]; then
-    curl -f https://zed.dev/install.sh | sh || warn "no se pudo actualizar Zed."
+    curl -fsSL https://zed.dev/install.sh | sh || warn "no se pudo actualizar Zed."
     ok "Zed actualizado."
 else
     warn "Zed no instalado (ejecuta 'make tooling')."
@@ -208,17 +261,25 @@ if [ -d "$HOME/.local/share/neovim" ]; then
         NVIM_ARCH=""
     fi
     if [ -n "$NVIM_ARCH" ]; then
-        TMP_DIR=$(mktemp -d)
-        if curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" -o "$TMP_DIR/nvim.tar.gz" 2>/dev/null; then
-            tar -xzf "$TMP_DIR/nvim.tar.gz" -C "$TMP_DIR"
-            rm -rf "$HOME/.local/share/neovim"
-            mv "$TMP_DIR/nvim-linux-${NVIM_ARCH}" "$HOME/.local/share/neovim"
-            ln -sf "$HOME/.local/share/neovim/bin/nvim" "$HOME/.local/bin/nvim"
-            ok "Neovim actualizado en ~/.local/bin/nvim."
+        NVIM_LATEST_URL=$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/neovim/neovim/releases/latest 2>/dev/null || echo "")
+        NVIM_VERSION="${NVIM_LATEST_URL##*/}"
+        NVIM_CUR_VER="$("$HOME/.local/bin/nvim" --version 2>/dev/null | awk 'NR==1 {print $2}' || true)"
+        if [ -n "$NVIM_VERSION" ] && [ "$NVIM_VERSION" != "latest" ] && [ -n "$NVIM_CUR_VER" ] && [ "$NVIM_CUR_VER" = "$NVIM_VERSION" ]; then
+            ok "Neovim ya está al día ($NVIM_VERSION)."
         else
-            warn "no se pudo descargar la última versión de Neovim."
+            TMP_DIR=$(mktemp -d)
+            if curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" -o "$TMP_DIR/nvim.tar.gz" 2>/dev/null \
+                && tar -xzf "$TMP_DIR/nvim.tar.gz" -C "$TMP_DIR" 2>/dev/null \
+                && [ -d "$TMP_DIR/nvim-linux-${NVIM_ARCH}" ]; then
+                rm -rf "$HOME/.local/share/neovim"
+                mv "$TMP_DIR/nvim-linux-${NVIM_ARCH}" "$HOME/.local/share/neovim"
+                ln -sf "$HOME/.local/share/neovim/bin/nvim" "$HOME/.local/bin/nvim"
+                ok "Neovim actualizado en ~/.local/bin/nvim (${NVIM_VERSION:-latest})."
+            else
+                warn "no se pudo descargar la última versión de Neovim."
+            fi
+            rm -rf "$TMP_DIR"
         fi
-        rm -rf "$TMP_DIR"
     fi
 elif command -v nvim &>/dev/null; then
     ok "Neovim gestionado por APT."
@@ -237,9 +298,17 @@ fi
 # ------------------------------------------------------------------------------
 # 4. IA: OpenCode CLI + Antigravity CLI (+ convergencia /opt sin re-extraer)
 # ------------------------------------------------------------------------------
+install_opencode() {
+    curl -fsSL https://opencode.ai/v2/install | bash
+}
+
+install_antigravity_cli() {
+    curl -fsSL https://antigravity.google/cli/install.sh | bash
+}
+
 step "Actualizando OpenCode CLI..."
-if command -v opencode &>/dev/null; then
-    curl -fsSL https://opencode.ai/v2/install | bash || warn "no se pudo actualizar OpenCode."
+if command -v opencode &>/dev/null || [ -x "$HOME/.opencode/bin/opencode" ]; then
+    run_with_zshrc_guard install_opencode || warn "no se pudo actualizar OpenCode."
     ok "OpenCode actualizado."
 else
     warn "opencode no instalado (ejecuta 'make devai')."
@@ -251,7 +320,7 @@ step "Convergencia Antigravity (/opt + CLI)..."
 bash "$SCRIPT_DIR/setup_agy.sh" || warn "setup_agy.sh falló."
 # Forzar CLI a última versión aunque ya existiera (setup_agy solo instala si falta).
 if command -v agy &>/dev/null || [ -f "$HOME/.local/bin/agy" ]; then
-    curl -fsSL https://antigravity.google/cli/install.sh | bash || warn "no se pudo actualizar Antigravity CLI."
+    run_with_zshrc_guard install_antigravity_cli || warn "no se pudo actualizar Antigravity CLI."
     [ -f "$HOME/.local/bin/agy" ] && ln -sf "$HOME/.local/bin/agy" "$HOME/.local/bin/antigravity-cli"
     ok "Antigravity CLI actualizado."
 fi
@@ -300,7 +369,16 @@ ok "Caché de tipografías al día."
 # ------------------------------------------------------------------------------
 if command -v flatpak &>/dev/null; then
     step "Actualizando aplicaciones Flatpak..."
-    flatpak update -y 2>/dev/null || warn "flatpak update devolvió advertencias."
+    flatpak update -y --noninteractive 2>/dev/null || flatpak update -y 2>/dev/null || warn "flatpak update devolvió advertencias."
+    FLATPAK_APPS=()
+    read_manifest "$REPO_DIR/packages/flatpak.txt" FLATPAK_APPS
+    missing_flatpaks=()
+    for app_id in "${FLATPAK_APPS[@]}"; do
+        flatpak info "$app_id" &>/dev/null || missing_flatpaks+=("$app_id")
+    done
+    if [ "${#missing_flatpaks[@]}" -gt 0 ]; then
+        warn "Flatpaks del manifiesto ausentes (${missing_flatpaks[*]}). Ejecuta 'make tooling' si deseas instalarlos."
+    fi
     ok "Aplicaciones Flatpak al día."
 fi
 

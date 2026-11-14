@@ -8,8 +8,13 @@ fi
 
 export PATH="$HOME/.local/bin:$PATH"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=scripts/lib/packages.sh
+source "$REPO_DIR/scripts/lib/packages.sh"
+
 echo "================================================================="
-echo "==> Instalando navegadores y editores (VS Code, Chrome, Zed, Neovim)..."
+echo "==> Instalando navegadores y editores (Brave, Chrome, VS Code, Zed, Neovim)..."
 echo "================================================================="
 
 # 1. Visual Studio Code (APT Oficial en formato canónico DEB822 para Debian)
@@ -36,22 +41,54 @@ else
     echo "✔ Visual Studio Code ya está instalado"
 fi
 
-# 2. Google Chrome Stable
+# 2. Brave Browser (APT Oficial DEB822 para amd64 / arm64; nuevo navegador predeterminado)
+if [ ! -f "/etc/apt/sources.list.d/brave-browser-release.sources" ] && [ ! -f "/etc/apt/sources.list.d/brave-browser-release.list" ]; then
+    DET_ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
+    if [ "$DET_ARCH" = "amd64" ] || [ "$DET_ARCH" = "x86_64" ] || [ "$DET_ARCH" = "arm64" ] || [ "$DET_ARCH" = "aarch64" ]; then
+        echo "==> Configurando repositorio oficial de Brave Browser (DEB822)..."
+        sudo install -m 0755 -d /usr/share/keyrings
+        sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
+            https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+        sudo chmod a+r /usr/share/keyrings/brave-browser-archive-keyring.gpg
+        sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
+            https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
+        sudo apt-get update -y
+    else
+        echo "⚠️ Brave Browser oficial soporta amd64 y arm64 (detectado: $DET_ARCH); omitiendo."
+    fi
+fi
+
+if ! command -v brave-browser &> /dev/null; then
+    if [ -f "/etc/apt/sources.list.d/brave-browser-release.sources" ] || [ -f "/etc/apt/sources.list.d/brave-browser-release.list" ]; then
+        echo "==> Instalando Brave Browser..."
+        sudo apt-get install -y brave-browser
+        echo "✔ Brave Browser instalado"
+    fi
+else
+    echo "✔ Brave Browser ya está instalado"
+fi
+
+# 3. Google Chrome Stable (solo disponible oficialmente para amd64)
 if ! command -v google-chrome &> /dev/null; then
-    echo "==> Instalando Google Chrome Stable..."
-    CHROME_DEB="/tmp/google-chrome-stable_current_amd64.deb"
-    curl -fsSL "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -o "$CHROME_DEB"
-    sudo apt-get install -y "$CHROME_DEB" || {
-        echo "Corrigiendo dependencias para Chrome..."
-        sudo apt-get install -f -y
-    }
-    rm -f "$CHROME_DEB"
-    echo "✔ Google Chrome instalado"
+    DET_ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
+    if [ "$DET_ARCH" = "amd64" ] || [ "$DET_ARCH" = "x86_64" ]; then
+        echo "==> Instalando Google Chrome Stable..."
+        CHROME_DEB="$(mktemp /tmp/google-chrome-stable_XXXXXX.deb)"
+        curl -fsSL "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" -o "$CHROME_DEB"
+        sudo apt-get install -y "$CHROME_DEB" || {
+            echo "Corrigiendo dependencias para Chrome..."
+            sudo apt-get install -f -y
+        }
+        rm -f "$CHROME_DEB"
+        echo "✔ Google Chrome instalado"
+    else
+        echo "⚠️ Google Chrome oficial solo publica paquetes .deb para amd64 (detectado: $DET_ARCH); omitiendo."
+    fi
 else
     echo "✔ Google Chrome ya está instalado"
 fi
 
-# 3. Zed Editor (Instalación nativa oficial de usuario)
+# 4. Zed Editor (Instalación nativa oficial de usuario)
 if ! command -v zed &> /dev/null && [ ! -f "$HOME/.local/bin/zed" ]; then
     echo "==> Instalando Zed Editor..."
     curl -f https://zed.dev/install.sh | sh
@@ -60,7 +97,7 @@ else
     echo "✔ Zed ya está instalado"
 fi
 
-# 4. Neovim (Editor de terminal extensible en espacio de usuario / APT)
+# 5. Neovim (Editor de terminal extensible en espacio de usuario / APT)
 if ! command -v nvim &> /dev/null && [ ! -f "$HOME/.local/bin/nvim" ]; then
     echo "==> Instalando Neovim..."
     DET_ARCH=$(dpkg --print-architecture 2>/dev/null || uname -m)
@@ -100,7 +137,7 @@ if [ -f "$HOME/.local/share/neovim/share/applications/nvim.desktop" ]; then
     update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
 fi
 
-# 5. Herramientas Sysadmin APT (Remmina RDP/VNC + Wireshark sin root)
+# 6. Herramientas Sysadmin APT (Remmina RDP/VNC + Wireshark sin root)
 SYSADMIN_APT=()
 for spkg in remmina remmina-plugin-rdp remmina-plugin-vnc remmina-plugin-secret wireshark tshark; do
     if ! dpkg -s "$spkg" &>/dev/null; then
@@ -122,16 +159,10 @@ else
     echo "✔ Remmina y Wireshark ya están instalados"
 fi
 
-# 6. Suite de Aplicaciones Flatpak (Firefox estándar, LibreOffice, DBeaver, Bruno, Obsidian, Super Productivity)
+# 7. Suite de Aplicaciones Flatpak (manifiesto packages/flatpak.txt, mantiene Firefox)
 if command -v flatpak &> /dev/null; then
-    FLATPAK_APPS=(
-        org.mozilla.firefox
-        org.libreoffice.LibreOffice
-        io.dbeaver.DBeaverCommunity
-        com.usebruno.Bruno
-        md.obsidian.Obsidian
-        com.super_productivity.SuperProductivity
-    )
+    FLATPAK_APPS=()
+    read_manifest "$REPO_DIR/packages/flatpak.txt" FLATPAK_APPS
     for app_id in "${FLATPAK_APPS[@]}"; do
         if flatpak info "$app_id" &> /dev/null; then
             echo "✔ Flatpak ya instalado: $app_id"
@@ -142,17 +173,23 @@ if command -v flatpak &> /dev/null; then
                 echo "  ⚠️ No se pudo instalar $app_id en modo no interactivo"
         fi
     done
+fi
 
-    # Configurar Firefox (Flatpak) como navegador predeterminado del sistema
-    if flatpak info org.mozilla.firefox &> /dev/null && command -v xdg-settings &> /dev/null; then
-        xdg-settings set default-web-browser org.mozilla.firefox.desktop 2>/dev/null || true
-        if command -v xdg-mime &> /dev/null; then
-            xdg-mime default org.mozilla.firefox.desktop x-scheme-handler/http x-scheme-handler/https text/html application/xhtml+xml 2>/dev/null || true
-        fi
-        echo "✔ Firefox (Flatpak) configurado como navegador predeterminado (Chrome disponible para pruebas)"
+# 8. Navegador predeterminado: Brave Browser (soporte PWAs), manteniendo Firefox y Chrome
+if command -v brave-browser &> /dev/null && command -v xdg-settings &> /dev/null; then
+    xdg-settings set default-web-browser brave-browser.desktop 2>/dev/null || true
+    if command -v xdg-mime &> /dev/null; then
+        xdg-mime default brave-browser.desktop x-scheme-handler/http x-scheme-handler/https text/html application/xhtml+xml 2>/dev/null || true
     fi
+    echo "✔ Brave Browser configurado como navegador predeterminado (Firefox y Chrome disponibles)"
+elif command -v flatpak &> /dev/null && flatpak info org.mozilla.firefox &> /dev/null && command -v xdg-settings &> /dev/null; then
+    xdg-settings set default-web-browser org.mozilla.firefox.desktop 2>/dev/null || true
+    if command -v xdg-mime &> /dev/null; then
+        xdg-mime default org.mozilla.firefox.desktop x-scheme-handler/http x-scheme-handler/https text/html application/xhtml+xml 2>/dev/null || true
+    fi
+    echo "✔ Firefox (Flatpak) configurado como navegador predeterminado de respaldo"
 fi
 
 echo "================================================================="
-echo "✔ Tooling (Firefox, Chrome, LibreOffice, VS Code, Zed, Neovim, Sysadmin & Productividad) completado."
+echo "✔ Tooling (Brave, Firefox, Chrome, LibreOffice, VS Code, Zed, Neovim, Sysadmin & Productividad) completado."
 echo "================================================================="

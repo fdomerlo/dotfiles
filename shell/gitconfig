@@ -1,6 +1,3 @@
-[user]
-	name = fdomerlo
-	email = merlof@folp.unlp.edu.ar
 [init]
 	defaultBranch = main
 [pull]
@@ -20,3 +17,5 @@
 [credential "https://gist.github.com"]
 	helper =
 	helper = !$HOME/.local/bin/gh auth git-credential
+[include]
+	path = ~/.config/git/local.gitconfig

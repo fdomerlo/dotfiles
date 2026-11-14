@@ -9,8 +9,8 @@
 #   1. Elimina fuentes activas de Docker Inc (docker.list/docker.sources),
 #      purga la pila docker-ce/containerd.io/docker.io si está instalada y
 #      deshabilita sus servicios. Este repo es podman-only.
-#   2. Deduplica VS Code: si existe vscode.sources (DEB822),
-#      elimina el legacy vscode.list duplicado (mismo URI/suite/componente).
+#   2. Deduplica fuentes de terceros: si existe .sources (DEB822),
+#      elimina el legacy .list duplicado (VS Code, Brave).
 #   3. Gestiona repositorios oficiales de Debian Stable:
 #      - Completa Signed-By en backports si quedó vacío.
 #      - Elimina el archivo legacy de FastTrack (repo discontinuado en estos dotfiles).
@@ -82,12 +82,18 @@ fi
 systemctl disable --now docker.service docker.socket containerd.service 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
-# 2. VS Code: deduplicar legacy .list si ya existe el .sources DEB822
+# 2. Fuentes de terceros: deduplicar legacy .list si ya existe el .sources DEB822
 # ------------------------------------------------------------------------------
 if [ -f "$SOURCES_D/vscode.sources" ] && [ -f "$SOURCES_D/vscode.list" ]; then
     echo "  Deduplicando VS Code: eliminando vscode.list (se conserva vscode.sources DEB822)..."
     rm -f "$SOURCES_D/vscode.list"
     ok "VS Code deduplicado."
+fi
+
+if [ -f "$SOURCES_D/brave-browser-release.sources" ] && [ -f "$SOURCES_D/brave-browser-release.list" ]; then
+    echo "  Deduplicando Brave: eliminando brave-browser-release.list (se conserva .sources DEB822)..."
+    rm -f "$SOURCES_D/brave-browser-release.list"
+    ok "Brave deduplicado."
 fi
 
 # ------------------------------------------------------------------------------

@@ -1,0 +1,78 @@
+# ==============================================================================
+# Paquetes APT base (Debian Stable main) gestionados por host/setup.sh
+# y actualizados con --only-upgrade por scripts/update.sh.
+# ==============================================================================
+
+# Base, compilación y shell
+git
+curl
+wget
+jq
+unzip
+zip
+ca-certificates
+gnupg
+lsb-release
+build-essential
+zsh
+
+# Tríada CLI moderna y utilidades de terminal
+ripgrep
+fd-find
+fzf
+bat
+btop
+direnv
+wl-clipboard
+chafa
+mc
+7zip
+ffmpeg
+zoxide
+atuin
+starship
+tmux
+
+# Visores ligeros
+zathura
+zathura-pdf-poppler
+imv
+
+# Keyring y gestión de secretos
+gnome-keyring
+seahorse
+libsecret-tools
+
+# Sysadmin y VPN
+remmina
+remmina-plugin-rdp
+remmina-plugin-vnc
+remmina-plugin-secret
+wireshark
+tshark
+network-manager-openvpn
+network-manager-openvpn-gnome
+
+# Tipografías base del sistema (paquetes oficiales Debian)
+fonts-jetbrains-mono
+fonts-noto-core
+
+# Ecosistema Flatpak y FUSE base (libfuse2t64/libfuse2 se detecta dinámicamente)
+flatpak
+gnome-software-plugin-flatpak
+xdg-desktop-portal-gnome
+libglib2.0-bin
+fuse3
+
+# Podman Rootless (crun + passt/pasta)
+uidmap
+dbus-user-session
+iptables
+podman
+crun
+buildah
+skopeo
+podman-compose
+passt
+slirp4netns
+catatonit
