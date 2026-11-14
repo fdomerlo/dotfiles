@@ -2,8 +2,9 @@
 # ==============================================================================
 # Gestor y cambiador automático de Wallpaper para Hyprland / Wayland
 # - Selecciona wallpapers aleatorios (.png, .jpg, .jpeg, .webp)
-# - Prioriza carpetas específicas del tema activo (<dir>/<tema>/); si están
-#   vacías o no existen, cae a las carpetas globales
+# - Suma la carpeta genérica con las carpetas del tema activo (<dir>/<tema>/),
+#   si existen; así el tema agrupa fondos propios sin ocultar la colección
+#   general del usuario
 # - Modo daemon: rota periódicamente (por defecto cada 30 min / 1800 seg)
 # - Transición suave sin parpadeo negro
 # - Admite cambio a demanda con --next o enviando señal SIGUSR1
@@ -52,24 +53,23 @@ collect_from_dirs() {
     fi
 }
 
-# Obtener lista de todos los wallpapers disponibles (por tema primero, luego globales)
+# Obtener lista de todos los wallpapers disponibles: las carpetas del tema
+# activo se suman a las globales (no las reemplazan).
 get_wallpapers() {
+    local -a dirs=()
     local theme
     theme="$(active_theme || true)"
     if [ -n "$theme" ]; then
-        local themed=""
-        themed="$(collect_from_dirs \
-            "$USER_WALLPAPERS/$theme" \
-            "$PICTURES_ES/$theme" \
-            "$PICTURES_EN/$theme" \
-            "$HYPR_DIR/themes/$theme/wallpapers")"
-        if [ -n "$themed" ]; then
-            printf '%s\n' "$themed"
-            return 0
-        fi
+        dirs+=(
+            "$USER_WALLPAPERS/$theme"
+            "$PICTURES_ES/$theme"
+            "$PICTURES_EN/$theme"
+            "$HYPR_DIR/themes/$theme/wallpapers"
+        )
     fi
+    dirs+=("$USER_WALLPAPERS" "$PICTURES_ES" "$PICTURES_EN" "$REPO_WALLPAPERS")
 
-    collect_from_dirs "$USER_WALLPAPERS" "$PICTURES_ES" "$PICTURES_EN" "$REPO_WALLPAPERS"
+    collect_from_dirs "${dirs[@]}"
 }
 
 # Aplica una imagen de fondo específica

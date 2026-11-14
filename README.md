@@ -110,7 +110,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 
 - **`cyber-teal`:** estética glass redondeada con blur, sombras, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
 - **`mr-robot`:** estilo terminal plano con bordes acero, Smart Gaps sin márgenes con una sola ventana, tipografía `JetBrains Mono` y wallpaper por defecto [`cyber-tower.jpg`](hypr/themes/mr-robot/wallpapers/cyber-tower.jpg).
-- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` (o `~/.config/hypr/wallpapers/<tema>/`) y rota con `Super+W`.
+- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés agruparlas por tema, en `~/.config/hypr/wallpapers/<tema>/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`.
 
 ### Personalización local (sin ensuciar Git)
 
