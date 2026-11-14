@@ -11,6 +11,15 @@ ShellRoot {
     property int selectedWorkspaceId: -1
     property bool tabNavigated: false
 
+    property bool launcherOpen: false
+    property string launcherTab: "apps"
+    property string launcherSearchQuery: ""
+    property var launcherScreen: null
+    property string activeThemeName: ""
+    property bool recordingActive: false
+    property bool nightlightActive: false
+    property var pendingCmd: null
+
     readonly property string wallpaperStatePath: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/hypr_current_wallpaper"
     readonly property string wallpaperName: {
         if (!wallpaperStateFile.loaded)
@@ -37,6 +46,41 @@ ShellRoot {
         interval: 1500
         repeat: false
         onTriggered: wallpaperStateFile.reload()
+    }
+
+    Process {
+        id: launcherStateProbe
+        command: [
+            "sh", "-c",
+            "t=$(readlink \"$HOME/.config/hypr/themes/active\" 2>/dev/null || true); " +
+            "t=${t##*/}; " +
+            "r=0; pgrep -x wf-recorder >/dev/null 2>&1 && r=1; " +
+            "n=0; [ -f \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr-nightlight.state\" ] && n=1; " +
+            "printf '%s|%s|%s\\n' \"$t\" \"$r\" \"$n\""
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = String(text || "").trim().split("|");
+                if (parts.length >= 3) {
+                    root.activeThemeName = parts[0] || "";
+                    root.recordingActive = (parts[1] === "1");
+                    root.nightlightActive = (parts[2] === "1");
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: delayedExecTimer
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (root.pendingCmd && root.pendingCmd.length > 0) {
+                const cmd = root.pendingCmd;
+                root.pendingCmd = null;
+                Quickshell.execDetached(cmd);
+            }
+        }
     }
 
     function orderedWorkspaceIds() {
@@ -68,7 +112,23 @@ ShellRoot {
         return ids;
     }
 
+    function resolveFocusedScreen() {
+        const fm = Hyprland.focusedMonitor;
+        const screens = Quickshell.screens;
+        if (!screens || screens.length === 0)
+            return null;
+        if (fm) {
+            for (let i = 0; i < screens.length; i++) {
+                if (screens[i].name === fm.name)
+                    return screens[i];
+            }
+        }
+        return screens[0];
+    }
+
     function openOverview() {
+        if (launcherOpen)
+            closeLauncher();
         searchQuery = "";
         tabNavigated = false;
         Hyprland.refreshMonitors();
@@ -96,6 +156,70 @@ ShellRoot {
             closeOverview();
         } else {
             openOverview();
+        }
+    }
+
+    function openLauncher(tabId) {
+        if (overviewOpen)
+            closeOverview();
+        Hyprland.refreshMonitors();
+        launcherScreen = resolveFocusedScreen();
+        launcherSearchQuery = "";
+        launcherTab = tabId || "apps";
+        if (!launcherStateProbe.running) {
+            launcherStateProbe.running = true;
+        }
+        launcherOpen = true;
+    }
+
+    function closeLauncher() {
+        launcherOpen = false;
+        launcherSearchQuery = "";
+    }
+
+    function toggleLauncher(tabId) {
+        if (launcherOpen) {
+            if (tabId && tabId !== launcherTab) {
+                launcherTab = tabId;
+            } else {
+                closeLauncher();
+            }
+        } else {
+            openLauncher(tabId);
+        }
+    }
+
+    function launchAppEntry(entry) {
+        if (!entry)
+            return;
+        closeLauncher();
+        if (entry.runInTerminal && entry.command && entry.command.length > 0) {
+            Quickshell.execDetached(["foot", "-e"].concat(entry.command));
+        } else {
+            entry.execute();
+        }
+    }
+
+    function launchAction(act) {
+        if (!act)
+            return;
+        closeLauncher();
+        if (act.actionType === "term-hold") {
+            const wrapped =
+                "export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/local/bin:$PATH\"; " +
+                act.termCmd +
+                "; rc=$?; printf '\\n[Estado: %s] Presioná cualquier tecla para cerrar...' \"$rc\"; read -rn1 -s _";
+            Quickshell.execDetached(["foot", "--title", act.termTitle || "Terminal", "-e", "bash", "-lc", wrapped]);
+            return;
+        }
+        if (act.delayMs && act.delayMs > 0) {
+            root.pendingCmd = act.cmd;
+            delayedExecTimer.interval = act.delayMs;
+            delayedExecTimer.restart();
+            return;
+        }
+        if (act.cmd && act.cmd.length > 0) {
+            Quickshell.execDetached(act.cmd);
         }
     }
 
@@ -153,6 +277,26 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "launcher"
+
+        function toggle(): void {
+            root.toggleLauncher("");
+        }
+
+        function open(): void {
+            root.openLauncher("apps");
+        }
+
+        function openTab(tabId: string): void {
+            root.toggleLauncher(tabId);
+        }
+
+        function close(): void {
+            root.closeLauncher();
+        }
+    }
+
+    IpcHandler {
         target: "wallpaper"
 
         function refresh(): void {
@@ -179,6 +323,26 @@ ShellRoot {
             onWindowSelected: toplevel => root.focusWindow(toplevel)
             onWorkspaceSelected: wsId => root.switchWorkspace(wsId)
         }
+    }
+
+    LauncherWindow {
+        screen: root.launcherScreen || (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
+        launcherOpen: root.launcherOpen
+        activeTab: root.launcherTab
+        searchQuery: root.launcherSearchQuery
+        activeTheme: root.activeThemeName
+        recordingActive: root.recordingActive
+        nightlightActive: root.nightlightActive
+        onTabSelected: tabId => {
+            root.launcherTab = tabId;
+        }
+        onSearchUpdated: text => {
+            root.launcherSearchQuery = text;
+        }
+        onCloseRequested: root.closeLauncher()
+        onAppActivated: entry => root.launchAppEntry(entry)
+        onActionActivated: act => root.launchAction(act)
+        onOverviewRequested: root.openOverview()
     }
 
     Variants {

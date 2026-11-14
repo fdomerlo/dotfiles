@@ -1,0 +1,1051 @@
+import QtQuick
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Wayland
+import Quickshell.Hyprland
+
+PanelWindow {
+    id: win
+
+    required property bool launcherOpen
+    required property string activeTab
+    required property string searchQuery
+    required property string activeTheme
+    required property bool recordingActive
+    required property bool nightlightActive
+
+    signal tabSelected(string tabId)
+    signal searchUpdated(string text)
+    signal closeRequested()
+    signal appActivated(var entry)
+    signal actionActivated(var actionObj)
+    signal overviewRequested()
+
+    readonly property var tabs: [
+        { id: "apps", label: "Apps", icon: "󰀻" },
+        { id: "capturar", label: "Capturar", icon: "󰄀" },
+        { id: "estilo", label: "Estilo", icon: "󰏘" },
+        { id: "sistema", label: "Sistema", icon: "󰒓" },
+        { id: "dev", label: "Dev & IA", icon: "󰅬" }
+    ]
+
+    property int selectedIndex: 0
+    property int desktopVersion: 0
+
+    Connections {
+        target: DesktopEntries
+        function onApplicationsChanged() {
+            win.desktopVersion += 1;
+        }
+    }
+
+    function normalizeText(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function scoreItem(title, subtitle, keywords, queryNorm) {
+        if (!queryNorm)
+            return 1;
+        const t = normalizeText(title);
+        const s = normalizeText(subtitle);
+        const k = normalizeText(keywords);
+
+        if (t === queryNorm)
+            return 1000;
+        if (t.indexOf(queryNorm) === 0)
+            return 700;
+
+        const words = t.split(/[\s\-_\/:()]+/);
+        for (let i = 0; i < words.length; i++) {
+            if (words[i].indexOf(queryNorm) === 0)
+                return 520;
+        }
+        if (t.indexOf(queryNorm) !== -1)
+            return 350;
+        if (s.indexOf(queryNorm) !== -1)
+            return 200;
+        if (k.indexOf(queryNorm) !== -1)
+            return 130;
+
+        // Soporte para búsqueda multi-palabra (ej. "cap swappy", "brave pwa")
+        const tokens = queryNorm.split(/\s+/).filter(tok => tok.length > 0);
+        if (tokens.length > 1) {
+            const haystack = t + " " + s + " " + k;
+            let allMatch = true;
+            for (let j = 0; j < tokens.length; j++) {
+                if (haystack.indexOf(tokens[j]) === -1) {
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch)
+                return 240;
+        }
+        return 0;
+    }
+
+    function buildActionCatalog() {
+        const themeLabel = activeTheme || "ninguno";
+        return [
+            // Capturar
+            {
+                kind: "action",
+                category: "capturar",
+                badge: "Capturar",
+                glyph: "󰆞",
+                title: "Captura de región (anotar con Swappy)",
+                subtitle: "Seleccionar área y editar o copiar",
+                keywords: "screenshot captura region swappy recortar imagen",
+                actionType: "capture",
+                delayMs: 220,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-region.sh\""]
+            },
+            {
+                kind: "action",
+                category: "capturar",
+                badge: "Capturar",
+                glyph: "󰆟",
+                title: "Captura de región al portapapeles",
+                subtitle: "Copiar selección directamente sin abrir editor",
+                keywords: "screenshot captura portapapeles raw copiar",
+                actionType: "capture",
+                delayMs: 220,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-region.sh\" --raw"]
+            },
+            {
+                kind: "action",
+                category: "capturar",
+                badge: "Capturar",
+                glyph: "󰍹",
+                title: "Captura de pantalla completa",
+                subtitle: "Capturar todo el monitor enfocado",
+                keywords: "screenshot full pantalla completa print",
+                actionType: "capture",
+                delayMs: 260,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-full.sh\""]
+            },
+            {
+                kind: "action",
+                category: "capturar",
+                badge: "Capturar",
+                glyph: recordingActive ? "󰓛" : "󰑋",
+                title: recordingActive ? "Detener grabación en curso" : "Grabar pantalla (monitor actual)",
+                subtitle: recordingActive ? "Finalizar video actual con wf-recorder" : "Iniciar grabación MP4 del monitor activo",
+                keywords: "grabar video pantalla record wf-recorder detener",
+                actionType: "capture",
+                delayMs: 180,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screen-record.sh\""]
+            },
+            {
+                kind: "action",
+                category: "capturar",
+                badge: "Capturar",
+                glyph: "󰩭",
+                title: "Grabar región de pantalla",
+                subtitle: "Seleccionar área a grabar en video",
+                keywords: "grabar video region area slurp wf-recorder",
+                actionType: "capture",
+                delayMs: 220,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screen-record.sh\" --region"]
+            },
+            {
+                kind: "action",
+                category: "capturar",
+                badge: "Capturar",
+                glyph: "󰈊",
+                title: "Selector de color (Hex)",
+                subtitle: "Tomar color de pantalla con hyprpicker",
+                keywords: "color picker hex hyprpicker gotero",
+                actionType: "capture",
+                delayMs: 220,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/color-picker.sh\""]
+            },
+            {
+                kind: "action",
+                category: "capturar",
+                badge: "Capturar",
+                glyph: "󰊄",
+                title: "OCR de región (extraer texto)",
+                subtitle: "Reconocer texto de la pantalla al portapapeles",
+                keywords: "ocr texto tesseract copiar imagen",
+                actionType: "capture",
+                delayMs: 220,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ocr-region.sh\""]
+            },
+
+            // Estilo
+            {
+                kind: "action",
+                category: "estilo",
+                badge: "Estilo",
+                glyph: "󰔎",
+                title: "Elegir tema (actual: " + themeLabel + ")",
+                subtitle: "Abrir selector entre cyber-teal y mr-robot",
+                keywords: "tema theme cyber-teal mr-robot apariencia estilo",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Temas' \"$HOME/.config/hypr/scripts/theme-switch.sh\" menu"]
+            },
+            {
+                kind: "action",
+                category: "estilo",
+                badge: "Estilo",
+                glyph: "󰸉",
+                title: "Alternar tema rápido",
+                subtitle: "Cambiar inmediatamente al siguiente tema",
+                keywords: "tema toggle alternar cambiar estilo",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/theme-switch.sh\" toggle"]
+            },
+            {
+                kind: "action",
+                category: "estilo",
+                badge: "Estilo",
+                glyph: "󰸨",
+                title: "Siguiente wallpaper",
+                subtitle: "Rotar fondo de pantalla del tema activo",
+                keywords: "wallpaper fondo pantalla imagen siguiente",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/wallpaper.sh\" --next"]
+            },
+            {
+                kind: "action",
+                category: "estilo",
+                badge: "Estilo",
+                glyph: "󰖔",
+                title: nightlightActive ? "Desactivar luz nocturna (4000K)" : "Activar luz nocturna (4000K)",
+                subtitle: nightlightActive ? "Volver a temperatura neutra (6500K)" : "Aplicar filtro cálido con hyprsunset",
+                keywords: "luz nocturna nightlight filtro azul hyprsunset 4000k",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/nightlight-toggle.sh\""]
+            },
+            {
+                kind: "action",
+                category: "estilo",
+                badge: "Estilo",
+                glyph: "󰂚",
+                title: "Centro de notificaciones (SwayNC)",
+                subtitle: "Abrir o cerrar el panel de notificaciones",
+                keywords: "notificaciones swaync panel alertas",
+                actionType: "exec",
+                delayMs: 40,
+                cmd: ["swaync-client", "-t", "-sw"]
+            },
+
+            // Sistema
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰤨",
+                title: "Red y VPN (NetworkManager)",
+                subtitle: "Wi-Fi, conexiones y túneles VPN",
+                keywords: "red wifi network vpn nmcli internet",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Red:' \"$HOME/.config/hypr/scripts/network-menu.sh\""]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰕾",
+                title: "Audio (pavucontrol)",
+                subtitle: "Control de volumen, salidas y micrófonos",
+                keywords: "audio volumen sonido microfono pavucontrol pipewire",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["pavucontrol"]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰂯",
+                title: "Bluetooth (blueman)",
+                subtitle: "Emparejar y gestionar dispositivos Bluetooth",
+                keywords: "bluetooth auriculares dispositivos blueman",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["blueman-manager"]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰅌",
+                title: "Historial del portapapeles",
+                subtitle: "Buscar y pegar entradas recientes de cliphist",
+                keywords: "portapapeles clipboard historial pegar cliphist",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Portapapeles' \"$HOME/.config/hypr/scripts/clipboard.sh\""]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰈞",
+                title: "Buscar archivos",
+                subtitle: "Búsqueda rápida en HOME con fd + fuzzel",
+                keywords: "buscar archivos ficheros fd search",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Archivo:' \"$HOME/.config/hypr/scripts/file-search.sh\""]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰖟",
+                title: "Web Apps / PWAs (instalar, abrir, quitar)",
+                subtitle: "Gestionar aplicaciones web aisladas con Brave",
+                keywords: "webapp pwa brave instalar abrir quitar web",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Web Apps' \"$HOME/.config/hypr/scripts/webapp-install.sh\" menu"]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰍺",
+                title: "Escala y PPI de monitores",
+                subtitle: "Calcular y aplicar escala fraccional o entera",
+                keywords: "monitor escala ppi dpi pantalla resolucion",
+                actionType: "term-hold",
+                delayMs: 0,
+                termTitle: "Escala de monitores",
+                termCmd: "\"$HOME/.config/hypr/scripts/monitor-scale.sh\" --hyprconf"
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰌌",
+                title: "Cheatsheet de atajos",
+                subtitle: "Listar combinaciones de teclas activas en Hyprland",
+                keywords: "atajos keybinds teclas ayuda shortcuts",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Atajos' \"$HOME/.config/hypr/scripts/keybinds.sh\""]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰑐",
+                title: "Recargar configuración Hyprland",
+                subtitle: "Ejecutar hyprctl reload en caliente",
+                keywords: "recargar reload hyprland configuracion",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "if hyprctl reload >/dev/null 2>&1; then notify-send -a Hyprland 'Hyprland' 'Configuración recargada'; else notify-send -u critical -a Hyprland 'Hyprland' 'Error al recargar configuración'; fi"]
+            },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰐥",
+                title: "Energía y sesión",
+                subtitle: "Bloquear, suspender, reiniciar, apagar o cerrar sesión",
+                keywords: "energia sesion apagar reiniciar suspender bloquear power logout",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Sistema:' \"$HOME/.config/hypr/scripts/powermenu.sh\""]
+            },
+
+            // Dev & IA
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰆍",
+                title: "Terminal flotante (Scratchpad)",
+                subtitle: "Mostrar u ocultar terminal persistente",
+                keywords: "terminal scratchpad flotante foot consola",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/scratchpad.sh\""]
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰒍",
+                title: "Diagnóstico de estación (devctl doctor)",
+                subtitle: "Comprobar estado de herramientas, Podman y Hyprland",
+                keywords: "devctl doctor diagnostico chequeo sistema",
+                actionType: "term-hold",
+                delayMs: 0,
+                termTitle: "devctl doctor",
+                termCmd: "devctl doctor"
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰚰",
+                title: "Actualizar estación (devctl update)",
+                subtitle: "Actualizar paquetes APT, Flatpak y herramientas",
+                keywords: "devctl update actualizar upgrade",
+                actionType: "term-hold",
+                delayMs: 0,
+                termTitle: "devctl update",
+                termCmd: "devctl update"
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰃢",
+                title: "Limpieza profunda (devctl clean)",
+                subtitle: "Limpiar cachés APT, contenedores y huérfanos",
+                keywords: "devctl clean limpiar cache",
+                actionType: "term-hold",
+                delayMs: 0,
+                termTitle: "devctl clean",
+                termCmd: "devctl clean"
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰍛",
+                title: "Monitor de sistema (btop)",
+                subtitle: "CPU, RAM y procesos en ventana TUI flotante",
+                keywords: "btop monitor cpu ram procesos htop",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["foot", "--app-id=tui-float", "-e", "btop"]
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰡨",
+                title: "Contenedores (lazydocker)",
+                subtitle: "Gestionar contenedores Podman/Docker en TUI flotante",
+                keywords: "lazydocker podman docker contenedores tui",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["foot", "--app-id=tui-float", "-e", "lazydocker"]
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰉋",
+                title: "Gestor de archivos TUI (yazi)",
+                subtitle: "Explorar directorios y previsualizar en terminal flotante",
+                keywords: "yazi archivos gestor file manager tui",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["foot", "--app-id=tui-float", "-e", "yazi"]
+            }
+        ];
+    }
+
+    function appPinRank(entry) {
+        const id = String(entry.id || "").toLowerCase();
+        const pinned = [
+            "foot",
+            "brave-browser",
+            "org.gnome.nautilus",
+            "dev.zed.zed",
+            "code",
+            "antigravity",
+            "google-chrome",
+            "org.mozilla.firefox"
+        ];
+        for (let i = 0; i < pinned.length; i++) {
+            if (id === pinned[i] || id === pinned[i] + ".desktop")
+                return i + 1;
+        }
+        return 0;
+    }
+
+    function isWebAppEntry(entry) {
+        const id = String(entry.id || "").toLowerCase();
+        const execStr = String(entry.execString || "");
+        return id.indexOf("webapp-") === 0 || execStr.indexOf("--app=") !== -1;
+    }
+
+    readonly property var filteredItems: {
+        void(win.desktopVersion);
+        void(win.activeTheme);
+        void(win.recordingActive);
+        void(win.nightlightActive);
+
+        const q = normalizeText(win.searchQuery.trim());
+        const tab = win.activeTab || "apps";
+        const actions = buildActionCatalog();
+        const out = [];
+
+        if (tab === "apps") {
+            const rawApps = DesktopEntries.applications ? DesktopEntries.applications.values : [];
+            if (rawApps) {
+                for (let i = 0; i < rawApps.length; i++) {
+                    const entry = rawApps[i];
+                    if (!entry || entry.noDisplay)
+                        continue;
+
+                    const name = String(entry.name || entry.id || "");
+                    if (!name)
+                        continue;
+
+                    const isPwa = isWebAppEntry(entry);
+                    const pinRank = appPinRank(entry);
+                    const subtitle = String(entry.comment || entry.genericName || "");
+                    const kwList = [];
+                    if (entry.categories) {
+                        for (let c = 0; c < entry.categories.length; c++)
+                            kwList.push(entry.categories[c]);
+                    }
+                    if (entry.keywords) {
+                        for (let k = 0; k < entry.keywords.length; k++)
+                            kwList.push(entry.keywords[k]);
+                    }
+                    if (isPwa)
+                        kwList.push("pwa webapp web");
+                    kwList.push(entry.id || "");
+
+                    let s = q ? scoreItem(name, subtitle, kwList.join(" "), q) : 1;
+                    if (q && s <= 0)
+                        continue;
+
+                    if (!q) {
+                        if (pinRank > 0)
+                            s = 900 - pinRank * 10;
+                        else if (isPwa)
+                            s = 650;
+                        else
+                            s = 100;
+                    } else if (isPwa || pinRank > 0) {
+                        s += 15;
+                    }
+
+                    out.push({
+                        kind: "app",
+                        entry: entry,
+                        title: name,
+                        subtitle: subtitle || (isPwa ? "Web App aislada" : "Aplicación"),
+                        badge: isPwa ? "PWA" : (pinRank > 0 ? "Rápido" : "App"),
+                        glyph: isPwa ? "󰖟" : "󰀻",
+                        iconName: String(entry.icon || ""),
+                        score: s,
+                        isQuick: pinRank > 0 || isPwa
+                    });
+                }
+            }
+
+            // Cuando el usuario escribe en "Apps", también busca acciones del sistema
+            if (q.length > 0) {
+                for (let a = 0; a < actions.length; a++) {
+                    const act = actions[a];
+                    const s = scoreItem(act.title, act.subtitle, act.keywords + " " + act.badge, q);
+                    if (s > 0) {
+                        out.push({
+                            kind: "action",
+                            actionObj: act,
+                            title: act.title,
+                            subtitle: act.subtitle,
+                            badge: act.badge,
+                            glyph: act.glyph,
+                            iconName: "",
+                            score: s,
+                            isQuick: false
+                        });
+                    }
+                }
+            }
+
+            out.sort((a, b) => {
+                if (b.score !== a.score)
+                    return b.score - a.score;
+                return a.title.localeCompare(b.title);
+            });
+            return out;
+        }
+
+        // Pestañas de sistema: Capturar | Estilo | Sistema | Dev & IA
+        for (let i = 0; i < actions.length; i++) {
+            const act = actions[i];
+            if (act.category !== tab)
+                continue;
+            const s = q ? scoreItem(act.title, act.subtitle, act.keywords, q) : (actions.length - i);
+            if (q && s <= 0)
+                continue;
+            out.push({
+                kind: "action",
+                actionObj: act,
+                title: act.title,
+                subtitle: act.subtitle,
+                badge: act.badge,
+                glyph: act.glyph,
+                iconName: "",
+                score: s,
+                isQuick: false
+            });
+        }
+
+        if (q.length > 0) {
+            out.sort((a, b) => b.score - a.score);
+        }
+        return out;
+    }
+
+    function resetSelection() {
+        selectedIndex = filteredItems.length > 0 ? 0 : -1;
+        if (resultList.count > 0 && selectedIndex >= 0) {
+            resultList.positionViewAtIndex(0, ListView.Beginning);
+        }
+    }
+
+    function moveSelection(delta) {
+        const count = filteredItems.length;
+        if (count <= 0) {
+            selectedIndex = -1;
+            return;
+        }
+        let next = selectedIndex + delta;
+        if (next < 0)
+            next = count - 1;
+        else if (next >= count)
+            next = 0;
+        selectedIndex = next;
+        resultList.positionViewAtIndex(selectedIndex, ListView.Contain);
+    }
+
+    function cycleTab(delta) {
+        let idx = 0;
+        for (let i = 0; i < tabs.length; i++) {
+            if (tabs[i].id === activeTab) {
+                idx = i;
+                break;
+            }
+        }
+        const nextIdx = (idx + delta + tabs.length) % tabs.length;
+        tabSelected(tabs[nextIdx].id);
+        searchInput.forceActiveFocus();
+    }
+
+    function activateIndex(idx) {
+        if (idx < 0 || idx >= filteredItems.length)
+            return;
+        const item = filteredItems[idx];
+        if (item.kind === "app") {
+            win.appActivated(item.entry);
+        } else if (item.kind === "action") {
+            win.actionActivated(item.actionObj);
+        }
+    }
+
+    onFilteredItemsChanged: resetSelection()
+    onActiveTabChanged: resetSelection()
+
+    onLauncherOpenChanged: {
+        if (launcherOpen) {
+            searchInput.text = "";
+            resetSelection();
+            focusTimer.restart();
+        }
+    }
+
+    Timer {
+        id: focusTimer
+        interval: 20
+        repeat: false
+        onTriggered: {
+            if (win.launcherOpen) {
+                searchInput.forceActiveFocus();
+            }
+        }
+    }
+
+    implicitWidth: Math.min(720, Math.round((screen ? screen.width : 1920) * 0.56))
+    implicitHeight: Math.min(560, Math.round((screen ? screen.height : 1080) * 0.68))
+
+    exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "quickshell-launcher"
+    WlrLayershell.keyboardFocus: launcherOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    color: "transparent"
+    visible: launcherOpen
+
+    HyprlandFocusGrab {
+        id: focusGrab
+        windows: [win]
+        active: win.launcherOpen
+        onCleared: win.closeRequested()
+    }
+
+    Rectangle {
+        id: surface
+        anchors.fill: parent
+        color: Theme.panelBg
+        radius: Theme.radius
+        border.width: 2
+        border.color: Theme.activeBorder
+        clip: true
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 12
+
+            // Buscador principal (foco inmediato al abrir)
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 44
+                color: Theme.cardBg
+                radius: Theme.cardRadius
+                border.width: Theme.borderWidth
+                border.color: searchInput.activeFocus ? Theme.activeBorder : Theme.border
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 10
+                    spacing: 10
+
+                    Text {
+                        text: "󰍉"
+                        color: Theme.accent
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 16
+                    }
+
+                    TextInput {
+                        id: searchInput
+                        Layout.fillWidth: true
+                        color: Theme.textBright
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
+                        clip: true
+                        selectByMouse: true
+                        activeFocusOnTab: false
+                        verticalAlignment: TextInput.AlignVCenter
+
+                        onTextChanged: {
+                            if (win.launcherOpen && text !== win.searchQuery) {
+                                win.searchUpdated(text);
+                            }
+                        }
+
+                        Keys.onEscapePressed: win.closeRequested()
+                        Keys.onReturnPressed: win.activateIndex(win.selectedIndex)
+                        Keys.onEnterPressed: win.activateIndex(win.selectedIndex)
+                        Keys.onUpPressed: win.moveSelection(-1)
+                        Keys.onDownPressed: win.moveSelection(1)
+                        Keys.onTabPressed: event => {
+                            event.accepted = true;
+                            win.cycleTab((event.modifiers & Qt.ShiftModifier) ? -1 : 1);
+                        }
+                        Keys.onBacktabPressed: event => {
+                            event.accepted = true;
+                            win.cycleTab(-1);
+                        }
+                        Keys.onPressed: event => {
+                            if ((event.modifiers & Qt.ControlModifier) && (event.key === Qt.Key_J || event.key === Qt.Key_N)) {
+                                event.accepted = true;
+                                win.moveSelection(1);
+                            } else if ((event.modifiers & Qt.ControlModifier) && (event.key === Qt.Key_K || event.key === Qt.Key_P)) {
+                                event.accepted = true;
+                                win.moveSelection(-1);
+                            } else if (event.key === Qt.Key_PageDown) {
+                                event.accepted = true;
+                                win.moveSelection(5);
+                            } else if (event.key === Qt.Key_PageUp) {
+                                event.accepted = true;
+                                win.moveSelection(-5);
+                            }
+                        }
+
+                        Text {
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            text: win.activeTab === "apps"
+                                ? "Buscar apps, PWAs o acciones del sistema..."
+                                : "Filtrar acciones en " + win.activeTab + "..."
+                            color: Theme.muted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 13
+                            elide: Text.ElideRight
+                            visible: !searchInput.text
+                        }
+                    }
+
+                    Rectangle {
+                        visible: searchInput.text.length > 0
+                        width: 24
+                        height: 24
+                        radius: Theme.cardRadius
+                        color: clearHover.containsMouse ? Theme.cardHoverBg : "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰅖"
+                            color: Theme.muted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 12
+                        }
+
+                        MouseArea {
+                            id: clearHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                searchInput.text = "";
+                                searchInput.forceActiveFocus();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Pills superiores de categorías (clic o Tab / Shift+Tab)
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+
+                Repeater {
+                    model: win.tabs
+
+                    delegate: Rectangle {
+                        id: pill
+                        required property var modelData
+                        readonly property bool isActive: win.activeTab === modelData.id
+
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 32
+                        radius: Theme.cardRadius
+                        color: isActive
+                            ? Theme.accent
+                            : (pillMouse.containsMouse ? Theme.cardHoverBg : Theme.cardBg)
+                        border.width: Theme.borderWidth
+                        border.color: isActive ? Theme.accent : (pillMouse.containsMouse ? Theme.activeBorder : Theme.border)
+
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            Text {
+                                text: pill.modelData.icon
+                                color: pill.isActive ? "#05080b" : Theme.accent
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 13
+                            }
+
+                            Text {
+                                text: pill.modelData.label
+                                color: pill.isActive ? "#05080b" : Theme.text
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 12
+                                font.bold: pill.isActive
+                            }
+                        }
+
+                        MouseArea {
+                            id: pillMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                win.tabSelected(pill.modelData.id);
+                                searchInput.forceActiveFocus();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Lista principal de resultados (apps, PWAs, accesos rápidos y acciones)
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                ListView {
+                    id: resultList
+                    anchors.fill: parent
+                    clip: true
+                    spacing: 4
+                    boundsBehavior: Flickable.StopAtBounds
+                    model: win.filteredItems
+
+                    delegate: Rectangle {
+                        id: rowItem
+                        required property var modelData
+                        required property int index
+
+                        readonly property bool isSelected: index === win.selectedIndex
+                        readonly property string resolvedIcon: modelData.iconName
+                            ? Quickshell.iconPath(modelData.iconName, true)
+                            : ""
+
+                        width: resultList.width
+                        height: 46
+                        radius: Theme.cardRadius
+                        color: isSelected
+                            ? Theme.cardHoverBg
+                            : (rowMouse.containsMouse ? Theme.cardBg : "transparent")
+                        border.width: isSelected ? Theme.borderWidth : 0
+                        border.color: isSelected ? Theme.activeBorder : "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            spacing: 12
+
+                            // Icono de aplicación o glifo de acción
+                            Item {
+                                Layout.preferredWidth: 26
+                                Layout.preferredHeight: 26
+
+                                Image {
+                                    id: appIcon
+                                    anchors.fill: parent
+                                    source: rowItem.resolvedIcon
+                                    sourceSize.width: 26
+                                    sourceSize.height: 26
+                                    fillMode: Image.PreserveAspectFit
+                                    smooth: true
+                                    visible: status === Image.Ready && rowItem.resolvedIcon !== ""
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: !appIcon.visible
+                                    text: rowItem.modelData.glyph
+                                    color: rowItem.isSelected ? Theme.activeBorder : Theme.accent
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 17
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 1
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: rowItem.modelData.title
+                                    color: rowItem.isSelected ? Theme.textBright : Theme.text
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 13
+                                    font.bold: rowItem.isSelected
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    visible: rowItem.modelData.subtitle !== ""
+                                    text: rowItem.modelData.subtitle
+                                    color: Theme.muted
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 11
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Rectangle {
+                                visible: rowItem.modelData.badge !== ""
+                                Layout.preferredWidth: badgeText.implicitWidth + 14
+                                Layout.preferredHeight: 22
+                                radius: Theme.cardRadius
+                                color: rowItem.isSelected ? Theme.accent : Theme.cardBg
+                                border.width: Theme.borderWidth
+                                border.color: rowItem.isSelected ? Theme.accent : Theme.border
+
+                                Text {
+                                    id: badgeText
+                                    anchors.centerIn: parent
+                                    text: rowItem.modelData.badge
+                                    color: rowItem.isSelected ? "#05080b" : Theme.muted
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 10
+                                    font.bold: rowItem.isSelected
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            id: rowMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onEntered: win.selectedIndex = rowItem.index
+                            onClicked: win.activateIndex(rowItem.index)
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: win.filteredItems.length === 0
+                    text: "Sin resultados para \"" + win.searchQuery.trim() + "\""
+                    color: Theme.muted
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 13
+                }
+            }
+
+            // Pie compacto con ayuda de navegación y acceso rápido a Actividades (Super+A)
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 28
+                color: "transparent"
+
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: 12
+
+                    Text {
+                        text: "Tab: pestaña · ↑↓: mover · Enter: ejecutar · Esc: cerrar"
+                        color: Theme.muted
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+
+                    Rectangle {
+                        Layout.preferredWidth: ovHint.implicitWidth + 16
+                        Layout.preferredHeight: 24
+                        radius: Theme.cardRadius
+                        color: ovMouse.containsMouse ? Theme.cardHoverBg : Theme.cardBg
+                        border.width: Theme.borderWidth
+                        border.color: ovMouse.containsMouse ? Theme.activeBorder : Theme.border
+
+                        Text {
+                            id: ovHint
+                            anchors.centerIn: parent
+                            text: "󰕰  Actividades (Super+A)"
+                            color: ovMouse.containsMouse ? Theme.textBright : Theme.muted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                        }
+
+                        MouseArea {
+                            id: ovMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: win.overviewRequested()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
