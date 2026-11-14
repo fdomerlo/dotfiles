@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Lanza un TUI en foot flotante, centrado y al 90% del monitor enfocado.
+# Lanza un TUI en foot flotante, centrado y al 85% del monitor enfocado.
 #
 # Uso:
 #   tui-float.sh <comando> [args...]
@@ -20,7 +20,7 @@ if [ "$#" -lt 1 ]; then
     exit 2
 fi
 
-pct="${TUI_FLOAT_PCT:-90}"
+pct="${TUI_FLOAT_PCT:-85}"
 size=""
 if command -v hyprctl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
     read -r mw mh <<<"$(hyprctl monitors -j |
