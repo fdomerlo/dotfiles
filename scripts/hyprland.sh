@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/hyprland.sh - Perfil opcional Hyprland para Debian Stable.
+# scripts/hyprland.sh - Escritorio principal Hyprland para Debian Stable (GNOME como fallback).
 #
 # Instala el stack Hyprland (desde stable-backports) y despliega la
 # configuración del repo en ~/.config con symlinks idempotentes.
@@ -26,7 +26,7 @@ ok()  { echo -e "  \033[32m✔\033[0m $*"; }
 warn(){ echo -e "  \033[33m⚠\033[0m $*"; }
 
 echo "================================================================="
-echo "==> Perfil opcional Hyprland (Debian Stable)"
+echo "==> Escritorio Hyprland (Debian Stable)"
 echo "================================================================="
 
 # ------------------------------------------------------------------------------
@@ -298,7 +298,7 @@ fi
 # ------------------------------------------------------------------------------
 echo
 echo "================================================================="
-echo "✔ Perfil Hyprland instalado y configurado."
+echo "✔ Escritorio Hyprland instalado y configurado (GNOME disponible como fallback en GDM)."
 echo "================================================================="
 cat <<EOF
 

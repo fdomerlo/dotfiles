@@ -177,7 +177,7 @@ doctor() {
   fi
 
   echo ""
-  echo "Hyprland (opcional):"
+  echo "Hyprland:"
   if command -v Hyprland &>/dev/null; then
     if [ -r "$BASE_DIR/scripts/hyprland-packages.sh" ]; then
       # shellcheck source=scripts/hyprland-packages.sh
@@ -226,7 +226,7 @@ doctor() {
       echo -e "  \033[33m○\033[0m Faltan tipografías Debian Hyprland ('sudo apt-get install -y fonts-inter fonts-atkinson-hyperlegible fonts-jetbrains-mono')"
     fi
   else
-    echo -e "  \033[33m○\033[0m Hyprland no instalado (opcional: make hyprland)"
+    echo -e "  \033[33m○\033[0m Hyprland no instalado (base-install; agrega con: make hyprland)"
   fi
 
   echo ""

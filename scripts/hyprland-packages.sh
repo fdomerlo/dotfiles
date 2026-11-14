@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Lista canónica de paquetes y binarios del perfil opcional Hyprland.
+# Lista canónica de paquetes y binarios del escritorio Hyprland.
 # Fuente única compartida por scripts/hyprland.sh, scripts/update.sh,
 # scripts/verify.sh y shell/devctl para evitar divergencias.
 # Los listados APT se leen desde packages/apt-backports.txt y

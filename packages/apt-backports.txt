@@ -1,5 +1,5 @@
 # ==============================================================================
-# Paquetes APT del perfil opcional Hyprland provistos por stable-backports.
+# Paquetes APT del escritorio Hyprland provistos por stable-backports.
 # Consumido por scripts/hyprland-packages.sh, scripts/hyprland.sh y update.sh.
 # ==============================================================================
 

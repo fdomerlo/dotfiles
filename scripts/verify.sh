@@ -299,10 +299,10 @@ if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
     check_optional "FastTrack legacy detectado (se elimina con 'make host')"
 fi
 
-# 13. Perfil opcional Hyprland (no falla si no está instalado)
-echo -n "Perfil Hyprland (opcional)... "
+# 13. Escritorio Hyprland (GNOME estándar queda como fallback)
+echo -n "Escritorio Hyprland... "
 if ! command -v Hyprland &>/dev/null; then
-    check_optional "No instalado (perfil opcional: ejecuta 'make hyprland')"
+    check_optional "No instalado (instalación base; agrega Hyprland con 'make hyprland')"
 else
     check_status 0 "Instalado"
 

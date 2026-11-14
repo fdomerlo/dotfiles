@@ -64,7 +64,7 @@ if command -v apt-get &>/dev/null; then
     read_manifest "$REPO_DIR/packages/apt-base.txt" BASE_APT_PKGS
     read_manifest "$REPO_DIR/packages/apt-optional.txt" OPT_APT_PKGS
 
-    # Paquetes del perfil opcional Hyprland: compartidos con scripts/hyprland.sh.
+    # Paquetes del escritorio Hyprland: compartidos con scripts/hyprland.sh.
     # shellcheck source=scripts/hyprland-packages.sh
     source "$SCRIPT_DIR/hyprland-packages.sh"
 

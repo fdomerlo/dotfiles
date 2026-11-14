@@ -1,5 +1,5 @@
 # ==============================================================================
-# Paquetes APT del perfil opcional Hyprland disponibles en Debian Stable main.
+# Paquetes APT del escritorio Hyprland disponibles en Debian Stable main.
 # Consumido por scripts/hyprland-packages.sh, scripts/hyprland.sh y update.sh.
 # ==============================================================================
 

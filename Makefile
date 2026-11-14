@@ -9,13 +9,14 @@ export CHSH=no
 export KEEP_ZSHRC=yes
 export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install full-install update refresh host timeshift podman shell devtools tooling devai desktop hyprland hypr-desktop hypr-laptop verify clean clean-deep gitconfig github-auth
+.PHONY: help install base-install full-install update refresh host timeshift podman shell devtools tooling devai desktop hyprland hypr-desktop hypr-laptop verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
 	@echo "Opciones de aprovisionamiento (Debian Stable Workstation):"
-	@echo "  make install         - Aprovisiona la estación de trabajo completa (host + podman + shell + devtools + tooling + devai + desktop)"
-	@echo "  make full-install    - Aprovisiona la estación de trabajo completa con Hyprland como escritorio"
+	@echo "  make install         - Aprovisionamiento completo con Hyprland (GNOME estándar como fallback)"
+	@echo "  make base-install    - Estación base sin Hyprland (host + podman + shell + devtools + tooling + devai + GNOME estándar)"
+	@echo "  make full-install    - Aprovisionamiento completo con Hyprland y snapshots Timeshift"
 	@echo "  make update          - Actualiza la estación (APT only-upgrade incl. perfil Hyprland + self-updates + flatpak)"
 	@echo "  make refresh         - Re-sincroniza configs/scripts de Hyprland desde el repo y recarga la sesión (tras git pull)"
 	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
@@ -26,22 +27,26 @@ help:
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
 	@echo "  make desktop         - Mantiene GNOME Shell estándar (sin extensiones/extras) y directorios de trabajo"
 	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
-	@echo "  make hyprland        - (Opcional) Instala y configura el perfil Hyprland sin reemplazar GNOME"
+	@echo "  make hyprland        - Instala y configura el escritorio Hyprland (mantiene GNOME como fallback)"
 	@echo "  make hypr-desktop    - Aplica plantilla local de estación desktop en ~/.config/hypr/conf/local.conf (con backup)"
 	@echo "  make hypr-laptop     - Aplica plantilla local de estación notebook en ~/.config/hypr/conf/local.conf (con backup)"
 	@echo "  make verify          - Ejecuta diagnóstico de salud del sistema"
 	@echo "  make clean           - Limpia paquetes residuales de APT y temporales"
 	@echo "  make clean-deep      - Limpieza profunda post-upgrade: purga configs residuales (rc), dependencias, logs y cachés"
 
-# Instalación completa desatendida (idempotente: re-ejecutable; Timeshift es opcional vía 'make timeshift')
-install: host podman shell devtools tooling devai desktop clean
-	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
-	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
+# Instalación completa con Hyprland como escritorio principal y GNOME estándar como fallback
+install: host podman shell devtools tooling devai desktop hyprland clean
+	@echo -e "\n✅ Instalación finalizada (Hyprland + GNOME fallback). Reinicia la sesión o elige Hyprland en GDM."
+	@echo -e "💡 Tip: Para habilitar respaldos del sistema, ejecuta: make timeshift (o usa 'make full-install')."
 
-# Instalación completa desatendida + Hyprland
+# Estación base sin Hyprland (solo GNOME estándar + CLI/Tooling/Podman)
+base-install: host podman shell devtools tooling devai desktop clean
+	@echo -e "\n✅ Instalación base finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
+	@echo -e "💡 Tip: Para sumar Hyprland luego: make hyprland | Para respaldos: make timeshift"
+
+# Instalación completa con Hyprland + Timeshift
 full-install: host podman shell devtools tooling devai desktop timeshift hyprland clean
-	@echo -e "\n✅ Instalación finalizada. Reinicia la sesión gráfica o terminal para aplicar todos los cambios."
-	@echo -e "💡 Tip: Si deseas habilitar respaldos del sistema en este equipo, ejecuta: make timeshift"
+	@echo -e "\n✅ Instalación completa finalizada (Hyprland + Timeshift + GNOME fallback). Elige Hyprland en GDM."
 
 # Actualización idempotente (no reconfigura SSH/gh auth, /opt, chsh ni registros)
 update:
@@ -165,9 +170,9 @@ desktop:
 	@echo "==> Manteniendo escritorio GNOME estándar y directorios de trabajo..."
 	bash scripts/desktop.sh
 
-# 7b. Perfil opcional Hyprland (no reemplaza GNOME; solo Debian Stable)
+# 7b. Escritorio principal Hyprland (mantiene GNOME estándar como fallback; solo Debian Stable)
 hyprland:
-	@echo "==> Configurando perfil opcional Hyprland..."
+	@echo "==> Configurando escritorio Hyprland..."
 	bash scripts/hyprland.sh
 
 # 7c. Perfiles locales de estación (no versionados; generan respaldo previo)
