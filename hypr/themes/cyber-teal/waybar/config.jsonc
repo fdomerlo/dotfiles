@@ -70,14 +70,14 @@
     "format": " {usage}%",
     "interval": 2,
     "tooltip": true,
-    "on-click": "foot --app-id=tui-float -e btop"
+    "on-click": "foot -e btop"
   },
 
   "memory": {
     "format": "󰍛 {used:0.1f}G",
     "interval": 2,
     "tooltip-format": "Memoria en uso: {used:0.2f}GiB de {total:0.2f}GiB",
-    "on-click": "foot --app-id=tui-float -e btop"
+    "on-click": "foot -e btop"
   },
 
   "power-profiles-daemon": {

@@ -183,9 +183,9 @@ menu_dev() {
         "󰒍 "*) launch_term_hold "devctl doctor" "devctl doctor" ;;
         "󰚰 "*) launch_term_hold "devctl update" "devctl update" ;;
         "󰃢 "*) launch_term_hold "devctl clean" "devctl clean" ;;
-        "󰍛 "*) launch_bg foot --app-id=tui-float -e btop ;;
-        "󰡨 "*) launch_bg foot --app-id=tui-float -e lazydocker ;;
-        "󰉋 "*) launch_bg foot --app-id=tui-float -e yazi ;;
+        "󰍛 "*) launch_bg foot -e btop ;;
+        "󰡨 "*) launch_bg "$SCRIPT_DIR/tui-float.sh" lazydocker ;;
+        "󰉋 "*) launch_bg "$SCRIPT_DIR/tui-float.sh" yazi ;;
         "󰁍 "*) return 0 ;;
     esac
     exit 0
