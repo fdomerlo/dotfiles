@@ -149,11 +149,23 @@ for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc l
     fi
 done
 
-echo -n "  -> brave-browser (navegador default): "
+echo -n "  -> firefox (navegador default): "
+if (command -v flatpak &>/dev/null && flatpak info org.mozilla.firefox &>/dev/null) || command -v firefox &>/dev/null || command -v firefox-esr &>/dev/null; then
+    DEF_BROWSER="$(xdg-settings get default-web-browser 2>/dev/null || true)"
+    if [[ "$DEF_BROWSER" == *firefox* ]]; then
+        check_status 0 "Presente y predeterminado ($DEF_BROWSER)"
+    else
+        check_optional "Presente, pero default actual es '${DEF_BROWSER:-ninguno}' (ejecuta 'make tooling')"
+    fi
+else
+    check_optional "No instalado aún (ejecuta 'make tooling' para instalar Firefox)"
+fi
+
+echo -n "  -> brave-browser (soporte PWAs): "
 if command -v brave-browser &>/dev/null; then
     check_status 0 "Presente"
 else
-    check_optional "No instalado aún (ejecuta 'make tooling' para instalar Brave como default)"
+    check_optional "No instalado aún (ejecuta 'make tooling' para habilitar PWAs con Brave)"
 fi
 
 echo -n "  -> google-chrome: "

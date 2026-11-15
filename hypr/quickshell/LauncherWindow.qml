@@ -458,13 +458,13 @@ PanelWindow {
         const id = String(entry.id || "").toLowerCase();
         const pinned = [
             "foot",
-            "brave-browser",
+            "org.mozilla.firefox",
             "org.gnome.nautilus",
             "dev.zed.zed",
             "code",
             "antigravity",
-            "google-chrome",
-            "org.mozilla.firefox"
+            "brave-browser",
+            "google-chrome"
         ];
         for (let i = 0; i < pinned.length; i++) {
             if (id === pinned[i] || id === pinned[i] + ".desktop")

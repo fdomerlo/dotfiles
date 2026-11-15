@@ -57,7 +57,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
-| **Navegadores, Editores & IA** | Brave (predeterminado + soporte PWA), Google Chrome, Firefox (Flatpak), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI, Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
+| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Brave (soporte PWA), Google Chrome, VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI, Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
 
 ---
 
@@ -90,7 +90,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+A` | **Actividades / Overview** (workspaces + previews en vivo + búsqueda de ventanas abiertas) |
 | `Super+F1` | **Cheatsheet interactivo** con todos los atajos activos (teclado + mouse) |
 | `Super+Return` / `Super+Shift+Return` | Terminal (`foot`) / terminal con sesión `tmux` persistente |
-| `Super+B` / `Super+E` / `Super+Y` | Navegador (`brave-browser`) / archivos (`nautilus`) / `yazi` TUI |
+| `Super+B` / `Super+E` / `Super+Y` | Navegador predeterminado (`firefox`) / archivos (`nautilus`) / `yazi` TUI |
 | `Super+` `` ` `` / `Super+Shift+` `` ` `` | Mostrar/ocultar terminal flotante (scratchpad) / enviar ventana al scratchpad |
 | `Super+Q` / `Super+F` / `Super+M` / `Super+S` | Cerrar / pantalla completa / maximizar / alternar flotante |
 | `Super+1..0` / `Super+Shift+1..0` | Cambiar de workspace / mover ventana (`1–5` monitor 1, `6–0` monitor 2) |
