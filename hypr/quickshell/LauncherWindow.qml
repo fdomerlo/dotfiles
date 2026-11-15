@@ -457,13 +457,12 @@ PanelWindow {
     function appPinRank(entry) {
         const id = String(entry.id || "").toLowerCase();
         const pinned = [
-            "foot",
-            "org.mozilla.firefox",
+            "google-chrome",
             "org.gnome.nautilus",
             "dev.zed.zed",
-            "code",
             "antigravity",
-            "google-chrome"
+            "foot",
+            "code"
         ];
         for (let i = 0; i < pinned.length; i++) {
             if (id === pinned[i] || id === pinned[i] + ".desktop")
@@ -537,7 +536,7 @@ PanelWindow {
                         entry: entry,
                         title: name,
                         subtitle: subtitle || (isPwa ? "Web App aislada" : "Aplicación"),
-                        badge: isPwa ? "PWA" : (pinRank > 0 ? "Rápido" : "App"),
+                        badge: isPwa ? "PWA" : (pinRank > 0 ? "Fijado" : "App"),
                         glyph: isPwa ? "󰖟" : "󰀻",
                         iconName: String(entry.icon || ""),
                         score: s,
