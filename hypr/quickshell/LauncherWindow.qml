@@ -356,8 +356,8 @@ PanelWindow {
                 badge: "Sistema",
                 glyph: "󰐥",
                 title: "Energía y sesión",
-                subtitle: "Bloquear, suspender, reiniciar, apagar o cerrar sesión",
-                keywords: "energia sesion apagar reiniciar suspender bloquear power logout",
+                subtitle: "Bloquear, suspender, hibernar, reiniciar, apagar o cerrar sesión",
+                keywords: "energia sesion apagar reiniciar suspender hibernar bloquear power logout hibernate",
                 actionType: "submenu",
                 delayMs: 90,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Sistema:' \"$HOME/.config/hypr/scripts/powermenu.sh\""]

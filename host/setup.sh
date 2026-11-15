@@ -26,6 +26,7 @@ echo "==> Configurando repositorios extendidos para Debian Stable (Backports)...
 write_if_changed() {
     local file="$1"
     local content="$2"
+    mkdir -p "$(dirname "$file")"
     if [ ! -f "$file" ] || [ "$(cat "$file")" != "$content" ]; then
         printf '%s\n' "$content" > "$file"
         return 0
@@ -147,6 +148,133 @@ fi
 echo "==> Habilitando systemd linger para $TARGET_USER..."
 loginctl enable-linger "$TARGET_USER"
 
+# ------------------------------------------------------------------------------
+# 6. Gestión de energía e hibernación (swapfile >= RAM, resume, logind, sleep)
+# ------------------------------------------------------------------------------
+echo "==> Configurando energía e hibernación automática (suspend-then-hibernate)..."
+
+# 6a. Asegurar /swapfile >= RAM (zram vive en RAM y no sirve para hibernar).
+RAM_KIB=$(awk '/MemTotal:/ {print $2}' /proc/meminfo)
+RAM_GIB=$(( (RAM_KIB + 1048575) / 1048576 ))
+[ "$RAM_GIB" -lt 4 ] && RAM_GIB=4
+TARGET_SWAP_BYTES=$(( RAM_GIB * 1024 * 1024 * 1024 ))
+ROOT_FSTYPE=$(findmnt -no FSTYPE / 2>/dev/null || echo "")
+
+if [ "$ROOT_FSTYPE" = "ext4" ] || [ "$ROOT_FSTYPE" = "xfs" ]; then
+    CUR_SWAP_BYTES=0
+    [ -f /swapfile ] && CUR_SWAP_BYTES=$(stat -c%s /swapfile 2>/dev/null || echo 0)
+
+    if [ "$CUR_SWAP_BYTES" -lt "$TARGET_SWAP_BYTES" ]; then
+        AVAIL_BYTES=$(df -B1 --output=avail / | tail -n1 | tr -d ' ')
+        NEEDED_BYTES=$(( TARGET_SWAP_BYTES - CUR_SWAP_BYTES ))
+        MARGIN_BYTES=$(( 5 * 1024 * 1024 * 1024 ))
+
+        if [ "$AVAIL_BYTES" -ge $(( NEEDED_BYTES + MARGIN_BYTES )) ]; then
+            echo "  -> Ajustando /swapfile a ${RAM_GIB}G (RAM detectada: ${RAM_GIB} GiB)..."
+            swapoff /swapfile 2>/dev/null || true
+            rm -f /swapfile
+            fallocate -l "${RAM_GIB}G" /swapfile
+            chmod 600 /swapfile
+            mkswap /swapfile >/dev/null
+            swapon --priority 10 /swapfile
+        else
+            echo "  ⚠️ Espacio libre insuficiente en / para ajustar /swapfile a ${RAM_GIB}G."
+        fi
+    else
+        echo "  ✔ /swapfile ya tiene tamaño suficiente (>= ${RAM_GIB} GiB)."
+    fi
+
+    if [ -f /swapfile ]; then
+        if ! grep -qE '^[[:space:]]*/swapfile[[:space:]]' /etc/fstab; then
+            echo '/swapfile none swap defaults,pri=10 0 0' >> /etc/fstab
+        fi
+        if ! grep -qE '^[[:space:]]*/swapfile[[:space:]]' /proc/swaps; then
+            swapon --priority 10 /swapfile || true
+        fi
+    fi
+else
+    echo "  ⚠️ Raíz en '$ROOT_FSTYPE'; omitiendo ajuste automático de /swapfile."
+fi
+
+# 6b. Parámetros de reanudación (resume= / resume_offset=) en GRUB para /swapfile.
+if [ -f /swapfile ] && command -v filefrag >/dev/null 2>&1 && [ -d /etc/default/grub.d ]; then
+    ROOT_UUID=$(findmnt -no UUID / 2>/dev/null || true)
+    SWAP_OFFSET=$(filefrag -v /swapfile 2>/dev/null | awk -F: '$1 ~ /^[[:space:]]*0$/ { sub(/\.\..*/, "", $3); gsub(/[[:space:]]/, "", $3); print $3; exit }' || true)
+
+    if [ -n "$ROOT_UUID" ] && [[ "$SWAP_OFFSET" =~ ^[0-9]+$ ]] && [ "$SWAP_OFFSET" -gt 0 ]; then
+        GRUB_HIBERNATE_CFG="/etc/default/grub.d/99-hibernate.cfg"
+        GRUB_HIBERNATE_CONTENT=$(cat <<EOF
+# Configurado por dotfiles (host/setup.sh) para reanudar desde /swapfile
+case " \${GRUB_CMDLINE_LINUX_DEFAULT:-} " in
+    *" resume="*) ;;
+    *) GRUB_CMDLINE_LINUX_DEFAULT="\${GRUB_CMDLINE_LINUX_DEFAULT:+\$GRUB_CMDLINE_LINUX_DEFAULT }resume=UUID=${ROOT_UUID} resume_offset=${SWAP_OFFSET}" ;;
+esac
+EOF
+)
+        if write_if_changed "$GRUB_HIBERNATE_CFG" "$GRUB_HIBERNATE_CONTENT"; then
+            if command -v update-grub >/dev/null 2>&1; then
+                echo "  -> Actualizando GRUB con resume=UUID=${ROOT_UUID} resume_offset=${SWAP_OFFSET}..."
+                update-grub
+            fi
+        else
+            echo "  ✔ GRUB resume= ya configurado."
+        fi
+    fi
+fi
+
+# 6c. systemd-sleep: habilitar hibernación + retardo dinámico (15m batería / 20m AC).
+SLEEP_CONF="/etc/systemd/sleep.conf.d/10-workstation-power.conf"
+SLEEP_CONTENT=$(cat <<'EOF'
+[Sleep]
+AllowHibernation=yes
+AllowSuspendThenHibernate=yes
+HibernateOnACPower=yes
+HibernateDelaySec=20min
+EOF
+)
+if write_if_changed "$SLEEP_CONF" "$SLEEP_CONTENT"; then
+    echo "  ✔ Política de sleep/hibernación escrita en $SLEEP_CONF."
+fi
+
+DELAY_BIN="/usr/local/libexec/workstation-hibernate-delay"
+mkdir -p "$(dirname "$DELAY_BIN")"
+if [ ! -f "$DELAY_BIN" ] || ! cmp -s "$REPO_DIR/host/hibernate-delay.sh" "$DELAY_BIN"; then
+    install -m 0755 "$REPO_DIR/host/hibernate-delay.sh" "$DELAY_BIN"
+    echo "  ✔ Helper de retardo AC/batería instalado en $DELAY_BIN."
+fi
+
+STH_DROPIN="/etc/systemd/system/systemd-suspend-then-hibernate.service.d/10-hibernate-delay.conf"
+STH_CONTENT=$(cat <<EOF
+[Service]
+ExecStartPre=${DELAY_BIN}
+EOF
+)
+if write_if_changed "$STH_DROPIN" "$STH_CONTENT"; then
+    systemctl daemon-reload
+    echo "  ✔ Drop-in de systemd-suspend-then-hibernate actualizado."
+fi
+
+# 6d. systemd-logind: cierre de tapa en laptop -> suspend-then-hibernate.
+LOGIND_CONF="/etc/systemd/logind.conf.d/10-workstation-power.conf"
+LOGIND_CONTENT=$(cat <<'EOF'
+[Login]
+HandleLidSwitch=suspend-then-hibernate
+HandleLidSwitchExternalPower=suspend-then-hibernate
+HandleLidSwitchDocked=ignore
+EOF
+)
+if write_if_changed "$LOGIND_CONF" "$LOGIND_CONTENT"; then
+    systemctl reload systemd-logind.service 2>/dev/null || true
+    echo "  ✔ Política de tapa (laptop) aplicada en $LOGIND_CONF."
+fi
+
+# 6e. Advertencia explícita si Secure Boot (lockdown) bloquea la hibernación.
+if [ -r /sys/power/disk ] && grep -q '\[disabled\]' /sys/power/disk 2>/dev/null; then
+    echo "  ⚠️ ATENCIÓN: el kernel reporta /sys/power/disk = [disabled] (lockdown/Secure Boot)."
+    echo "     En Debian con Secure Boot activo, el kernel bloquea la hibernación."
+    echo "     Desactivá Secure Boot en UEFI/BIOS para habilitar hibernación (30/40 min)."
+fi
+
 echo "================================================================="
-echo "✔ Host setup completado (Debian Stable + Backports + Flatpak + AppImage + Podman Rootless)."
+echo "✔ Host setup completado (Debian Stable + Backports + Flatpak + AppImage + Podman Rootless + Energía)."
 echo "================================================================="

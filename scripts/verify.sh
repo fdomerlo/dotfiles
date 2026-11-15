@@ -74,11 +74,42 @@ else
 fi
 
 # 3. Swapfile en disco
-echo -n "Swapfile de respaldo... "
-if grep -q "swapfile" /proc/swaps; then
-    check_status 0 "Swapfile secundario activo"
+echo -n "Swapfile de respaldo (>= RAM)... "
+if grep -q "swapfile" /proc/swaps && [ -f /swapfile ]; then
+    ram_kib=$(awk '/MemTotal:/ {print $2}' /proc/meminfo)
+    ram_gib=$(( (ram_kib + 1048575) / 1048576 ))
+    [ "$ram_gib" -lt 4 ] && ram_gib=4
+    swap_bytes=$(stat -c%s /swapfile 2>/dev/null || echo 0)
+    target_bytes=$(( ram_gib * 1024 * 1024 * 1024 ))
+    if [ "$swap_bytes" -ge "$target_bytes" ]; then
+        check_status 0 "Swapfile activo ($(( swap_bytes / 1024 / 1024 / 1024 )) GiB >= ${ram_gib} GiB RAM)"
+    else
+        check_optional "Swapfile activo ($(( swap_bytes / 1024 / 1024 )) MiB < ${ram_gib} GiB RAM; ejecutá 'make host' para redimensionar)"
+    fi
 else
     check_status 1 "Swapfile secundario no activo"
+fi
+
+# 3b. Hibernación y energía (suspend-then-hibernate)
+echo -n "Energía e hibernación (suspend-then-hibernate)... "
+if [ -f /etc/systemd/sleep.conf.d/10-workstation-power.conf ] && \
+   [ -f /etc/systemd/logind.conf.d/10-workstation-power.conf ] && \
+   [ -x /usr/local/libexec/workstation-hibernate-delay ] && \
+   [ -f /etc/default/grub.d/99-hibernate.cfg ]; then
+    can_sth=$(busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager CanSuspendThenHibernate 2>/dev/null | awk -F'"' '{print $2}' || true)
+    if [ "$can_sth" = "yes" ]; then
+        if grep -q 'resume=' /proc/cmdline; then
+            check_status 0 "Hibernación y suspend-then-hibernate operativos"
+        else
+            check_optional "Configurado en disco; reiniciá para activar resume= en el kernel"
+        fi
+    elif [ -r /sys/power/disk ] && grep -q '\[disabled\]' /sys/power/disk 2>/dev/null; then
+        check_optional "Secure Boot activo (kernel lockdown bloquea hibernación; desactivalo en UEFI/BIOS para habilitar 30/40 min)"
+    else
+        check_optional "Configurado, pero CanSuspendThenHibernate='${can_sth:-desconocido}' (revisá reboot o tamaño de swapfile)"
+    fi
+else
+    check_optional "Falta política de energía del sistema (ejecutá 'make host')"
 fi
 
 # 4. Timeshift (Opcional)
@@ -370,6 +401,8 @@ else
     echo -n "Configuración de Hyprland desplegada... "
     cfg_missing=()
     for f in "$HOME/.config/hypr/hyprland.conf" \
+             "$HOME/.config/hypr/hypridle.conf" \
+             "$HOME/.config/hypr/scripts/idle-suspend.sh" \
              "$HOME/.config/hypr/conf/plugins.conf" \
              "$HOME/.config/hypr/conf/local.conf" \
              "$HOME/.config/hypr/conf/webapps.conf" \

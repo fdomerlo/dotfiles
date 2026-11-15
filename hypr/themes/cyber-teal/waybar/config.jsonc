@@ -98,8 +98,8 @@
       "activated": "󰅶",
       "deactivated": "󰾪"
     },
-    "tooltip-format-activated": "Inhibidor de reposo: ACTIVO\nLa pantalla no se bloqueará por inactividad",
-    "tooltip-format-deactivated": "Inhibidor de reposo: inactivo\nClick para evitar bloqueo/apagado de pantalla"
+    "tooltip-format-activated": "Inhibidor de reposo: ACTIVO\nEl equipo no se bloqueará, suspenderá ni hibernará automáticamente",
+    "tooltip-format-deactivated": "Inhibidor de reposo: inactivo\nClick para evitar bloqueo, suspensión e hibernación automática"
   },
 
   "backlight": {
