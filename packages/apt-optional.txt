@@ -16,5 +16,4 @@ pipewire
 
 # Repositorios externos / paquetes .deb de terceros (scripts/tooling.sh)
 code
-brave-browser
 google-chrome-stable

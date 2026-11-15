@@ -161,18 +161,11 @@ else
     check_optional "No instalado aún (ejecuta 'make tooling' para instalar Firefox)"
 fi
 
-echo -n "  -> brave-browser (soporte PWAs): "
-if command -v brave-browser &>/dev/null; then
-    check_status 0 "Presente"
-else
-    check_optional "No instalado aún (ejecuta 'make tooling' para habilitar PWAs con Brave)"
-fi
-
-echo -n "  -> google-chrome: "
+echo -n "  -> google-chrome (soporte PWAs): "
 if command -v google-chrome &>/dev/null; then
     check_status 0 "Presente"
 else
-    check_optional "No instalado"
+    check_optional "No instalado aún (ejecuta 'make tooling' para habilitar PWAs con Chrome)"
 fi
 
 echo "Herramientas de shell productiva:"
@@ -195,8 +188,8 @@ if [ -f "$SOURCES_D/vscode.list" ] && [ -f "$SOURCES_D/vscode.sources" ]; then
     echo -e "\n  -> VS Code duplicado (vscode.list + vscode.sources)"
     apt_ok=1
 fi
-if [ -f "$SOURCES_D/brave-browser-release.list" ] && [ -f "$SOURCES_D/brave-browser-release.sources" ]; then
-    echo -e "\n  -> Brave duplicado (brave-browser-release.list + brave-browser-release.sources)"
+if [ -f "$SOURCES_D/google-chrome.list" ] && [ -f "$SOURCES_D/google-chrome.sources" ]; then
+    echo -e "\n  -> Google Chrome duplicado (google-chrome.list + google-chrome.sources)"
     apt_ok=1
 fi
 for pkg in docker-ce docker-ce-cli containerd.io docker.io; do

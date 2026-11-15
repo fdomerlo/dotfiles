@@ -57,7 +57,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
-| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Brave (soporte PWA), Google Chrome, VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI, Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
+| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI, Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
 
 ---
 
@@ -74,7 +74,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | `make update` / `devctl update` | Actualiza paquetes APT (`packages/`), herramientas user-space y Flatpaks |
 | `make verify` / `devctl doctor` | Verifica salud del entorno, enlaces, Podman y Hyprland |
 | `make clean` / `make clean-deep` | Limpieza estándar o profunda (`rc`, huérfanos, cachés y logs) |
-| `devctl webapp install "<Nombre>" "<URL>"` | Crea una Web App (PWA) aislada en Brave con icono e integración en Hyprland |
+| `devctl webapp install "<Nombre>" "<URL>"` | Crea una Web App (PWA) aislada en Chrome con icono e integración en Hyprland |
 
 ---
 

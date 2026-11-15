@@ -2,8 +2,8 @@
 # ==============================================================================
 # Gestor de Web Apps (PWAs) aisladas para Hyprland y GNOME.
 #
-# Genera lanzadores .desktop en ~/.local/share/applications/ usando Brave
-# (por defecto), Google Chrome o Chromium con --app=<URL>, descarga el favicon
+# Genera lanzadores .desktop en ~/.local/share/applications/ usando Google Chrome
+# (por defecto) o Chromium con --app=<URL>, descarga el favicon
 # y escribe reglas opcionales (float / scratchpad) en ~/.config/hypr/conf/webapps.conf
 # usando la sintaxis Hyprland 0.55+ (windowrule v3).
 #
@@ -18,7 +18,7 @@
 #   --mode tile|float|scratchpad   Comportamiento en Hyprland (default: tile)
 #   --icon <ruta|url>              Icono local o URL PNG/SVG/ICO
 #   --isolated                     Usa perfil aislado en ~/.local/share/webapps/<slug>
-#   --browser brave|chrome|chromium
+#   --browser chrome|chromium
 #   --purge                        (Con remove) borra también el perfil aislado
 # ==============================================================================
 set -euo pipefail
@@ -104,19 +104,13 @@ pick_browser() {
     local requested="${1:-}"
     case "$requested" in
         "")
-            if command -v brave-browser >/dev/null 2>&1; then
-                printf 'brave-browser'
-            elif command -v google-chrome >/dev/null 2>&1; then
+            if command -v google-chrome >/dev/null 2>&1; then
                 printf 'google-chrome'
             elif command -v chromium >/dev/null 2>&1; then
                 printf 'chromium'
             else
-                die "No se encontró brave-browser, google-chrome ni chromium. Ejecutá 'make tooling'."
+                die "No se encontró google-chrome ni chromium. Ejecutá 'make tooling'."
             fi
-            ;;
-        brave|brave-browser)
-            command -v brave-browser >/dev/null 2>&1 || die "brave-browser no está instalado."
-            printf 'brave-browser'
             ;;
         chrome|google-chrome|google-chrome-stable)
             command -v google-chrome >/dev/null 2>&1 || die "google-chrome no está instalado."
@@ -127,7 +121,7 @@ pick_browser() {
             printf 'chromium'
             ;;
         *)
-            die "Navegador no soportado: '$requested' (usa brave, chrome o chromium)"
+            die "Navegador no soportado: '$requested' (usa chrome o chromium)"
             ;;
     esac
 }
@@ -206,9 +200,9 @@ write_hypr_rule_block() {
 
     local host_re cls_re
     host_re="$(regex_escape "$host")"
-    # En Wayland nativo Chromium/Brave/Chrome asigna app_id "<navegador>-<host>...-Default"
+    # En Wayland nativo Chrome/Chromium asigna app_id "<navegador>-<host>...-Default"
     # e ignora --class=; en XWayland aplica "webapp-<slug>". Cubrimos ambos casos.
-    cls_re="^((brave|chrome|chromium)-${host_re}.*|webapp-${slug})$"
+    cls_re="^((chrome|chromium)-${host_re}.*|webapp-${slug})$"
 
     {
         printf '# BEGIN webapp-%s\n' "$slug"
@@ -249,7 +243,7 @@ cmd_install() {
                 shift
                 ;;
             --browser)
-                [ "$#" -ge 2 ] || die "--browser requiere un valor (brave|chrome|chromium)"
+                [ "$#" -ge 2 ] || die "--browser requiere un valor (chrome|chromium)"
                 browser_req="$2"
                 shift 2
                 ;;
@@ -288,7 +282,7 @@ cmd_install() {
     browser_bin="$(pick_browser "$browser_req")"
     icon_val="$(fetch_icon "$slug" "$url" "$icon_arg")"
 
-    wm_prefix="brave"
+    wm_prefix="chrome"
     case "$browser_bin" in
         google-chrome*) wm_prefix="chrome" ;;
         chromium*) wm_prefix="chromium" ;;
@@ -343,7 +337,7 @@ list_webapps_tsv() {
         url="$(sed -n 's/^X-WebApp-URL=//p' "$f" | head -n1)"
         mode="$(sed -n 's/^X-WebApp-Mode=//p' "$f" | head -n1)"
         browser="$(sed -n 's/^X-WebApp-Browser=//p' "$f" | head -n1)"
-        printf '%s\t%s\t%s\t%s\t%s\n' "$slug" "${name:-$slug}" "${mode:-tile}" "${browser:-brave-browser}" "${url:-}"
+        printf '%s\t%s\t%s\t%s\t%s\n' "$slug" "${name:-$slug}" "${mode:-tile}" "${browser:-google-chrome}" "${url:-}"
     done
 }
 
@@ -426,7 +420,7 @@ cmd_menu() {
             [ -n "$mode_choice" ] || return 0
             mode="${mode_choice%% *}"
             iso_choice="$(fuzzel_pick "Perfil de sesión: " 2 48 \
-                "Compartido  (usa tus sesiones de Brave)" \
+                "Compartido  (usa tus sesiones de Chrome)" \
                 "Aislado     (perfil separado para esta Web App)")"
             [ -n "$iso_choice" ] || return 0
             [[ "$iso_choice" == Aislado* ]] && isolated=1

@@ -87,7 +87,6 @@ doctor() {
   check zed
   check opencode
   check antigravity
-  check_opt brave-browser
   check_opt google-chrome
   check_opt agy
   check_opt lazydocker

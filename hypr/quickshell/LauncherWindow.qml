@@ -72,7 +72,7 @@ PanelWindow {
         if (k.indexOf(queryNorm) !== -1)
             return 130;
 
-        // Soporte para búsqueda multi-palabra (ej. "cap swappy", "brave pwa")
+        // Soporte para búsqueda multi-palabra (ej. "cap swappy", "chrome pwa")
         const tokens = queryNorm.split(/\s+/).filter(tok => tok.length > 0);
         if (tokens.length > 1) {
             const haystack = t + " " + s + " " + k;
@@ -307,8 +307,8 @@ PanelWindow {
                 badge: "Sistema",
                 glyph: "󰖟",
                 title: "Web Apps / PWAs (instalar, abrir, quitar)",
-                subtitle: "Gestionar aplicaciones web aisladas con Brave",
-                keywords: "webapp pwa brave instalar abrir quitar web",
+                subtitle: "Gestionar aplicaciones web aisladas con Chrome",
+                keywords: "webapp pwa chrome instalar abrir quitar web",
                 actionType: "submenu",
                 delayMs: 90,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Web Apps' \"$HOME/.config/hypr/scripts/webapp-install.sh\" menu"]
@@ -463,7 +463,6 @@ PanelWindow {
             "dev.zed.zed",
             "code",
             "antigravity",
-            "brave-browser",
             "google-chrome"
         ];
         for (let i = 0; i < pinned.length; i++) {

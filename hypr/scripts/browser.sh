@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Lanza el navegador predeterminado del sistema (Firefox por defecto en estos
-# dotfiles), con respaldo automático a Firefox Flatpak/nativo, Brave o Chrome.
+# dotfiles), con respaldo automático a Firefox Flatpak/nativo o Chrome.
 # ==============================================================================
 set -euo pipefail
 
@@ -18,8 +18,6 @@ elif command -v firefox >/dev/null 2>&1; then
     exec firefox "$@"
 elif command -v firefox-esr >/dev/null 2>&1; then
     exec firefox-esr "$@"
-elif command -v brave-browser >/dev/null 2>&1; then
-    exec brave-browser "$@"
 elif command -v google-chrome >/dev/null 2>&1; then
     exec google-chrome "$@"
 fi

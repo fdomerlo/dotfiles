@@ -10,7 +10,7 @@
 #      purga la pila docker-ce/containerd.io/docker.io si está instalada y
 #      deshabilita sus servicios. Este repo es podman-only.
 #   2. Deduplica fuentes de terceros: si existe .sources (DEB822),
-#      elimina el legacy .list duplicado (VS Code, Brave).
+#      elimina el legacy .list duplicado (VS Code, Google Chrome y legacy).
 #   3. Gestiona repositorios oficiales de Debian Stable:
 #      - Completa Signed-By en backports si quedó vacío.
 #      - Elimina el archivo legacy de FastTrack (repo discontinuado en estos dotfiles).
@@ -90,8 +90,15 @@ if [ -f "$SOURCES_D/vscode.sources" ] && [ -f "$SOURCES_D/vscode.list" ]; then
     ok "VS Code deduplicado."
 fi
 
+if [ -f "$SOURCES_D/google-chrome.sources" ] && [ -f "$SOURCES_D/google-chrome.list" ]; then
+    echo "  Deduplicando Google Chrome: eliminando google-chrome.list (se conserva google-chrome.sources DEB822)..."
+    rm -f "$SOURCES_D/google-chrome.list"
+    ok "Google Chrome deduplicado."
+fi
+
+# Legacy: deduplicar Brave si el host aún lo conserva instalado manualmente
 if [ -f "$SOURCES_D/brave-browser-release.sources" ] && [ -f "$SOURCES_D/brave-browser-release.list" ]; then
-    echo "  Deduplicando Brave: eliminando brave-browser-release.list (se conserva .sources DEB822)..."
+    echo "  Deduplicando Brave (legacy): eliminando brave-browser-release.list (se conserva .sources DEB822)..."
     rm -f "$SOURCES_D/brave-browser-release.list"
     ok "Brave deduplicado."
 fi

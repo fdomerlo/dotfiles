@@ -10,7 +10,6 @@ sdkman|devtools|~/.sdkman|https://get.sdkman.io|auto
 yazi|devtools|~/.local/bin/yazi|https://github.com/sxyazi/yazi/releases/latest|auto
 lazydocker|devtools|~/.local/bin/lazydocker|https://github.com/jesseduffield/lazydocker/releases/latest|auto
 code|tooling|/usr/bin/code|https://packages.microsoft.com/repos/code|apt
-brave-browser|tooling|/usr/bin/brave-browser|https://brave-browser-apt-release.s3.brave.com|apt
 google-chrome|tooling|/usr/bin/google-chrome|https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb|apt
 zed|tooling|~/.local/bin/zed|https://zed.dev/install.sh|auto
 nvim|tooling|~/.local/bin/nvim|https://github.com/neovim/neovim/releases/latest|auto
