@@ -31,6 +31,9 @@ PROMPT_PREFIX="${WEBAPP_PROMPT_PREFIX:-}"
 
 die() {
     printf 'Error: %s\n' "$*" >&2
+    if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+        notify "Error en Web Apps" "$*"
+    fi
     exit 1
 }
 
@@ -428,7 +431,7 @@ cmd_menu() {
             [ -n "$iso_choice" ] || return 0
             [[ "$iso_choice" == Aislado* ]] && isolated=1
 
-            local -a args=(install "$name" "$url" --mode "$mode")
+            local -a args=("$name" "$url" --mode "$mode")
             [ "$isolated" -eq 1 ] && args+=(--isolated)
             cmd_install "${args[@]}"
             ;;
