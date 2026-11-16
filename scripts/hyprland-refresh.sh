@@ -101,9 +101,14 @@ EOF
     ok "$WEBAPPS_CONF (semilla vacía)"
 fi
 
-for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf; do
-    link_file "$f" "$CONFIG_HOME/hypr/$(basename "$f")"
-done
+link_file "$HYPR_SRC/hypridle.conf" "$CONFIG_HOME/hypr/hypridle.conf"
+HYPRLOCK_DEST="$CONFIG_HOME/hypr/hyprlock.conf"
+HYPRLOCK_CUR="$(readlink -f -- "$HYPRLOCK_DEST" 2>/dev/null || true)"
+if [ -L "$HYPRLOCK_DEST" ] && [[ "$HYPRLOCK_CUR" == "$HYPR_SRC/lockscreens/"*.conf ]] && [ -e "$HYPRLOCK_CUR" ]; then
+    ok "$HYPRLOCK_DEST (preset $(basename "$HYPRLOCK_CUR" .conf) preservado)"
+else
+    link_file "$HYPR_SRC/hyprlock.conf" "$HYPRLOCK_DEST"
+fi
 for f in "$HYPR_SRC"/scripts/*.sh; do
     link_file "$f" "$CONFIG_HOME/hypr/scripts/$(basename "$f")"
 done
