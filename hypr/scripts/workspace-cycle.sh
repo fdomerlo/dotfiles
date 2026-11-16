@@ -4,16 +4,16 @@
 #
 # Uso: workspace-cycle.sh next|prev [--move]
 #
-# Recorre los workspaces de todas las salidas activas: con WS_PER_MONITOR=5 y
-# N monitores, recorre 1 .. N*5 (p. ej. 1-10 con dos monitores: 1-5 en el
-# primero, 6-10 en el segundo). Al llegar al final vuelve al inicio (10→1 y 1→10).
+# Recorre los workspaces de todas las salidas activas: con WS_PER_MONITOR=6 y
+# N monitores, recorre 1 .. N*6 (p. ej. 1-12 con dos monitores: 1-6 en el
+# primero, 7-12 en el segundo). Al llegar al final vuelve al inicio (12→1 y 1→12).
 #
 # --move mueve la ventana activa al workspace destino sin seguirla (igual que
 # Super+Shift+N). Sin --move solo cambia de workspace.
 # ==============================================================================
 set -euo pipefail
 
-WS_PER_MONITOR=5
+WS_PER_MONITOR=6
 
 direction="${1:-next}"
 mode="${2:-}"
