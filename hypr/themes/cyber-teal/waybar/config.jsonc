@@ -206,7 +206,7 @@
   },
 
   "clock": {
-    "format": "󰃭 {:L%A, %d de %B %H:%M}",
+    "format": "󰃭 {:L%A, %d %B %H:%M}",
     "tooltip-format": "<tt>{calendar}</tt>",
     "locale": "es_AR.UTF-8",
     "timezone": "America/Argentina/Buenos_Aires",
