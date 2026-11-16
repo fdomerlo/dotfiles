@@ -32,6 +32,9 @@ node_modules/
 skills/
 .agents/
 .gemini/
+# La skill de la estación se versiona (excepción al patrón 'skills/' de arriba)
+!ai/skills/
+!ai/skills/**
 
 # Tema activo de Hyprland (estado runtime, no versionado)
 hypr/themes/active

@@ -23,10 +23,10 @@ PanelWindow {
 
     readonly property var tabs: [
         { id: "apps", label: "Apps", icon: "󰀻" },
+        { id: "dev", label: "Dev & IA", icon: "󰅬" },
         { id: "capturar", label: "Capturar", icon: "󰄀" },
         { id: "estilo", label: "Estilo", icon: "󰏘" },
-        { id: "sistema", label: "Sistema", icon: "󰒓" },
-        { id: "dev", label: "Dev & IA", icon: "󰅬" }
+        { id: "sistema", label: "Sistema", icon: "󰒓" }
     ]
 
     property int selectedIndex: 0
@@ -364,6 +364,30 @@ PanelWindow {
             },
 
             // Dev & IA
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰚩",
+                title: "Asistente IA (acciones rápidas)",
+                subtitle: "Preguntar, explicar portapapeles, resumir, traducir o revisar cambios",
+                keywords: "ia ai opencode asistente explicar resumir traducir portapapeles commit",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ai.sh\" menu"]
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰆍",
+                title: "Abrir OpenCode",
+                subtitle: "Agente de terminal en ~/Proyectos",
+                keywords: "opencode agente ia ai terminal code",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ai.sh\" open"]
+            },
             {
                 kind: "action",
                 category: "dev",

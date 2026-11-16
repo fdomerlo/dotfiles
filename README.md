@@ -57,7 +57,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
-| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI, Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
+| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI con asistente integrado en Hyprland (`Super+Shift+A`), Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
 
 ---
 
@@ -71,10 +71,72 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | `make hyprland` | Instala o re-aplica solo el stack y la configuración de Hyprland |
 | `make hypr-desktop` / `make hypr-laptop` | Aplica plantilla local de desktop o notebook en `~/.config/hypr/conf/local.conf` |
 | `make refresh` | Re-enlaza configs/scripts de Hyprland y recarga la sesión activa tras un `git pull` |
+| `make devai` | Instala OpenCode, Antigravity y la skill de contexto de la estación |
+| `make virt` | (Opcional) Instala Quickemu + QEMU/KVM para VMs sin daemon ni autostart |
 | `make update` / `devctl update` | Actualiza paquetes APT (`packages/`), herramientas user-space y Flatpaks |
 | `make verify` / `devctl doctor` | Verifica salud del entorno, enlaces, Podman y Hyprland |
 | `make clean` / `make clean-deep` | Limpieza estándar o profunda (`rc`, huérfanos, cachés y logs) |
 | `devctl webapp install "<Nombre>" "<URL>"` | Crea una Web App (PWA) aislada en Chrome con icono e integración en Hyprland |
+
+---
+
+## 🤖 IA integrada (OpenCode)
+
+La estación **no ejecuta modelos locales**. OpenCode consume modelos cloud
+(OpenCode Zen/Console, Google AI Studio u otro proveedor conectado con
+`/connect`) y la integración con el escritorio es una capa de curaduría:
+atajos, menús y una skill con el contexto del repo.
+
+| Acción | Cómo |
+| :--- | :--- |
+| Menú de acciones IA | `Super+Shift+A` (o `Dev & IA` en el Centro Unificado / Lanzador) |
+| Explicar el portapapeles | `Super+Ctrl+I` |
+| Abrir OpenCode | `Super+Return` y luego `c` |
+| Continuar la última sesión | `cc` |
+| Forzar un modelo puntual | `AI_MODEL=provider/modelo ai` |
+
+`hypr/scripts/ai.sh` permite preguntar, explicar el portapapeles o un error,
+resumir, traducir, revisar el diff del repo de dotfiles y generar mensajes de
+commit. Las llamadas usan `opencode run --archived` para no ensuciar el historial
+de sesiones.
+
+La skill `ai/skills/workstation/SKILL.md` le da al agente el contexto de la
+estación (Debian Stable, Hyprland, Podman rootless, convenciones e invariantes
+del aprovisionamiento). `make devai` enlaza cada `ai/skills/<id>/SKILL.md` en
+`~/.config/opencode/skills/<id>`, así que agregar skills nuevas no requiere
+tocar el instalador.
+
+### Otros agentes (no aprovisionados)
+
+El repo no instala Claude Code, Codex CLI ni Pi: se solapan con OpenCode y
+Antigravity y agregarían runtimes y mantenimiento sin aportar valor al
+aprovisionamiento base. Si los necesitás, se instalan aparte con su instalador
+oficial y su propio login:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash         # Claude Code
+curl -fsSL https://chatgpt.com/codex/install.sh | sh   # Codex CLI
+curl -fsSL https://pi.dev/install.sh | sh              # Pi (requiere Node 22.19+)
+```
+
+---
+
+## 🖥️ Virtualización opcional (Quickemu)
+
+Para pruebas esporádicas de software, drivers y paridad con estaciones
+Windows/Ubuntu/Zorin/Fedora, **sin libvirtd ni daemons permanentes**:
+
+```bash
+make virt
+quickget windows 10        # o ubuntu 24.04, zorin 17, fedora <release>
+quickemu --vm ~/VMs/windows-10.conf
+quickemu --vm ~/VMs/windows-10.conf --snapshot create base
+```
+
+Cada VM es un proceso QEMU del usuario que termina al apagarla. Las imágenes
+viven en `~/VMs` (override con `VMS_DIR`) y no hay autostart ni red NAT
+administrada. Con 7 GB de RAM conviene una VM liviana a la vez; Windows 11 no es
+un objetivo realista en este hardware.
 
 ---
 
@@ -98,6 +160,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+V` / `Super+Shift+T` / `Super+W` | Historial portapapeles / cambiar tema / siguiente wallpaper |
 | `Print` / `Ctrl+Print` / `Shift+Print` | Captura + `swappy` / captura directa al portapapeles / pantalla completa |
 | `Super+Shift+R` / `Super+Shift+P` / `Super+Ctrl+O` | Grabar pantalla / selector color HEX / OCR de región |
+| `Super+Shift+A` / `Super+Ctrl+I` | Menú del asistente IA / explicar el portapapeles con OpenCode |
 | `Super+L` / `Super+N` / `Super+Ctrl+N` | Bloquear pantalla / notificaciones / luz nocturna (`4000K`) |
 | **Touchpad (3 dedos)** | Horizontal: workspaces · Arriba: Centro Unificado · Abajo: Actividades |
 
@@ -140,5 +203,6 @@ find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/q
 ├── host/             # Configuración del sistema base y Podman Rootless
 ├── scripts/          # Instaladores modulares, actualización (update.sh) y salud (verify.sh)
 ├── shell/            # Dotfiles de zsh, git, tmux, nvim, yazi, mc, btop, zathura y CLI devctl
+├── ai/               # Skill de contexto de la estación para OpenCode (SKILL.md)
 └── hypr/             # Escritorio Hyprland (conf, quickshell, waybar, foot, fuzzel, swaync, temas, scripts)
 ```

@@ -9,7 +9,7 @@ export CHSH=no
 export KEEP_ZSHRC=yes
 export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install base-install full-install update refresh host timeshift podman shell devtools tooling devai desktop hyprland hypr-desktop hypr-laptop verify clean clean-deep gitconfig github-auth
+.PHONY: help install base-install full-install update refresh host timeshift podman shell devtools tooling devai virt desktop hyprland hypr-desktop hypr-laptop verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
@@ -25,6 +25,7 @@ help:
 	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi, lazydocker y sincroniza SSH de GitHub"
 	@echo "  make tooling         - Instala navegadores, editores y suite sysadmin/productividad (Firefox default, Chrome para PWAs, LibreOffice, VS Code, Zed, Neovim, Remmina, Wireshark, DBeaver, Bruno, Obsidian, Super Productivity)"
 	@echo "  make devai           - Instala OpenCode CLI, Antigravity CLI y Core/IDE"
+	@echo "  make virt            - (Opcional) Instala Quickemu + QEMU/KVM para VMs sin daemon"
 	@echo "  make desktop         - Mantiene GNOME Shell estándar (sin extensiones/extras) y directorios de trabajo"
 	@echo "  make timeshift       - (Opcional) Instala y configura Timeshift sin crear snapshots automáticos iniciales"
 	@echo "  make hyprland        - Instala y configura el escritorio Hyprland (mantiene GNOME como fallback)"
@@ -164,6 +165,11 @@ tooling:
 devai:
 	@echo "==> Instalando herramientas de IA..."
 	bash scripts/devai.sh
+
+# 6b. Virtualización opcional (Quickemu + QEMU/KVM, sin daemon ni autostart)
+virt:
+	@echo "==> Configurando virtualización opcional (Quickemu)..."
+	bash scripts/virt.sh
 
 # 7. Entorno de Escritorio (GNOME fallback estándar)
 desktop:

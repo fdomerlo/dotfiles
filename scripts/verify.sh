@@ -180,6 +180,41 @@ for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc l
     fi
 done
 
+# 8b. IA integrada (OpenCode + skill) y virtualización opcional
+echo -n "Skills del repo para OpenCode: "
+skills_total=0
+skills_missing=0
+shopt -s nullglob
+for skill_md in "$REPO_DIR"/ai/skills/*/SKILL.md; do
+    skills_total=$((skills_total + 1))
+    skill_name="$(basename "$(dirname "$skill_md")")"
+    [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills/$skill_name/SKILL.md" ] || skills_missing=$((skills_missing + 1))
+done
+shopt -u nullglob
+if [ "$skills_total" -eq 0 ]; then
+    check_optional "No hay skills versionadas en ai/skills/"
+elif [ "$skills_missing" -eq 0 ]; then
+    check_status 0 "$skills_total enlazada(s)"
+else
+    check_optional "$skills_missing de $skills_total sin enlazar (ejecuta 'make devai')"
+fi
+
+echo -n "Acciones IA de Hyprland (ai.sh): "
+if [ -x "$HOME/.config/hypr/scripts/ai.sh" ]; then
+    check_status 0 "Presente"
+else
+    check_optional "No instalada (ejecuta 'make hyprland' o 'make refresh')"
+fi
+
+echo -n "Virtualización (Quickemu + /dev/kvm): "
+if command -v quickemu &>/dev/null && [ -c /dev/kvm ]; then
+    check_status 0 "Disponible"
+elif command -v quickemu &>/dev/null; then
+    check_optional "Quickemu instalado, pero /dev/kvm ausente (revisa BIOS/grupo kvm)"
+else
+    check_optional "No instalada (opcional: 'make virt')"
+fi
+
 echo -n "  -> firefox (navegador default): "
 if (command -v flatpak &>/dev/null && flatpak info org.mozilla.firefox &>/dev/null) || command -v firefox &>/dev/null || command -v firefox-esr &>/dev/null; then
     DEF_BROWSER="$(xdg-settings get default-web-browser 2>/dev/null || true)"

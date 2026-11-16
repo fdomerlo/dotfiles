@@ -166,6 +166,8 @@ menu_sistema() {
 
 menu_dev() {
     local -a opts=(
+        "󰚩  Asistente IA (acciones rápidas)"
+        "󰆍  Abrir OpenCode"
         "󰒍  Diagnóstico de estación (devctl doctor)"
         "󰚰  Actualizar estación (devctl update)"
         "󰃢  Limpieza profunda (devctl clean)"
@@ -180,6 +182,8 @@ menu_dev() {
     [ -n "$choice" ] || exit 0
 
     case "$choice" in
+        "󰚩 "*) launch_bg "$SCRIPT_DIR/ai.sh" menu ;;
+        "󰆍 "*) launch_bg "$SCRIPT_DIR/ai.sh" open ;;
         "󰒍 "*) launch_term_hold "devctl doctor" "devctl doctor" ;;
         "󰚰 "*) launch_term_hold "devctl update" "devctl update" ;;
         "󰃢 "*) launch_term_hold "devctl clean" "devctl clean" ;;
@@ -220,10 +224,10 @@ menu_buscar() {
 
 while true; do
     root_opts=(
+        "󰅬  Dev & IA"
         "󰄀  Capturar"
         "󰏘  Estilo"
         "󰒓  Sistema"
-        "󰅬  Dev & IA"
         "󰍉  Buscar & Utilidades"
     )
 
@@ -231,10 +235,10 @@ while true; do
     [ -n "$choice" ] || exit 0
 
     case "$choice" in
+        "󰅬 "*) menu_dev ;;
         "󰄀 "*) menu_capturar ;;
         "󰏘 "*) menu_estilo ;;
         "󰒓 "*) menu_sistema ;;
-        "󰅬 "*) menu_dev ;;
         "󰍉 "*) menu_buscar ;;
     esac
 done

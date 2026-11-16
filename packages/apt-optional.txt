@@ -17,3 +17,12 @@ pipewire
 # Repositorios externos / paquetes .deb de terceros (scripts/tooling.sh)
 code
 google-chrome-stable
+
+# Virtualización opcional sin daemon (scripts/virt.sh -> make virt)
+quickemu
+qemu-system-x86
+qemu-utils
+ovmf
+swtpm
+genisoimage
+usbutils

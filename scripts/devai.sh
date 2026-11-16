@@ -72,4 +72,22 @@ fi
 # 3. Antigravity Desktop (componente opcional)
 bash "$SCRIPT_DIR/setup_agy.sh"
 
+# 4. Skills del repo para OpenCode (contexto de la estación y futuras skills).
+#    Cada ai/skills/<id>/SKILL.md se enlaza como ~/.config/opencode/skills/<id>.
+OPENCODE_SKILLS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills"
+mkdir -p "$OPENCODE_SKILLS_DIR"
+shopt -s nullglob
+for skill_md in "$REPO_DIR"/ai/skills/*/SKILL.md; do
+    skill_src="$(dirname "$skill_md")"
+    skill_name="$(basename "$skill_src")"
+    skill_dest="$OPENCODE_SKILLS_DIR/$skill_name"
+    if [ -L "$skill_dest" ] || [ ! -e "$skill_dest" ]; then
+        ln -sfn "$skill_src" "$skill_dest"
+        echo "✔ Skill '$skill_name' enlazada en $OPENCODE_SKILLS_DIR."
+    else
+        echo "  ⚠️ $skill_dest existe y no es un symlink; se deja intacta."
+    fi
+done
+shopt -u nullglob
+
 echo "✔ Herramientas de IA configuradas."
