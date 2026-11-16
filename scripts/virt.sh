@@ -36,6 +36,12 @@ ok()   { echo "  ✔ $1"; }
 warn() { echo "  ⚠️ $1"; }
 step() { echo; echo "==> $1"; }
 
+have_sudo() {
+    command -v sudo >/dev/null 2>&1 || return 1
+    sudo -n true 2>/dev/null && return 0
+    [ -t 0 ] && sudo -v
+}
+
 # Paquetes APT: quickemu arrastra QEMU, SPICE y swtpm; el resto se declara
 # explícito para dejar clara la dependencia (OVMF, ISOs y passthrough USB).
 VIRT_PKGS=(quickemu qemu-system-x86 qemu-utils ovmf swtpm genisoimage usbutils)
@@ -72,14 +78,15 @@ if [ "${#MISSING[@]}" -eq 0 ]; then
 elif [ "$CHECK_ONLY" -eq 1 ]; then
     warn "Faltan: ${MISSING[*]} (ejecutá 'make virt')"
 else
-    if sudo -n true 2>/dev/null; then
-        echo "==> Instalando: ${MISSING[*]}..."
+    if have_sudo; then
+        echo "==> Actualizando índices APT e instalando: ${MISSING[*]}..."
+        sudo apt-get update -y || warn "No se pudo actualizar el índice APT; intentando con caché local."
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${MISSING[@]}"
-        ok "Paquetes instalados"
+        ok "Paquetes instalados: ${MISSING[*]}"
     else
         warn "Faltan: ${MISSING[*]}"
-        warn "Instalalos con: sudo apt install ${MISSING[*]}"
-        exit 0
+        warn "No hay sesión sudo interactiva; instalalos con: sudo apt install ${MISSING[*]}"
+        exit 1
     fi
 fi
 
@@ -102,7 +109,7 @@ if getent group kvm >/dev/null 2>&1; then
         ok "Usuario '$USER' en el grupo kvm"
     elif [ -c /dev/kvm ] && [ "$(stat -c '%a' /dev/kvm 2>/dev/null || echo 000)" = "666" ]; then
         ok "/dev/kvm es accesible sin grupo kvm"
-    elif sudo -n true 2>/dev/null; then
+    elif [ "$CHECK_ONLY" -eq 0 ] && have_sudo; then
         sudo usermod -aG kvm "$USER"
         warn "Agregado '$USER' al grupo kvm: cerrá sesión y volvé a entrar"
     else
