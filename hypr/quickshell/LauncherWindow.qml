@@ -207,6 +207,18 @@ PanelWindow {
                 kind: "action",
                 category: "estilo",
                 badge: "Estilo",
+                glyph: "󰌾",
+                title: "Estilo de pantalla de bloqueo",
+                subtitle: "Elegir entre Tema (Opción A), SOC Console, Matrix SOC, Minimal o Clásico",
+                keywords: "lockscreen bloqueo hyprlock candado soc matrix estilo",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Lockscreen' \"$HOME/.config/hypr/scripts/lockscreen-switch.sh\" menu"]
+            },
+            {
+                kind: "action",
+                category: "estilo",
+                badge: "Estilo",
                 glyph: "󰸨",
                 title: "Siguiente wallpaper",
                 subtitle: "Rotar fondo de pantalla del tema activo",
@@ -387,6 +399,18 @@ PanelWindow {
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ai.sh\" open"]
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰍹",
+                title: "Máquinas virtuales (Quickemu)",
+                subtitle: "Iniciar, apagar, snapshots y crear VMs en ~/VMs",
+                keywords: "vm virtual machine quickemu quickget qemu windows kvm",
+                actionType: "submenu",
+                delayMs: 90,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'VMs:' \"$HOME/.config/hypr/scripts/vm-menu.sh\""]
             },
             {
                 kind: "action",

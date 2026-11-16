@@ -108,6 +108,7 @@ menu_estilo() {
     local -a opts=(
         "󰔎  Elegir tema (actual: $theme)"
         "󰸉  Alternar tema rápido"
+        "󰌾  Estilo de pantalla de bloqueo"
         "󰸨  Siguiente wallpaper"
         "$night_label"
         "󰂚  Centro de notificaciones (SwayNC)"
@@ -121,6 +122,7 @@ menu_estilo() {
     case "$choice" in
         "󰔎 "*) "$SCRIPT_DIR/theme-switch.sh" menu ;;
         "󰸉 "*) launch_bg "$SCRIPT_DIR/theme-switch.sh" toggle ;;
+        "󰌾 "*) "$SCRIPT_DIR/lockscreen-switch.sh" menu ;;
         "󰸨 "*) launch_bg "$SCRIPT_DIR/wallpaper.sh" --next ;;
         "󰖔 "*) launch_bg "$SCRIPT_DIR/nightlight-toggle.sh" ;;
         "󰂚 "*) launch_bg swaync-client -t -sw ;;
@@ -168,6 +170,7 @@ menu_dev() {
     local -a opts=(
         "󰚩  Asistente IA (acciones rápidas)"
         "󰆍  Abrir OpenCode"
+        "󰍹  Máquinas virtuales (Quickemu)"
         "󰒍  Diagnóstico de estación (devctl doctor)"
         "󰚰  Actualizar estación (devctl update)"
         "󰃢  Limpieza profunda (devctl clean)"
@@ -184,6 +187,7 @@ menu_dev() {
     case "$choice" in
         "󰚩 "*) launch_bg "$SCRIPT_DIR/ai.sh" menu ;;
         "󰆍 "*) launch_bg "$SCRIPT_DIR/ai.sh" open ;;
+        "󰍹 "*) VM_PROMPT_PREFIX="Menú · VMs" "$SCRIPT_DIR/vm-menu.sh" menu ;;
         "󰒍 "*) launch_term_hold "devctl doctor" "devctl doctor" ;;
         "󰚰 "*) launch_term_hold "devctl update" "devctl update" ;;
         "󰃢 "*) launch_term_hold "devctl clean" "devctl clean" ;;
