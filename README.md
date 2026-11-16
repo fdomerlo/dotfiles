@@ -4,7 +4,7 @@
 ![podman](https://img.shields.io/badge/podman-rootless-purple)
 ![apps](https://img.shields.io/badge/apps-Flatpak%20%7C%20AppImage-blue)
 
-# Dotfiles — Debian Stable Workstation
+# Debian Workstation — Hyprland & Dev Environment
 
 Aprovisionamiento idempotente para estaciones de trabajo de desarrollo, DevOps e IA sobre **Debian Stable** (`trixie`). Incluye **Hyprland como escritorio principal** (con **GNOME estándar** como fallback limpio en GDM), contenedores **Podman Rootless**, shell productiva y runtimes aislados en user-space.
 
