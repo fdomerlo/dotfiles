@@ -130,12 +130,35 @@ window#waybar.empty #window {
 #clock,
 #tray,
 #custom-power {
-    background: rgba(10, 16, 21, 0.78);
-    border: 1px solid #1d3542;
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(46, 116, 145, 0.30);
     border-radius: 0;
-    margin: 4px 1px;
-    padding: 0 9px;
+    margin: 3px 0;
+    padding: 0 11px;
     color: #c3d2dd;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+/* Hover tenue: mismo lenguaje que los workspaces, sin cajas ni marcos. */
+#cpu:hover,
+#memory:hover,
+#power-profiles-daemon:hover,
+#idle_inhibitor:hover,
+#backlight:hover,
+#battery:hover,
+#pulseaudio:hover,
+#network:hover,
+#custom-vpn:hover,
+#bluetooth:hover,
+#custom-notification:hover,
+#custom-nightlight:hover,
+#custom-recording:hover,
+#clock:hover,
+#tray:hover,
+#custom-power:hover {
+    background: rgba(46, 116, 145, 0.18);
+    color: #d8e4ec;
 }
 
 #cpu,
@@ -157,14 +180,14 @@ window#waybar.empty #window {
 
 #idle_inhibitor {
     color: #5f7684;
-    padding: 0 9px;
+    padding: 0 11px;
     font-size: 14px;
     transition: all 0.12s ease;
 }
 
 #idle_inhibitor.activated {
     color: #4f9fbf;
-    border-color: #2e7491;
+    border-left-color: #4f9fbf;
 }
 
 #backlight {
@@ -186,7 +209,7 @@ window#waybar.empty #window {
 
 #battery.critical:not(.charging) {
     color: #c83434;
-    border-color: rgba(200, 52, 52, 0.50);
+    border-left-color: rgba(200, 52, 52, 0.50);
 }
 
 #pulseaudio {
@@ -224,7 +247,7 @@ window#waybar.empty #window {
 
 #custom-notification {
     color: #5f7684;
-    padding: 0 9px;
+    padding: 0 11px;
     font-size: 14px;
     transition: all 0.12s ease;
 }
@@ -240,35 +263,35 @@ window#waybar.empty #window {
 
 #custom-notification:hover {
     color: #d8e4ec;
-    border-color: #2e7491;
+    border-left-color: rgba(79, 159, 191, 0.60);
 }
 
 /* Luz nocturna: solo aparece mientras el filtro está activo. */
 #custom-nightlight {
     color: #c9a227;
-    padding: 0 9px;
+    padding: 0 11px;
     transition: all 0.12s ease;
 }
 
 #custom-nightlight:hover {
-    background: #c9a227;
-    color: #05080b;
-    border-color: #c9a227;
+    background: rgba(201, 162, 39, 0.18);
+    color: #e0c04a;
+    border-left-color: #c9a227;
 }
 
 /* Grabación de pantalla: parpadea como un indicador REC. */
 #custom-recording {
     color: #c83434;
-    border-color: rgba(200, 52, 52, 0.45);
-    padding: 0 9px;
+    border-left-color: rgba(200, 52, 52, 0.45);
+    padding: 0 11px;
     font-weight: bold;
     animation: recording-pulse 1.2s ease-in-out infinite alternate;
 }
 
 #custom-recording:hover {
-    background: #c83434;
-    color: #05080b;
-    border-color: #c83434;
+    background: rgba(200, 52, 52, 0.20);
+    color: #e05a5a;
+    border-left-color: #c83434;
 }
 
 @keyframes recording-pulse {
@@ -279,11 +302,11 @@ window#waybar.empty #window {
 #clock {
     color: #d8e4ec;
     font-weight: bold;
-    border-color: rgba(46, 116, 145, 0.45);
+    border-left-color: rgba(46, 116, 145, 0.45);
 }
 
 #tray {
-    padding: 0 7px;
+    padding: 0 9px;
 }
 
 #tray > .passive {
@@ -297,16 +320,16 @@ window#waybar.empty #window {
 
 #custom-power {
     color: #c83434;
-    border-color: rgba(200, 52, 52, 0.40);
-    padding: 0 10px;
+    border-left-color: rgba(200, 52, 52, 0.40);
+    padding: 0 11px;
     font-size: 14px;
     transition: all 0.12s ease;
 }
 
 #custom-power:hover {
-    background: #c83434;
-    color: #05080b;
-    border-color: #c83434;
+    background: rgba(200, 52, 52, 0.20);
+    color: #e05a5a;
+    border-left-color: #c83434;
 }
 
 /* --- Tooltip --- */
