@@ -123,9 +123,14 @@ alias dc="podman compose"
 alias lzd="lazydocker"
 
 # --- Agentes de IA (OpenCode) ---
+# `--standalone` usa un servidor privado por invocación: el servicio de fondo
+# queda apagado salvo que se encienda con `oc-on`.
 if command -v opencode &>/dev/null; then
-  alias c="opencode"
-  alias cc="opencode --continue"
+  alias c="opencode --standalone"
+  alias cc="opencode --standalone --continue"
+  alias oc-on="opencode service start"
+  alias oc-off="opencode service stop"
+  alias oc-st="opencode service status"
 fi
 if [[ -x "$HOME/.config/hypr/scripts/ai.sh" ]]; then
   alias ai="$HOME/.config/hypr/scripts/ai.sh"

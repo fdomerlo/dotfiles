@@ -170,6 +170,9 @@ menu_dev() {
     local -a opts=(
         "󰚩  Asistente IA (acciones rápidas)"
         "󰆍  Abrir OpenCode"
+        "󰐊  Encender servicio OpenCode"
+        "󰐥  Apagar servicio OpenCode"
+        "󰒓  Estado del servicio OpenCode"
         "󰍹  Máquinas virtuales (Quickemu)"
         "󰒍  Diagnóstico de estación (devctl doctor)"
         "󰚰  Actualizar estación (devctl update)"
@@ -187,6 +190,9 @@ menu_dev() {
     case "$choice" in
         "󰚩 "*) launch_bg "$SCRIPT_DIR/ai.sh" menu ;;
         "󰆍 "*) launch_bg "$SCRIPT_DIR/ai.sh" open ;;
+        "󰐊 "*) launch_bg "$SCRIPT_DIR/ai.sh" service start ;;
+        "󰐥 "*) launch_bg "$SCRIPT_DIR/ai.sh" service stop ;;
+        "󰒓 "*) launch_term_hold "Estado del servicio OpenCode" "\"$SCRIPT_DIR/ai.sh\" service status" ;;
         "󰍹 "*) VM_PROMPT_PREFIX="Menú · VMs" "$SCRIPT_DIR/vm-menu.sh" menu ;;
         "󰒍 "*) launch_term_hold "devctl doctor" "devctl doctor" ;;
         "󰚰 "*) launch_term_hold "devctl update" "devctl update" ;;

@@ -93,12 +93,20 @@ atajos, menús y una skill con el contexto del repo.
 | Explicar el portapapeles | `Super+Ctrl+I` |
 | Abrir OpenCode | `Super+Return` y luego `c` |
 | Continuar la última sesión | `cc` |
+| Encender/apagar servicio de fondo | `oc-on`, `oc-off`, `oc-st` (o `Dev & IA`) |
 | Forzar un modelo puntual | `AI_MODEL=provider/modelo ai` |
 
 `hypr/scripts/ai.sh` permite preguntar, explicar el portapapeles o un error,
 resumir, traducir, revisar el diff del repo de dotfiles y generar mensajes de
-commit. Las llamadas usan `opencode run --archived` para no ensuciar el historial
-de sesiones.
+commit. Las llamadas usan `opencode run --archived --standalone`: `--archived`
+evita ensuciar el historial de sesiones y `--standalone` levanta un servidor
+privado que muere con el proceso.
+
+Eso deja **apagado** el servicio de fondo de OpenCode (unos 250 MB de RAM) por
+defecto. Solo se enciende si se pide con `oc-on`, con `ai.sh service start` o
+desde `Dev & IA`; `oc-off` lo detiene. Cualquier invocación de `opencode` sin
+`--standalone` vuelve a levantarlo, así que la TUI se abre como `opencode
+--standalone`.
 
 La skill `ai/skills/workstation/SKILL.md` le da al agente el contexto de la
 estación (Debian Stable, Hyprland, Podman rootless, convenciones e invariantes

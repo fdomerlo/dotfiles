@@ -10,7 +10,12 @@
 #   ai.sh menu        # menú de acciones (Super+Shift+A)
 #   ai.sh explain     # explicar el portapapeles (Super+Ctrl+I)
 #   ai.sh ask|error|summarize|translate|diff|commit|open
+#   ai.sh service start|stop|status   # servicio de fondo de OpenCode
 #   ai.sh __run <mode> <title> <prompt-file>    # interno
+#
+# Las llamadas usan `--standalone`: cada acción levanta un servidor privado que
+# muere con el proceso, así el servicio de fondo (~250 MB) queda apagado salvo
+# que se encienda a propósito con `ai.sh service start`.
 # ==============================================================================
 set -euo pipefail
 
@@ -66,7 +71,7 @@ __run() {
         exit 1
     }
 
-    local -a args=(run --archived)
+    local -a args=(run --archived --standalone)
     [ -n "${AI_MODEL:-}" ] && args+=(--model "$AI_MODEL")
     if [ -n "$attach" ] && [ -f "$attach" ]; then
         args+=(--file "$attach")
@@ -222,7 +227,67 @@ action_open() {
     require_foot
     local start_dir="$HOME/Proyectos"
     [ -d "$start_dir" ] || start_dir="$HOME"
-    setsid foot --title "OpenCode" -e opencode "$start_dir" >/dev/null 2>&1 </dev/null &
+    setsid foot --title "OpenCode" -e opencode --standalone "$start_dir" >/dev/null 2>&1 </dev/null &
+}
+
+# Servicio de fondo de OpenCode: `start` lo enciende, `stop` lo apaga y
+# `status` imprime la URL activa o "detenido". Sin él, cada acción IA usa su
+# propio servidor efímero.
+service_url() {
+    command -v opencode >/dev/null 2>&1 || return 1
+    local status
+    status="$(opencode service status 2>/dev/null | head -n1)"
+    [ -n "$status" ] && [ "$status" != "stopped" ] || return 1
+    printf '%s\n' "$status"
+}
+
+action_service() {
+    local action="${1:-status}"
+    require_opencode
+
+    case "$action" in
+        start)
+            if [ -n "$(service_url || true)" ]; then
+                notify "IA" "El servicio de OpenCode ya está activo."
+                return 0
+            fi
+            opencode service start >/dev/null 2>&1 ||
+                die "No se pudo iniciar el servicio de OpenCode."
+            notify "IA" "Servicio de OpenCode iniciado."
+            ;;
+        stop)
+            opencode service stop >/dev/null 2>&1 || true
+            notify "IA" "Servicio de OpenCode detenido."
+            ;;
+        status)
+            local url
+            url="$(service_url || true)"
+            if [ -n "$url" ]; then
+                printf 'Servicio de OpenCode: activo en %s\n' "$url"
+            else
+                printf 'Servicio de OpenCode: detenido\n'
+            fi
+            ;;
+        *)
+            echo "Uso: $(basename "$0") service {start|stop|status}" >&2
+            return 2
+            ;;
+    esac
+}
+
+# Estado del servicio en una terminal flotante (para el menú).
+show_service_status() {
+    require_foot
+    local msg url
+    url="$(service_url || true)"
+    if [ -n "$url" ]; then
+        msg="Servicio de OpenCode: activo en $url"
+    else
+        msg="Servicio de OpenCode: detenido"
+    fi
+    setsid foot --title "IA · Servicio OpenCode" -e \
+        bash -c 'printf "%s\n\n[Enter para cerrar]" "$1"; read -r _' _ "$msg" \
+        >/dev/null 2>&1 </dev/null &
 }
 
 menu() {
@@ -230,6 +295,9 @@ menu() {
     local -a opts=(
         "󰚩  Preguntar a la IA"
         "󰆍  Abrir OpenCode"
+        "󰐊  Encender servicio OpenCode"
+        "󰐥  Apagar servicio OpenCode"
+        "󰒓  Estado del servicio OpenCode"
         "󰆧  Explicar el portapapeles"
         "󰆧  Explicar un error del portapapeles"
         "󰈈  Explicar la ventana activa"
@@ -248,6 +316,9 @@ menu() {
     case "$choice" in
         "󰚩 "*) action_ask ;;
         "󰆍 "*) action_open ;;
+        "󰐊 "*) action_service start ;;
+        "󰐥 "*) action_service stop ;;
+        "󰒓 "*) show_service_status ;;
         "󰆧  Explicar el"*) action_explain ;;
         "󰆧  Explicar un"*) action_error ;;
         "󰈈 "*) action_window ;;
@@ -272,9 +343,10 @@ case "${1:-menu}" in
     diff) action_diff ;;
     commit) action_commit ;;
     open) action_open ;;
+    service) shift; action_service "${1:-status}" ;;
     __run) shift; __run "$@" ;;
     *)
-        echo "Uso: $(basename "$0") {menu|ask|explain|error|summarize|translate|window|image|diff|commit|open}" >&2
+        echo "Uso: $(basename "$0") {menu|ask|explain|error|summarize|translate|window|image|diff|commit|open|service}" >&2
         exit 2
         ;;
 esac
