@@ -41,6 +41,14 @@ return {
         map("]d", vim.diagnostic.goto_next, "Siguiente diagnóstico")
       end
 
+      -- Autocomando global de LspAttach para asegurar atajos en cualquier LSP
+      vim.api.nvim_create_autocmd("LspAttach", {
+        group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
+        callback = function(ev)
+          on_attach(nil, ev.buf)
+        end,
+      })
+
       local lspconfig = require("lspconfig")
       local mason_lspconfig = require("mason-lspconfig")
 
@@ -53,31 +61,72 @@ return {
         automatic_installation = true,
       })
 
-      -- Handler automático: cualquier LSP instalado vía :Mason queda listo
-      mason_lspconfig.setup_handlers({
-        function(server_name)
-          lspconfig[server_name].setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-          })
-        end,
-        ["lua_ls"] = function()
-          lspconfig.lua_ls.setup({
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-              Lua = {
-                diagnostics = {
-                  globals = { "vim" },
-                },
-                workspace = {
-                  checkThirdParty = false,
-                },
+      -- En Neovim 0.11+ se utiliza la API nativa vim.lsp.config
+      if vim.lsp.config then
+        vim.lsp.config("*", {
+          capabilities = capabilities,
+        })
+        vim.lsp.config("lua_ls", {
+          settings = {
+            Lua = {
+              diagnostics = {
+                globals = { "vim" },
+              },
+              workspace = {
+                checkThirdParty = false,
               },
             },
-          })
-        end,
-      })
+          },
+        })
+      end
+
+      -- Compatibilidad con mason-lspconfig v1 (setup_handlers) si estuviera presente
+      if type(mason_lspconfig.setup_handlers) == "function" then
+        mason_lspconfig.setup_handlers({
+          function(server_name)
+            lspconfig[server_name].setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+            })
+          end,
+          ["lua_ls"] = function()
+            lspconfig.lua_ls.setup({
+              capabilities = capabilities,
+              on_attach = on_attach,
+              settings = {
+                Lua = {
+                  diagnostics = {
+                    globals = { "vim" },
+                  },
+                  workspace = {
+                    checkThirdParty = false,
+                  },
+                },
+              },
+            })
+          end,
+        })
+      elseif not vim.lsp.config then
+        -- Fallback para versiones previas sin vim.lsp.config ni setup_handlers
+        lspconfig.lua_ls.setup({
+          capabilities = capabilities,
+          on_attach = on_attach,
+          settings = {
+            Lua = {
+              diagnostics = {
+                globals = { "vim" },
+              },
+              workspace = {
+                checkThirdParty = false,
+              },
+            },
+          },
+        })
+        lspconfig.bashls.setup({
+          capabilities = capabilities,
+          on_attach = on_attach,
+        })
+      end
     end,
   },
 }
