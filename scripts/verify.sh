@@ -42,7 +42,7 @@ fi
 
 echo -n "Manifiestos de paquetes (packages/)... "
 manifest_fail=0
-for m in apt-base.txt apt-optional.txt apt-backports.txt apt-hyprland.txt flatpak.txt external.txt; do
+for m in apt-base.txt apt-optional.txt apt-backports.txt apt-backports-tools.txt apt-hyprland.txt flatpak.txt external.txt; do
     mpath="$REPO_DIR/packages/$m"
     _tmp_items=()
     if ! read_manifest "$mpath" _tmp_items 2>/dev/null || [ "${#_tmp_items[@]}" -eq 0 ]; then
@@ -51,7 +51,7 @@ for m in apt-base.txt apt-optional.txt apt-backports.txt apt-hyprland.txt flatpa
     fi
 done
 if [ $manifest_fail -eq 0 ]; then
-    check_status 0 "6 manifiestos válidos en packages/"
+    check_status 0 "7 manifiestos válidos en packages/"
 else
     check_status 1 "Faltan o fallaron manifiestos en packages/"
 fi

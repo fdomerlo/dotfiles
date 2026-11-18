@@ -110,6 +110,7 @@ shell:
 	ln -sf $(ROOT_DIR)/shell/yazi/yazi.toml $(HOME)/.config/yazi/yazi.toml
 	ln -sf $(ROOT_DIR)/shell/yazi/keymap.toml $(HOME)/.config/yazi/keymap.toml
 	ln -sf $(ROOT_DIR)/shell/yazi/theme.toml $(HOME)/.config/yazi/theme.toml
+	ln -sf $(ROOT_DIR)/shell/yazi/init.lua $(HOME)/.config/yazi/init.lua
 	mkdir -p $(HOME)/.config/mc $(HOME)/.local/share/mc/skins
 	ln -sf $(ROOT_DIR)/shell/mc/ini $(HOME)/.config/mc/ini
 	ln -sf $(ROOT_DIR)/shell/mc/skins/nord.ini $(HOME)/.local/share/mc/skins/nord.ini

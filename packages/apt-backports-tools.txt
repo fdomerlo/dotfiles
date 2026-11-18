@@ -1,0 +1,7 @@
+# ==============================================================================
+# Herramientas de usuario provistas por stable-backports.
+# Consumido por scripts/devtools.sh (instalación) y scripts/update.sh (upgrades).
+# ==============================================================================
+
+# rga: búsqueda en PDFs, subtítulos y otros formatos con ripgrep-all.
+ripgrep-all

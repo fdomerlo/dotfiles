@@ -2,6 +2,8 @@
 # Se usa prepend_keymap para conservar las teclas nativas:
 #   hjkl / flechas, s (fd), S (rg), d (papelera), r (renombrar), w (tareas),
 #   t t (pestañas), o/O (abrir), c c (copiar ruta), f (filtrar), . (ocultos).
+# C-f se reasigna a rga (búsqueda en PDFs/documentos); para bajar una página
+# quedan <PageDown> y C-d.
 
 [[mgr.prepend_keymap]]
 on   = "<F2>"
@@ -87,3 +89,8 @@ desc = "Buscar y saltar con fzf"
 on   = "<C-g>"
 run  = "plugin zoxide"
 desc = "Saltar con zoxide"
+
+[[mgr.prepend_keymap]]
+on   = "<C-f>"
+run  = "search --via=rga"
+desc = "Buscar dentro de PDFs y documentos (rga)"

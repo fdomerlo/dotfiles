@@ -6,6 +6,11 @@ if [[ $EUID -eq 0 ]]; then
     exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=scripts/lib/packages.sh
+source "$REPO_DIR/scripts/lib/packages.sh"
+
 export PATH="$HOME/.local/bin:$HOME/.local/share/fnm:$PATH"
 
 echo "================================================================="
@@ -137,6 +142,24 @@ if [ ${#YAZI_DEPS[@]} -gt 0 ]; then
     fi
 else
     echo "✔ dependencias de previews de Yazi ya están instaladas"
+fi
+
+# Herramientas de usuario que Debian provee en stable-backports (p. ej. rga).
+BACKPORTS_TOOLS_PKGS=()
+read_manifest "$REPO_DIR/packages/apt-backports-tools.txt" BACKPORTS_TOOLS_PKGS
+MISSING_BACKPORTS_TOOLS=()
+for pkg in "${BACKPORTS_TOOLS_PKGS[@]}"; do
+    dpkg -s "$pkg" &> /dev/null || MISSING_BACKPORTS_TOOLS+=("$pkg")
+done
+if [ ${#MISSING_BACKPORTS_TOOLS[@]} -gt 0 ]; then
+    if sudo -n true 2>/dev/null || [ -t 0 ]; then
+        echo "Instalando herramientas de backports: ${MISSING_BACKPORTS_TOOLS[*]}..."
+        sudo apt-get install -y -t stable-backports "${MISSING_BACKPORTS_TOOLS[@]}"
+    else
+        echo "  (Pendiente: sudo apt install -t stable-backports ${MISSING_BACKPORTS_TOOLS[*]})"
+    fi
+else
+    echo "✔ herramientas de backports ya están instaladas (rga)"
 fi
 
 # Midnight Commander: alternativa TUI a Yazi, con skin Nord propio.

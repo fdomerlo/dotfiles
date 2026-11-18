@@ -61,8 +61,10 @@ if command -v apt-get &>/dev/null; then
 
     BASE_APT_PKGS=()
     OPT_APT_PKGS=()
+    BACKPORTS_TOOLS_PKGS=()
     read_manifest "$REPO_DIR/packages/apt-base.txt" BASE_APT_PKGS
     read_manifest "$REPO_DIR/packages/apt-optional.txt" OPT_APT_PKGS
+    read_manifest "$REPO_DIR/packages/apt-backports-tools.txt" BACKPORTS_TOOLS_PKGS
 
     # Paquetes del escritorio Hyprland: compartidos con scripts/hyprland.sh.
     # shellcheck source=scripts/hyprland-packages.sh
@@ -71,6 +73,7 @@ if command -v apt-get &>/dev/null; then
     CANDIDATES=(
         "${BASE_APT_PKGS[@]}"
         "${OPT_APT_PKGS[@]}"
+        "${BACKPORTS_TOOLS_PKGS[@]}"
         "${HYPR_BACKPORTS_PKGS[@]}"
         "${HYPR_MAIN_PKGS[@]}"
     )
