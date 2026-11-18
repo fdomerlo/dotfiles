@@ -13,9 +13,9 @@ if [ "${#active_vpns[@]}" -gt 0 ]; then
     vpn_name="${active_vpns[0]}"
     if command -v jq >/dev/null 2>&1; then
         jq -nc --arg name "$vpn_name" \
-            '{text: ("VPN " + $name), tooltip: ("VPN conectada: " + $name + "\nClick para administrar"), class: "connected"}'
+            '{text: (" " + $name), tooltip: ("VPN conectada: " + $name + "\nClick para administrar"), class: "connected"}'
     else
-        printf '{"text": "VPN %s", "tooltip": "VPN conectada: %s\\nClick para administrar", "class": "connected"}\n' "$vpn_name" "$vpn_name"
+        printf '{"text": "\uf132 %s", "tooltip": "VPN conectada: %s\\nClick para administrar", "class": "connected"}\n' "$vpn_name" "$vpn_name"
     fi
 else
     printf '{"text": "", "tooltip": "Sin VPN activa\\nClick para conectar", "class": "disconnected"}\n'

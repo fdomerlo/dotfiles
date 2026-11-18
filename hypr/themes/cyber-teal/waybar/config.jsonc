@@ -124,7 +124,7 @@
 
   "pulseaudio": {
     "format": "{icon} {volume}%",
-    "format-muted": "󰖁 MUTE",
+    "format-muted": "󰖁",
     "format-icons": {
       "default": ["󰕿", "󰖀", "󰕾"]
     },
@@ -136,8 +136,8 @@
 
   "network": {
     "format-wifi": " {essid}",
-    "format-ethernet": "󰈀 LAN",
-    "format-disconnected": "󰪎 Sin red",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰪎",
     "tooltip-format": "{ifname} via {gwaddr}",
     "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Red:' ~/.config/hypr/scripts/network-menu.sh",
     "on-click-right": "nm-connection-editor"

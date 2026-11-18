@@ -462,6 +462,8 @@ else
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
              "$HOME/.config/swaync/config.json" \
+             "$HOME/.config/swayosd/style.css" \
+             "$HOME/.config/swayosd/config.toml" \
              "$HOME/.config/quickshell/shell.qml" \
              "$HOME/.config/quickshell/WallpaperBadge.qml"; do
         [ -e "$f" ] || cfg_missing+=("$f")

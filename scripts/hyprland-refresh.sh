@@ -136,6 +136,9 @@ done
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
 done
+for f in "$HYPR_SRC"/swayosd/*; do
+    link_file "$f" "$CONFIG_HOME/swayosd/$(basename "$f")"
+done
 for f in "$HYPR_SRC"/quickshell/*; do
     link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
@@ -186,7 +189,8 @@ prune_stale_links() {
     for dir in "$CONFIG_HOME/hypr" "$CONFIG_HOME/hypr/conf" "$CONFIG_HOME/hypr/scripts" \
                "$CONFIG_HOME/waybar" "$CONFIG_HOME/fuzzel" "$CONFIG_HOME/foot" \
                "$CONFIG_HOME/swappy" "$CONFIG_HOME/wofi" "$CONFIG_HOME/kitty" \
-               "$CONFIG_HOME/mako" "$CONFIG_HOME/swaync" "$CONFIG_HOME/quickshell" \
+               "$CONFIG_HOME/mako" "$CONFIG_HOME/swaync" "$CONFIG_HOME/swayosd" \
+               "$CONFIG_HOME/quickshell" \
                "$CONFIG_HOME/fontconfig/conf.d" "$CONFIG_HOME/xdg-desktop-portal"; do
         [ -d "$dir" ] || continue
         while IFS= read -r -d '' link; do
@@ -264,6 +268,13 @@ if pgrep -x swaync >/dev/null 2>&1 && command -v swaync-client >/dev/null 2>&1; 
     swaync-client -R >/dev/null 2>&1 || true
     swaync-client -rs >/dev/null 2>&1 || true
     ok "swaync recargado (config + CSS)."
+fi
+
+# SwayOSD: solo lee style.css al arrancar; reiniciar solo si estaba activo.
+if command -v swayosd-server >/dev/null 2>&1 && pgrep -x swayosd-server >/dev/null 2>&1; then
+    pkill -x swayosd-server 2>/dev/null || true
+    setsid swayosd-server >/dev/null 2>&1 </dev/null &
+    ok "swayosd reiniciado (CSS del tema)."
 fi
 
 # hypridle: reiniciar para releer hypridle.conf.

@@ -5,12 +5,32 @@
 # overrides ni extensiones) como fallback limpio al cerrar Hyprland.
 #
 # Uso:
-#   session-gsettings.sh apply   # modo oscuro, fuentes Debian y cursor Bibata
+#   session-gsettings.sh apply   # modo oscuro, fuentes Debian, cursor Bibata y acento del tema
 #   session-gsettings.sh reset   # restaura los defaults estándar de GNOME
 # ==============================================================================
 set -euo pipefail
 
 command -v gsettings >/dev/null 2>&1 || exit 0
+
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+HYPR_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+active_theme() {
+    local link="$HYPR_DIR/themes/active"
+    [ -L "$link" ] || return 0
+    basename "$(readlink "$link")"
+}
+
+# Acento de libadwaita por tema: asi Nautilus, Configuracion y Flatpaks dejan
+# de quedar azules cuando el escritorio usa otra paleta.
+accent_for_theme() {
+    case "$1" in
+        mr-robot)   printf 'slate' ;;
+        cyber-teal) printf 'teal' ;;
+        *)          printf 'blue' ;;
+    esac
+}
 
 set_if_changed() {
     local schema="$1" key="$2" expected="$3" value="$4"
@@ -27,6 +47,10 @@ apply_hyprland() {
 
     set_if_changed org.gnome.desktop.interface color-scheme "'prefer-dark'" "prefer-dark"
     set_if_changed org.gnome.desktop.interface gtk-theme "'Adwaita'" "Adwaita"
+
+    local accent
+    accent="$(accent_for_theme "$(active_theme)")"
+    set_if_changed org.gnome.desktop.interface accent-color "'$accent'" "$accent"
 
     if grep -iqE '(^|,)Inter(,|$)' <<<"$fc_families"; then
         set_if_changed org.gnome.desktop.interface font-name "'Inter 11'" "Inter 11"
@@ -46,7 +70,7 @@ apply_hyprland() {
 
 reset_gnome() {
     local key
-    for key in font-name document-font-name monospace-font-name cursor-theme cursor-size color-scheme gtk-theme; do
+    for key in font-name document-font-name monospace-font-name cursor-theme cursor-size color-scheme gtk-theme accent-color; do
         gsettings reset org.gnome.desktop.interface "$key" 2>/dev/null || true
     done
 }

@@ -58,6 +58,16 @@ reload_desktop() {
     # swaync relee el CSS del tema activo.
     swaync-client -rs >/dev/null 2>&1 || true
 
+    # swayosd solo lee su style.css al arrancar: reiniciarlo si estaba activo
+    # (si el usuario no lo usa, no se enciende un daemon nuevo).
+    if command -v swayosd-server >/dev/null 2>&1 && pgrep -x swayosd-server >/dev/null 2>&1; then
+        pkill -x swayosd-server 2>/dev/null || true
+        setsid swayosd-server >/dev/null 2>&1 </dev/null &
+    fi
+
+    # Acento de libadwaita/GTK (Nautilus, Configuracion, Flatpaks) segun el tema.
+    "$HYPR_DIR/scripts/session-gsettings.sh" apply >/dev/null 2>&1 || true
+
     # Si el tema tiene fondos propios (o al cambiar de tema), actualizar wallpaper.
     "$HYPR_DIR/scripts/wallpaper.sh" --next >/dev/null 2>&1 || true
 
@@ -75,7 +85,8 @@ apply_theme() {
     local missing=()
     local f
     for f in appearance.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini \
-             quickshell/Theme.qml swaync/style.css waybar/config.jsonc waybar/style.css; do
+             quickshell/Theme.qml swaync/style.css swayosd/style.css \
+             waybar/config.jsonc waybar/style.css; do
         [ -e "$theme_dir/$f" ] || missing+=("$f")
     done
     if [ "${#missing[@]}" -gt 0 ]; then

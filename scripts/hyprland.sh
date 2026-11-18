@@ -202,6 +202,9 @@ done
 for f in "$HYPR_SRC"/swaync/*; do
     link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
 done
+for f in "$HYPR_SRC"/swayosd/*; do
+    link_file "$f" "$CONFIG_HOME/swayosd/$(basename "$f")"
+done
 for f in "$HYPR_SRC"/quickshell/*; do
     link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
