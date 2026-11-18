@@ -123,6 +123,15 @@ PanelWindow {
         }
     }
 
+    // Con LazyLoader la ventana puede nacer ya abierta; el handler de cambio no
+    // se dispara en ese caso y el buscador quedaría sin foco de teclado.
+    Component.onCompleted: {
+        if (overviewOpen && isFocusedMonitor) {
+            searchInput.text = "";
+            searchInput.forceActiveFocus();
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: Theme.backdrop

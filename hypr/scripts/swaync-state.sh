@@ -12,6 +12,13 @@ RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
 STATE_FILE="$RUNTIME/swaync-panel-state"
 EVENT_LOG="$RUNTIME/swaync-panel-state.log"
 
+# Instancia única: autostart y notifications-toggle.sh pueden lanzarlo casi a
+# la vez y cada copia abre su propia suscripción a swaync-client.
+exec 9>"$RUNTIME/swaync-state.lock"
+if ! flock -n 9; then
+    exit 0
+fi
+
 state_of() {
     printf '%s' "$1" | jq -r '
         (.class // "")

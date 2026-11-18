@@ -742,6 +742,16 @@ PanelWindow {
         }
     }
 
+    // La ventana puede crearse ya abierta por LazyLoader; replicamos el foco
+    // inicial que normalmente dispara el cambio de launcherOpen.
+    Component.onCompleted: {
+        if (launcherOpen) {
+            searchInput.text = "";
+            resetSelection();
+            focusTimer.restart();
+        }
+    }
+
     Timer {
         id: focusTimer
         interval: 20

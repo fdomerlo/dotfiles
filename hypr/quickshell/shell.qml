@@ -304,45 +304,55 @@ ShellRoot {
         }
     }
 
-    Variants {
-        model: Quickshell.screens
+    // Las ventanas pesadas se crean solo al abrirlas: en reposo Quickshell
+    // mantiene únicamente el badge del wallpaper y los handlers IPC.
+    LazyLoader {
+        active: root.overviewOpen
 
-        OverviewWindow {
-            required property var modelData
-            screen: modelData
-            overviewOpen: root.overviewOpen
-            searchQuery: root.searchQuery
-            selectedWorkspaceId: root.selectedWorkspaceId
-            tabNavigated: root.tabNavigated
-            onSearchUpdated: text => {
-                root.searchQuery = text;
-                root.tabNavigated = false;
+        Variants {
+            model: Quickshell.screens
+
+            OverviewWindow {
+                required property var modelData
+                screen: modelData
+                overviewOpen: root.overviewOpen
+                searchQuery: root.searchQuery
+                selectedWorkspaceId: root.selectedWorkspaceId
+                tabNavigated: root.tabNavigated
+                onSearchUpdated: text => {
+                    root.searchQuery = text;
+                    root.tabNavigated = false;
+                }
+                onCloseRequested: root.closeOverview()
+                onCycleWorkspaceRequested: delta => root.cycleWorkspace(delta)
+                onWindowSelected: toplevel => root.focusWindow(toplevel)
+                onWorkspaceSelected: wsId => root.switchWorkspace(wsId)
             }
-            onCloseRequested: root.closeOverview()
-            onCycleWorkspaceRequested: delta => root.cycleWorkspace(delta)
-            onWindowSelected: toplevel => root.focusWindow(toplevel)
-            onWorkspaceSelected: wsId => root.switchWorkspace(wsId)
         }
     }
 
-    LauncherWindow {
-        screen: root.launcherScreen || (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
-        launcherOpen: root.launcherOpen
-        activeTab: root.launcherTab
-        searchQuery: root.launcherSearchQuery
-        activeTheme: root.activeThemeName
-        recordingActive: root.recordingActive
-        nightlightActive: root.nightlightActive
-        onTabSelected: tabId => {
-            root.launcherTab = tabId;
+    LazyLoader {
+        active: root.launcherOpen
+
+        LauncherWindow {
+            screen: root.launcherScreen || (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
+            launcherOpen: root.launcherOpen
+            activeTab: root.launcherTab
+            searchQuery: root.launcherSearchQuery
+            activeTheme: root.activeThemeName
+            recordingActive: root.recordingActive
+            nightlightActive: root.nightlightActive
+            onTabSelected: tabId => {
+                root.launcherTab = tabId;
+            }
+            onSearchUpdated: text => {
+                root.launcherSearchQuery = text;
+            }
+            onCloseRequested: root.closeLauncher()
+            onAppActivated: entry => root.launchAppEntry(entry)
+            onActionActivated: act => root.launchAction(act)
+            onOverviewRequested: root.openOverview()
         }
-        onSearchUpdated: text => {
-            root.launcherSearchQuery = text;
-        }
-        onCloseRequested: root.closeLauncher()
-        onAppActivated: entry => root.launchAppEntry(entry)
-        onActionActivated: act => root.launchAction(act)
-        onOverviewRequested: root.openOverview()
     }
 
     Variants {
