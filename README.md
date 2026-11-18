@@ -53,7 +53,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 
 | Capa | Herramientas principales |
 | :--- | :--- |
-| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades), `fuzzel`, `foot`, `swaync`, `swayosd`, `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `mr-robot`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
+| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades; se apaga solo tras 10 min sin uso y se relanza al abrirlo), `fuzzel`, `foot`, `swaync`, `swayosd`, `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `mr-robot`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |

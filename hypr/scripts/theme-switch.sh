@@ -46,8 +46,9 @@ reload_desktop() {
     sleep 0.4
     setsid "$HYPR_DIR/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 
-    # Quickshell relee Theme.qml al reiniciar el daemon.
-    if command -v qs >/dev/null 2>&1 && { pgrep -x quickshell >/dev/null 2>&1 || pgrep -x qs >/dev/null 2>&1; }; then
+    # Quickshell relee Theme.qml al reiniciar el daemon. Si se apagó por
+    # inactividad no se enciende: la próxima apertura ya carga el tema nuevo.
+    if command -v qs >/dev/null 2>&1 && qs ipc show >/dev/null 2>&1; then
         qs kill >/dev/null 2>&1 || true
         pkill -x quickshell 2>/dev/null || true
         sleep 0.2

@@ -7,16 +7,19 @@ set -euo pipefail
 
 command -v qs >/dev/null 2>&1 || exit 0
 
-if qs ipc call overview toggle >/dev/null 2>&1; then
-    exit 0
-fi
-
-qs -n -d >/dev/null 2>&1 || true
-for _ in $(seq 1 30); do
+# Dos pasadas: si Quickshell se estaba apagando por inactividad, `-n` puede
+# descartar el arranque y la primera espera se agota sin ventana.
+for attempt in 1 2; do
     if qs ipc call overview toggle >/dev/null 2>&1; then
         exit 0
     fi
-    sleep 0.1
+    qs -n -d >/dev/null 2>&1 || true
+    for _ in $(seq 1 30); do
+        if qs ipc call overview toggle >/dev/null 2>&1; then
+            exit 0
+        fi
+        sleep 0.1
+    done
 done
 
 exit 1

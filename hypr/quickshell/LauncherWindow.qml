@@ -686,7 +686,10 @@ PanelWindow {
     }
 
     function resetSelection() {
-        selectedIndex = filteredItems.length > 0 ? 0 : -1;
+        // `filteredItems` puede estar todavía sin evaluar cuando la ventana nace
+        // ya abierta por LazyLoader; sin el guard el log escupe un TypeError.
+        const items = filteredItems;
+        selectedIndex = (items && items.length > 0) ? 0 : -1;
         if (resultList.count > 0 && selectedIndex >= 0) {
             resultList.positionViewAtIndex(0, ListView.Beginning);
         }

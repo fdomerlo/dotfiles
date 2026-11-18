@@ -243,8 +243,10 @@ sleep 0.3
 setsid "$CONFIG_HOME/hypr/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 ok "Waybar reiniciado."
 
-# Quickshell: iniciar o reiniciar esperando el cierre limpio antes de relanzar.
-if command -v qs >/dev/null 2>&1; then
+# Quickshell: reiniciar solo si está vivo (`qs ipc show` responde). Si se apagó
+# por inactividad no se fuerza el arranque: la próxima apertura del lanzador ya
+# carga la config nueva.
+if command -v qs >/dev/null 2>&1 && qs ipc show >/dev/null 2>&1; then
     qs kill >/dev/null 2>&1 || true
     pkill -x quickshell 2>/dev/null || true
     for _ in $(seq 1 20); do
@@ -253,6 +255,8 @@ if command -v qs >/dev/null 2>&1; then
     done
     setsid qs -n -d >/dev/null 2>&1 </dev/null &
     ok "Quickshell (re)iniciado."
+elif command -v qs >/dev/null 2>&1; then
+    ok "Quickshell apagado por inactividad; se relanza al abrir el lanzador."
 fi
 
 # Notificaciones: recargar config y CSS de swaync.

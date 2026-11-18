@@ -83,6 +83,31 @@ ShellRoot {
         }
     }
 
+    readonly property bool anyWindowOpen: launcherOpen || overviewOpen
+
+    // Sin ventanas abiertas Quickshell solo mantiene el badge del wallpaper.
+    // Apagarlo devuelve su memoria; launcher-toggle.sh y overview-toggle.sh lo
+    // relanzan cuando hace falta (primer atajo tras el apagado: ~500 ms).
+    Timer {
+        id: idleShutdown
+        interval: 10 * 60 * 1000
+        repeat: false
+        onTriggered: Qt.quit()
+    }
+
+    // restart() reinicia la cuenta desde cero al cerrar la última ventana.
+    onAnyWindowOpenChanged: {
+        if (anyWindowOpen)
+            idleShutdown.stop();
+        else
+            idleShutdown.restart();
+    }
+
+    Component.onCompleted: {
+        if (!anyWindowOpen)
+            idleShutdown.start();
+    }
+
     function orderedWorkspaceIds() {
         const list = [];
         const vals = Hyprland.workspaces.values;
