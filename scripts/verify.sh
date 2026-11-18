@@ -180,23 +180,36 @@ for cmd in git gh uv fnm code zed nvim opencode antigravity agy podman yazi mc l
     fi
 done
 
-# 8b. IA integrada (OpenCode + skill) y virtualización opcional
-echo -n "Skills del repo para OpenCode: "
-skills_total=0
-skills_missing=0
-shopt -s nullglob
-for skill_md in "$REPO_DIR"/ai/skills/*/SKILL.md; do
-    skills_total=$((skills_total + 1))
-    skill_name="$(basename "$(dirname "$skill_md")")"
-    [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills/$skill_name/SKILL.md" ] || skills_missing=$((skills_missing + 1))
-done
-shopt -u nullglob
-if [ "$skills_total" -eq 0 ]; then
-    check_optional "No hay skills versionadas en ai/skills/"
-elif [ "$skills_missing" -eq 0 ]; then
-    check_status 0 "$skills_total enlazada(s)"
-else
-    check_optional "$skills_missing de $skills_total sin enlazar (ejecuta 'make devai')"
+# 8b. IA integrada (OpenCode / Antigravity + skills) y virtualización opcional
+check_skills_dir() {
+    local label="$1"
+    local skills_dir="$2"
+    local skills_total=0
+    local skills_missing=0
+    echo -n "Skills del repo ($label): "
+    shopt -s nullglob
+    for skill_md in "$REPO_DIR"/ai/skills/*/SKILL.md; do
+        skills_total=$((skills_total + 1))
+        skill_name="$(basename "$(dirname "$skill_md")")"
+        [ -f "$skills_dir/$skill_name/SKILL.md" ] || skills_missing=$((skills_missing + 1))
+    done
+    shopt -u nullglob
+    if [ "$skills_total" -eq 0 ]; then
+        check_optional "No hay skills versionadas en ai/skills/"
+    elif [ "$skills_missing" -eq 0 ]; then
+        check_status 0 "$skills_total enlazada(s)"
+    else
+        check_optional "$skills_missing de $skills_total sin enlazar (ejecuta 'make devai')"
+    fi
+}
+
+check_skills_dir "OpenCode" "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills"
+check_skills_dir "Antigravity" "$HOME/.gemini/config/skills"
+if command -v agy &>/dev/null || [ -x "$HOME/.local/bin/agy" ] || [ -d "$HOME/.gemini/antigravity-cli" ]; then
+    check_skills_dir "Antigravity CLI" "$HOME/.gemini/antigravity-cli/skills"
+fi
+if [ -d "/opt/Antigravity-x64" ] || [ -d "$HOME/.gemini/antigravity" ]; then
+    check_skills_dir "Antigravity IDE" "$HOME/.gemini/antigravity/skills"
 fi
 
 echo -n "Acciones IA de Hyprland (ai.sh): "

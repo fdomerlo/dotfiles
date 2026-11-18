@@ -72,21 +72,43 @@ fi
 # 3. Antigravity Desktop (componente opcional)
 bash "$SCRIPT_DIR/setup_agy.sh"
 
-# 4. Skills del repo para OpenCode (contexto de la estación y futuras skills).
-#    Cada ai/skills/<id>/SKILL.md se enlaza como ~/.config/opencode/skills/<id>.
-OPENCODE_SKILLS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills"
-mkdir -p "$OPENCODE_SKILLS_DIR"
-shopt -s nullglob
-for skill_md in "$REPO_DIR"/ai/skills/*/SKILL.md; do
-    skill_src="$(dirname "$skill_md")"
-    skill_name="$(basename "$skill_src")"
-    skill_dest="$OPENCODE_SKILLS_DIR/$skill_name"
+# 4. Skills globales del repo para OpenCode y Antigravity.
+#    Cada ai/skills/<id>/SKILL.md se enlaza con ruta absoluta (requisito de IDE/CLI).
+link_skill_into_dir() {
+    local skill_src="$1"
+    local skill_name="$2"
+    local target_dir="$3"
+    local skill_dest="$target_dir/$skill_name"
+
+    mkdir -p "$target_dir"
     if [ -L "$skill_dest" ] || [ ! -e "$skill_dest" ]; then
         ln -sfn "$skill_src" "$skill_dest"
-        echo "✔ Skill '$skill_name' enlazada en $OPENCODE_SKILLS_DIR."
+        echo "✔ Skill '$skill_name' enlazada en $target_dir."
     else
         echo "  ⚠️ $skill_dest existe y no es un symlink; se deja intacta."
     fi
+}
+
+SKILL_TARGET_DIRS=(
+    "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills"
+    "$HOME/.gemini/config/skills"
+)
+
+if command -v agy &>/dev/null || [ -x "$HOME/.local/bin/agy" ] || [ -d "$HOME/.gemini/antigravity-cli" ]; then
+    SKILL_TARGET_DIRS+=("$HOME/.gemini/antigravity-cli/skills")
+fi
+
+if [ -d "/opt/Antigravity-x64" ] || [ -d "$HOME/.gemini/antigravity" ]; then
+    SKILL_TARGET_DIRS+=("$HOME/.gemini/antigravity/skills")
+fi
+
+shopt -s nullglob
+for skill_md in "$REPO_DIR"/ai/skills/*/SKILL.md; do
+    skill_src="$(cd "$(dirname "$skill_md")" && pwd)"
+    skill_name="$(basename "$skill_src")"
+    for target_dir in "${SKILL_TARGET_DIRS[@]}"; do
+        link_skill_into_dir "$skill_src" "$skill_name" "$target_dir"
+    done
 done
 shopt -u nullglob
 

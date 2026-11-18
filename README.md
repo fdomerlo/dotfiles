@@ -108,11 +108,13 @@ desde `Dev & IA`; `oc-off` lo detiene. Cualquier invocación de `opencode` sin
 `--standalone` vuelve a levantarlo, así que la TUI se abre como `opencode
 --standalone`.
 
-La skill `ai/skills/workstation/SKILL.md` le da al agente el contexto de la
-estación (Debian Stable, Hyprland, Podman rootless, convenciones e invariantes
-del aprovisionamiento). `make devai` enlaza cada `ai/skills/<id>/SKILL.md` en
-`~/.config/opencode/skills/<id>`, así que agregar skills nuevas no requiere
-tocar el instalador.
+La skill `ai/skills/workstation/SKILL.md` le da a los agentes el perfil
+operativo de la estación (Debian Stable, Podman rootless, `uv`/`fnm`/`sdkman`,
+medición de hardware y límites del entorno), mientras que `AGENTS.md` agrupa las
+reglas propias del repositorio `~/.dotfiles`. `make devai` enlaza cada
+`ai/skills/<id>/SKILL.md` tanto en OpenCode (`~/.config/opencode/skills/<id>`)
+como en Antigravity (`~/.gemini/config/skills/<id>` y perfiles activos), así que
+agregar skills nuevas no requiere tocar el instalador.
 
 ### Otros agentes (no aprovisionados)
 
@@ -143,8 +145,9 @@ quickemu --vm ~/VMs/windows-10.conf --snapshot create base
 
 Cada VM es un proceso QEMU del usuario que termina al apagarla. Las imágenes
 viven en `~/VMs` (override con `VMS_DIR`) y no hay autostart ni red NAT
-administrada. Con 7 GB de RAM conviene una VM liviana a la vez; Windows 11 no es
-un objetivo realista en este hardware.
+administrada. La capacidad depende de cada estación: conviene una VM liviana a
+la vez y verificar la RAM libre antes de levantarla. Windows 11 no es un
+objetivo realista.
 
 ---
 
@@ -211,6 +214,6 @@ find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/q
 ├── host/             # Configuración del sistema base y Podman Rootless
 ├── scripts/          # Instaladores modulares, actualización (update.sh) y salud (verify.sh)
 ├── shell/            # Dotfiles de zsh, git, tmux, nvim, yazi, mc, btop, zathura y CLI devctl
-├── ai/               # Skill de contexto de la estación para OpenCode (SKILL.md)
+├── ai/               # Skills globales de la estación para OpenCode y Antigravity
 └── hypr/             # Escritorio Hyprland (conf, quickshell, waybar, foot, fuzzel, swaync, temas, scripts)
 ```
