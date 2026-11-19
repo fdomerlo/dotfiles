@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Estado del servicio de fondo de OpenCode para Waybar (JSON).
-# Solo se muestra cuando `opencode serve --service` está corriendo; si está
-# apagado emite texto vacío y Waybar lo oculta con hide-empty-text.
+#
+# El indicador queda siempre visible: verde cuando el servicio corre y atenuado
+# cuando está apagado. Así se puede encender desde la propia barra (clic derecho
+# alterna encendido/apagado) sin depender del menú.
 # ==============================================================================
 set -euo pipefail
 
 pid="$(pgrep -u "$USER" -f '(^|/)opencode[[:space:]]+serve[[:space:]]+--service([[:space:]]|$)' 2>/dev/null | head -n1 || true)"
+
+text="󰚩 IA"
 
 if [ -n "$pid" ]; then
     rss_kb="$(ps -o rss= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
@@ -31,13 +35,18 @@ if [ -n "$pid" ]; then
         detail="PID $pid"
     fi
 
+    class="active"
     tooltip="Servicio OpenCode activo (${detail})"$'\n'"Click izq.: menú IA · Click der.: detener servicio"
-    if command -v jq >/dev/null 2>&1; then
-        jq -nc --arg text "󰚩 IA" --arg cls "active" --arg tip "$tooltip" \
-            '{text: $text, class: $cls, tooltip: $tip}'
-    else
-        printf '{"text": "󰚩 IA", "class": "active", "tooltip": "Servicio OpenCode activo (%s)\\nClick izq.: menú IA · Click der.: detener servicio"}\n' "$detail"
-    fi
 else
-    printf '{"text": "", "class": "idle"}\n'
+    class="idle"
+    tooltip="Servicio OpenCode apagado"$'\n'"Click izq.: menú IA · Click der.: iniciar servicio"
+fi
+
+if command -v jq >/dev/null 2>&1; then
+    jq -nc --arg text "$text" --arg cls "$class" --arg tip "$tooltip" \
+        '{text: $text, class: $cls, tooltip: $tip}'
+else
+    escaped_tooltip="${tooltip//$'\n'/\\n}"
+    printf '{"text": "%s", "class": "%s", "tooltip": "%s"}\n' \
+        "$text" "$class" "$escaped_tooltip"
 fi

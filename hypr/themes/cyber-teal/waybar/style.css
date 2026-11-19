@@ -235,12 +235,17 @@ window#waybar.empty #window {
     color: #e6ece8;
 }
 
-/* Servicio de fondo OpenCode: solo aparece cuando está encendido. */
+/* Servicio de fondo OpenCode: siempre visible; atenuado cuando está apagado. */
 #custom-ai-service {
     color: #48d7b0;
     border-color: rgba(72, 215, 176, 0.45);
     padding: 0 10px;
     transition: all 0.2s ease;
+}
+
+#custom-ai-service.idle {
+    color: rgba(72, 215, 176, 0.35);
+    border-color: rgba(72, 215, 176, 0.15);
 }
 
 #custom-ai-service:hover {

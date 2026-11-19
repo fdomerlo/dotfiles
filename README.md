@@ -94,7 +94,7 @@ atajos, menús y una skill con el contexto del repo.
 | Explicar selección o portapapeles | `Super+Ctrl+I` |
 | Continuar sesión / TUI mínima | `cc` / `cm` (`opencode mini --standalone`) |
 | Pipes en Zsh | `git diff \| ai commit` o `cmd \| ai explain` |
-| Encender/apagar servicio de fondo | `oc-on`, `oc-off`, `oc-st` (o indicador en Waybar / `Dev & IA`) |
+| Encender/apagar servicio de fondo | `oc-on`, `oc-off`, `oc-st` (o clic derecho en el indicador IA de Waybar / `Dev & IA`) |
 | Forzar un modelo puntual | `AI_MODEL=provider/modelo ai ...` |
 
 `hypr/scripts/ai.sh` permite preguntar, explicar selección primaria o
@@ -106,9 +106,11 @@ defecto usa `opencode run --archived --standalone` (servidor efímero que muere
 con el proceso); solo reutiliza `opencode service` cuando ya está encendido, sin
 auto-iniciarlo, y rutea el modelo por tarea salvo override con `AI_MODEL`.
 
-Así, el servicio de fondo de OpenCode queda **apagado** por defecto. Solo se
-enciende bajo demanda con `oc-on`, `ai.sh service start` o desde `Dev & IA`
-(mostrando un indicador en Waybar con opción de detenerlo con clic derecho);
+Así, el servicio de fondo de OpenCode queda **apagado** por defecto. El
+indicador `󰚩 IA` de Waybar está siempre visible: atenuado cuando el servicio
+está apagado y en verde cuando corre. El clic derecho alterna encendido/apagado
+(`ai.sh service toggle`) y el clic izquierdo abre el menú IA; también se
+enciende bajo demanda con `oc-on`, `ai.sh service start` o desde `Dev & IA`.
 `oc-off` lo apaga. Los alias `c`, `cc` y `cm` pasan `--standalone` para no
 levantar el servicio accidentalmente.
 

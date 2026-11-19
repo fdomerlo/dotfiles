@@ -13,7 +13,7 @@
 #   ai.sh explain     # explicar selección primaria o portapapeles (Super+Ctrl+I)
 #   ai.sh ask [texto] # preguntar (interactivo o por CLI/stdin)
 #   ai.sh error|summarize|translate|window|image|diff|commit
-#   ai.sh service start|stop|status   # servicio de fondo opcional de OpenCode
+#   ai.sh service start|stop|toggle|status   # servicio de fondo opcional de OpenCode
 #   ai.sh __run <mode> <title> <prompt-file> [attach]   # interno
 #
 # Por defecto usa `--standalone` (servidor efímero que muere con el proceso).
@@ -115,8 +115,8 @@ active_git_repo() {
     return 1
 }
 
-# Servicio de fondo de OpenCode: `start` lo enciende, `stop` lo apaga y
-# `status` imprime la URL activa o "detenido".
+# Servicio de fondo de OpenCode: `start` lo enciende, `stop` lo apaga,
+# `toggle` alterna y `status` imprime la URL activa o "detenido".
 service_url() {
     command -v opencode >/dev/null 2>&1 || return 1
     local status
@@ -559,6 +559,13 @@ action_service() {
             signal_waybar_ai
             notify "IA" "Servicio de OpenCode detenido."
             ;;
+        toggle)
+            if [ -n "$(service_url || true)" ]; then
+                action_service stop
+            else
+                action_service start
+            fi
+            ;;
         status)
             local url
             url="$(service_url || true)"
@@ -569,7 +576,7 @@ action_service() {
             fi
             ;;
         *)
-            echo "Uso: $(basename "$0") service {start|stop|status}" >&2
+            echo "Uso: $(basename "$0") service {start|stop|toggle|status}" >&2
             return 2
             ;;
     esac

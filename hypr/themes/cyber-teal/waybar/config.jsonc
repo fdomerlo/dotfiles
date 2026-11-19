@@ -192,9 +192,8 @@
     "return-type": "json",
     "interval": 5,
     "signal": 9,
-    "hide-empty-text": true,
     "on-click": "~/.config/hypr/scripts/ai.sh menu",
-    "on-click-right": "~/.config/hypr/scripts/ai.sh service stop",
+    "on-click-right": "~/.config/hypr/scripts/ai.sh service toggle",
     "tooltip": true
   },
 

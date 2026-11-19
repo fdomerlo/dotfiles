@@ -268,12 +268,17 @@ window#waybar.empty #window {
     border-left-color: rgba(79, 159, 191, 0.60);
 }
 
-/* Servicio de fondo OpenCode: solo aparece cuando está encendido. */
+/* Servicio de fondo OpenCode: siempre visible; atenuado cuando está apagado. */
 #custom-ai-service {
     color: #6fae8f;
     border-left-color: rgba(111, 174, 143, 0.45);
     padding: 0 11px;
     transition: all 0.12s ease;
+}
+
+#custom-ai-service.idle {
+    color: rgba(111, 174, 143, 0.40);
+    border-left-color: rgba(111, 174, 143, 0.15);
 }
 
 #custom-ai-service:hover {
