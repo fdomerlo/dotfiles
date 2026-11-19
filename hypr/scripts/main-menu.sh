@@ -26,10 +26,29 @@ notify() {
 dmenu() {
     local prompt="$1" lines="$2" width="$3"
     shift 3
+    # El ancho indicado es el mínimo: si una fila trae atajo, la ventana crece.
+    local entry
+    for entry in "$@"; do
+        (( ${#entry} + 4 > width )) && width=$(( ${#entry} + 4 ))
+    done
     printf '%s\n' "$@" | fuzzel --dmenu \
         --prompt "$prompt" \
         --width "$width" \
         --lines "$lines" 2>/dev/null || true
+}
+
+# Compone una fila del menú con el atajo alineado a la derecha.
+# Uso: row "etiqueta" ["atajo"]
+ROW_WIDTH=46
+row() {
+    local label="$1" hint="${2:-}" pad
+    if [ -z "$hint" ]; then
+        printf '%s' "$label"
+        return
+    fi
+    pad=$(( ROW_WIDTH - ${#label} ))
+    (( pad < 2 )) && pad=2
+    printf '%s%*s%s' "$label" "$pad" '' "$hint"
 }
 
 launch_bg() {
@@ -69,13 +88,13 @@ menu_capturar() {
     fi
 
     local -a opts=(
-        "󰆞  Captura de región (anotar con Swappy)"
-        "󰆟  Captura de región al portapapeles"
-        "󰍹  Captura de pantalla completa"
-        "$rec_label"
+        "$(row "󰆞  Captura de región (anotar con Swappy)" "Print")"
+        "$(row "󰆟  Captura de región al portapapeles" "Ctrl+Print")"
+        "$(row "󰍹  Captura de pantalla completa" "Shift+Print")"
+        "$(row "$rec_label" "Super+Shift+R")"
         "󰩭  Grabar región de pantalla"
-        "󰈊  Selector de color (Hex)"
-        "󰊄  OCR de región (extraer texto)"
+        "$(row "󰈊  Selector de color (Hex)" "Super+Shift+P")"
+        "$(row "󰊄  OCR de región (extraer texto)" "Super+Ctrl+O")"
         "󰁍  Volver"
     )
 
@@ -106,12 +125,12 @@ menu_estilo() {
     fi
 
     local -a opts=(
-        "󰔎  Elegir tema (actual: $theme)"
+        "$(row "󰔎  Elegir tema (actual: $theme)" "Super+Shift+T")"
         "󰸉  Alternar tema rápido"
         "󰌾  Estilo de pantalla de bloqueo"
-        "󰸨  Siguiente wallpaper"
-        "$night_label"
-        "󰂚  Centro de notificaciones (SwayNC)"
+        "$(row "󰸨  Siguiente wallpaper" "Super+W")"
+        "$(row "$night_label" "Super+Ctrl+N")"
+        "$(row "󰂚  Centro de notificaciones (SwayNC)" "Super+N")"
         "󰁍  Volver"
     )
 
@@ -137,8 +156,8 @@ menu_sistema() {
         "󰕾  Audio (pavucontrol)"
         "󰂯  Bluetooth (blueman)"
         "󰍺  Escala y PPI de monitores"
-        "󰌌  Cheatsheet de atajos"
-        "󰑐  Recargar configuración Hyprland"
+        "$(row "󰌌  Cheatsheet de atajos" "Super+F1")"
+        "$(row "󰑐  Recargar configuración Hyprland" "Super+Esc")"
         "󰐥  Energía y sesión"
         "󰁍  Volver"
     )
@@ -168,8 +187,8 @@ menu_sistema() {
 
 menu_dev() {
     local -a opts=(
-        "󰚩  Asistente IA (acciones rápidas)"
-        "󰆍  Abrir OpenCode"
+        "$(row "󰚩  Asistente IA (acciones rápidas)" "Super+Shift+A")"
+        "$(row "󰆍  Abrir OpenCode" "Super+Shift+O")"
         "󰐊  Encender servicio OpenCode"
         "󰐥  Apagar servicio OpenCode"
         "󰒓  Estado del servicio OpenCode"
@@ -179,7 +198,7 @@ menu_dev() {
         "󰃢  Limpieza profunda (devctl clean)"
         "󰍛  Monitor de sistema (btop)"
         "󰡨  Contenedores (lazydocker)"
-        "󰉋  Gestor de archivos TUI (yazi)"
+        "$(row "󰉋  Gestor de archivos TUI (yazi)" "Super+Y")"
         "󰁍  Volver"
     )
 
@@ -207,12 +226,12 @@ menu_dev() {
 
 menu_buscar() {
     local -a opts=(
-        "󰀻  Lanzador de aplicaciones"
+        "$(row "󰀻  Lanzador de aplicaciones" "Super+D")"
         "󰖟  Web Apps / PWAs (instalar, abrir, quitar)"
-        "󰕰  Overview de workspaces (Quickshell)"
-        "󰅌  Historial del portapapeles"
-        "󰈞  Buscar archivos"
-        "󰆍  Terminal flotante (Scratchpad)"
+        "$(row "󰕰  Overview de workspaces (Quickshell)" "Super+A")"
+        "$(row "󰅌  Historial del portapapeles" "Super+V")"
+        "$(row "󰈞  Buscar archivos" "Super+Ctrl+F")"
+        "$(row "󰆍  Terminal flotante (Scratchpad)" "Super+\`")"
         "󰁍  Volver"
     )
 

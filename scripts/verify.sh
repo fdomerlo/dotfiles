@@ -204,6 +204,19 @@ check_skills_dir() {
 }
 
 check_skills_dir "OpenCode" "${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills"
+
+echo -n "Configuración de OpenCode (opencode.json): "
+OPENCODE_CFG_SRC="$(readlink -f "$REPO_DIR/ai/opencode/opencode.json" 2>/dev/null || true)"
+OPENCODE_CFG_DST="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/opencode.json"
+if [ -L "$OPENCODE_CFG_DST" ] && [ -n "$OPENCODE_CFG_SRC" ] && \
+   [ "$(readlink -f "$OPENCODE_CFG_DST" 2>/dev/null || true)" = "$OPENCODE_CFG_SRC" ]; then
+    check_status 0 "Enlazado al repo ($OPENCODE_CFG_DST)"
+elif [ -e "$OPENCODE_CFG_DST" ]; then
+    check_optional "Existe en $OPENCODE_CFG_DST pero no apunta al repo (ejecuta 'make devai')"
+else
+    check_optional "No enlazado en $OPENCODE_CFG_DST (ejecuta 'make devai')"
+fi
+
 check_skills_dir "Antigravity" "$HOME/.gemini/config/skills"
 if command -v agy &>/dev/null || [ -x "$HOME/.local/bin/agy" ] || [ -d "$HOME/.gemini/antigravity-cli" ]; then
     check_skills_dir "Antigravity CLI" "$HOME/.gemini/antigravity-cli/skills"

@@ -57,7 +57,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
-| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI con asistente integrado en Hyprland (`Super+Shift+A`), Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
+| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI con asistente integrado en Hyprland (`Super+Shift+A` / `Super+Shift+O`), Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
 
 ---
 
@@ -90,31 +90,33 @@ atajos, menús y una skill con el contexto del repo.
 | Acción | Cómo |
 | :--- | :--- |
 | Menú de acciones IA | `Super+Shift+A` (o `Dev & IA` en el Centro Unificado / Lanzador) |
-| Explicar el portapapeles | `Super+Ctrl+I` |
-| Abrir OpenCode | `Super+Return` y luego `c` |
-| Continuar la última sesión | `cc` |
-| Encender/apagar servicio de fondo | `oc-on`, `oc-off`, `oc-st` (o `Dev & IA`) |
-| Forzar un modelo puntual | `AI_MODEL=provider/modelo ai` |
+| Abrir TUI de OpenCode | `Super+Shift+O` (o `c` en terminal; `Super+Shift+A` abre el menú) |
+| Explicar selección o portapapeles | `Super+Ctrl+I` |
+| Continuar sesión / TUI mínima | `cc` / `cm` (`opencode mini --standalone`) |
+| Pipes en Zsh | `git diff \| ai commit` o `cmd \| ai explain` |
+| Encender/apagar servicio de fondo | `oc-on`, `oc-off`, `oc-st` (o indicador en Waybar / `Dev & IA`) |
+| Forzar un modelo puntual | `AI_MODEL=provider/modelo ai ...` |
 
-`hypr/scripts/ai.sh` permite preguntar, explicar el portapapeles o un error,
-resumir, traducir, revisar el diff del repo de dotfiles y generar mensajes de
-commit. Las llamadas usan `opencode run --archived --standalone`: `--archived`
-evita ensuciar el historial de sesiones y `--standalone` levanta un servidor
-privado que muere con el proceso.
+`hypr/scripts/ai.sh` permite preguntar, explicar selección primaria o
+portapapeles, analizar errores, resumir, traducir, capturar ventanas o
+imágenes, revisar el diff del repo Git activo y generar mensajes de commit
+(también desde `stdin` por pipe en Zsh). Sus diálogos corren en `footclient`
+flotante (`ai-float`) con salida renderizada en Markdown (`batcat`). Por
+defecto usa `opencode run --archived --standalone` (servidor efímero que muere
+con el proceso); solo reutiliza `opencode service` cuando ya está encendido, sin
+auto-iniciarlo, y rutea el modelo por tarea salvo override con `AI_MODEL`.
 
-Eso deja **apagado** el servicio de fondo de OpenCode (unos 250 MB de RAM) por
-defecto. Solo se enciende si se pide con `oc-on`, con `ai.sh service start` o
-desde `Dev & IA`; `oc-off` lo detiene. Cualquier invocación de `opencode` sin
-`--standalone` vuelve a levantarlo, así que la TUI se abre como `opencode
---standalone`.
+Así, el servicio de fondo de OpenCode queda **apagado** por defecto. Solo se
+enciende bajo demanda con `oc-on`, `ai.sh service start` o desde `Dev & IA`
+(mostrando un indicador en Waybar con opción de detenerlo con clic derecho);
+`oc-off` lo apaga. Los alias `c`, `cc` y `cm` pasan `--standalone` para no
+levantar el servicio accidentalmente.
 
-La skill `ai/skills/workstation/SKILL.md` le da a los agentes el perfil
-operativo de la estación (Debian Stable, Podman rootless, `uv`/`fnm`/`sdkman`,
-medición de hardware y límites del entorno), mientras que `AGENTS.md` agrupa las
-reglas propias del repositorio `~/.dotfiles`. `make devai` enlaza cada
-`ai/skills/<id>/SKILL.md` tanto en OpenCode (`~/.config/opencode/skills/<id>`)
-como en Antigravity (`~/.gemini/config/skills/<id>` y perfiles activos), así que
-agregar skills nuevas no requiere tocar el instalador.
+`make devai` enlaza `ai/opencode/opencode.json` en `~/.config/opencode/opencode.json`
+para fijar la configuración base entre estaciones, junto con cada skill en
+`ai/skills/<id>/SKILL.md` (`workstation/SKILL.md` + reglas propias del repo en
+`AGENTS.md`), tanto en OpenCode (`~/.config/opencode/skills/<id>`) como en
+Antigravity (`~/.gemini/config/skills/<id>` y perfiles activos).
 
 ### Otros agentes (no aprovisionados)
 
@@ -164,6 +166,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+F1` | **Cheatsheet interactivo** con todos los atajos activos (teclado + mouse) |
 | `Super+Return` / `Super+Shift+Return` | Terminal (`foot`) / terminal con sesión `tmux` persistente |
 | `Super+B` / `Super+E` / `Super+Y` | Navegador predeterminado (`firefox`) / archivos (`nautilus`) / `yazi` TUI |
+| `Super+C` | Editor de código predeterminado (`zed`, con respaldo `code` y `nvim` en Foot) |
 | `Super+` `` ` `` / `Super+Shift+` `` ` `` | Mostrar/ocultar terminal flotante (scratchpad) / enviar ventana al scratchpad |
 | `Super+Q` / `Super+F` / `Super+M` / `Super+S` | Cerrar / pantalla completa / maximizar / alternar flotante |
 | `Super+1..0` / `Super+Shift+1..0` | Cambiar de workspace / mover ventana (`1–6` monitor 1, `7–0` monitor 2; `11–12` con `Av.Pág` o Actividades) |
@@ -171,7 +174,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+V` / `Super+Shift+T` / `Super+W` | Historial portapapeles / cambiar tema / siguiente wallpaper |
 | `Print` / `Ctrl+Print` / `Shift+Print` | Captura + `swappy` / captura directa al portapapeles / pantalla completa |
 | `Super+Shift+R` / `Super+Shift+P` / `Super+Ctrl+O` | Grabar pantalla / selector color HEX / OCR de región |
-| `Super+Shift+A` / `Super+Ctrl+I` | Menú del asistente IA / explicar el portapapeles con OpenCode |
+| `Super+Shift+A` / `Super+Shift+O` / `Super+Ctrl+I` | Menú del asistente IA / abrir TUI de OpenCode / explicar selección o portapapeles |
 | `Super+L` / `Super+N` / `Super+Ctrl+N` | Bloquear pantalla / notificaciones / luz nocturna (`4000K`) |
 | **Touchpad (3 dedos)** | Horizontal: workspaces · Arriba: Centro Unificado · Abajo: Actividades |
 
@@ -214,6 +217,6 @@ find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/q
 ├── host/             # Configuración del sistema base y Podman Rootless
 ├── scripts/          # Instaladores modulares, actualización (update.sh) y salud (verify.sh)
 ├── shell/            # Dotfiles de zsh, git, tmux, nvim, yazi, mc, btop, zathura y CLI devctl
-├── ai/               # Skills globales de la estación para OpenCode y Antigravity
+├── ai/               # Configuración base (opencode.json) y skills globales para OpenCode y Antigravity
 └── hypr/             # Escritorio Hyprland (conf, quickshell, waybar, foot, fuzzel, swaync, temas, scripts)
 ```

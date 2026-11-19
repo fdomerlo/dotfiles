@@ -27,6 +27,7 @@
     "custom/vpn",
     "bluetooth",
     "custom/notification",
+    "custom/ai-service",
     "custom/nightlight",
     "custom/recording",
     "clock",
@@ -183,6 +184,18 @@
     "on-click": "~/.config/hypr/scripts/notifications-toggle.sh",
     "on-click-right": "swaync-client -d -sw",
     "escape": true
+  },
+
+  "custom/ai-service": {
+    "format": "{}",
+    "exec": "~/.config/hypr/scripts/ai-service-status.sh",
+    "return-type": "json",
+    "interval": 5,
+    "signal": 9,
+    "hide-empty-text": true,
+    "on-click": "~/.config/hypr/scripts/ai.sh menu",
+    "on-click-right": "~/.config/hypr/scripts/ai.sh service stop",
+    "tooltip": true
   },
 
   "custom/nightlight": {

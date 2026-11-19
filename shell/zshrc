@@ -128,6 +128,7 @@ alias lzd="lazydocker"
 if command -v opencode &>/dev/null; then
   alias c="opencode --standalone"
   alias cc="opencode --standalone --continue"
+  alias cm="opencode mini --standalone"
   alias oc-on="opencode service start"
   alias oc-off="opencode service stop"
   alias oc-st="opencode service status"

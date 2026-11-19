@@ -72,7 +72,25 @@ fi
 # 3. Antigravity Desktop (componente opcional)
 bash "$SCRIPT_DIR/setup_agy.sh"
 
-# 4. Skills globales del repo para OpenCode y Antigravity.
+# 4. Configuración versionada de OpenCode
+OPENCODE_CFG_SRC="$REPO_DIR/ai/opencode/opencode.json"
+OPENCODE_CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
+OPENCODE_CFG_DST="$OPENCODE_CFG_DIR/opencode.json"
+
+if [ -f "$OPENCODE_CFG_SRC" ]; then
+    mkdir -p "$OPENCODE_CFG_DIR"
+    if [ -L "$OPENCODE_CFG_DST" ] || [ ! -e "$OPENCODE_CFG_DST" ]; then
+        ln -sfn "$OPENCODE_CFG_SRC" "$OPENCODE_CFG_DST"
+        echo "✔ Configuración de OpenCode enlazada en $OPENCODE_CFG_DST."
+        if command -v opencode &>/dev/null && [[ "$(opencode service status 2>/dev/null | head -n1 | tr -d '\r' || true)" =~ ^https?:// ]]; then
+            opencode reload >/dev/null 2>&1 || true
+        fi
+    else
+        echo "  ⚠️ $OPENCODE_CFG_DST existe y no es un symlink; se deja intacto."
+    fi
+fi
+
+# 5. Skills globales del repo para OpenCode y Antigravity.
 #    Cada ai/skills/<id>/SKILL.md se enlaza con ruta absoluta (requisito de IDE/CLI).
 link_skill_into_dir() {
     local skill_src="$1"
