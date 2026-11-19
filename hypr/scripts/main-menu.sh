@@ -7,7 +7,7 @@
 #
 # Todos los prompts incluyen la palabra "Menú" para que toggle-menu.sh pueda
 # detectar y cerrar fuzzel con la misma tecla (Super+Alt+Space) desde cualquier
-# submenú, restaurando input:follow_mouse=1 al salir.
+# submenú, restaurando el valor previo de input:follow_mouse al salir.
 # ==============================================================================
 set -euo pipefail
 
@@ -188,7 +188,8 @@ menu_sistema() {
 menu_dev() {
     local -a opts=(
         "$(row "󰚩  Asistente IA (acciones rápidas)" "Super+Shift+A")"
-        "$(row "󰆍  Abrir OpenCode" "Super+Shift+O")"
+        "$(row "󰆍  Abrir OpenCode" "Super+Shift+I")"
+        "$(row "󰅩  Abrir editor (Zed)" "Super+C")"
         "󰐊  Encender servicio OpenCode"
         "󰐥  Apagar servicio OpenCode"
         "󰒓  Estado del servicio OpenCode"
@@ -209,6 +210,7 @@ menu_dev() {
     case "$choice" in
         "󰚩 "*) launch_bg "$SCRIPT_DIR/ai.sh" menu ;;
         "󰆍 "*) launch_bg "$SCRIPT_DIR/ai.sh" open ;;
+        "󰅩 "*) launch_bg "$SCRIPT_DIR/editor.sh" ;;
         "󰐊 "*) launch_bg "$SCRIPT_DIR/ai.sh" service start ;;
         "󰐥 "*) launch_bg "$SCRIPT_DIR/ai.sh" service stop ;;
         "󰒓 "*) launch_term_hold "Estado del servicio OpenCode" "\"$SCRIPT_DIR/ai.sh\" service status" ;;
@@ -231,7 +233,7 @@ menu_buscar() {
         "$(row "󰕰  Overview de workspaces (Quickshell)" "Super+A")"
         "$(row "󰅌  Historial del portapapeles" "Super+V")"
         "$(row "󰈞  Buscar archivos" "Super+Ctrl+F")"
-        "$(row "󰆍  Terminal flotante (Scratchpad)" "Super+\`")"
+        "$(row "󰆍  Terminal flotante (Scratchpad)" "Super+Shift+S")"
         "󰁍  Volver"
     )
 

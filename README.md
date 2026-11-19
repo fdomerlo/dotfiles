@@ -57,7 +57,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
-| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI con asistente integrado en Hyprland (`Super+Shift+A` / `Super+Shift+O`), Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
+| **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI con asistente integrado en Hyprland (`Super+Shift+A` / `Super+Shift+I`), Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
 
 ---
 
@@ -90,7 +90,7 @@ atajos, menús y una skill con el contexto del repo.
 | Acción | Cómo |
 | :--- | :--- |
 | Menú de acciones IA | `Super+Shift+A` (o `Dev & IA` en el Centro Unificado / Lanzador) |
-| Abrir TUI de OpenCode | `Super+Shift+O` (o `c` en terminal; `Super+Shift+A` abre el menú) |
+| Abrir TUI de OpenCode | `Super+Shift+I` (o `c` en terminal; `Super+Shift+A` abre el menú) |
 | Explicar selección o portapapeles | `Super+Ctrl+I` |
 | Continuar sesión / TUI mínima | `cc` / `cm` (`opencode mini --standalone`) |
 | Pipes en Zsh | `git diff \| ai commit` o `cmd \| ai explain` |
@@ -167,14 +167,14 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+Return` / `Super+Shift+Return` | Terminal (`foot`) / terminal con sesión `tmux` persistente |
 | `Super+B` / `Super+E` / `Super+Y` | Navegador predeterminado (`firefox`) / archivos (`nautilus`) / `yazi` TUI |
 | `Super+C` | Editor de código predeterminado (`zed`, con respaldo `code` y `nvim` en Foot) |
-| `Super+` `` ` `` / `Super+Shift+` `` ` `` | Mostrar/ocultar terminal flotante (scratchpad) / enviar ventana al scratchpad |
+| `Super+Shift+S` / `Super+Ctrl+S` | Mostrar/ocultar terminal flotante (scratchpad) / enviar ventana al scratchpad |
 | `Super+Q` / `Super+F` / `Super+M` / `Super+S` | Cerrar / pantalla completa / maximizar / alternar flotante |
 | `Super+1..0` / `Super+Shift+1..0` | Cambiar de workspace / mover ventana (`1–6` monitor 1, `7–0` monitor 2; `11–12` con `Av.Pág` o Actividades) |
 | `Super+Av.Pág` / `Super+Re.Pág` | Ciclar workspaces cubriendo todos los monitores |
 | `Super+V` / `Super+Shift+T` / `Super+W` | Historial portapapeles / cambiar tema / siguiente wallpaper |
 | `Print` / `Ctrl+Print` / `Shift+Print` | Captura + `swappy` / captura directa al portapapeles / pantalla completa |
 | `Super+Shift+R` / `Super+Shift+P` / `Super+Ctrl+O` | Grabar pantalla / selector color HEX / OCR de región |
-| `Super+Shift+A` / `Super+Shift+O` / `Super+Ctrl+I` | Menú del asistente IA / abrir TUI de OpenCode / explicar selección o portapapeles |
+| `Super+Shift+A` / `Super+Shift+I` / `Super+Ctrl+I` | Menú del asistente IA / abrir TUI de OpenCode / explicar selección o portapapeles |
 | `Super+L` / `Super+N` / `Super+Ctrl+N` | Bloquear pantalla / notificaciones / luz nocturna (`4000K`) |
 | **Touchpad (3 dedos)** | Horizontal: workspaces · Arriba: Centro Unificado · Abajo: Actividades |
 

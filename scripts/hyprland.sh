@@ -320,7 +320,7 @@ Atajos y gestos principales:
   Super+Return         terminal (foot)           Super+L       bloquear (hyprlock)
   Super+Shift+Return   terminal con tmux         Super+Q       cerrar ventana
   Alt+Tab              cambiar de ventana        Super+N       notificaciones (swaync)
-  Super+grave          scratchpad (terminal)     Super+F1      cheatsheet de atajos
+  Super+Shift+S        scratchpad (terminal)     Super+F1      cheatsheet de atajos
   Super+Shift+V        historial portapapeles    Print         captura + swappy
   3 dedos horizontal   cambiar workspace         3 dedos arriba/abajo lanzador / overview
 

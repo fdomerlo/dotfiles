@@ -9,7 +9,7 @@
 #
 # Uso:
 #   ai.sh menu        # menú de acciones (Super+Shift+A)
-#   ai.sh open        # abrir TUI de OpenCode en el repo activo (Super+Shift+O)
+#   ai.sh open        # abrir TUI de OpenCode en el repo activo (Super+Shift+I)
 #   ai.sh explain     # explicar selección primaria o portapapeles (Super+Ctrl+I)
 #   ai.sh ask [texto] # preguntar (interactivo o por CLI/stdin)
 #   ai.sh error|summarize|translate|window|image|diff|commit

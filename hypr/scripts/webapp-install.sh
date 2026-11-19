@@ -416,7 +416,7 @@ cmd_menu() {
             mode_choice="$(fuzzel_pick "Modo ventana ($name): " 3 44 \
                 "tile        (mosaico normal)" \
                 "float       (flotante centrada 80%)" \
-                "scratchpad  (oculta en magic, Super+\`)")"
+                "scratchpad  (oculta en magic, Super+Shift+S)")"
             [ -n "$mode_choice" ] || return 0
             mode="${mode_choice%% *}"
             iso_choice="$(fuzzel_pick "Perfil de sesión: " 2 48 \

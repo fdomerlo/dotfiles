@@ -40,8 +40,15 @@ fi
 # Mientras fuzzel está abierto (con keyboard-focus=on-demand), desacoplar el
 # foco de teclado del movimiento del puntero (follow_mouse=2): así mover el
 # mouse no cierra el menú, pero hacer clic en otra ventana o presionar ESC sí.
+# Se guarda el valor vigente (local.conf puede haberlo cambiado) y se restaura
+# al salir, en lugar de asumir 1.
+previous_follow_mouse="$(hyprctl getoption input:follow_mouse 2>/dev/null |
+    awk '/^int:/ { print $2; exit }' || true)"
+
 restore_mouse() {
-    hyprctl keyword input:follow_mouse 1 >/dev/null 2>&1 || true
+    if [ -n "${previous_follow_mouse:-}" ]; then
+        hyprctl keyword input:follow_mouse "$previous_follow_mouse" >/dev/null 2>&1 || true
+    fi
 }
 trap restore_mouse EXIT INT TERM
 hyprctl keyword input:follow_mouse 2 >/dev/null 2>&1 || true

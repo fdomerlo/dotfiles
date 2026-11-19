@@ -101,6 +101,7 @@ PanelWindow {
                 title: "Captura de región (anotar con Swappy)",
                 subtitle: "Seleccionar área y editar o copiar",
                 keywords: "screenshot captura region swappy recortar imagen",
+                shortcut: "Print",
                 actionType: "capture",
                 delayMs: 220,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-region.sh\""]
@@ -113,6 +114,7 @@ PanelWindow {
                 title: "Captura de región al portapapeles",
                 subtitle: "Copiar selección directamente sin abrir editor",
                 keywords: "screenshot captura portapapeles raw copiar",
+                shortcut: "Ctrl+Print",
                 actionType: "capture",
                 delayMs: 220,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-region.sh\" --raw"]
@@ -125,6 +127,7 @@ PanelWindow {
                 title: "Captura de pantalla completa",
                 subtitle: "Capturar todo el monitor enfocado",
                 keywords: "screenshot full pantalla completa print",
+                shortcut: "Shift+Print",
                 actionType: "capture",
                 delayMs: 260,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-full.sh\""]
@@ -137,6 +140,7 @@ PanelWindow {
                 title: recordingActive ? "Detener grabación en curso" : "Grabar pantalla (monitor actual)",
                 subtitle: recordingActive ? "Finalizar video actual con wf-recorder" : "Iniciar grabación MP4 del monitor activo",
                 keywords: "grabar video pantalla record wf-recorder detener",
+                shortcut: "Super+Shift+R",
                 actionType: "capture",
                 delayMs: 180,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screen-record.sh\""]
@@ -161,6 +165,7 @@ PanelWindow {
                 title: "Selector de color (Hex)",
                 subtitle: "Tomar color de pantalla con hyprpicker",
                 keywords: "color picker hex hyprpicker gotero",
+                shortcut: "Super+Shift+P",
                 actionType: "capture",
                 delayMs: 220,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/color-picker.sh\""]
@@ -173,6 +178,7 @@ PanelWindow {
                 title: "OCR de región (extraer texto)",
                 subtitle: "Reconocer texto de la pantalla al portapapeles",
                 keywords: "ocr texto tesseract copiar imagen",
+                shortcut: "Super+Ctrl+O",
                 actionType: "capture",
                 delayMs: 220,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ocr-region.sh\""]
@@ -187,6 +193,7 @@ PanelWindow {
                 title: "Elegir tema (actual: " + themeLabel + ")",
                 subtitle: "Abrir selector entre cyber-teal y mr-robot",
                 keywords: "tema theme cyber-teal mr-robot apariencia estilo",
+                shortcut: "Super+Shift+T",
                 actionType: "submenu",
                 delayMs: 90,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Temas' \"$HOME/.config/hypr/scripts/theme-switch.sh\" menu"]
@@ -223,6 +230,7 @@ PanelWindow {
                 title: "Siguiente wallpaper",
                 subtitle: "Rotar fondo de pantalla del tema activo",
                 keywords: "wallpaper fondo pantalla imagen siguiente",
+                shortcut: "Super+W",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/wallpaper.sh\" --next"]
@@ -235,6 +243,7 @@ PanelWindow {
                 title: nightlightActive ? "Desactivar luz nocturna (4000K)" : "Activar luz nocturna (4000K)",
                 subtitle: nightlightActive ? "Volver a temperatura neutra (6500K)" : "Aplicar filtro cálido con hyprsunset",
                 keywords: "luz nocturna nightlight filtro azul hyprsunset 4000k",
+                shortcut: "Super+Ctrl+N",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/nightlight-toggle.sh\""]
@@ -247,6 +256,7 @@ PanelWindow {
                 title: "Centro de notificaciones (SwayNC)",
                 subtitle: "Abrir o cerrar el panel de notificaciones",
                 keywords: "notificaciones swaync panel alertas",
+                shortcut: "Super+N",
                 actionType: "exec",
                 delayMs: 40,
                 cmd: ["swaync-client", "-t", "-sw"]
@@ -297,6 +307,7 @@ PanelWindow {
                 title: "Historial del portapapeles",
                 subtitle: "Buscar y pegar entradas recientes de cliphist",
                 keywords: "portapapeles clipboard historial pegar cliphist",
+                shortcut: "Super+V",
                 actionType: "submenu",
                 delayMs: 90,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Portapapeles' \"$HOME/.config/hypr/scripts/clipboard.sh\""]
@@ -309,6 +320,7 @@ PanelWindow {
                 title: "Buscar archivos",
                 subtitle: "Búsqueda rápida en HOME con fd + fuzzel",
                 keywords: "buscar archivos ficheros fd search",
+                shortcut: "Super+Ctrl+F",
                 actionType: "submenu",
                 delayMs: 90,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Archivo:' \"$HOME/.config/hypr/scripts/file-search.sh\""]
@@ -346,6 +358,7 @@ PanelWindow {
                 title: "Cheatsheet de atajos",
                 subtitle: "Listar combinaciones de teclas activas en Hyprland",
                 keywords: "atajos keybinds teclas ayuda shortcuts",
+                shortcut: "Super+F1",
                 actionType: "submenu",
                 delayMs: 90,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Atajos' \"$HOME/.config/hypr/scripts/keybinds.sh\""]
@@ -358,6 +371,7 @@ PanelWindow {
                 title: "Recargar configuración Hyprland",
                 subtitle: "Ejecutar hyprctl reload en caliente",
                 keywords: "recargar reload hyprland configuracion",
+                shortcut: "Super+Esc",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "if hyprctl reload >/dev/null 2>&1; then notify-send -a Hyprland 'Hyprland' 'Configuración recargada'; else notify-send -u critical -a Hyprland 'Hyprland' 'Error al recargar configuración'; fi"]
@@ -384,6 +398,7 @@ PanelWindow {
                 title: "Asistente IA (acciones rápidas)",
                 subtitle: "Preguntar, explicar portapapeles, resumir, traducir o revisar cambios",
                 keywords: "ia ai opencode asistente explicar resumir traducir portapapeles commit",
+                shortcut: "Super+Shift+A",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ai.sh\" menu"]
@@ -396,9 +411,23 @@ PanelWindow {
                 title: "Abrir OpenCode",
                 subtitle: "Agente de terminal en ~/Proyectos",
                 keywords: "opencode agente ia ai terminal code",
+                shortcut: "Super+Shift+I",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ai.sh\" open"]
+            },
+            {
+                kind: "action",
+                category: "dev",
+                badge: "Dev & IA",
+                glyph: "󰅩",
+                title: "Abrir editor (Zed)",
+                subtitle: "Editor predeterminado; respaldo VS Code o Neovim en Foot",
+                keywords: "editor zed code vscode nvim codigo abrir",
+                shortcut: "Super+C",
+                actionType: "exec",
+                delayMs: 0,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/editor.sh\""]
             },
             {
                 kind: "action",
@@ -456,6 +485,7 @@ PanelWindow {
                 title: "Terminal flotante (Scratchpad)",
                 subtitle: "Mostrar u ocultar terminal persistente",
                 keywords: "terminal scratchpad flotante foot consola",
+                shortcut: "Super+Shift+S",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/scratchpad.sh\""]
@@ -531,6 +561,7 @@ PanelWindow {
                 title: "Gestor de archivos TUI (yazi)",
                 subtitle: "Explorar directorios y previsualizar en terminal flotante",
                 keywords: "yazi archivos gestor file manager tui",
+                shortcut: "Super+Y",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["foot", "--app-id=tui-float", "-e", "yazi"]
@@ -643,6 +674,7 @@ PanelWindow {
                             badge: act.badge,
                             glyph: act.glyph,
                             iconName: "",
+                            shortcut: act.shortcut || "",
                             score: s,
                             isQuick: false
                         });
@@ -674,6 +706,7 @@ PanelWindow {
                 badge: act.badge,
                 glyph: act.glyph,
                 iconName: "",
+                shortcut: act.shortcut || "",
                 score: s,
                 isQuick: false
             });
@@ -1050,6 +1083,26 @@ PanelWindow {
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 11
                                     elide: Text.ElideRight
+                                }
+                            }
+
+                            // Atajo de teclado correspondiente (si la acción tiene uno).
+                            Rectangle {
+                                visible: (rowItem.modelData.shortcut || "") !== ""
+                                Layout.preferredWidth: shortcutText.implicitWidth + 12
+                                Layout.preferredHeight: 20
+                                radius: Theme.cardRadius
+                                color: "transparent"
+                                border.width: Theme.borderWidth
+                                border.color: rowItem.isSelected ? Theme.activeBorder : Theme.border
+
+                                Text {
+                                    id: shortcutText
+                                    anchors.centerIn: parent
+                                    text: rowItem.modelData.shortcut || ""
+                                    color: rowItem.isSelected ? Theme.textBright : Theme.muted
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 10
                                 }
                             }
 
