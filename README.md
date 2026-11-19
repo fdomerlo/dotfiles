@@ -171,6 +171,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+C` | Editor de código predeterminado (`zed`, con respaldo `code` y `nvim` en Foot) |
 | `Super+Shift+S` / `Super+Ctrl+S` | Mostrar/ocultar terminal flotante (scratchpad) / enviar ventana al scratchpad |
 | `Super+Q` / `Super+F` / `Super+M` / `Super+S` | Cerrar / pantalla completa / maximizar / alternar flotante |
+| `Super+Shift+C` / `Super+Ctrl+Tab` | Calculadora / alternar con la última ventana |
 | `Super+1..0` / `Super+Shift+1..0` | Cambiar de workspace / mover ventana (`1–6` monitor 1, `7–0` monitor 2; `11–12` con `Av.Pág` o Actividades) |
 | `Super+Av.Pág` / `Super+Re.Pág` | Ciclar workspaces cubriendo todos los monitores |
 | `Super+V` / `Super+Shift+T` / `Super+W` | Historial portapapeles / cambiar tema / siguiente wallpaper |
