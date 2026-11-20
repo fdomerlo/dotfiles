@@ -4,7 +4,8 @@
 # - Selecciona wallpapers aleatorios (.png, .jpg, .jpeg, .webp)
 # - Suma la carpeta genérica con las carpetas del tema activo (<dir>/<tema>/),
 #   si existen; así el tema agrupa fondos propios sin ocultar la colección
-#   general del usuario
+#   general del usuario. Si el tema marca wallpapers/.exclusive, rota solo con
+#   sus propios fondos.
 # - Modo daemon: rota periódicamente (por defecto cada 30 min / 1800 seg)
 # - Transición suave sin parpadeo negro
 # - Admite cambio a demanda con --next o enviando señal SIGUSR1
@@ -48,19 +49,32 @@ collect_from_dirs() {
 }
 
 # Obtener lista de todos los wallpapers disponibles: las carpetas del tema
-# activo se suman a las globales (no las reemplazan).
+# activo se suman a las globales (no las reemplazan). Un tema puede marcar
+# wallpapers/.exclusive para rotar solo con sus propios fondos.
 get_wallpapers() {
     local -a dirs=()
+    local -a theme_dirs=()
     local theme
     theme="$(active_theme || true)"
     if [ -n "$theme" ]; then
-        dirs+=(
+        theme_dirs=(
             "$USER_WALLPAPERS/$theme"
             "$PICTURES_ES/$theme"
             "$PICTURES_EN/$theme"
             "$HYPR_DIR/themes/$theme/wallpapers"
         )
+        dirs+=("${theme_dirs[@]}")
     fi
+
+    if [ -n "$theme" ] && [ -e "$HYPR_DIR/themes/$theme/wallpapers/.exclusive" ]; then
+        local -a own=()
+        mapfile -t own < <(collect_from_dirs "${theme_dirs[@]}")
+        if [ "${#own[@]}" -gt 0 ]; then
+            printf '%s\n' "${own[@]}"
+            return 0
+        fi
+    fi
+
     dirs+=("$USER_WALLPAPERS" "$PICTURES_ES" "$PICTURES_EN" "$REPO_WALLPAPERS")
 
     collect_from_dirs "${dirs[@]}"

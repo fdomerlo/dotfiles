@@ -10,6 +10,7 @@ Singleton {
     readonly property color border: "#1d3542"
     readonly property color activeBorder: "#4f9fbf"
     readonly property color accent: "#2e7491"
+    readonly property color accentText: "#05080b"
     readonly property color urgent: "#c83434"
     readonly property color text: "#c3d2dd"
     readonly property color textBright: "#eaf2f7"

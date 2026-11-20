@@ -1,0 +1,61 @@
+/* ==============================================================================
+   SwayOSD - Paper Teal
+   HUD de volumen y brillo: tarjeta papel opaca, borde teal de 1px, tipografia
+   monoespaciada y esquinas apenas redondeadas. El rojo se reserva para el
+   estado mudo.
+   ============================================================================== */
+
+window#osd {
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(15, 107, 122, 0.70);
+    background: rgba(255, 253, 247, 0.97);
+}
+
+window#osd #container {
+    margin: 6px 2px;
+    min-width: 210px;
+}
+
+window#osd image {
+    color: #0f6b7a;
+}
+
+window#osd label {
+    color: #1e2a30;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+window#osd label.title-4 {
+    color: #1e2a30;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+window#osd progressbar {
+    min-height: 6px;
+    border-radius: 3px;
+    background: transparent;
+    border: none;
+}
+
+window#osd progressbar:disabled {
+    opacity: 0.45;
+}
+
+window#osd trough {
+    min-height: inherit;
+    border-radius: 3px;
+    border: 1px solid rgba(15, 107, 122, 0.30);
+    background: rgba(15, 107, 122, 0.12);
+}
+
+window#osd progress {
+    min-height: inherit;
+    border-radius: 3px;
+    border: none;
+    background: linear-gradient(90deg, #0f6b7a, #2e9aa8);
+}

@@ -307,7 +307,7 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: ws.name
-                                        color: (wsCard.isCurrentWs || wsCard.isSelectedWs) ? "#05080b" : Theme.textBright
+                                        color: (wsCard.isCurrentWs || wsCard.isSelectedWs) ? Theme.accentText : Theme.textBright
                                         font.family: Theme.fontFamily
                                         font.pixelSize: 12
                                         font.bold: true

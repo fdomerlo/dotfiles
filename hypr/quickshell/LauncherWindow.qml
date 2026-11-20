@@ -969,14 +969,14 @@ PanelWindow {
 
                             Text {
                                 text: pill.modelData.icon
-                                color: pill.isActive ? "#05080b" : Theme.accent
+                                color: pill.isActive ? Theme.accentText : Theme.accent
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 13
                             }
 
                             Text {
                                 text: pill.modelData.label
-                                color: pill.isActive ? "#05080b" : Theme.text
+                                color: pill.isActive ? Theme.accentText : Theme.text
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 12
                                 font.bold: pill.isActive
@@ -1119,7 +1119,7 @@ PanelWindow {
                                     id: badgeText
                                     anchors.centerIn: parent
                                     text: rowItem.modelData.badge
-                                    color: rowItem.isSelected ? "#05080b" : Theme.muted
+                                    color: rowItem.isSelected ? Theme.accentText : Theme.muted
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 10
                                     font.bold: rowItem.isSelected

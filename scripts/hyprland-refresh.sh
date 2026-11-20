@@ -161,7 +161,7 @@ if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
     link_file "$HYPR_SRC/wallpapers/default.png" "$CONFIG_HOME/hypr/wallpapers/default.png"
 fi
 
-# Modo oscuro GTK3/GTK4, fuente Inter y cursor Bibata-Modern-Classic.
+# Esquema GTK3/GTK4 (claro/oscuro segun tema), fuente Inter y cursor Bibata-Modern-Classic.
 set_gtk_setting() {
     local file="$1" key="$2" value="$3"
     if grep -qE "^[[:space:]]*${key}[[:space:]]*=" "$file"; then
@@ -177,7 +177,7 @@ for gtk_ver in gtk-3.0 gtk-4.0; do
     settings="$CONFIG_HOME/$gtk_ver/settings.ini"
     [ -f "$settings" ] || printf '[Settings]\n' >"$settings"
     set_gtk_setting "$settings" gtk-theme-name Adwaita
-    set_gtk_setting "$settings" gtk-application-prefer-dark-theme 1
+    # El modo claro/oscuro lo resuelve session-gsettings.sh segun el tema activo.
     set_gtk_setting "$settings" gtk-font-name "Inter 11"
     set_gtk_setting "$settings" gtk-cursor-theme-name Bibata-Modern-Classic
     set_gtk_setting "$settings" gtk-cursor-theme-size 24

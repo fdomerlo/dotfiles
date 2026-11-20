@@ -229,7 +229,7 @@ if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
 fi
 ok "Directorio de wallpapers: $CONFIG_HOME/hypr/wallpapers"
 
-# Modo oscuro GTK3/GTK4, fuente Inter y cursor Bibata-Modern-Classic para apps en Hyprland.
+# Esquema GTK3/GTK4 (claro/oscuro segun tema), fuente Inter y cursor Bibata-Modern-Classic para apps en Hyprland.
 set_gtk_setting() {
     local file="$1" key="$2" value="$3"
     if grep -qE "^[[:space:]]*${key}[[:space:]]*=" "$file"; then
@@ -245,11 +245,16 @@ for gtk_ver in gtk-3.0 gtk-4.0; do
     settings="$CONFIG_HOME/$gtk_ver/settings.ini"
     [ -f "$settings" ] || printf '[Settings]\n' >"$settings"
     set_gtk_setting "$settings" gtk-theme-name Adwaita
-    set_gtk_setting "$settings" gtk-application-prefer-dark-theme 1
+    # El modo claro/oscuro lo resuelve session-gsettings.sh segun el tema activo.
     set_gtk_setting "$settings" gtk-font-name "Inter 11"
     set_gtk_setting "$settings" gtk-cursor-theme-name Bibata-Modern-Classic
     set_gtk_setting "$settings" gtk-cursor-theme-size 24
 done
+
+# Aplicar esquema claro/oscuro, acento y paleta Qt segun el tema activo.
+if [ -x "$CONFIG_HOME/hypr/scripts/session-gsettings.sh" ]; then
+    "$CONFIG_HOME/hypr/scripts/session-gsettings.sh" apply >/dev/null 2>&1 || true
+fi
 
 # Refrescar caché de fontconfig tras desplegar las reglas del perfil
 command -v fc-cache >/dev/null 2>&1 && fc-cache -f >/dev/null 2>&1 || true
