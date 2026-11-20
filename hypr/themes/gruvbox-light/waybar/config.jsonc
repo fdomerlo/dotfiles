@@ -2,7 +2,7 @@
   "include": ["~/.config/waybar/local.jsonc"],
   "layer": "top",
   "position": "bottom",
-  "height": 42,
+  "height": 46,
   "margin-top": 0,
   "margin-bottom": 8,
   "margin-left": 10,
@@ -234,9 +234,9 @@
       "on-scroll": 1,
       "format": {
         "months": "<span color='#4f5d6b'><b>{}</b></span>",
-        "weekdays": "<span color='#7c6f64'><b>{}</b></span>",
-        "days": "<span color='#3c3836'>{}</span>",
-        "weeks": "<span color='#a89984'>W{}</span>",
+        "weekdays": "<span color='#6b6b6b'><b>{}</b></span>",
+        "days": "<span color='#2f2f2f'>{}</span>",
+        "weeks": "<span color='#9a9a9a'>W{}</span>",
         "today": "<span color='#cc241d'><b><u>{}</u></b></span>"
       }
     },

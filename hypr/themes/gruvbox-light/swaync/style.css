@@ -1,23 +1,23 @@
 /* ==============================================================================
-   SwayNC - Centro de notificaciones (Gruvbox Light)
-   Basado en el style.css oficial de SwayNC, con la paleta Gruvbox Light del
-   escritorio: crema, tan, tinta marron y acento slate. Con blur suave.
+   SwayNC - Centro de notificaciones (gruvbox-light · Whitesmoke)
+   Basado en el style.css oficial de SwayNC, con base whitesmoke translucida
+   y acento slate. Con blur suave.
    ============================================================================== */
 
-@define-color cc-bg rgba(251, 241, 199, 0.92);
-@define-color noti-border-color rgba(213, 196, 161, 0.65);
-@define-color noti-bg rgba(242, 229, 188, 0.94);
-@define-color noti-bg-opaque rgba(242, 229, 188, 0.97);
-@define-color noti-bg-darker rgba(235, 219, 178, 0.95);
-@define-color noti-bg-hover rgba(229, 213, 172, 0.95);
-@define-color noti-bg-hover-opaque rgba(229, 213, 172, 0.96);
-@define-color noti-bg-focus rgba(79, 93, 107, 0.10);
-@define-color noti-close-bg rgba(60, 56, 54, 0.06);
+@define-color cc-bg rgba(245, 245, 245, 0.86);
+@define-color noti-border-color rgba(0, 0, 0, 0.10);
+@define-color noti-bg rgba(250, 250, 250, 0.88);
+@define-color noti-bg-opaque rgba(250, 250, 250, 0.96);
+@define-color noti-bg-darker rgba(235, 235, 235, 0.92);
+@define-color noti-bg-hover rgba(230, 230, 230, 0.94);
+@define-color noti-bg-hover-opaque rgba(230, 230, 230, 0.97);
+@define-color noti-bg-focus rgba(79, 93, 107, 0.12);
+@define-color noti-close-bg rgba(0, 0, 0, 0.06);
 @define-color noti-close-bg-hover rgba(204, 36, 29, 0.20);
-@define-color text-color rgb(60, 56, 54);
-@define-color text-color-disabled rgb(146, 131, 116);
+@define-color text-color rgb(47, 47, 47);
+@define-color text-color-disabled rgb(138, 138, 138);
 @define-color bg-selected rgb(79, 93, 107);
-@define-color noti-bg-alt rgb(235, 219, 178);
+@define-color noti-bg-alt rgba(235, 235, 235, 0.92);
 @define-color accent #4f5d6b;
 @define-color green #98971a;
 @define-color warning #d79921;
@@ -279,7 +279,7 @@
   background: @cc-bg;
   color: @text-color;
   border-radius: 14px;
-    box-shadow: 0 8px 24px rgba(60, 56, 54, 0.20);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
 
 .control-center .control-center-list-placeholder {
@@ -293,7 +293,7 @@
 }
 
 .control-center .control-center-list .notification {
-  box-shadow: 0 6px 18px rgba(60, 56, 54, 0.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
 }
 
 .control-center .control-center-list .notification .notification-default-action,
@@ -376,8 +376,8 @@
 }
 
 /* Mpris widget */
-@define-color mpris-album-art-overlay rgba(251, 241, 199, 0.80);
-@define-color mpris-button-hover rgba(79, 93, 107, 0.10);
+@define-color mpris-album-art-overlay rgba(245, 245, 245, 0.82);
+@define-color mpris-button-hover rgba(79, 93, 107, 0.12);
 .widget-mpris {
   /* The parent to all players */
 }
@@ -531,7 +531,7 @@
     border-top: 2px solid @accent;
     border-radius: 14px;
     padding: 8px;
-    box-shadow: 0 8px 24px rgba(60, 56, 54, 0.20);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
 
 .widget-title {
@@ -550,7 +550,7 @@
 }
 
 .notification-row .notification-background .notification {
-    border: 1px solid rgba(213, 196, 161, 0.65);
+    border: 1px solid rgba(0, 0, 0, 0.10);
     border-radius: 12px;
 }
 
@@ -569,7 +569,7 @@
 
 .widget-volume scale trough,
 .widget-backlight scale trough {
-    background: rgba(60, 56, 54, 0.12);
+    background: rgba(0, 0, 0, 0.10);
     border-radius: 10px;
     min-height: 6px;
 }

@@ -1,15 +1,15 @@
 /* ==============================================================================
-   SwayOSD - Gruvbox Light (Harvest)
-   Tarjeta crema, borde tan, tipografia Inter y acento slate.
+   SwayOSD - gruvbox-light · Whitesmoke
+   Tarjeta whitesmoke translucida, borde neutro, tipografia Inter y acento slate.
    Sin radios ni profundidad: solo reglas y contraste.
    ============================================================================== */
 
 window#osd {
     padding: 10px 16px;
     border-radius: 12px;
-    border: 1px solid rgba(213, 196, 161, 0.65);
-    background: rgba(251, 241, 199, 0.88);
-    box-shadow: 0 4px 14px rgba(60, 56, 54, 0.18);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: rgba(245, 245, 245, 0.82);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
 }
 
 window#osd #container {
@@ -22,14 +22,14 @@ window#osd image {
 }
 
 window#osd label {
-    color: #3c3836;
+    color: #2f2f2f;
     font-family: "Inter", sans-serif;
     font-size: 11px;
     font-weight: 700;
 }
 
 window#osd label.title-4 {
-    color: #3c3836;
+    color: #2f2f2f;
     font-family: "Inter", sans-serif;
     font-size: 11px;
     font-weight: 700;
@@ -49,8 +49,8 @@ window#osd progressbar:disabled {
 window#osd trough {
     min-height: inherit;
     border-radius: 6px;
-    border: 1px solid rgba(213, 196, 161, 0.65);
-    background: #ebdbb2;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: rgba(220, 220, 220, 0.45);
 }
 
 window#osd progress {

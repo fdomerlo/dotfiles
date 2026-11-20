@@ -1,7 +1,7 @@
 /* ==============================================================================
-   Waybar - Gruvbox Light (Harvest)
+   Waybar - gruvbox-light (Whitesmoke)
    Una sola barra inferior redondeada y translucida, sin secciones ni
-   separadores internos. Crema/tan calido, tinta marron y acento slate.
+   separadores internos. Base whitesmoke, tinta grafito y acento slate.
    El blur de la capa lo aplica Hyprland; aca solo se define el vidrio.
    ============================================================================== */
 
@@ -14,11 +14,11 @@
 }
 
 window#waybar {
-    background: rgba(251, 241, 199, 0.72);
-    color: #3c3836;
-    border: 1px solid rgba(213, 196, 161, 0.60);
+    background: rgba(245, 245, 245, 0.65);
+    color: #2f2f2f;
+    border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 14px;
-    box-shadow: 0 8px 28px rgba(60, 56, 54, 0.22);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
 }
 
 window#waybar > box {
@@ -40,7 +40,7 @@ window#waybar > box {
 
 #custom-launcher:hover {
     background: #4f5d6b;
-    color: #fbf1c7;
+    color: #f5f5f5;
     border-color: #4f5d6b;
 }
 
@@ -55,7 +55,7 @@ window#waybar > box {
 #workspaces button {
     padding: 0 10px;
     margin: 0;
-    color: #7c6f64;
+    color: #5f5f5f;
     background: transparent;
     border-radius: 8px;
     transition: all 0.16s ease;
@@ -68,21 +68,21 @@ window#waybar > box {
 }
 
 #workspaces button.active {
-    color: #fbf1c7;
+    color: #f5f5f5;
     background: #4f5d6b;
     font-weight: 700;
     box-shadow: none;
 }
 
 #workspaces button.urgent {
-    color: #fbf1c7;
+    color: #f5f5f5;
     background: #cc241d;
 }
 
 /* --- Ventana activa y multimedia --- */
 
 #window {
-    color: #7c6f64;
+    color: #5f5f5f;
     font-weight: 500;
     padding: 0 12px;
     margin: 0 4px;
@@ -104,7 +104,7 @@ window#waybar.empty #window {
     border-radius: 8px;
     margin: 0 4px;
     padding: 0 10px;
-    color: #79740e;
+    color: #4f5d6b;
     font-style: italic;
     font-weight: 500;
 }
@@ -133,7 +133,7 @@ window#waybar.empty #window {
     border-radius: 8px;
     margin: 4px 0;
     padding: 0 10px;
-    color: #3c3836;
+    color: #2f2f2f;
     transition: background 0.16s ease, color 0.16s ease;
 }
 
@@ -160,7 +160,7 @@ window#waybar.empty #window {
 
 #cpu,
 #memory {
-    color: #7c6f64;
+    color: #5f5f5f;
 }
 
 #power-profiles-daemon {
@@ -178,7 +178,7 @@ window#waybar.empty #window {
 }
 
 #idle_inhibitor {
-    color: #928374;
+    color: #8a8a8a;
     font-size: 10px;
     font-weight: 700;
 }
@@ -209,7 +209,7 @@ window#waybar.empty #window {
 }
 
 #pulseaudio {
-    color: #3c3836;
+    color: #2f2f2f;
 }
 
 #pulseaudio.muted {
@@ -234,7 +234,7 @@ window#waybar.empty #window {
 }
 
 #bluetooth.disabled {
-    color: #928374;
+    color: #8a8a8a;
 }
 
 #bluetooth.connected {
@@ -242,7 +242,7 @@ window#waybar.empty #window {
 }
 
 #custom-notification {
-    color: #928374;
+    color: #8a8a8a;
     font-size: 13px;
 }
 
@@ -311,7 +311,7 @@ window#waybar.empty #window {
 
 /* Reloj y apagado a la derecha. */
 #clock {
-    color: #3c3836;
+    color: #1f1f1f;
     font-weight: 700;
     font-size: 12px;
     padding: 0 14px;
@@ -325,19 +325,19 @@ window#waybar.empty #window {
 
 #custom-power:hover {
     background: #cc241d;
-    color: #fbf1c7;
+    color: #f5f5f5;
 }
 
 /* --- Tooltip --- */
 
 tooltip {
-    background: rgba(251, 241, 199, 0.96);
-    border: 1px solid rgba(213, 196, 161, 0.70);
+    background: rgba(245, 245, 245, 0.94);
+    border: 1px solid rgba(0, 0, 0, 0.10);
     border-radius: 10px;
 }
 
 tooltip label {
-    color: #3c3836;
+    color: #2f2f2f;
     font-family: "Inter", sans-serif;
     font-size: 12px;
 }

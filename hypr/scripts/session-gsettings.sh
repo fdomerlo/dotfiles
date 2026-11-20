@@ -45,7 +45,7 @@ scheme_for_theme() {
 # Paleta de Qt6CT equivalente (solo si el archivo existe en el sistema).
 qt_colors_for_theme() {
     case "$1" in
-        gruvbox-light) printf '/usr/share/qt6ct/colors/sand.conf' ;;
+        gruvbox-light) printf '/usr/share/qt6ct/colors/airy.conf' ;;
         *)             printf '/usr/share/qt6ct/colors/darker.conf' ;;
     esac
 }
