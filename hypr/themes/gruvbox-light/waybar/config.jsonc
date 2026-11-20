@@ -233,7 +233,7 @@
       "weeks-pos": "right",
       "on-scroll": 1,
       "format": {
-        "months": "<span color='#d65d0e'><b>{}</b></span>",
+        "months": "<span color='#4f5d6b'><b>{}</b></span>",
         "weekdays": "<span color='#7c6f64'><b>{}</b></span>",
         "days": "<span color='#3c3836'>{}</span>",
         "weeks": "<span color='#a89984'>W{}</span>",

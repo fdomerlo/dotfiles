@@ -28,7 +28,7 @@ accent_for_theme() {
     case "$1" in
         mr-robot)      printf 'slate' ;;
         cyber-teal)    printf 'teal' ;;
-        gruvbox-light) printf 'orange' ;;
+        gruvbox-light) printf 'slate' ;;
         *)             printf 'blue' ;;
     esac
 }

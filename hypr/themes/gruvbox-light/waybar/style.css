@@ -1,7 +1,7 @@
 /* ==============================================================================
    Waybar - Gruvbox Light (Harvest)
    Una sola barra inferior redondeada y translucida, sin secciones ni
-   separadores internos. Crema/tan calido, tinta marron y naranja tostado.
+   separadores internos. Crema/tan calido, tinta marron y acento slate.
    El blur de la capa lo aplica Hyprland; aca solo se define el vidrio.
    ============================================================================== */
 
@@ -29,7 +29,7 @@ window#waybar > box {
 
 #custom-launcher {
     font-size: 18px;
-    color: #d65d0e;
+    color: #4f5d6b;
     padding: 0 12px;
     margin: 4px 2px;
     border-radius: 10px;
@@ -39,9 +39,9 @@ window#waybar > box {
 }
 
 #custom-launcher:hover {
-    background: #d65d0e;
+    background: #4f5d6b;
     color: #fbf1c7;
-    border-color: #d65d0e;
+    border-color: #4f5d6b;
 }
 
 #workspaces {
@@ -62,14 +62,14 @@ window#waybar > box {
 }
 
 #workspaces button:hover {
-    color: #d65d0e;
-    background: rgba(214, 93, 14, 0.10);
+    color: #4f5d6b;
+    background: rgba(79, 93, 107, 0.10);
     box-shadow: none;
 }
 
 #workspaces button.active {
     color: #fbf1c7;
-    background: #d65d0e;
+    background: #4f5d6b;
     font-weight: 700;
     box-shadow: none;
 }
@@ -154,8 +154,8 @@ window#waybar.empty #window {
 #tray:hover,
 #clock:hover,
 #custom-power:hover {
-    background: rgba(214, 93, 14, 0.10);
-    color: #d65d0e;
+    background: rgba(79, 93, 107, 0.10);
+    color: #4f5d6b;
 }
 
 #cpu,
@@ -164,7 +164,7 @@ window#waybar.empty #window {
 }
 
 #power-profiles-daemon {
-    color: #d65d0e;
+    color: #4f5d6b;
     font-size: 10px;
     font-weight: 700;
 }
@@ -184,7 +184,7 @@ window#waybar.empty #window {
 }
 
 #idle_inhibitor.activated {
-    color: #d65d0e;
+    color: #4f5d6b;
 }
 
 #backlight {
@@ -197,7 +197,7 @@ window#waybar.empty #window {
 
 #battery.charging,
 #battery.plugged {
-    color: #d65d0e;
+    color: #4f5d6b;
 }
 
 #battery.warning:not(.charging) {

@@ -1,6 +1,6 @@
 /* ==============================================================================
    SwayOSD - Gruvbox Light (Harvest)
-   Tarjeta crema, borde tan, tipografia Inter y acento naranja tostado.
+   Tarjeta crema, borde tan, tipografia Inter y acento slate.
    Sin radios ni profundidad: solo reglas y contraste.
    ============================================================================== */
 
@@ -18,7 +18,7 @@ window#osd #container {
 }
 
 window#osd image {
-    color: #d65d0e;
+    color: #4f5d6b;
 }
 
 window#osd label {
@@ -57,5 +57,5 @@ window#osd progress {
     min-height: inherit;
     border-radius: 6px;
     border: none;
-    background: linear-gradient(90deg, #d65d0e, #fe8019);
+    background: linear-gradient(90deg, #4f5d6b, #6b7a88);
 }
