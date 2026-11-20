@@ -2,10 +2,10 @@
   "include": ["~/.config/waybar/local.jsonc"],
   "layer": "top",
   "position": "top",
-  "height": 40,
-  "margin-top": 0,
-  "margin-left": 0,
-  "margin-right": 0,
+  "height": 34,
+  "margin-top": 8,
+  "margin-left": 10,
+  "margin-right": 10,
   "spacing": 0,
 
   "modules-left": [
@@ -14,7 +14,9 @@
     "custom/media",
     "hyprland/window"
   ],
-  "modules-center": [],
+  "modules-center": [
+    "clock"
+  ],
   "modules-right": [
     "cpu",
     "memory",
@@ -30,13 +32,12 @@
     "custom/ai-service",
     "custom/nightlight",
     "custom/recording",
-    "clock",
     "tray",
     "custom/power"
   ],
 
   "custom/launcher": {
-    "format": ">_",
+    "format": "MENÚ",
     "on-click": "~/.config/hypr/scripts/launcher-toggle.sh",
     "on-click-right": "~/.config/hypr/scripts/overview-toggle.sh",
     "tooltip": true,
@@ -44,14 +45,14 @@
   },
 
   "hyprland/workspaces": {
-    "format": "[{name}]",
+    "format": "{name}",
     "on-click": "activate",
     "disable-scroll": false,
     "all-outputs": false
   },
 
   "custom/media": {
-    "format": ">> {text}",
+    "format": "{text}",
     "max-length": 35,
     "interval": 3,
     "exec": "playerctl metadata --format '{{artist}} - {{title}}' 2>/dev/null",
@@ -68,14 +69,14 @@
   },
 
   "cpu": {
-    "format": " {usage}%",
+    "format": "CPU {usage}%",
     "interval": 2,
     "tooltip": true,
     "on-click": "foot -e btop"
   },
 
   "memory": {
-    "format": "󰍛 {used:0.1f}G",
+    "format": "MEM {used:0.1f}G",
     "interval": 2,
     "tooltip-format": "Memoria en uso: {used:0.2f}GiB de {total:0.2f}GiB",
     "on-click": "foot -e btop"
@@ -86,26 +87,25 @@
     "tooltip-format": "Perfil de energía: {profile}\nDriver: {driver}\nClick para alternar",
     "tooltip": true,
     "format-icons": {
-      "default": "󰾅",
-      "performance": "󰓅",
-      "balanced": "󰾅",
-      "power-saver": "󰌪"
+      "default": "BAL",
+      "performance": "PERF",
+      "balanced": "BAL",
+      "power-saver": "SAVE"
     }
   },
 
   "idle_inhibitor": {
     "format": "{icon}",
     "format-icons": {
-      "activated": "󰅶",
-      "deactivated": "󰾪"
+      "activated": "ON",
+      "deactivated": "OFF"
     },
     "tooltip-format-activated": "Inhibidor de reposo: ACTIVO\nEl equipo no se bloqueará, suspenderá ni hibernará automáticamente",
     "tooltip-format-deactivated": "Inhibidor de reposo: inactivo\nClick para evitar bloqueo, suspensión e hibernación automática"
   },
 
   "backlight": {
-    "format": "{icon} {percent}%",
-    "format-icons": ["󰃞", "󰃟", "󰃠"],
+    "format": "BRI {percent}%",
     "on-scroll-up": "~/.config/hypr/scripts/osd.sh brightness raise",
     "on-scroll-down": "~/.config/hypr/scripts/osd.sh brightness lower",
     "tooltip-format": "Brillo: {percent}%"
@@ -116,19 +116,15 @@
       "warning": 30,
       "critical": 15
     },
-    "format": "{icon} {capacity}%",
-    "format-charging": "󰂄 {capacity}%",
-    "format-plugged": "󰚥 {capacity}%",
-    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "format": "BAT {capacity}%",
+    "format-charging": "CHG {capacity}%",
+    "format-plugged": "AC {capacity}%",
     "tooltip-format": "{timeTo}\nConsumo: {power} W"
   },
 
   "pulseaudio": {
-    "format": "{icon} {volume}%",
-    "format-muted": "󰖁",
-    "format-icons": {
-      "default": ["󰕿", "󰖀", "󰕾"]
-    },
+    "format": "VOL {volume}%",
+    "format-muted": "MUTE",
     "scroll-step": 5,
     "on-click": "pavucontrol",
     "tooltip": true,
@@ -136,9 +132,10 @@
   },
 
   "network": {
-    "format-wifi": " {essid}",
-    "format-ethernet": "󰈀",
-    "format-disconnected": "󰪎",
+    "format-wifi": "NET {essid}",
+    "format-ethernet": "LAN",
+    "format-disconnected": "NET —",
+    "max-length": 20,
     "tooltip-format": "{ifname} via {gwaddr}",
     "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Red:' ~/.config/hypr/scripts/network-menu.sh",
     "on-click-right": "nm-connection-editor"
@@ -218,7 +215,8 @@
   },
 
   "clock": {
-    "format": "󰃭 {:L%A, %d/%m %H:%M}",
+    "format": "{:%H:%M}",
+    "format-alt": "{:%a %d %b}",
     "tooltip-format": "{:L%A, %d de %B %H:%M}\n\n<tt><small>{calendar}</small></tt>",
     "locale": "es_AR.UTF-8",
     "timezone": "America/Argentina/Buenos_Aires",
@@ -229,11 +227,11 @@
       "weeks-pos": "right",
       "on-scroll": 1,
       "format": {
-        "months": "<span color='#0f6b7a'><b>{}</b></span>",
-        "weekdays": "<span color='#5a6a72'><b>{}</b></span>",
-        "days": "<span color='#1e2a30'>{}</span>",
-        "weeks": "<span color='#8a9099'>W{}</span>",
-        "today": "<span color='#b3403a'><b><u>{}</u></b></span>"
+        "months": "<span color='#002fa7'><b>{}</b></span>",
+        "weekdays": "<span color='#5f6368'><b>{}</b></span>",
+        "days": "<span color='#0a0a0a'>{}</span>",
+        "weeks": "<span color='#9ca3af'>W{}</span>",
+        "today": "<span color='#c81e1e'><b><u>{}</u></b></span>"
       }
     },
     "actions": {
@@ -249,7 +247,7 @@
   },
 
   "custom/power": {
-    "format": "󰐥",
+    "format": "⏻",
     "tooltip": true,
     "tooltip-format": "Menú del sistema (Apagar / Cerrar sesión)",
     "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Sistema:' ~/.config/hypr/scripts/powermenu.sh"

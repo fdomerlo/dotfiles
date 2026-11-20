@@ -1,0 +1,365 @@
+/* ==============================================================================
+   Waybar - Swiss
+   Barra flotante editorial: blanco frio, tinta casi negra, azul Klein como
+   acento y hairlines de 1px. Inter en toda la UI, sin iconos decorativos en
+   los modulos de estado (CPU, memoria, bateria, volumen y red van en texto).
+   ============================================================================== */
+
+* {
+    font-family: "Inter", "Symbols Nerd Font", "Font Awesome 6 Free", "FontAwesome", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    min-height: 0;
+    border: none;
+}
+
+window#waybar {
+    background: #fafaf7;
+    color: #0a0a0a;
+    border: 1px solid #dadad5;
+    border-radius: 2px;
+}
+
+window#waybar > box {
+    padding: 0 4px;
+}
+
+/* --- Modulos Izquierda --- */
+
+#custom-launcher {
+    font-size: 10px;
+    font-weight: 700;
+    color: #0a0a0a;
+    padding: 0 12px;
+    margin: 4px 2px;
+    border-radius: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.14s ease;
+}
+
+#custom-launcher:hover {
+    background: #0a0a0a;
+    color: #fafaf7;
+    border-color: #0a0a0a;
+}
+
+#workspaces {
+    background: transparent;
+    border-radius: 0;
+    margin: 4px 2px;
+    padding: 0;
+    border: none;
+}
+
+#workspaces button {
+    padding: 0 9px;
+    margin: 0;
+    color: #5f6368;
+    background: transparent;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.14s ease;
+}
+
+#workspaces button:hover {
+    color: #0a0a0a;
+    background: rgba(0, 47, 167, 0.08);
+    border-bottom-color: #002fa7;
+    box-shadow: none;
+}
+
+#workspaces button.active {
+    color: #ffffff;
+    background: #002fa7;
+    border-bottom-color: #002fa7;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+#workspaces button.urgent {
+    color: #ffffff;
+    background: #c81e1e;
+    border-bottom-color: #c81e1e;
+}
+
+#custom-media {
+    background: transparent;
+    border: none;
+    border-left: 1px solid #dadad5;
+    border-radius: 0;
+    margin: 6px 4px;
+    padding: 0 10px;
+    color: #5f6368;
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* --- Titulo de la Ventana --- */
+
+#window {
+    color: #5f6368;
+    font-weight: 500;
+    padding: 0 12px;
+    background: transparent;
+    border-radius: 0;
+    margin: 3px 2px;
+    border: none;
+    border-left: 1px solid #dadad5;
+}
+
+window#waybar.empty #window {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* --- Reloj centrado --- */
+
+#clock {
+    color: #0a0a0a;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0 16px;
+    margin: 4px 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+#clock:hover {
+    color: #002fa7;
+}
+
+/* --- Modulos Derecha --- */
+
+#cpu,
+#memory,
+#power-profiles-daemon,
+#idle_inhibitor,
+#backlight,
+#battery,
+#pulseaudio,
+#network,
+#custom-vpn,
+#bluetooth,
+#custom-notification,
+#custom-ai-service,
+#custom-nightlight,
+#custom-recording,
+#tray,
+#custom-power {
+    background: transparent;
+    border: none;
+    border-left: 1px solid #dadad5;
+    border-radius: 0;
+    margin: 6px 0;
+    padding: 0 10px;
+    color: #0a0a0a;
+    transition: background 0.14s ease, color 0.14s ease;
+}
+
+#cpu:hover,
+#memory:hover,
+#power-profiles-daemon:hover,
+#idle_inhibitor:hover,
+#backlight:hover,
+#battery:hover,
+#pulseaudio:hover,
+#network:hover,
+#custom-vpn:hover,
+#bluetooth:hover,
+#custom-notification:hover,
+#custom-ai-service:hover,
+#custom-nightlight:hover,
+#custom-recording:hover,
+#tray:hover,
+#custom-power:hover {
+    background: rgba(0, 47, 167, 0.06);
+    color: #002fa7;
+}
+
+#cpu,
+#memory {
+    color: #5f6368;
+}
+
+#power-profiles-daemon {
+    color: #002fa7;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+#power-profiles-daemon.performance {
+    color: #c81e1e;
+}
+
+#power-profiles-daemon.power-saver {
+    color: #1f6f43;
+}
+
+#idle_inhibitor {
+    color: #9ca3af;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+#idle_inhibitor.activated {
+    color: #002fa7;
+    border-left-color: #002fa7;
+}
+
+#backlight {
+    color: #0a0a0a;
+}
+
+#battery {
+    color: #1f6f43;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #002fa7;
+}
+
+#battery.warning:not(.charging) {
+    color: #9a6700;
+}
+
+#battery.critical:not(.charging) {
+    color: #c81e1e;
+    border-left-color: rgba(200, 30, 30, 0.50);
+}
+
+#pulseaudio {
+    color: #0a0a0a;
+}
+
+#pulseaudio.muted {
+    color: #c81e1e;
+}
+
+#network {
+    color: #0a0a0a;
+}
+
+#network.disconnected {
+    color: #c81e1e;
+}
+
+#custom-vpn {
+    color: #1f6f43;
+    font-weight: 700;
+}
+
+#bluetooth {
+    color: #0a0a0a;
+}
+
+#bluetooth.disabled {
+    color: #9ca3af;
+}
+
+#bluetooth.connected {
+    color: #1f6f43;
+}
+
+#custom-notification {
+    color: #5f6368;
+    font-size: 13px;
+}
+
+#custom-notification.notification {
+    color: #c81e1e;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+    color: #9a6700;
+}
+
+/* Servicio de fondo OpenCode: visible; atenuado cuando esta apagado. */
+#custom-ai-service {
+    color: #1f6f43;
+}
+
+#custom-ai-service.idle {
+    color: rgba(31, 111, 67, 0.40);
+    border-left-color: rgba(31, 111, 67, 0.18);
+}
+
+#custom-ai-service:hover {
+    background: rgba(31, 111, 67, 0.08);
+    color: #1f6f43;
+    border-left-color: #1f6f43;
+}
+
+/* Luz nocturna: solo aparece mientras el filtro esta activo. */
+#custom-nightlight {
+    color: #9a6700;
+}
+
+#custom-nightlight:hover {
+    background: rgba(154, 103, 0, 0.08);
+    color: #7c5600;
+    border-left-color: #9a6700;
+}
+
+/* Grabacion de pantalla: parpadea como un indicador REC. */
+#custom-recording {
+    color: #c81e1e;
+    border-left-color: rgba(200, 30, 30, 0.45);
+    font-weight: 700;
+    animation: recording-pulse 1.2s ease-in-out infinite alternate;
+}
+
+#custom-recording:hover {
+    background: rgba(200, 30, 30, 0.08);
+    color: #a01818;
+    border-left-color: #c81e1e;
+}
+
+@keyframes recording-pulse {
+    from { opacity: 1; }
+    to   { opacity: 0.40; }
+}
+
+#tray {
+    padding: 0 8px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: #c81e1e;
+}
+
+#custom-power {
+    color: #0a0a0a;
+    font-size: 13px;
+    transition: all 0.14s ease;
+}
+
+#custom-power:hover {
+    background: #c81e1e;
+    color: #ffffff;
+    border-left-color: #c81e1e;
+}
+
+/* --- Tooltip --- */
+
+tooltip {
+    background: #ffffff;
+    border: 1px solid #dadad5;
+    border-radius: 2px;
+}
+
+tooltip label {
+    color: #0a0a0a;
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+}

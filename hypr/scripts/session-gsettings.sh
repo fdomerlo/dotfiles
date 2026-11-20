@@ -28,25 +28,25 @@ accent_for_theme() {
     case "$1" in
         mr-robot)   printf 'slate' ;;
         cyber-teal) printf 'teal' ;;
-        paper-teal) printf 'teal' ;;
+        swiss)      printf 'blue' ;;
         *)          printf 'blue' ;;
     esac
 }
 
-# Esquema claro/oscuro por tema. paper-teal es el unico diurno; el resto son
+# Esquema claro/oscuro por tema. swiss es el unico diurno; el resto son
 # temas oscuros y deben declararlo para que libadwaita y las apps GTK los sigan.
 scheme_for_theme() {
     case "$1" in
-        paper-teal) printf 'prefer-light' ;;
-        *)          printf 'prefer-dark' ;;
+        swiss) printf 'prefer-light' ;;
+        *)     printf 'prefer-dark' ;;
     esac
 }
 
 # Paleta de Qt6CT equivalente (solo si el archivo existe en el sistema).
 qt_colors_for_theme() {
     case "$1" in
-        paper-teal) printf '/usr/share/qt6ct/colors/sand.conf' ;;
-        *)          printf '/usr/share/qt6ct/colors/darker.conf' ;;
+        swiss) printf '/usr/share/qt6ct/colors/airy.conf' ;;
+        *)     printf '/usr/share/qt6ct/colors/darker.conf' ;;
     esac
 }
 

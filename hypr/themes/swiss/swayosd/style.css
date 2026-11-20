@@ -1,0 +1,60 @@
+/* ==============================================================================
+   SwayOSD - Swiss
+   HUD de volumen y brillo: tarjeta blanca, borde hairline, tipografia Inter y
+   acento azul Klein. Sin radios ni profundidad: solo reglas y contraste.
+   ============================================================================== */
+
+window#osd {
+    padding: 10px 16px;
+    border-radius: 2px;
+    border: 1px solid #dadad5;
+    background: rgba(250, 250, 247, 0.98);
+}
+
+window#osd #container {
+    margin: 6px 2px;
+    min-width: 210px;
+}
+
+window#osd image {
+    color: #002fa7;
+}
+
+window#osd label {
+    color: #0a0a0a;
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+window#osd label.title-4 {
+    color: #0a0a0a;
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+window#osd progressbar {
+    min-height: 6px;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+}
+
+window#osd progressbar:disabled {
+    opacity: 0.45;
+}
+
+window#osd trough {
+    min-height: inherit;
+    border-radius: 0;
+    border: 1px solid #dadad5;
+    background: #f0f0ec;
+}
+
+window#osd progress {
+    min-height: inherit;
+    border-radius: 0;
+    border: none;
+    background: linear-gradient(90deg, #002fa7, #3355c8);
+}
