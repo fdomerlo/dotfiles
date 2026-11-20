@@ -1,8 +1,8 @@
 /* ==============================================================================
    Waybar - Gruvbox Light (Harvest)
-   Barra inferior estilo Windows: tan calido, tinta marron, naranja tostado y
-   hairlines. Inicio y workspaces a la izquierda; estado, reloj y apagado a la
-   derecha. Inter en la UI, sin blur ni sombras.
+   Una sola barra inferior redondeada y translucida, sin secciones ni
+   separadores internos. Crema/tan calido, tinta marron y naranja tostado.
+   El blur de la capa lo aplica Hyprland; aca solo se define el vidrio.
    ============================================================================== */
 
 * {
@@ -14,14 +14,15 @@
 }
 
 window#waybar {
-    background: #ebdbb2;
+    background: rgba(251, 241, 199, 0.72);
     color: #3c3836;
-    border-top: 1px solid #d5c4a1;
-    border-radius: 0;
+    border: 1px solid rgba(213, 196, 161, 0.60);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(60, 56, 54, 0.22);
 }
 
 window#waybar > box {
-    padding: 2px 6px;
+    padding: 3px 8px;
 }
 
 /* --- Inicio y workspaces --- */
@@ -29,12 +30,12 @@ window#waybar > box {
 #custom-launcher {
     font-size: 18px;
     color: #d65d0e;
-    padding: 0 14px;
-    margin: 6px 2px;
-    border-radius: 0;
+    padding: 0 12px;
+    margin: 4px 2px;
+    border-radius: 10px;
     background: transparent;
     border: 1px solid transparent;
-    transition: all 0.14s ease;
+    transition: all 0.16s ease;
 }
 
 #custom-launcher:hover {
@@ -46,7 +47,7 @@ window#waybar > box {
 #workspaces {
     background: transparent;
     border-radius: 0;
-    margin: 6px 2px;
+    margin: 4px 2px;
     padding: 0;
     border: none;
 }
@@ -56,22 +57,19 @@ window#waybar > box {
     margin: 0;
     color: #7c6f64;
     background: transparent;
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-    transition: all 0.14s ease;
+    border-radius: 8px;
+    transition: all 0.16s ease;
 }
 
 #workspaces button:hover {
-    color: #3c3836;
-    background: #e0cfa9;
-    border-bottom-color: #d65d0e;
+    color: #d65d0e;
+    background: rgba(214, 93, 14, 0.10);
     box-shadow: none;
 }
 
 #workspaces button.active {
     color: #fbf1c7;
     background: #d65d0e;
-    border-bottom-color: #d65d0e;
     font-weight: 700;
     box-shadow: none;
 }
@@ -79,7 +77,6 @@ window#waybar > box {
 #workspaces button.urgent {
     color: #fbf1c7;
     background: #cc241d;
-    border-bottom-color: #cc241d;
 }
 
 /* --- Ventana activa y multimedia --- */
@@ -88,11 +85,10 @@ window#waybar > box {
     color: #7c6f64;
     font-weight: 500;
     padding: 0 12px;
+    margin: 0 4px;
     background: transparent;
-    border-radius: 0;
-    margin: 3px 2px;
     border: none;
-    border-left: 1px solid #d5c4a1;
+    border-radius: 8px;
 }
 
 window#waybar.empty #window {
@@ -105,9 +101,8 @@ window#waybar.empty #window {
 #custom-media {
     background: transparent;
     border: none;
-    border-left: 1px solid #d5c4a1;
-    border-radius: 0;
-    margin: 9px 4px;
+    border-radius: 8px;
+    margin: 0 4px;
     padding: 0 10px;
     color: #79740e;
     font-style: italic;
@@ -135,12 +130,11 @@ window#waybar.empty #window {
 #custom-power {
     background: transparent;
     border: none;
-    border-left: 1px solid #d5c4a1;
-    border-radius: 0;
-    margin: 9px 0;
-    padding: 0 11px;
+    border-radius: 8px;
+    margin: 4px 0;
+    padding: 0 10px;
     color: #3c3836;
-    transition: background 0.14s ease, color 0.14s ease;
+    transition: background 0.16s ease, color 0.16s ease;
 }
 
 #cpu:hover,
@@ -160,8 +154,8 @@ window#waybar.empty #window {
 #tray:hover,
 #clock:hover,
 #custom-power:hover {
-    background: #e0cfa9;
-    color: #3c3836;
+    background: rgba(214, 93, 14, 0.10);
+    color: #d65d0e;
 }
 
 #cpu,
@@ -191,7 +185,6 @@ window#waybar.empty #window {
 
 #idle_inhibitor.activated {
     color: #d65d0e;
-    border-left-color: #d65d0e;
 }
 
 #backlight {
@@ -213,7 +206,6 @@ window#waybar.empty #window {
 
 #battery.critical:not(.charging) {
     color: #cc241d;
-    border-left-color: rgba(204, 36, 29, 0.50);
 }
 
 #pulseaudio {
@@ -270,13 +262,11 @@ window#waybar.empty #window {
 
 #custom-ai-service.idle {
     color: rgba(152, 151, 26, 0.40);
-    border-left-color: rgba(152, 151, 26, 0.18);
 }
 
 #custom-ai-service:hover {
     background: rgba(152, 151, 26, 0.12);
     color: #79740e;
-    border-left-color: #98971a;
 }
 
 /* Luz nocturna: solo aparece mientras el filtro esta activo. */
@@ -287,13 +277,11 @@ window#waybar.empty #window {
 #custom-nightlight:hover {
     background: rgba(215, 153, 33, 0.14);
     color: #b57614;
-    border-left-color: #d79921;
 }
 
 /* Grabacion de pantalla: parpadea como un indicador REC. */
 #custom-recording {
     color: #cc241d;
-    border-left-color: rgba(204, 36, 29, 0.45);
     font-weight: 700;
     animation: recording-pulse 1.2s ease-in-out infinite alternate;
 }
@@ -301,7 +289,6 @@ window#waybar.empty #window {
 #custom-recording:hover {
     background: rgba(204, 36, 29, 0.12);
     color: #9d0006;
-    border-left-color: #cc241d;
 }
 
 @keyframes recording-pulse {
@@ -322,38 +309,31 @@ window#waybar.empty #window {
     background-color: #cc241d;
 }
 
-/* Reloj estilo Windows: a la derecha, antes del apagado. */
+/* Reloj y apagado a la derecha. */
 #clock {
     color: #3c3836;
     font-weight: 700;
     font-size: 12px;
     padding: 0 14px;
-    border-left-color: #d5c4a1;
-}
-
-#clock:hover {
-    color: #d65d0e;
 }
 
 #custom-power {
     color: #cc241d;
     font-size: 15px;
     padding: 0 12px;
-    transition: all 0.14s ease;
 }
 
 #custom-power:hover {
     background: #cc241d;
     color: #fbf1c7;
-    border-left-color: #cc241d;
 }
 
 /* --- Tooltip --- */
 
 tooltip {
-    background: #fbf1c7;
-    border: 1px solid #d5c4a1;
-    border-radius: 0;
+    background: rgba(251, 241, 199, 0.96);
+    border: 1px solid rgba(213, 196, 161, 0.70);
+    border-radius: 10px;
 }
 
 tooltip label {
