@@ -76,6 +76,7 @@ ShellRoot {
     }
 
     Component.onCompleted: {
+        Hyprland.refreshMonitors();
         if (!anyWindowOpen)
             idleShutdown.start();
     }
@@ -109,18 +110,43 @@ ShellRoot {
         return ids;
     }
 
-    function resolveFocusedScreen() {
-        const fm = Hyprland.focusedMonitor;
+    function screenSortKey(scr) {
+        const hm = Hyprland.monitorFor(scr);
+        const hasHypr = hm !== null && hm !== undefined;
+        const x = hasHypr ? hm.x : (scr.x !== undefined ? scr.x : 0);
+        const y = hasHypr ? hm.y : (scr.y !== undefined ? scr.y : 0);
+        const id = hasHypr && hm.id !== undefined ? hm.id : 999999;
+        const name = String(scr.name || "");
+        return { x: x, y: y, id: id, name: name };
+    }
+
+    function compareScreenKeys(a, b) {
+        if (a.x !== b.x)
+            return a.x - b.x;
+        if (a.y !== b.y)
+            return a.y - b.y;
+        if (a.id !== b.id)
+            return a.id - b.id;
+        return a.name.localeCompare(b.name);
+    }
+
+    // Monitor 1: mismo criterio portable que workspaces-init.sh (izquierda ->
+    // derecha por coordenada x, desempatando por y, id de Hyprland y nombre).
+    function resolvePrimaryScreen() {
         const screens = Quickshell.screens;
         if (!screens || screens.length === 0)
             return null;
-        if (fm) {
-            for (let i = 0; i < screens.length; i++) {
-                if (screens[i].name === fm.name)
-                    return screens[i];
+        let best = screens[0];
+        let bestKey = screenSortKey(best);
+        for (let i = 1; i < screens.length; i++) {
+            const candidate = screens[i];
+            const key = screenSortKey(candidate);
+            if (compareScreenKeys(key, bestKey) < 0) {
+                best = candidate;
+                bestKey = key;
             }
         }
-        return screens[0];
+        return best;
     }
 
     function openOverview() {
@@ -160,7 +186,7 @@ ShellRoot {
         if (overviewOpen)
             closeOverview();
         Hyprland.refreshMonitors();
-        launcherScreen = resolveFocusedScreen();
+        launcherScreen = resolvePrimaryScreen();
         launcherSearchQuery = "";
         launcherTab = tabId || "apps";
         if (!launcherStateProbe.running) {
@@ -172,6 +198,7 @@ ShellRoot {
     function closeLauncher() {
         launcherOpen = false;
         launcherSearchQuery = "";
+        launcherScreen = null;
     }
 
     function toggleLauncher(tabId) {
@@ -324,7 +351,7 @@ ShellRoot {
         active: root.launcherOpen
 
         LauncherWindow {
-            screen: root.launcherScreen || (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
+            screen: root.launcherScreen || root.resolvePrimaryScreen()
             launcherOpen: root.launcherOpen
             activeTab: root.launcherTab
             searchQuery: root.launcherSearchQuery
