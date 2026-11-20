@@ -1,37 +1,36 @@
 /* ==============================================================================
-   Waybar - Swiss
-   Barra flotante editorial: blanco frio, tinta casi negra, azul Klein como
-   acento y hairlines de 1px. Inter en toda la UI, sin iconos decorativos en
-   los modulos de estado (CPU, memoria, bateria, volumen y red van en texto).
+   Waybar - Gruvbox Light (Harvest)
+   Barra inferior estilo Windows: tan calido, tinta marron, naranja tostado y
+   hairlines. Inicio y workspaces a la izquierda; estado, reloj y apagado a la
+   derecha. Inter en la UI, sin blur ni sombras.
    ============================================================================== */
 
 * {
     font-family: "Inter", "Symbols Nerd Font", "Font Awesome 6 Free", "FontAwesome", sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     min-height: 0;
     border: none;
 }
 
 window#waybar {
-    background: #fafaf7;
-    color: #0a0a0a;
-    border: 1px solid #dadad5;
-    border-radius: 2px;
+    background: #ebdbb2;
+    color: #3c3836;
+    border-top: 1px solid #d5c4a1;
+    border-radius: 0;
 }
 
 window#waybar > box {
-    padding: 0 4px;
+    padding: 2px 6px;
 }
 
-/* --- Modulos Izquierda --- */
+/* --- Inicio y workspaces --- */
 
 #custom-launcher {
-    font-size: 10px;
-    font-weight: 700;
-    color: #0a0a0a;
-    padding: 0 12px;
-    margin: 4px 2px;
+    font-size: 18px;
+    color: #d65d0e;
+    padding: 0 14px;
+    margin: 6px 2px;
     border-radius: 0;
     background: transparent;
     border: 1px solid transparent;
@@ -39,23 +38,23 @@ window#waybar > box {
 }
 
 #custom-launcher:hover {
-    background: #0a0a0a;
-    color: #fafaf7;
-    border-color: #0a0a0a;
+    background: #d65d0e;
+    color: #fbf1c7;
+    border-color: #d65d0e;
 }
 
 #workspaces {
     background: transparent;
     border-radius: 0;
-    margin: 4px 2px;
+    margin: 6px 2px;
     padding: 0;
     border: none;
 }
 
 #workspaces button {
-    padding: 0 9px;
+    padding: 0 10px;
     margin: 0;
-    color: #5f6368;
+    color: #7c6f64;
     background: transparent;
     border-radius: 0;
     border-bottom: 2px solid transparent;
@@ -63,49 +62,37 @@ window#waybar > box {
 }
 
 #workspaces button:hover {
-    color: #0a0a0a;
-    background: rgba(0, 47, 167, 0.08);
-    border-bottom-color: #002fa7;
+    color: #3c3836;
+    background: #e0cfa9;
+    border-bottom-color: #d65d0e;
     box-shadow: none;
 }
 
 #workspaces button.active {
-    color: #ffffff;
-    background: #002fa7;
-    border-bottom-color: #002fa7;
+    color: #fbf1c7;
+    background: #d65d0e;
+    border-bottom-color: #d65d0e;
     font-weight: 700;
     box-shadow: none;
 }
 
 #workspaces button.urgent {
-    color: #ffffff;
-    background: #c81e1e;
-    border-bottom-color: #c81e1e;
+    color: #fbf1c7;
+    background: #cc241d;
+    border-bottom-color: #cc241d;
 }
 
-#custom-media {
-    background: transparent;
-    border: none;
-    border-left: 1px solid #dadad5;
-    border-radius: 0;
-    margin: 6px 4px;
-    padding: 0 10px;
-    color: #5f6368;
-    font-style: italic;
-    font-weight: 500;
-}
-
-/* --- Titulo de la Ventana --- */
+/* --- Ventana activa y multimedia --- */
 
 #window {
-    color: #5f6368;
+    color: #7c6f64;
     font-weight: 500;
     padding: 0 12px;
     background: transparent;
     border-radius: 0;
     margin: 3px 2px;
     border: none;
-    border-left: 1px solid #dadad5;
+    border-left: 1px solid #d5c4a1;
 }
 
 window#waybar.empty #window {
@@ -115,21 +102,16 @@ window#waybar.empty #window {
     margin: 0;
 }
 
-/* --- Reloj centrado --- */
-
-#clock {
-    color: #0a0a0a;
-    font-weight: 700;
-    font-size: 12px;
-    padding: 0 16px;
-    margin: 4px 0;
+#custom-media {
     background: transparent;
     border: none;
+    border-left: 1px solid #d5c4a1;
     border-radius: 0;
-}
-
-#clock:hover {
-    color: #002fa7;
+    margin: 9px 4px;
+    padding: 0 10px;
+    color: #79740e;
+    font-style: italic;
+    font-weight: 500;
 }
 
 /* --- Modulos Derecha --- */
@@ -149,14 +131,15 @@ window#waybar.empty #window {
 #custom-nightlight,
 #custom-recording,
 #tray,
+#clock,
 #custom-power {
     background: transparent;
     border: none;
-    border-left: 1px solid #dadad5;
+    border-left: 1px solid #d5c4a1;
     border-radius: 0;
-    margin: 6px 0;
-    padding: 0 10px;
-    color: #0a0a0a;
+    margin: 9px 0;
+    padding: 0 11px;
+    color: #3c3836;
     transition: background 0.14s ease, color 0.14s ease;
 }
 
@@ -175,149 +158,150 @@ window#waybar.empty #window {
 #custom-nightlight:hover,
 #custom-recording:hover,
 #tray:hover,
+#clock:hover,
 #custom-power:hover {
-    background: rgba(0, 47, 167, 0.06);
-    color: #002fa7;
+    background: #e0cfa9;
+    color: #3c3836;
 }
 
 #cpu,
 #memory {
-    color: #5f6368;
+    color: #7c6f64;
 }
 
 #power-profiles-daemon {
-    color: #002fa7;
+    color: #d65d0e;
     font-size: 10px;
     font-weight: 700;
 }
 
 #power-profiles-daemon.performance {
-    color: #c81e1e;
+    color: #cc241d;
 }
 
 #power-profiles-daemon.power-saver {
-    color: #1f6f43;
+    color: #98971a;
 }
 
 #idle_inhibitor {
-    color: #9ca3af;
+    color: #928374;
     font-size: 10px;
     font-weight: 700;
 }
 
 #idle_inhibitor.activated {
-    color: #002fa7;
-    border-left-color: #002fa7;
+    color: #d65d0e;
+    border-left-color: #d65d0e;
 }
 
 #backlight {
-    color: #0a0a0a;
+    color: #d79921;
 }
 
 #battery {
-    color: #1f6f43;
+    color: #98971a;
 }
 
 #battery.charging,
 #battery.plugged {
-    color: #002fa7;
+    color: #d65d0e;
 }
 
 #battery.warning:not(.charging) {
-    color: #9a6700;
+    color: #d79921;
 }
 
 #battery.critical:not(.charging) {
-    color: #c81e1e;
-    border-left-color: rgba(200, 30, 30, 0.50);
+    color: #cc241d;
+    border-left-color: rgba(204, 36, 29, 0.50);
 }
 
 #pulseaudio {
-    color: #0a0a0a;
+    color: #3c3836;
 }
 
 #pulseaudio.muted {
-    color: #c81e1e;
+    color: #cc241d;
 }
 
 #network {
-    color: #0a0a0a;
+    color: #458588;
 }
 
 #network.disconnected {
-    color: #c81e1e;
+    color: #cc241d;
 }
 
 #custom-vpn {
-    color: #1f6f43;
+    color: #98971a;
     font-weight: 700;
 }
 
 #bluetooth {
-    color: #0a0a0a;
+    color: #458588;
 }
 
 #bluetooth.disabled {
-    color: #9ca3af;
+    color: #928374;
 }
 
 #bluetooth.connected {
-    color: #1f6f43;
+    color: #98971a;
 }
 
 #custom-notification {
-    color: #5f6368;
+    color: #928374;
     font-size: 13px;
 }
 
 #custom-notification.notification {
-    color: #c81e1e;
+    color: #cc241d;
 }
 
 #custom-notification.dnd-none,
 #custom-notification.dnd-notification {
-    color: #9a6700;
+    color: #d79921;
 }
 
 /* Servicio de fondo OpenCode: visible; atenuado cuando esta apagado. */
 #custom-ai-service {
-    color: #1f6f43;
+    color: #98971a;
 }
 
 #custom-ai-service.idle {
-    color: rgba(31, 111, 67, 0.40);
-    border-left-color: rgba(31, 111, 67, 0.18);
+    color: rgba(152, 151, 26, 0.40);
+    border-left-color: rgba(152, 151, 26, 0.18);
 }
 
 #custom-ai-service:hover {
-    background: rgba(31, 111, 67, 0.08);
-    color: #1f6f43;
-    border-left-color: #1f6f43;
+    background: rgba(152, 151, 26, 0.12);
+    color: #79740e;
+    border-left-color: #98971a;
 }
 
 /* Luz nocturna: solo aparece mientras el filtro esta activo. */
 #custom-nightlight {
-    color: #9a6700;
+    color: #d79921;
 }
 
 #custom-nightlight:hover {
-    background: rgba(154, 103, 0, 0.08);
-    color: #7c5600;
-    border-left-color: #9a6700;
+    background: rgba(215, 153, 33, 0.14);
+    color: #b57614;
+    border-left-color: #d79921;
 }
 
 /* Grabacion de pantalla: parpadea como un indicador REC. */
 #custom-recording {
-    color: #c81e1e;
-    border-left-color: rgba(200, 30, 30, 0.45);
+    color: #cc241d;
+    border-left-color: rgba(204, 36, 29, 0.45);
     font-weight: 700;
     animation: recording-pulse 1.2s ease-in-out infinite alternate;
 }
 
 #custom-recording:hover {
-    background: rgba(200, 30, 30, 0.08);
-    color: #a01818;
-    border-left-color: #c81e1e;
+    background: rgba(204, 36, 29, 0.12);
+    color: #9d0006;
+    border-left-color: #cc241d;
 }
 
 @keyframes recording-pulse {
@@ -326,7 +310,7 @@ window#waybar.empty #window {
 }
 
 #tray {
-    padding: 0 8px;
+    padding: 0 9px;
 }
 
 #tray > .passive {
@@ -335,31 +319,45 @@ window#waybar.empty #window {
 
 #tray > .needs-attention {
     -gtk-icon-effect: highlight;
-    background-color: #c81e1e;
+    background-color: #cc241d;
+}
+
+/* Reloj estilo Windows: a la derecha, antes del apagado. */
+#clock {
+    color: #3c3836;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0 14px;
+    border-left-color: #d5c4a1;
+}
+
+#clock:hover {
+    color: #d65d0e;
 }
 
 #custom-power {
-    color: #0a0a0a;
-    font-size: 13px;
+    color: #cc241d;
+    font-size: 15px;
+    padding: 0 12px;
     transition: all 0.14s ease;
 }
 
 #custom-power:hover {
-    background: #c81e1e;
-    color: #ffffff;
-    border-left-color: #c81e1e;
+    background: #cc241d;
+    color: #fbf1c7;
+    border-left-color: #cc241d;
 }
 
 /* --- Tooltip --- */
 
 tooltip {
-    background: #ffffff;
-    border: 1px solid #dadad5;
-    border-radius: 2px;
+    background: #fbf1c7;
+    border: 1px solid #d5c4a1;
+    border-radius: 0;
 }
 
 tooltip label {
-    color: #0a0a0a;
+    color: #3c3836;
     font-family: "Inter", sans-serif;
-    font-size: 11px;
+    font-size: 12px;
 }

@@ -53,7 +53,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 
 | Capa | Herramientas principales |
 | :--- | :--- |
-| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades; se apaga solo tras 10 min sin uso y se relanza al abrirlo), `fuzzel`, `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `mr-robot` / `swiss`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
+| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades; se apaga solo tras 10 min sin uso y se relanza al abrirlo), `fuzzel`, `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `mr-robot` / `gruvbox-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
@@ -190,8 +190,8 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 
 - **`cyber-teal`:** estética glass redondeada con blur, sombras, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
 - **`mr-robot`:** estilo terminal plano con bordes acero, Smart Gaps sin márgenes con una sola ventana, tipografía `JetBrains Mono` y wallpaper por defecto [`cyber-tower.jpg`](hypr/themes/mr-robot/wallpapers/cyber-tower.jpg).
-- **`swiss`:** tema claro editorial: blanco frío, tinta casi negra y azul Klein, con barra flotante, reloj centrado, tipografía `Inter` en la UI y hairlines en lugar de sombras. GTK/libadwaita y Qt acompañan el modo claro y rotan solo entre sus wallpapers ([`swiss-grid.jpg`](hypr/themes/swiss/wallpapers/swiss-grid.jpg), [`swiss-type.jpg`](hypr/themes/swiss/wallpapers/swiss-type.jpg)).
-- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés agruparlas por tema, en `~/.config/hypr/wallpapers/<tema>/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`. Un tema puede marcar su carpeta `wallpapers/.exclusive` para rotar solo con sus fondos (lo usa `swiss`).
+- **`gruvbox-light`:** tema claro cálido inspirado en Gruvbox Light: crema, tan, tinta marrón y naranja tostado, con **barra inferior estilo Windows** (inicio y workspaces a la izquierda, estado y reloj a la derecha), ventanas rectas y tipografía `Inter` en la UI. GTK/libadwaita y Qt acompañan el modo claro y rotan solo entre sus wallpapers ([`wheat-skyline.jpg`](hypr/themes/gruvbox-light/wallpapers/wheat-skyline.jpg), [`wheat-field.jpg`](hypr/themes/gruvbox-light/wallpapers/wheat-field.jpg)).
+- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés agruparlas por tema, en `~/.config/hypr/wallpapers/<tema>/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`. Un tema puede marcar su carpeta `wallpapers/.exclusive` para rotar solo con sus fondos (lo usa `gruvbox-light`).
 
 ### Personalización local (sin ensuciar Git)
 

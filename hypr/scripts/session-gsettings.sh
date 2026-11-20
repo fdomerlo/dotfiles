@@ -26,27 +26,27 @@ active_theme() {
 # de quedar azules cuando el escritorio usa otra paleta.
 accent_for_theme() {
     case "$1" in
-        mr-robot)   printf 'slate' ;;
-        cyber-teal) printf 'teal' ;;
-        swiss)      printf 'blue' ;;
-        *)          printf 'blue' ;;
+        mr-robot)      printf 'slate' ;;
+        cyber-teal)    printf 'teal' ;;
+        gruvbox-light) printf 'orange' ;;
+        *)             printf 'blue' ;;
     esac
 }
 
-# Esquema claro/oscuro por tema. swiss es el unico diurno; el resto son
-# temas oscuros y deben declararlo para que libadwaita y las apps GTK los sigan.
+# Esquema claro/oscuro por tema. gruvbox-light es el unico diurno; el resto
+# son temas oscuros y deben declararlo para que libadwaita y las apps GTK los sigan.
 scheme_for_theme() {
     case "$1" in
-        swiss) printf 'prefer-light' ;;
-        *)     printf 'prefer-dark' ;;
+        gruvbox-light) printf 'prefer-light' ;;
+        *)             printf 'prefer-dark' ;;
     esac
 }
 
 # Paleta de Qt6CT equivalente (solo si el archivo existe en el sistema).
 qt_colors_for_theme() {
     case "$1" in
-        swiss) printf '/usr/share/qt6ct/colors/airy.conf' ;;
-        *)     printf '/usr/share/qt6ct/colors/darker.conf' ;;
+        gruvbox-light) printf '/usr/share/qt6ct/colors/sand.conf' ;;
+        *)             printf '/usr/share/qt6ct/colors/darker.conf' ;;
     esac
 }
 
