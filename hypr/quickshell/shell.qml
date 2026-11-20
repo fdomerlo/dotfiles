@@ -20,34 +20,6 @@ ShellRoot {
     property bool nightlightActive: false
     property var pendingCmd: null
 
-    readonly property string wallpaperStatePath: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/hypr_current_wallpaper"
-    readonly property string wallpaperName: {
-        if (!wallpaperStateFile.loaded)
-            return "";
-        const raw = String(wallpaperStateFile.text() || "").trim();
-        if (!raw)
-            return "";
-        const slash = raw.lastIndexOf("/");
-        return slash >= 0 ? raw.slice(slash + 1) : raw;
-    }
-
-    FileView {
-        id: wallpaperStateFile
-        path: root.wallpaperStatePath
-        preload: true
-        watchChanges: true
-        printErrors: false
-        onFileChanged: reload()
-        onLoadFailed: wallpaperRetryTimer.restart()
-    }
-
-    Timer {
-        id: wallpaperRetryTimer
-        interval: 1500
-        repeat: false
-        onTriggered: wallpaperStateFile.reload()
-    }
-
     Process {
         id: launcherStateProbe
         command: [
@@ -85,12 +57,12 @@ ShellRoot {
 
     readonly property bool anyWindowOpen: launcherOpen || overviewOpen
 
-    // Sin ventanas abiertas Quickshell solo mantiene el badge del wallpaper.
-    // Apagarlo devuelve su memoria; launcher-toggle.sh y overview-toggle.sh lo
-    // relanzan cuando hace falta (primer atajo tras el apagado: ~500 ms).
+    // Sin ventanas abiertas Quickshell no tiene UI activa. Apagarlo tras 90 s
+    // devuelve su memoria; launcher-toggle.sh y overview-toggle.sh lo relanzan
+    // bajo demanda (primer atajo tras el apagado: ~500 ms).
     Timer {
         id: idleShutdown
-        interval: 10 * 60 * 1000
+        interval: 90 * 1000
         repeat: false
         onTriggered: Qt.quit()
     }
@@ -321,16 +293,8 @@ ShellRoot {
         }
     }
 
-    IpcHandler {
-        target: "wallpaper"
-
-        function refresh(): void {
-            wallpaperStateFile.reload();
-        }
-    }
-
     // Las ventanas pesadas se crean solo al abrirlas: en reposo Quickshell
-    // mantiene únicamente el badge del wallpaper y los handlers IPC.
+    // mantiene únicamente los handlers IPC hasta que venza idleShutdown.
     LazyLoader {
         active: root.overviewOpen
 
@@ -377,16 +341,6 @@ ShellRoot {
             onAppActivated: entry => root.launchAppEntry(entry)
             onActionActivated: act => root.launchAction(act)
             onOverviewRequested: root.openOverview()
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        WallpaperBadge {
-            required property var modelData
-            screen: modelData
-            wallpaperName: root.wallpaperName
         }
     }
 }

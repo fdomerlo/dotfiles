@@ -24,12 +24,6 @@ PID_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr_wallpaper_daemon.pid"
 
 DEFAULT_INTERVAL=1800 # 30 minutos
 
-notify_quickshell() {
-    if command -v qs >/dev/null 2>&1; then
-        qs ipc call wallpaper refresh >/dev/null 2>&1 || true
-    fi
-}
-
 active_theme() {
     local active_link="$HYPR_DIR/themes/active"
     local resolved
@@ -79,9 +73,8 @@ apply_wallpaper() {
         return 1
     fi
 
-    # Guardar la imagen aplicada como actual y avisar a Quickshell
+    # Guardar la imagen aplicada como actual (evita repetirla en apply_random)
     echo "$wall" > "$STATE_FILE"
-    notify_quickshell
 
     if command -v swaybg >/dev/null 2>&1; then
         local old_pids
@@ -105,7 +98,6 @@ apply_random() {
 
     if [ "$total" -eq 0 ]; then
         rm -f "$STATE_FILE"
-        notify_quickshell
         if command -v swaybg >/dev/null 2>&1; then
             pkill -x swaybg 2>/dev/null || true
             swaybg -c '#0c1012' >/dev/null 2>&1 &
