@@ -12,6 +12,9 @@ ShellRoot {
     property bool tabNavigated: false
 
     property bool launcherOpen: false
+    property bool launcherPending: false
+    property string pendingPrimaryName: ""
+    property int pendingScreenRetries: 0
     property string launcherTab: "apps"
     property string launcherSearchQuery: ""
     property var launcherScreen: null
@@ -40,6 +43,30 @@ ShellRoot {
                 }
             }
         }
+    }
+
+    // Nombre del monitor 1 segun Hyprland (izquierda -> derecha). Se consulta
+    // fuera de Quickshell porque al relanzar el daemon su lista de screens
+    // todavia puede estar incompleta y terminaria abriendo en el monitor
+    // enfocado. Mismo criterio que workspaces-init.sh y main-menu.sh.
+    Process {
+        id: primaryScreenProbe
+        command: [
+            "sh", "-c",
+            "hyprctl monitors -j 2>/dev/null | " +
+            "jq -r 'map(select(.disabled | not)) | sort_by(.x, .y, .id) | .[0].name // empty' " +
+            "2>/dev/null || true"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: root.applyPrimaryScreen(String(text || "").trim())
+        }
+    }
+
+    Timer {
+        id: primaryScreenRetry
+        interval: 80
+        repeat: false
+        onTriggered: root.tryApplyPrimaryScreen()
     }
 
     Timer {
@@ -149,6 +176,44 @@ ShellRoot {
         return best;
     }
 
+    function applyPrimaryScreen(name) {
+        pendingPrimaryName = name || "";
+        pendingScreenRetries = 0;
+        tryApplyPrimaryScreen();
+    }
+
+    function tryApplyPrimaryScreen() {
+        if (!launcherPending)
+            return;
+
+        const screens = Quickshell.screens || [];
+        let target = null;
+        if (pendingPrimaryName) {
+            for (let i = 0; i < screens.length; i++) {
+                if (screens[i] && screens[i].name === pendingPrimaryName) {
+                    target = screens[i];
+                    break;
+                }
+            }
+        }
+
+        // Si el monitor 1 todavia no esta en la lista de Quickshell, reintentar
+        // brevemente. Sin nombre de referencia, no esperar de mas.
+        const maxRetries = pendingPrimaryName ? 12 : 2;
+        if (!target && pendingScreenRetries < maxRetries) {
+            pendingScreenRetries += 1;
+            primaryScreenRetry.restart();
+            return;
+        }
+
+        launcherScreen = target || resolvePrimaryScreen() || (screens.length > 0 ? screens[0] : null);
+        if (!launcherStateProbe.running) {
+            launcherStateProbe.running = true;
+        }
+        launcherOpen = true;
+        launcherPending = false;
+    }
+
     function openOverview() {
         if (launcherOpen)
             closeLauncher();
@@ -185,17 +250,21 @@ ShellRoot {
     function openLauncher(tabId) {
         if (overviewOpen)
             closeOverview();
-        Hyprland.refreshMonitors();
-        launcherScreen = resolvePrimaryScreen();
         launcherSearchQuery = "";
         launcherTab = tabId || "apps";
-        if (!launcherStateProbe.running) {
-            launcherStateProbe.running = true;
-        }
-        launcherOpen = true;
+        launcherPending = true;
+        pendingPrimaryName = "";
+        pendingScreenRetries = 0;
+        primaryScreenRetry.stop();
+        Hyprland.refreshMonitors();
+        // La ventana se crea recien cuando primaryScreenProbe resolvio el
+        // monitor 1 y Quickshell ya lo tiene en su lista de screens.
+        primaryScreenProbe.running = true;
     }
 
     function closeLauncher() {
+        primaryScreenRetry.stop();
+        launcherPending = false;
         launcherOpen = false;
         launcherSearchQuery = "";
         launcherScreen = null;
@@ -205,12 +274,20 @@ ShellRoot {
         if (launcherOpen) {
             if (tabId && tabId !== launcherTab) {
                 launcherTab = tabId;
+                return;
+            }
+            closeLauncher();
+            return;
+        }
+        if (launcherPending) {
+            if (tabId) {
+                launcherTab = tabId;
             } else {
                 closeLauncher();
             }
-        } else {
-            openLauncher(tabId);
+            return;
         }
+        openLauncher(tabId);
     }
 
     function launchAppEntry(entry) {

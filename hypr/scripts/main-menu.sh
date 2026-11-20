@@ -18,6 +18,19 @@ RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
 command -v fuzzel >/dev/null 2>&1 || exit 1
 
+# El Menú Maestro debe abrir siempre en el monitor 1 (el de la izquierda),
+# sin seguir al monitor enfocado. Mismo criterio que workspaces-init.sh:
+# izquierda -> derecha por x, desempatando por y e id de Hyprland.
+primary_monitor() {
+    command -v hyprctl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 0
+    hyprctl monitors -j 2>/dev/null |
+        jq -r 'map(select(.disabled | not)) | sort_by(.x, .y, .id) | .[0].name // empty' 2>/dev/null || true
+}
+
+FUZZEL_OUTPUT="$(primary_monitor)"
+FUZZEL_OUTPUT_ARGS=()
+[ -n "$FUZZEL_OUTPUT" ] && FUZZEL_OUTPUT_ARGS=(--output "$FUZZEL_OUTPUT")
+
 notify() {
     command -v notify-send >/dev/null 2>&1 &&
         notify-send -a Hyprland "$@" 2>/dev/null || true
@@ -31,7 +44,7 @@ dmenu() {
     for entry in "$@"; do
         (( ${#entry} + 4 > width )) && width=$(( ${#entry} + 4 ))
     done
-    printf '%s\n' "$@" | fuzzel --dmenu \
+    printf '%s\n' "$@" | fuzzel --dmenu "${FUZZEL_OUTPUT_ARGS[@]}" \
         --prompt "$prompt" \
         --width "$width" \
         --lines "$lines" 2>/dev/null || true
@@ -242,7 +255,7 @@ menu_buscar() {
     [ -n "$choice" ] || exit 0
 
     case "$choice" in
-        "󰀻 "*) exec env XDG_CURRENT_DESKTOP=Hyprland:GNOME fuzzel --placeholder 'Buscar aplicaciones...' ;;
+        "󰀻 "*) exec env XDG_CURRENT_DESKTOP=Hyprland:GNOME fuzzel "${FUZZEL_OUTPUT_ARGS[@]}" --placeholder 'Buscar aplicaciones...' ;;
         "󰖟 "*) WEBAPP_PROMPT_PREFIX="Menú · " "$SCRIPT_DIR/webapp-install.sh" menu ;;
         "󰕰 "*) launch_bg "$SCRIPT_DIR/overview-toggle.sh" ;;
         "󰅌 "*) "$SCRIPT_DIR/clipboard.sh" ;;
