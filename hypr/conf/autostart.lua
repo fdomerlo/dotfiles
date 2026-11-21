@@ -7,7 +7,7 @@ hl.on("hyprland.start", function()
     -- Keyring (secretos/PKCS11, desbloqueado por PAM/GDM) y agente SSH único vía systemd --user.
     -- No se lanza `gnome-keyring-daemon --start` manualmente para evitar procesos duplicados;
     -- systemd ya gestiona gnome-keyring-daemon.service y ssh-agent.socket.
-    hl.exec_cmd([[sh -c 'systemctl --user start gnome-keyring-daemon.service ssh-agent.socket >/dev/null 2>&1 || true; if [ -z "${SSH_AUTH_SOCK:-}" ] && [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openssh_agent" ]; then export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openssh_agent"; fi; dbus-update-activation-environment --systemd PATH WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_DATA_DIRS SSH_AUTH_SOCK QT_QPA_PLATFORMTHEME']])
+    hl.exec_cmd([[sh -c 'systemctl --user start gnome-keyring-daemon.service ssh-agent.socket >/dev/null 2>&1 || true; if [ -z "${SSH_AUTH_SOCK:-}" ] && [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openssh_agent" ]; then export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/openssh_agent"; fi; dbus-update-activation-environment --systemd PATH WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_DATA_DIRS SSH_AUTH_SOCK']])
 
     -- Servidor de terminal Foot para apertura instantánea (<10 ms)
     hl.exec_cmd([[sh -c 'command -v foot >/dev/null 2>&1 && exec foot --server']])

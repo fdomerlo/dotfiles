@@ -1,8 +1,7 @@
 # Yazi - esquema de color optimizado para lectura
 #
 # Paleta Nord de bajo deslumbramiento sobre fondos oscuros. Los contrastes
-# aproximados (WCAG) contra los fondos de mr-robot (#05080b) y cyber-teal
-# (#0c1012) son:
+# aproximados (WCAG) contra el fondo oscuro de cyber-teal (#0c1012) son:
 #
 #   Texto principal #d8dee9 .... 14.9 : 1
 #   Texto secundario #8394a3 .... 6.4 : 1

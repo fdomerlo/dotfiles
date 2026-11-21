@@ -80,7 +80,7 @@ glyph_for_class() {
         *thunderbird*|*slack*|*discord*|*telegram*|*signal*) printf '󰍡' ;;
         *blueman*) printf '󰂯' ;;
         *calculator*) printf '󰪚' ;;
-        *settings*|*control-center*|*qt6ct*|*timeshift*|*gparted*|*btop*) printf '󰒓' ;;
+        *settings*|*control-center*|*timeshift*|*gparted*|*btop*) printf '󰒓' ;;
         *) printf '󱂬' ;;
     esac
 }

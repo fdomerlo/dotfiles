@@ -40,13 +40,9 @@ network-manager-openvpn
 network-manager-openvpn-gnome
 blueman
 xdg-desktop-portal-gtk
-qt6ct
-qt5ct
-qtwayland5
 xwayland
 adwaita-icon-theme
 bibata-cursor-theme
-gnome-themes-extra
 fonts-inter
 fonts-atkinson-hyperlegible
 fonts-jetbrains-mono

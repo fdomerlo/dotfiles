@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Abre o cierra el selector rápido de ventanas y workspaces en Rofi 2.0.
-# Reemplaza el Overview de Quickshell sin daemon residente (0 MB en reposo).
+# Sin daemon residente: arranca bajo demanda y libera memoria al cerrarse.
 # ==============================================================================
 set -euo pipefail
 

@@ -110,10 +110,10 @@ idempotencia.
 
 ### Cambiar un atajo o el menú
 - Atajos: `hypr/conf/keybinds.lua` (usar `mod = "SUPER"` y API `hl.bind` / `hl.dsp.*`).
-- Menú maestro fallback: `hypr/scripts/main-menu.sh` (Fuzzel dmenu).
 - Centro Unificado y selector de ventanas (Rofi 2.0): `hypr/rofi/config.rasi`,
-  `hypr/scripts/rofi-actions.sh` (`dev`, `capturar`, `estilo`, `sistema`) y
-  `hypr/scripts/rofi-windows.sh`.
+  `hypr/scripts/rofi-all.sh` (buscador global `Todo`), `hypr/scripts/rofi-apps.sh`
+  (apps con glifos simbólicos), `hypr/scripts/rofi-actions.sh` (`dev`, `capturar`,
+  `estilo`, `sistema`) y `hypr/scripts/rofi-windows.sh`.
 - Después: `make refresh` (re-enlaza y recarga Hyprland).
 
 ### Agregar una skill global de IA

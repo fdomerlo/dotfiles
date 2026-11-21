@@ -20,7 +20,6 @@
 -- persistent-workspaces. La cantidad por monitor se ajusta con WS_PER_MONITOR
 -- en workspaces-init.sh y workspace-cycle.sh.
 --
--- Las reglas visuales de Smart Gaps (w[tv1] / f[1]) viven por tema en
--- hypr/themes/<tema>/appearance.lua (activas en mr-robot; omitidas en
--- cyber-teal para preservar sus márgenes flotantes y bordes degradados).
+-- La estética de bordes y márgenes uniformes (4 px) vive por tema en
+-- hypr/themes/<tema>/appearance.lua (cyber-teal / cyber-teal-light).
 -- ==============================================================================

@@ -43,7 +43,7 @@ make verify          # Chequeo integral de estado del sistema
 
 ### 3. Instalación desatendida desde cero (opcional: `preseed.cfg` + Ventoy)
 
-Para aprovisionar un equipo nuevo sobre **Debian Testing (`forky`)** usando la ISO oficial `debian-testing-amd64-netinst.iso` (con [`ventoy/ventoy.json`](ventoy/ventoy.json) y [`preseed.cfg`](preseed.cfg)), reemplaza antes en una copia local los placeholders:
+Para aprovisionar un equipo nuevo sobre **Debian Testing (`forky`)** usando la ISO oficial `debian-testing-amd64-netinst.iso` (con [`ventoy/ventoy.json`](ventoy/ventoy.json) y [`preseed.cfg`](preseed.cfg)), reemplaza antes en una copia local los placeholders (para migrar una estación existente en Trixie, ver [`docs/trixie-to-forky-runbook.md`](docs/trixie-to-forky-runbook.md)):
 - `<WIFI_SSID>` y `<WIFI_PASSWORD>`
 - `<PASSWORD_HASH_SHA512>` (generado con `openssl passwd -6`)
 
@@ -53,7 +53,7 @@ Para aprovisionar un equipo nuevo sobre **Debian Testing (`forky`)** usando la I
 
 | Capa | Herramientas principales |
 | :--- | :--- |
-| **Escritorio (Hyprland + GNOME fallback)** | `hyprland` 0.57+ (`hyprland.lua`), `waybar`, `rofi` 2.0 Wayland nativo (Centro Unificado por pestañas + selector de ventanas, 0 MB en reposo), `fuzzel` (dmenus rápidos), `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `cyber-teal-light` / `mr-robot`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
+| **Escritorio (Hyprland + GNOME fallback)** | `hyprland` 0.57+ (`hyprland.lua`), `waybar`, `rofi` 2.0 Wayland nativo (Centro Unificado por pestañas + selector de ventanas, 0 MB en reposo), `fuzzel` (dmenus rápidos), `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `cyber-teal-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
 | **Sistema & Contenedores** | Debian Testing (`forky/main`) + `apt-listbugs`, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
@@ -188,9 +188,8 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 ~/.config/hypr/scripts/theme-switch.sh menu       # Selector interactivo (Super+Shift+T)
 ```
 
-- **`cyber-teal`:** estética glass oscura redondeada con acento cyan disciplinado, barra unificada, blur suave, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
-- **`cyber-teal-light`:** contraparte diurna de `cyber-teal` con la misma geometría, barra unificada translúcida, tipografía `Inter` y acento teal de alto contraste sobre superficies hielo/niebla. GTK/libadwaita (`prefer-light` + acento `teal`) y Qt acompañan el modo claro, con wallpaper por defecto [`glacier-mist.jpg`](hypr/themes/cyber-teal-light/wallpapers/glacier-mist.jpg).
-- **`mr-robot`:** estilo terminal plano con bordes acero, Smart Gaps sin márgenes con una sola ventana, tipografía `JetBrains Mono` y wallpaper por defecto [`cyber-tower.jpg`](hypr/themes/mr-robot/wallpapers/cyber-tower.jpg).
+- **`cyber-teal`:** tema oscuro principal con estética glass redondeada, acento cyan disciplinado, barra flotante unificada de `40 px`, blur suave, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
+- **`cyber-teal-light`:** contraparte diurna de `cyber-teal` con la misma geometría, barra flotante unificada translúcida, tipografía `Inter` y acento petrol-teal de alto contraste sobre superficies hielo/niebla. GTK/libadwaita (`prefer-light` + acento `teal`) acompañan el modo claro, con wallpaper por defecto [`glacier-mist.jpg`](hypr/themes/cyber-teal-light/wallpapers/glacier-mist.jpg).
 - **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés agruparlas por tema, en `~/.config/hypr/wallpapers/<tema>/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`.
 
 ### Personalización local (sin ensuciar Git)

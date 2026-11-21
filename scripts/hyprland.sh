@@ -149,8 +149,8 @@ link_file() {
 THEMES_DIR="$HYPR_SRC/themes"
 ACTIVE_THEME_LINK="$THEMES_DIR/active"
 if [ ! -d "$ACTIVE_THEME_LINK" ]; then
-    ln -sfn mr-robot "$ACTIVE_THEME_LINK"
-    warn "Tema activo ausente; se configuró mr-robot por defecto."
+    ln -sfn cyber-teal "$ACTIVE_THEME_LINK"
+    warn "Tema activo ausente o retirado; se configuró cyber-teal por defecto."
 fi
 
 link_file "$HYPR_SRC/hyprland.lua" "$CONFIG_HOME/hypr/hyprland.lua"
@@ -231,16 +231,6 @@ for f in "$HYPR_SRC"/fontconfig/*.conf; do
 done
 link_file "$HYPR_SRC/xdg-desktop-portal/hyprland-portals.conf" "$CONFIG_HOME/xdg-desktop-portal/hyprland-portals.conf"
 
-# Semilla inicial de qt6ct si no existe (qt6ct escribe cambios propios en este archivo).
-if [ -f "$HYPR_SRC/qt6ct/qt6ct.conf" ] && [ ! -e "$CONFIG_HOME/qt6ct/qt6ct.conf" ]; then
-    mkdir -p "$CONFIG_HOME/qt6ct"
-    cp "$HYPR_SRC/qt6ct/qt6ct.conf" "$CONFIG_HOME/qt6ct/qt6ct.conf"
-    ok "$CONFIG_HOME/qt6ct/qt6ct.conf (semilla inicial)"
-elif [ -f "$HYPR_SRC/qt6ct/qt6ct.conf" ] && grep -q 'Adwaita Sans' "$CONFIG_HOME/qt6ct/qt6ct.conf"; then
-    sed -i 's/Adwaita Sans/Inter/g' "$CONFIG_HOME/qt6ct/qt6ct.conf"
-    ok "$CONFIG_HOME/qt6ct/qt6ct.conf (fuente migrada a Inter)"
-fi
-
 mkdir -p "$CONFIG_HOME/hypr/wallpapers"
 if [ -f "$HYPR_SRC/wallpapers/default.png" ]; then
     link_file "$HYPR_SRC/wallpapers/default.png" "$CONFIG_HOME/hypr/wallpapers/default.png"
@@ -269,7 +259,7 @@ for gtk_ver in gtk-3.0 gtk-4.0; do
     set_gtk_setting "$settings" gtk-cursor-theme-size 24
 done
 
-# Aplicar esquema claro/oscuro, acento y paleta Qt segun el tema activo.
+# Aplicar esquema claro/oscuro y acento GTK/libadwaita segun el tema activo.
 if [ -x "$CONFIG_HOME/hypr/scripts/session-gsettings.sh" ]; then
     "$CONFIG_HOME/hypr/scripts/session-gsettings.sh" apply >/dev/null 2>&1 || true
 fi

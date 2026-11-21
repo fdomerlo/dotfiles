@@ -63,7 +63,7 @@ APP_GLYPH_HINTS = [
     # Bluetooth
     (("blueman", "bluetooth"), "󰂯"),
     # Sistema / Respaldo / Discos / Monitores
-    (("timeshift", "gparted", "baobab", "gnome-disks", "diskutility", "btop", "htop", "missioncenter", "gnome-system-monitor", "gnome-control-center", "qt6ct", "nwg-look"), "󰒓"),
+    (("timeshift", "gparted", "baobab", "gnome-disks", "diskutility", "btop", "htop", "missioncenter", "gnome-system-monitor", "gnome-control-center", "nwg-look"), "󰒓"),
 ]
 
 # Mapeo por categoría XDG estándar (fallback limpio por función)

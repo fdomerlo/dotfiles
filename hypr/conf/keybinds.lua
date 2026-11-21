@@ -47,7 +47,7 @@ hl.bind(mod .. " + SHIFT + A", hl.dsp.exec_cmd(scripts .. "/ai.sh menu"))
 hl.bind(mod .. " + SHIFT + I", hl.dsp.exec_cmd(scripts .. "/ai.sh open"))
 hl.bind(mod .. " + CTRL + I", hl.dsp.exec_cmd(scripts .. "/ai.sh explain"))
 
--- Intercambiador de temas (Cyber-Teal / Cyber-Teal Light / Mr. Robot).
+-- Intercambiador de temas (Cyber-Teal / Cyber-Teal Light).
 hl.bind(mod .. " + SHIFT + T", hl.dsp.exec_cmd(menuToggle .. " 'Temas' " .. scripts .. "/theme-switch.sh menu"))
 
 -- Descubrimiento: cheatsheet de atajos activos.

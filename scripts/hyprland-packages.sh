@@ -25,5 +25,5 @@ HYPR_REQUIRED_BINS=(
     waybar rofi fuzzel grim slurp swappy wf-recorder wl-copy cliphist swaybg
     swaync swaync-client swayosd-server swayosd-client
     brightnessctl playerctl wpctl foot zathura imv-wayland seahorse nautilus pavucontrol
-    nm-connection-editor blueman-manager qt6ct socat fdfind gnome-calculator tesseract
+    nm-connection-editor blueman-manager socat fdfind gnome-calculator tesseract
 )
