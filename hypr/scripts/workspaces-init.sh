@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Mapeo dinámico de workspaces por monitor (6 por salida).
+# Mapeo dinámico de workspaces por monitor (5 por salida).
 #
 # Asigna WS_PER_MONITOR workspaces a cada salida conectada, en orden
 # izquierda→derecha según su posición x:
 #
-#   1 monitor  : la salida conectada   → 1-6
-#   2 monitores: la de la izquierda    → 1-6
-#                la de la derecha      → 7-12
+#   1 monitor  : la salida conectada   → 1-5
+#   2 monitores: la de la izquierda    → 1-5
+#                la de la derecha      → 6-10
 #
 # Los rangos se aplican en caliente con `hyprctl eval "hl.workspace_rule(...)"`
 # (Hyprland 0.57+ Lua) y `persistent = true`, así Hyprland crea los workspaces
@@ -16,8 +16,8 @@
 # Por qué un script y no reglas en workspaces.lua: una regla atada a un monitor
 # específico reserva el ID N aunque esté desconectado. Hyprland elige el default
 # con CMonitor::findAvailableDefaultWS(), que salta todo ID atado a otro monitor;
-# en una notebook con reglas para HDMI-A-1/HDMI-A-2 (1-6 y 7-12) el primer
-# workspace libre terminaba siendo 13.
+# en una notebook con reglas para HDMI-A-1/HDMI-A-2 (1-5 y 6-10) el primer
+# workspace libre terminaba siendo 11.
 #
 # Uso:
 #   workspaces-init.sh            # aplica una vez
@@ -25,7 +25,7 @@
 # ==============================================================================
 set -euo pipefail
 
-WS_PER_MONITOR=6
+WS_PER_MONITOR=5
 
 for bin in hyprctl jq; do
     command -v "$bin" >/dev/null 2>&1 || exit 1

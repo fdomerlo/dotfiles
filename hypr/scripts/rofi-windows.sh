@@ -2,9 +2,9 @@
 # ==============================================================================
 # Selector de ventanas y workspaces para Rofi 2.0 + Hyprland 0.57 (script-mode).
 #
-# Reemplaza OverviewWindow.qml sin daemon residente ni streaming ScreencopyView:
-# lista todas las ventanas mapeadas con su workspace, clase, título e ícono,
-# y enfoca la ventana elegida vía `hl.dsp.focus({ window = 'address:...' })`.
+# Lista todas las ventanas mapeadas con glifo simbólico monocromo por tipo de
+# aplicación, workspace, clase y título, y enfoca la elegida vía
+# `hl.dsp.focus({ window = 'address:...' })`.
 # ==============================================================================
 set -euo pipefail
 
@@ -65,6 +65,26 @@ pango_escape() {
     printf '%s' "$s"
 }
 
+glyph_for_class() {
+    case "${1,,}" in
+        *firefox*|*chrome*|*chromium*|*brave*|*vivaldi*|*epiphany*|*zen*) printf '󰖟' ;;
+        *foot*|*kitty*|*alacritty*|*wezterm*|*tmux*|*terminal*|*tui-float*) printf '󰆍' ;;
+        *zed*|*code*|*codium*|*nvim*|*neovim*|*antigravity*|*cursor*|*sublime*) printf '󰅩' ;;
+        *dbeaver*|*bruno*|*postman*|*insomnia*|*pgadmin*) printf '󰆼' ;;
+        *wireshark*|*remmina*|*rustdesk*|*nm-connection*) printf '󰤨' ;;
+        *nautilus*|*thunar*|*dolphin*|*nemo*|*yazi*) printf '󰉋' ;;
+        *obsidian*|*libreoffice*|*evince*|*papers*|*okular*|*zathura*) printf '󰈙' ;;
+        *pavucontrol*|*vlc*|*mpv*|*spotify*|*obs*|*audacity*) printf '󰎆' ;;
+        *gimp*|*inkscape*|*blender*|*krita*|*swappy*|*loupe*|*imv*) printf '󰏘' ;;
+        *keepass*|*bitwarden*|*seahorse*) printf '󰒃' ;;
+        *thunderbird*|*slack*|*discord*|*telegram*|*signal*) printf '󰍡' ;;
+        *blueman*) printf '󰂯' ;;
+        *calculator*) printf '󰪚' ;;
+        *settings*|*control-center*|*qt6ct*|*timeshift*|*gparted*|*btop*) printf '󰒓' ;;
+        *) printf '󱂬' ;;
+    esac
+}
+
 while IFS=$'\t' read -r addr ws_id ws_name cls title; do
     [ -n "$addr" ] || continue
     if [[ "$ws_name" == special:* ]]; then
@@ -72,11 +92,11 @@ while IFS=$'\t' read -r addr ws_id ws_name cls title; do
     else
         ws_tag="[WS ${ws_id}]"
     fi
+    glyph="$(glyph_for_class "$cls")"
     cls_esc="$(pango_escape "$cls")"
     title_esc="$(pango_escape "$title")"
-    icon_name="${cls,,}"
-    display="<span alpha='70%'>${ws_tag}</span>  <b>${cls_esc}</b>  —  ${title_esc}"
+    display="${glyph}  <b>${cls_esc}</b>  <span alpha='55%' size='small'>${ws_tag}</span>  <span alpha='78%'>${title_esc}</span>"
     meta="ws${ws_id} ${ws_name} ${cls} ${title}"
-    printf '%s\0info\x1faddr:%s\x1ficon\x1f%s\x1fmeta\x1f%s\n' \
-        "$display" "$addr" "$icon_name" "$meta"
-done <<<"$clients_tsv"
+    printf '%s\0info\x1faddr:%s\x1fmeta\x1f%s\n' \
+        "$display" "$addr" "$meta"
+done <<< "$clients_tsv"

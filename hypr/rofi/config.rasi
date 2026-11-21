@@ -4,11 +4,9 @@
  * ============================================================================== */
 
 configuration {
-    modes: "drun,dev:~/.config/hypr/scripts/rofi-dev.sh,capturar:~/.config/hypr/scripts/rofi-capturar.sh,estilo:~/.config/hypr/scripts/rofi-estilo.sh,sistema:~/.config/hypr/scripts/rofi-sistema.sh,ventanas:~/.config/hypr/scripts/rofi-windows.sh";
-    show-icons: true;
-    icon-theme: "Adwaita";
+    modes: "todo:~/.config/hypr/scripts/rofi-all.sh,apps:~/.config/hypr/scripts/rofi-apps.sh,dev:~/.config/hypr/scripts/rofi-dev.sh,capturar:~/.config/hypr/scripts/rofi-capturar.sh,estilo:~/.config/hypr/scripts/rofi-estilo.sh,sistema:~/.config/hypr/scripts/rofi-sistema.sh,ventanas:~/.config/hypr/scripts/rofi-windows.sh";
+    show-icons: false;
     terminal: "foot";
-    drun-display-format: "{name}";
     disable-history: false;
     sort: true;
     sorting-method: "fzf";
@@ -20,12 +18,13 @@ configuration {
     scroll-method: 0;
     sidebar-mode: true;
 
-    display-drun:     "󰀻 Apps";
-    display-dev:      "󰅬 Dev & IA";
-    display-capturar: "󰄀 Capturar";
-    display-estilo:   "󰏘 Estilo";
-    display-sistema:  "󰒓 Sistema";
-    display-ventanas: "󱂬 Ventanas";
+    display-todo:     "Todo";
+    display-apps:     "Apps";
+    display-dev:      "Dev";
+    display-capturar: "Capturar";
+    display-estilo:   "Estilo";
+    display-sistema:  "Sistema";
+    display-ventanas: "Ventanas";
 
     /* En Rofi 2.0 Tab / ISO_Left_Tab vienen atados a kb-element-next/prev:
        se liberan para que Tab / Shift+Tab alternen entre pestañas. */

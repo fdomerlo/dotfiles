@@ -1,9 +1,6 @@
 -- ==============================================================================
--- Apariencia, animaciones e input base (gruvbox-light · Whitesmoke)
---
--- Base neutra whitesmoke con tinta grafito y acento slate. Ventanas y paneles
--- translúcidos, blur suave y sombras neutras para que combine con cualquier
--- wallpaper. Sin ocre ni amarillos opacos en las superficies.
+-- Apariencia, animaciones e input base (Cyber-Teal Light · Modo Diurno)
+-- Misma geometría, tipografía y ritmo que cyber-teal en polaridad clara.
 -- ==============================================================================
 
 local home = os.getenv("HOME") or ""
@@ -11,13 +8,13 @@ local scripts = home .. "/.config/hypr/scripts"
 
 hl.config({
     general = {
-        gaps_in     = 4,
-        gaps_out    = 8,
+        gaps_in     = 2,
+        gaps_out    = 4,
         border_size = 2,
         col = {
-            -- Slate para el foco; gris neutro para lo inactivo.
-            active_border   = "rgba(4f5d6bff)",
-            inactive_border = "rgba(d9d9d9ff)",
+            -- Disciplina de color diurna: foco nítido en petrol-teal (#007a91), inactivo suave.
+            active_border   = "rgba(007a91ff)",
+            inactive_border = "rgba(b7ccd1bb)",
         },
         layout           = "dwindle",
         resize_on_border = true,
@@ -25,30 +22,27 @@ hl.config({
     },
 
     decoration = {
-        -- Esquinas redondeadas y vidrio translúcido.
-        rounding         = 10,
-        active_opacity   = 0.90,
-        inactive_opacity = 0.86,
-        dim_inactive     = false,
+        rounding         = 8,
+        active_opacity   = 1.0,
+        inactive_opacity = 0.91,
 
         shadow = {
             enabled        = true,
-            range          = 16,
+            range          = 18,
             render_power   = 3,
-            offset         = { 0, 4 },
-            -- rgba(40, 40, 40, 0.20) y rgba(40, 40, 40, 0.10)
-            color          = "rgba(28282833)",
-            color_inactive = "rgba(2828281a)",
+            offset         = { 0, 5 },
+            color          = "rgba(16232833)",
+            color_inactive = "rgba(1623281c)",
         },
 
         blur = {
             enabled    = true,
-            size       = 6,
+            size       = 5,
             passes     = 3,
             noise      = 0.01,
-            contrast   = 1.0,
+            contrast   = 1.05,
             brightness = 1.0,
-            vibrancy   = 0.2,
+            vibrancy   = 0.12,
         },
     },
 
@@ -82,7 +76,8 @@ hl.config({
         -- NumLock encendido al iniciar la sesión (workspaces con el teclado numérico).
         numlock_by_default = true,
         -- Foco "loose": el puntero hace hover y scroll en la ventana bajo el cursor,
-        -- pero el foco de teclado solo cambia al hacer clic.
+        -- pero el foco de teclado solo cambia al hacer clic. Evita que los modales y
+        -- menús (DBeaver, fuzzel, rofi, diálogos XWayland) se cierren al mover el mouse.
         follow_mouse                = 2,
         float_switch_override_focus = 0,
         sensitivity                 = 0,
@@ -116,38 +111,45 @@ hl.config({
     },
 })
 
--- Movimiento cálido y directo, sin el "snap" de terminal de mr-robot.
-hl.curve("harvest", { type = "bezier", points = { { 0.22, 1.0 }, { 0.36, 1.0 } } })
+-- Curva Bézier fluida pero seca y reactiva (mismo ritmo que cyber-teal oscuro)
+hl.curve("fluent_decel", { type = "bezier", points = { { 0.1, 1.0 }, { 0.0, 1.0 } } })
 
-hl.animation({ leaf = "windows",          enabled = true, speed = 3, bezier = "harvest", style = "slide" })
-hl.animation({ leaf = "windowsOut",       enabled = true, speed = 3, bezier = "harvest", style = "slide" })
-hl.animation({ leaf = "windowsMove",      enabled = true, speed = 3, bezier = "harvest" })
-hl.animation({ leaf = "fade",             enabled = true, speed = 3, bezier = "harvest" })
-hl.animation({ leaf = "workspaces",       enabled = true, speed = 4, bezier = "harvest", style = "slide" })
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "harvest", style = "slidevert" })
-hl.animation({ leaf = "layers",           enabled = true, speed = 3, bezier = "harvest", style = "fade" })
+hl.animation({ leaf = "windows",          enabled = true, speed = 3, bezier = "fluent_decel", style = "slide" })
+hl.animation({ leaf = "windowsOut",       enabled = true, speed = 3, bezier = "fluent_decel", style = "slide" })
+hl.animation({ leaf = "windowsMove",      enabled = true, speed = 3, bezier = "fluent_decel" })
+hl.animation({ leaf = "fade",             enabled = true, speed = 3, bezier = "fluent_decel" })
+hl.animation({ leaf = "workspaces",       enabled = true, speed = 4, bezier = "fluent_decel", style = "slide" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "fluent_decel", style = "slidevert" })
+hl.animation({ leaf = "layers",           enabled = true, speed = 3, bezier = "fluent_decel", style = "fade" })
 
--- Capas Wayland: blur suave en paneles flotantes (barra, launcher, notificaciones y OSD)
+-- Pulido visual de capas Wayland (vidrio claro y animaciones por superficie)
 hl.layer_rule({
-    name         = "gruvbox-light-waybar",
+    name         = "cyber-teal-light-waybar",
     match        = { namespace = "^(waybar)$" },
     blur         = true,
     ignore_alpha = 0.2,
     blur_popups  = true,
-    animation    = "slide bottom",
+    animation    = "slide top",
 })
 
 hl.layer_rule({
-    name         = "gruvbox-light-launcher",
+    name         = "cyber-teal-light-launcher",
     match        = { namespace = "^(launcher|rofi)$" },
     blur         = true,
     ignore_alpha = 0.2,
     dim_around   = true,
-    animation    = "popin 96%",
+    animation    = "popin 88%",
 })
 
 hl.layer_rule({
-    name         = "gruvbox-light-swaync-cc",
+    name         = "cyber-teal-light-fuzzel",
+    match        = { namespace = "^(fuzzel)$" },
+    blur         = true,
+    ignore_alpha = 0.2,
+})
+
+hl.layer_rule({
+    name         = "cyber-teal-light-swaync-cc",
     match        = { namespace = "^(swaync-control-center)$" },
     blur         = true,
     ignore_alpha = 0.2,
@@ -155,7 +157,7 @@ hl.layer_rule({
 })
 
 hl.layer_rule({
-    name         = "gruvbox-light-swaync-notif",
+    name         = "cyber-teal-light-swaync-notif",
     match        = { namespace = "^(swaync-notification-window)$" },
     blur         = true,
     ignore_alpha = 0.2,
@@ -163,18 +165,11 @@ hl.layer_rule({
 })
 
 hl.layer_rule({
-    name         = "gruvbox-light-swayosd",
+    name         = "cyber-teal-light-swayosd",
     match        = { namespace = "^(swayosd)$" },
     blur         = true,
     ignore_alpha = 0.2,
-    animation    = "popin 96%",
-})
-
-hl.layer_rule({
-    name         = "gruvbox-light-fuzzel",
-    match        = { namespace = "^(fuzzel)$" },
-    blur         = true,
-    ignore_alpha = 0.2,
+    animation    = "popin 90%",
 })
 
 -- Gestos Touchpad estilo GNOME (Hyprland 0.57+)

@@ -1,11 +1,13 @@
 /* ==============================================================================
- * Rofi 2.0 - Cyber-Teal (Look & Feel PikaOS)
- * Vidrio oscuro cian con acentos #0db7d4 y bordes redondeados.
+ * Rofi 2.0 - Cyber-Teal (alineado al diseño estilizado de Fuzzel)
+ * Vidrio oscuro cian con input plano, pestañas livianas y acento #0db7d4.
  * ============================================================================== */
 
 * {
-    bg:          #0c1012e6;
-    bg-alt:      #141e22e6;
+    bg:          #0c1012d1;
+    bg-alt:      #141e22cc;
+    divider:     #0db7d433;
+    tab-active:  #0db7d442;
     fg:          #e6ece8ff;
     fg-muted:    #6f878bff;
     accent:      #0db7d4ff;
@@ -14,7 +16,7 @@
     border-col:  #0db7d4ff;
     urgent:      #f7768eff;
 
-    font: "Inter 11";
+    font: "Inter 10.5";
     background-color: transparent;
     text-color: @fg;
     margin: 0px;
@@ -25,7 +27,7 @@
 window {
     location: center;
     anchor: center;
-    width: 720px;
+    width: 620px;
     background-color: @bg;
     border: 2px solid;
     border-color: @border-col;
@@ -33,19 +35,18 @@ window {
 }
 
 mainbox {
-    padding: 18px;
-    spacing: 12px;
+    padding: 20px 24px;
+    spacing: 10px;
     children: [ "inputbar", "mode-switcher", "message", "listview" ];
 }
 
 inputbar {
-    padding: 10px 14px;
-    spacing: 10px;
-    background-color: @bg-alt;
-    border: 1px solid;
-    border-color: #0db7d466;
-    border-radius: 10px;
-    children: [ "prompt", "entry" ];
+    padding: 2px 2px 10px 2px;
+    spacing: 8px;
+    background-color: transparent;
+    border: 0px 0px 1px 0px;
+    border-color: @divider;
+    children: [ "prompt", "textbox-prompt-colon", "entry" ];
 }
 
 prompt {
@@ -53,34 +54,43 @@ prompt {
     vertical-align: 0.5;
 }
 
+textbox-prompt-colon {
+    expand: false;
+    str: "›";
+    text-color: @fg-muted;
+    vertical-align: 0.5;
+}
+
 entry {
-    placeholder: "Buscar aplicaciones, acciones o comandos...";
+    placeholder: "Buscar...";
     placeholder-color: @fg-muted;
+    text-color: @fg;
     cursor: text;
     vertical-align: 0.5;
 }
 
 mode-switcher {
-    spacing: 6px;
+    spacing: 4px;
 }
 
 button {
-    padding: 7px 10px;
-    background-color: @bg-alt;
+    padding: 5px 6px;
+    background-color: transparent;
     text-color: @fg-muted;
-    border-radius: 8px;
+    border-radius: 6px;
+    horizontal-align: 0.5;
     cursor: pointer;
 }
 
 button selected {
-    background-color: @accent;
-    text-color: @sel-fg;
+    background-color: @tab-active;
+    text-color: @fg;
 }
 
 message {
-    padding: 8px 12px;
+    padding: 6px 10px;
     background-color: @bg-alt;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 textbox {
@@ -91,14 +101,14 @@ listview {
     lines: 10;
     columns: 1;
     fixed-height: true;
+    dynamic: false;
     scrollbar: false;
-    spacing: 4px;
+    spacing: 2px;
 }
 
 element {
-    padding: 8px 12px;
-    spacing: 10px;
-    border-radius: 8px;
+    padding: 6px 10px;
+    border-radius: 7px;
     cursor: pointer;
 }
 
@@ -115,6 +125,7 @@ element selected.normal {
 
 element normal.urgent,
 element alternate.urgent {
+    background-color: transparent;
     text-color: @urgent;
 }
 
@@ -123,12 +134,14 @@ element selected.urgent {
     text-color: @sel-fg;
 }
 
-element-icon {
-    size: 22px;
+element-text {
+    background-color: transparent;
+    text-color: inherit;
     vertical-align: 0.5;
+    highlight: bold underline #73dacaff;
+    cursor: inherit;
 }
 
-element-text {
-    vertical-align: 0.5;
-    highlight: bold underline;
+element-text selected {
+    highlight: bold underline #0c1012ff;
 }

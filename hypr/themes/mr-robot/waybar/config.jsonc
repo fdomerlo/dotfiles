@@ -10,7 +10,7 @@
 
   "modules-left": [
     "custom/launcher",
-    "hyprland/workspaces",
+    "ext/workspaces",
     "custom/media",
     "hyprland/window"
   ],
@@ -40,14 +40,15 @@
     "on-click": "~/.config/hypr/scripts/launcher-toggle.sh",
     "on-click-right": "~/.config/hypr/scripts/overview-toggle.sh",
     "tooltip": true,
-    "tooltip-format": "Click izq.: Lanzador y Sistema (Super)\nClick der.: Actividades / Overview (Super + A)"
+    "tooltip-format": "Click izq.: Centro Unificado (Super)\nClick der.: Selector de ventanas (Super + A)"
   },
 
-  "hyprland/workspaces": {
+  "ext/workspaces": {
     "format": "[{name}]",
     "on-click": "activate",
-    "disable-scroll": false,
-    "all-outputs": false
+    "sort-by-id": true,
+    "all-outputs": false,
+    "ignore-hidden": true
   },
 
   "custom/media": {
@@ -251,7 +252,7 @@
   "custom/power": {
     "format": "󰐥",
     "tooltip": true,
-    "tooltip-format": "Menú del sistema (Apagar / Cerrar sesión)",
+    "tooltip-format": "Menú del sistema (Super + X)",
     "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Sistema:' ~/.config/hypr/scripts/powermenu.sh"
   }
 }

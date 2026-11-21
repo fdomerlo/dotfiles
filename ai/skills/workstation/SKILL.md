@@ -1,12 +1,12 @@
 ---
 name: Workstation Debian
-description: Perfil operativo de esta estación de trabajo Debian Stable (ingeniería de sistemas, desarrollo asistido por IA y DevOps; Podman rootless, uv/fnm/sdkman, Hyprland/Wayland). Usar al trabajar en cualquier proyecto sobre la estación, definir contenedores, elegir runtimes, diagnosticar el sistema o recomendar comandos.
+description: Perfil operativo de esta estación de trabajo Debian Forky (ingeniería de sistemas, desarrollo asistido por IA y DevOps; Podman rootless, uv/fnm/sdkman, Hyprland 0.57 Lua/Wayland + Rofi 2.0). Usar al trabajar en cualquier proyecto sobre la estación, definir contenedores, elegir runtimes, diagnosticar el sistema o recomendar comandos.
 ---
 
-# Workstation Debian Stable
+# Workstation Debian Forky
 
 Estación de trabajo orientada a **ingeniería de sistemas, desarrollo asistido
-por IA y DevOps** sobre **Debian Stable (`trixie`)**, aprovisionada de forma
+por IA y DevOps** sobre **Debian Testing (`forky`)**, aprovisionada de forma
 declarativa e idempotente desde `~/.dotfiles`.
 
 El mismo aprovisionamiento se despliega en **varias estaciones** con hardware
@@ -26,9 +26,9 @@ estación, no una máquina genérica ni un hardware fijo.
 - **Shell y CLI de ingeniería:** `zsh`, `tmux`, `nvim`, `rg` (ripgrep), `fd`
   (`fdfind`), `bat` (`batcat`), `fzf`, `zoxide`, `atuin`, `jq`, `btop`, `yazi`,
   `mc`, `gh`, `direnv` y `devctl`.
-- **Escritorio:** Hyprland (Wayland) con `foot`, `fuzzel`, `waybar`,
-  `quickshell` y portapapeles `wl-copy` / `wl-paste`. GNOME estándar queda como
-  fallback en GDM.
+- **Escritorio:** Hyprland 0.57+ (`hyprland.lua`, Wayland) con `foot`, `rofi`
+  2.0 (Wayland nativo, 0 MB en reposo), `fuzzel`, `waybar` y portapapeles
+  `wl-copy` / `wl-paste`. GNOME estándar queda como fallback en GDM.
 - **Virtualización bajo demanda:** Quickemu + QEMU/KVM (`quickget` / `quickemu`
   en `~/VMs`), sin `libvirtd` ni autostart. Cada VM es un proceso de usuario.
 - **Agentes de IA:** OpenCode CLI (`c` / `cc`, con `--standalone` por defecto)
@@ -50,7 +50,7 @@ estación, no una máquina genérica ni un hardware fijo.
 - Preferir entornos aislados por proyecto (`uv`, `fnm`, `sdkman`) antes que
   instalar librerías globales con `pip`, `npm -g` o paquetes `python3-*` del
   sistema.
-- En Debian Stable, no romper el Python del sistema ni sugerir `--break-system-packages`.
+- En Debian, no romper el Python del sistema ni sugerir `--break-system-packages`.
 
 ### 3. Hardware y recursos reales
 - **Medir antes de dimensionar.** No asumir cantidad de CPUs, RAM, GPU ni disco:
@@ -71,7 +71,8 @@ estación, no una máquina genérica ni un hardware fijo.
 ### 5. Diagnóstico y mantenimiento del entorno
 - Salud integral de la estación: `devctl doctor` o `make -C ~/.dotfiles verify`.
 - Actualización del sistema y herramientas user-space: `devctl update` o
-  `make -C ~/.dotfiles update`.
+  `make -C ~/.dotfiles update` (en Debian Forky, si hay paquetes retenidos por
+  transiciones, aplicar `sudo apt full-upgrade` manualmente tras revisar `apt-listbugs`).
 - Si una sesión de Hyprland necesita recargar symlinks/configs tras cambios en
   dotfiles: `make -C ~/.dotfiles refresh`.
 

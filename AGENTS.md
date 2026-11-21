@@ -1,18 +1,19 @@
-# AGENTS.md — ~/.dotfiles (Workstation Debian Stable)
+# AGENTS.md — ~/.dotfiles (Workstation Debian Forky)
 
-Instrucciones para agentes de IA al trabajar **dentro del repositorio `~/.dotfiles`**.
+Instrucciones para agentes de IA al trabajar **dentro del repositorio `~/.dotfiles`** (rama `forky`).
 El contexto operativo general de la estación para cualquier proyecto vive separado en
 `ai/skills/workstation/SKILL.md`.
 
 ## Qué es este repositorio
 
 Aprovisionamiento idempotente de **estaciones de trabajo** de ingeniería de
-sistemas, desarrollo asistido con IA y DevOps sobre **Debian Stable (`trixie`)**.
+sistemas, desarrollo asistido con IA y DevOps sobre **Debian Testing (`forky`)**.
 El mismo repositorio se aplica en **varias estaciones**, así que nada debe
 asumir un hardware concreto.
 
-- **Escritorio principal:** Hyprland (Wayland) con Waybar, Quickshell, Fuzzel y
-  Foot. **GNOME estándar** queda como fallback en GDM, sin extensiones.
+- **Escritorio principal:** Hyprland 0.57+ (`hyprland.lua`, Wayland) con Waybar,
+  Rofi 2.0 (Wayland nativo), Fuzzel y Foot. **GNOME estándar** queda como
+  fallback en GDM, sin extensiones.
 - **Contenedores:** Podman rootless con `crun` + `pasta`, socket compatible con
   Docker para herramientas que lo esperan.
 - **Shell:** Zsh + Oh My Zsh, Starship, Atuin, Zoxide, fzf, tmux, `devctl`.
@@ -22,7 +23,7 @@ asumir un hardware concreto.
 - **Hardware:** heterogéneo entre estaciones. No fijes CPU, RAM ni GPU en
   scripts ni documentación: si una decisión depende de recursos, medilos en la
   máquina actual (`nproc`, `free -h`, `lspci`, `df -h`). Las diferencias por
-  estación van en `hypr/conf/local.conf` (gitignored).
+  estación van en `hypr/conf/local.lua` (gitignored).
 - **Memoria y swap:** `host/setup.sh` dimensiona `/swapfile` según la RAM
   detectada; el repo no fija tamaños absolutos.
 
@@ -45,14 +46,14 @@ idempotencia.
 │                             # update, refresh, host, podman, shell, devtools,
 │                             # tooling, devai, virt, hyprland, verify, clean(-deep)
 ├── packages/                 # Manifiestos declarativos (una entrada por línea)
-│   ├── apt-base.txt          # APT base (host/setup.sh)
-│   ├── apt-hyprland.txt      # APT del escritorio
+│   ├── apt-base.txt          # APT base (host/setup.sh, incluye apt-listbugs)
+│   ├── apt-hyprland.txt      # APT del escritorio (incluye rofi, fuzzel, foot)
 │   ├── apt-optional.txt      # APT opcional/bajo demanda (incluye Quickemu)
-│   ├── apt-backports.txt     # APT desde backports
-│   ├── apt-backports-tools.txt # Herramientas CLI desde backports
+│   ├── apt-backports.txt     # Stack Hyprland principal (instalado desde main en Forky)
+│   ├── apt-backports-tools.txt # Herramientas CLI adicionales (instaladas desde main en Forky)
 │   ├── flatpak.txt           # Apps Flatpak
 │   └── external.txt          # Inventario de binarios fuera de APT
-├── host/                     # setup.sh (root): APT, backports, zRAM, swap, sleep,
+├── host/                     # setup.sh (root): APT Forky, zRAM, swap, sleep,
 │                             # Podman rootless, linger, timeshift.sh
 ├── scripts/                  # Instaladores modulares y mantenimiento
 │   ├── devai.sh              # OpenCode, Antigravity y enlace de skills globales
@@ -64,7 +65,7 @@ idempotencia.
 │   └── lib/packages.sh       # Lector de manifiestos (read_manifest)
 ├── shell/                    # zshrc, gitconfig, tmux, starship, atuin, devctl,
 │                             # nvim, yazi, mc, btop, lazydocker, zathura
-├── hypr/                     # hyprland.conf, conf/, scripts/, quickshell/,
+├── hypr/                     # hyprland.lua, conf/*.lua, scripts/, rofi/,
 │                             # waybar/, foot/, fuzzel/, swaync/, themes/
 └── ai/skills/workstation/    # Skill global de la estación (enlazada en OpenCode
                               # y Antigravity mediante scripts/devai.sh)
@@ -89,8 +90,8 @@ idempotencia.
 7. **Secretos fuera del repo:** `~/.config/opencode/service.json`,
    `~/.config/opencode/auth.json`, `~/.pi/agent/auth.json`, credenciales de
    `~/.gemini/`, `.env*`.
-8. **Configs locales por máquina** van fuera de Git (`hypr/conf/local.conf`,
-   `waybar/local.jsonc`, `~/.config/git/local.gitconfig`).
+8. **Configs locales por máquina** van fuera de Git (`hypr/conf/local.lua`,
+   `hypr/conf/webapps.lua`, `waybar/local.jsonc`, `~/.config/git/local.gitconfig`).
 
 ## Flujos típicos
 
@@ -108,10 +109,12 @@ idempotencia.
 - Lógica compartida: `scripts/lib/` o `shell/devctl`.
 
 ### Cambiar un atajo o el menú
-- Atajos: `hypr/conf/keybinds.conf` (usar `$mod` = Super).
-- Menú maestro: `hypr/scripts/main-menu.sh` (Fuzzel dmenu).
-- Lanzador unificado: `hypr/quickshell/LauncherWindow.qml` (categoría `dev`).
-- Después: `make refresh` (re-enlaza y recarga Hyprland/Quickshell).
+- Atajos: `hypr/conf/keybinds.lua` (usar `mod = "SUPER"` y API `hl.bind` / `hl.dsp.*`).
+- Menú maestro fallback: `hypr/scripts/main-menu.sh` (Fuzzel dmenu).
+- Centro Unificado y selector de ventanas (Rofi 2.0): `hypr/rofi/config.rasi`,
+  `hypr/scripts/rofi-actions.sh` (`dev`, `capturar`, `estilo`, `sistema`) y
+  `hypr/scripts/rofi-windows.sh`.
+- Después: `make refresh` (re-enlaza y recarga Hyprland).
 
 ### Agregar una skill global de IA
 - Crear `ai/skills/<id>/SKILL.md` con frontmatter YAML (`name` y `description`).
@@ -121,9 +124,10 @@ idempotencia.
 
 ### Actualizar o diagnosticar
 - `make update` / `devctl update`: APT `--only-upgrade` + herramientas
-  user-space + Flatpak.
+  user-space + Flatpak (en Forky avisa si quedan paquetes retenidos para
+  `sudo apt full-upgrade` manual).
 - `make verify` / `devctl doctor`: sintaxis, manifiestos, drivers, symlinks,
-  Podman, skills de IA, keyring y errores de Hyprland.
+  Podman, skills de IA, keyring y errores de Hyprland (`hyprctl configerrors`).
 - `make clean` / `make clean-deep`: limpieza de APT, huérfanos, logs y cachés.
 
 ## Convenciones de código
@@ -134,9 +138,10 @@ idempotencia.
 - Mensajes en español, con `ok()` / `warn()` / `step()` cuando el script ya los
   define.
 - Rutas relativas al repo con `SCRIPT_DIR` y `REPO_DIR`; nunca asumir `$PWD`.
-- En `hypr/scripts/`, usar `notify-send` y `fuzzel` como en `main-menu.sh`.
-- Los prompts de Fuzzel que deban cerrarse con `Super+Alt+Space` incluyen la
-  palabra `Menú`.
+- En `hypr/scripts/`, usar `notify-send` y `fuzzel` para dmenus rápidos; usar
+  `LC_ALL=C` cuando se parsea salida de `apt-cache policy`.
+- Los prompts de Fuzzel que deban cerrarse con toggle vía `toggle-menu.sh`
+  coinciden exactamente con el patrón pasado al wrapper.
 
 ## Qué NO hacer
 

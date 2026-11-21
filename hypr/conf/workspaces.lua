@@ -1,19 +1,19 @@
 -- ==============================================================================
--- Workspaces por monitor: 6 por salida, asignados en caliente.
+-- Workspaces por monitor: 5 por salida, asignados en caliente.
 --
 -- Este archivo NO declara reglas `hl.workspace_rule(...)` a propósito. El mapeo
 -- lo resuelve hypr/scripts/workspaces-init.sh al iniciar la sesión (y con
 -- --watch al conectar o desconectar un monitor):
 --
---   1 monitor  : la salida conectada    → 1-6
---   2 monitores: la de la izquierda     → 1-6
---                la de la derecha       → 7-12
+--   1 monitor  : la salida conectada    → 1-5
+--   2 monitores: la de la izquierda     → 1-5
+--                la de la derecha       → 6-10
 --
 -- Por qué no se atan acá: una regla ligada a `monitor = "HDMI-A-1"` reserva el
 -- ID N para ese monitor aunque esté desconectado. Hyprland busca el default de
 -- cada monitor con CMonitor::findAvailableDefaultWS(), que salta todo ID atado
--- a otro monitor; en una notebook con reglas para HDMI-A-1 (1-6) y HDMI-A-2
--- (7-12) el primer workspace libre terminaba siendo 13.
+-- a otro monitor; en una notebook con reglas para HDMI-A-1 (1-5) y HDMI-A-2
+-- (6-10) el primer workspace libre terminaba siendo 11.
 --
 -- Los workspaces se aplican con `persistent = true`, así Hyprland los mantiene
 -- vivos y Waybar los muestra por salida (all-outputs: false) sin necesidad de

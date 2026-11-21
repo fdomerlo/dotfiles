@@ -18,8 +18,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start graphical-session.target")
     hl.exec_cmd(scripts .. "/session-gsettings.sh apply")
 
-    -- Workspaces: 6 por monitor, asignados en caliente según las salidas conectadas
-    -- (1-6, 7-12, …). Con --watch se re-aplica al conectar/desconectar un monitor.
+    -- Workspaces: 5 por monitor, asignados en caliente según las salidas conectadas
+    -- (1-5, 6-10, …). Con --watch se re-aplica al conectar/desconectar un monitor.
     -- Va antes de Waybar para que los workspaces existan cuando la barra conecte.
     hl.exec_cmd(scripts .. "/workspaces-init.sh --watch")
 

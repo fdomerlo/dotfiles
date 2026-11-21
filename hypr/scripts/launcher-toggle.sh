@@ -4,8 +4,9 @@
 # Sin daemon residente: arranca bajo demanda y libera memoria al cerrarse.
 #
 # Uso:
-#   launcher-toggle.sh              # alterna en la pestaña Apps (drun)
-#   launcher-toggle.sh apps         # abre o alterna en Apps (drun)
+#   launcher-toggle.sh              # alterna en la pestaña global Todo
+#   launcher-toggle.sh todo         # abre o alterna en Todo (buscador global)
+#   launcher-toggle.sh apps         # abre o alterna en Apps
 #   launcher-toggle.sh dev          # abre en Dev & IA
 #   launcher-toggle.sh capturar     # abre en Capturar
 #   launcher-toggle.sh estilo       # abre en Estilo
@@ -25,11 +26,12 @@ if pgrep -x rofi >/dev/null 2>&1; then
     exit 0
 fi
 
-tab="${1:-drun}"
+tab="${1:-todo}"
 case "$tab" in
-    apps|"") mode="drun" ;;
-    dev|capturar|estilo|sistema|ventanas|drun) mode="$tab" ;;
-    *) mode="drun" ;;
+    todo|all|"") mode="todo" ;;
+    apps|drun) mode="apps" ;;
+    dev|capturar|estilo|sistema|ventanas) mode="$tab" ;;
+    *) mode="todo" ;;
 esac
 
 exec rofi -show "$mode"

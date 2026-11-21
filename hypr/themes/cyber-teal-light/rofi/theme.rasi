@@ -1,0 +1,147 @@
+/* ==============================================================================
+ * Rofi 2.0 - Cyber-Teal Light (Modo Diurno, alineado a Fuzzel)
+ * Vidrio claro alabastro con input plano, pestañas livianas y acento #007a91.
+ * ============================================================================== */
+
+* {
+    bg:          #f2f6f7d9;
+    bg-alt:      #e4ecef88;
+    divider:     #007a912e;
+    tab-active:  #007a9136;
+    fg:          #162328ff;
+    fg-muted:    #5c737aff;
+    accent:      #007a91ff;
+    accent-hi:   #005f73ff;
+    sel-fg:      #f7fbfcff;
+    border-col:  #007a9188;
+    urgent:      #c4324bff;
+
+    font: "Inter 10.5";
+    background-color: transparent;
+    text-color: @fg;
+    margin: 0px;
+    padding: 0px;
+    spacing: 0px;
+}
+
+window {
+    location: center;
+    anchor: center;
+    width: 620px;
+    background-color: @bg;
+    border: 2px solid;
+    border-color: @border-col;
+    border-radius: 14px;
+}
+
+mainbox {
+    padding: 20px 24px;
+    spacing: 10px;
+    children: [ "inputbar", "mode-switcher", "message", "listview" ];
+}
+
+inputbar {
+    padding: 2px 2px 10px 2px;
+    spacing: 8px;
+    background-color: transparent;
+    border: 0px 0px 1px 0px;
+    border-color: @divider;
+    children: [ "prompt", "textbox-prompt-colon", "entry" ];
+}
+
+prompt {
+    text-color: @accent;
+    vertical-align: 0.5;
+}
+
+textbox-prompt-colon {
+    expand: false;
+    str: "›";
+    text-color: @fg-muted;
+    vertical-align: 0.5;
+}
+
+entry {
+    placeholder: "Buscar...";
+    placeholder-color: @fg-muted;
+    text-color: @fg;
+    cursor: text;
+    vertical-align: 0.5;
+}
+
+mode-switcher {
+    spacing: 4px;
+}
+
+button {
+    padding: 5px 6px;
+    background-color: transparent;
+    text-color: @fg-muted;
+    border-radius: 6px;
+    horizontal-align: 0.5;
+    cursor: pointer;
+}
+
+button selected {
+    background-color: @tab-active;
+    text-color: @accent-hi;
+}
+
+message {
+    padding: 6px 10px;
+    background-color: @bg-alt;
+    border-radius: 6px;
+}
+
+textbox {
+    text-color: @fg-muted;
+}
+
+listview {
+    lines: 10;
+    columns: 1;
+    fixed-height: true;
+    dynamic: false;
+    scrollbar: false;
+    spacing: 2px;
+}
+
+element {
+    padding: 6px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element selected.normal {
+    background-color: @accent;
+    text-color: @sel-fg;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    background-color: transparent;
+    text-color: @urgent;
+}
+
+element selected.urgent {
+    background-color: @urgent;
+    text-color: @sel-fg;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    vertical-align: 0.5;
+    highlight: bold underline #005f73ff;
+    cursor: inherit;
+}
+
+element-text selected {
+    highlight: bold underline #ffffffff;
+}

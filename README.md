@@ -1,12 +1,12 @@
 ![status](https://img.shields.io/badge/status-active-success)
-![platform](https://img.shields.io/badge/platform-Debian%20Stable-red)
+![platform](https://img.shields.io/badge/platform-Debian%20Forky%20(Testing)-red)
 ![shell](https://img.shields.io/badge/shell-zsh-green)
 ![podman](https://img.shields.io/badge/podman-rootless-purple)
 ![apps](https://img.shields.io/badge/apps-Flatpak%20%7C%20AppImage-blue)
 
 # Debian Workstation — Hyprland & Dev Environment
 
-Aprovisionamiento idempotente para estaciones de trabajo de desarrollo, DevOps e IA sobre **Debian Stable** (`trixie`). Incluye **Hyprland como escritorio principal** (con **GNOME estándar** como fallback limpio en GDM), contenedores **Podman Rootless**, shell productiva y runtimes aislados en user-space.
+Aprovisionamiento idempotente para estaciones de trabajo de desarrollo, DevOps e IA sobre **Debian Testing (`forky`)**. Incluye **Hyprland 0.57+ (Lua) como escritorio principal** (con **GNOME estándar** como fallback limpio en GDM), **Rofi 2.0** nativo en Wayland, contenedores **Podman Rootless**, shell productiva y runtimes aislados en user-space.
 
 ![Tiling en Hyprland con Zed, btop y Bruno](assets/hyprland-tiling.png)
 
@@ -16,11 +16,11 @@ Aprovisionamiento idempotente para estaciones de trabajo de desarrollo, DevOps e
 
 ## ⚡ Quick Start
 
-### 1. Instalar sobre Debian Stable existente
+### 1. Instalar sobre Debian Testing (`forky`) existente
 
 ```bash
 sudo apt update && sudo apt install -y git make
-git clone https://github.com/fdomerlo/dotfiles.git ~/.dotfiles
+git clone -b forky https://github.com/fdomerlo/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 
 # Instalación estándar (estación completa + Hyprland, GNOME como fallback)
@@ -53,8 +53,8 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 
 | Capa | Herramientas principales |
 | :--- | :--- |
-| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades; se apaga solo tras 10 min sin uso y se relanza al abrirlo), `fuzzel`, `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `mr-robot` / `gruvbox-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
-| **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
+| **Escritorio (Hyprland + GNOME fallback)** | `hyprland` 0.57+ (`hyprland.lua`), `waybar`, `rofi` 2.0 Wayland nativo (Centro Unificado por pestañas + selector de ventanas, 0 MB en reposo), `fuzzel` (dmenus rápidos), `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `cyber-teal-light` / `mr-robot`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
+| **Sistema & Contenedores** | Debian Testing (`forky/main`) + `apt-listbugs`, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
 | **Navegadores, Editores & IA** | Firefox (Flatpak, predeterminado), Google Chrome (soporte PWA), VS Code, Zed, Neovim (`lazy.nvim`), OpenCode CLI con asistente integrado en Hyprland (`Super+Shift+A` / `Super+Shift+I`), Antigravity IDE/CLI, DBeaver, Bruno, Remmina, Wireshark, Obsidian, LibreOffice |
@@ -69,7 +69,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | `make full-install` | Igual que `make install` más configuración de snapshots Timeshift |
 | `make base-install` | Estación base sin Hyprland (solo GNOME estándar + CLI/Tooling/Podman) |
 | `make hyprland` | Instala o re-aplica solo el stack y la configuración de Hyprland |
-| `make hypr-desktop` / `make hypr-laptop` | Aplica plantilla local de desktop o notebook en `~/.config/hypr/conf/local.conf` |
+| `make hypr-desktop` / `make hypr-laptop` | Aplica plantilla local de desktop o notebook en `~/.config/hypr/conf/local.lua` |
 | `make refresh` | Re-enlaza configs/scripts de Hyprland y recarga la sesión activa tras un `git pull` |
 | `make devai` | Instala OpenCode, Antigravity y la skill de contexto de la estación |
 | `make virt` | (Opcional) Instala Quickemu + QEMU/KVM para VMs sin daemon ni autostart |
@@ -163,8 +163,8 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 
 | Atajo | Acción |
 | :--- | :--- |
-| `Super` / `Super+D` / `Super+Space` | **Centro Unificado** (`Apps`, `Capturar`, `Estilo`, `Sistema`, `Dev & IA` — cambia de pestaña con `Tab`) |
-| `Super+A` | **Actividades / Overview** (workspaces + previews en vivo + búsqueda de ventanas abiertas) |
+| `Super` / `Super+D` / `Super+Space` | **Centro Unificado (Rofi 2.0)** (`Apps`, `Dev & IA`, `Capturar`, `Estilo`, `Sistema`, `Ventanas` — cambia de pestaña con `Tab` / `Shift+Tab`) |
+| `Super+A` | **Selector rápido de ventanas** (Rofi 2.0 + `hyprctl`, búsqueda fuzzy por workspace, clase y título) |
 | `Super+F1` | **Cheatsheet interactivo** con todos los atajos activos (teclado + mouse) |
 | `Super+Return` / `Super+Shift+Return` | Terminal (`foot`) / terminal con sesión `tmux` persistente |
 | `Super+B` / `Super+E` / `Super+Y` | Navegador predeterminado (`firefox`) / archivos (`nautilus`) / `yazi` TUI |
@@ -172,14 +172,14 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+Shift+S` / `Super+Ctrl+S` | Mostrar/ocultar terminal flotante (scratchpad) / enviar ventana al scratchpad |
 | `Super+Q` / `Super+F` / `Super+M` / `Super+S` | Cerrar / pantalla completa / maximizar / alternar flotante |
 | `Super+Shift+C` / `Super+Ctrl+Tab` | Calculadora / alternar con la última ventana |
-| `Super+1..0` / `Super+Shift+1..0` | Cambiar de workspace / mover ventana (`1–6` monitor 1, `7–0` monitor 2; `11–12` con `Av.Pág` o Actividades) |
+| `Super+1..0` / `Super+Shift+1..0` | Cambiar de workspace / mover ventana (`1–5` monitor 1, `6–0` monitor 2) |
 | `Super+Av.Pág` / `Super+Re.Pág` | Ciclar workspaces cubriendo todos los monitores |
 | `Super+V` / `Super+Shift+T` / `Super+W` | Historial portapapeles / cambiar tema / siguiente wallpaper |
 | `Print` / `Ctrl+Print` / `Shift+Print` | Captura + `swappy` / captura directa al portapapeles / pantalla completa |
 | `Super+Shift+R` / `Super+Shift+P` / `Super+Ctrl+O` | Grabar pantalla / selector color HEX / OCR de región |
 | `Super+Shift+A` / `Super+Shift+I` / `Super+Ctrl+I` | Menú del asistente IA / abrir TUI de OpenCode / explicar selección o portapapeles |
-| `Super+L` / `Super+N` / `Super+Ctrl+N` | Bloquear pantalla / notificaciones / luz nocturna (`4000K`) |
-| **Touchpad (3 dedos)** | Horizontal: workspaces · Arriba: Centro Unificado · Abajo: Actividades |
+| `Super+L` / `Super+X` / `Super+N` / `Super+Ctrl+N` | Bloquear pantalla / menú de energía y sesión / notificaciones / luz nocturna (`4000K`) |
+| **Touchpad (3 dedos)** | Horizontal: workspaces · Arriba: Centro Unificado · Abajo: Selector de ventanas |
 
 ### Temas y wallpapers
 
@@ -188,15 +188,15 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 ~/.config/hypr/scripts/theme-switch.sh menu       # Selector interactivo (Super+Shift+T)
 ```
 
-- **`cyber-teal`:** estética glass redondeada con blur, sombras, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
+- **`cyber-teal`:** estética glass oscura redondeada con acento cyan disciplinado, barra unificada, blur suave, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
+- **`cyber-teal-light`:** contraparte diurna de `cyber-teal` con la misma geometría, barra unificada translúcida, tipografía `Inter` y acento teal de alto contraste sobre superficies hielo/niebla. GTK/libadwaita (`prefer-light` + acento `teal`) y Qt acompañan el modo claro, con wallpaper por defecto [`glacier-mist.jpg`](hypr/themes/cyber-teal-light/wallpapers/glacier-mist.jpg).
 - **`mr-robot`:** estilo terminal plano con bordes acero, Smart Gaps sin márgenes con una sola ventana, tipografía `JetBrains Mono` y wallpaper por defecto [`cyber-tower.jpg`](hypr/themes/mr-robot/wallpapers/cyber-tower.jpg).
-- **`gruvbox-light`:** tema claro translúcido de base whitesmoke, tinta grafito y acento slate, con **una única barra inferior redondeada y translúcida** (inicio y workspaces a la izquierda; estado, reloj y apagado a la derecha), ventanas redondeadas, blur suave y tipografía `Inter` en la UI. GTK/libadwaita y Qt acompañan el modo claro y rota wallpapers como el resto de los temas ([`wheat-skyline.jpg`](hypr/themes/gruvbox-light/wallpapers/wheat-skyline.jpg), [`wheat-field.jpg`](hypr/themes/gruvbox-light/wallpapers/wheat-field.jpg)).
 - **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés agruparlas por tema, en `~/.config/hypr/wallpapers/<tema>/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`.
 
 ### Personalización local (sin ensuciar Git)
 
 - **Git:** `~/.config/git/local.gitconfig` (`user.name`, `user.email`, firma, etc.).
-- **Hyprland por equipo:** `~/.config/hypr/conf/local.conf` (monitores, sensibilidad, binds locales; inicializado con `make hypr-desktop` / `make hypr-laptop`).
+- **Hyprland por equipo:** `~/.config/hypr/conf/local.lua` (monitores, sensibilidad, binds locales; inicializado con `make hypr-desktop` / `make hypr-laptop`).
 - **Waybar:** `~/.config/waybar/local.jsonc` (módulos o formato por equipo).
 - **Paquetes:** edita los manifiestos en [`packages/`](packages/) si haces un fork para tu equipo.
 
@@ -205,7 +205,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 Hyprland no modifica tu sesión GNOME: basta con elegir **GNOME** en GDM. Si además quieres quitar los symlinks del escritorio Hyprland:
 
 ```bash
-find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/quickshell ~/.config/swappy ~/.config/swaync ~/.config/fontconfig/conf.d \
+find ~/.config/hypr ~/.config/waybar ~/.config/rofi ~/.config/fuzzel ~/.config/foot ~/.config/swappy ~/.config/swaync ~/.config/fontconfig/conf.d \
   -maxdepth 2 -type l -lname '*/.dotfiles/hypr/*' -delete 2>/dev/null || true
 ```
 
@@ -216,11 +216,11 @@ find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/q
 ```text
 ~/.dotfiles/
 ├── Makefile          # Orquestador de instalación, actualización y perfiles
-├── preseed.cfg       # Instalador desatendido de Debian Stable
-├── packages/         # Listas declarativas de paquetes (apt, backports, flatpak, externos)
+├── preseed.cfg       # Instalador desatendido de Debian Forky
+├── packages/         # Listas declarativas de paquetes (apt, flatpak, externos)
 ├── host/             # Configuración del sistema base y Podman Rootless
 ├── scripts/          # Instaladores modulares, actualización (update.sh) y salud (verify.sh)
 ├── shell/            # Dotfiles de zsh, git, tmux, nvim, yazi, mc, btop, zathura y CLI devctl
 ├── ai/               # Configuración base (opencode.json) y skills globales para OpenCode y Antigravity
-└── hypr/             # Escritorio Hyprland (conf, quickshell, waybar, foot, fuzzel, swaync, temas, scripts)
+└── hypr/             # Escritorio Hyprland 0.57 Lua (conf, rofi, waybar, foot, fuzzel, swaync, temas, scripts)
 ```

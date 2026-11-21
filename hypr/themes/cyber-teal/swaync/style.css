@@ -3,7 +3,7 @@
    Basado en el style.css oficial de SwayNC, con la paleta del escritorio.
    ============================================================================== */
 
-@define-color cc-bg rgba(12, 16, 18, 0.88);
+@define-color cc-bg rgba(12, 16, 18, 0.82);
 @define-color noti-border-color rgba(13, 183, 212, 0.35);
 @define-color noti-bg rgba(24, 34, 36, 0.86);
 @define-color noti-bg-opaque rgb(24, 34, 36);

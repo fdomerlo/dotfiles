@@ -1,5 +1,5 @@
 /* ==============================================================================
-   Waybar - Estilo Otter-bar / PikaOS (Cyber-Teal Glass)
+   Waybar - Cyber-Teal Glass (superficie unificada + disciplina de color)
    ============================================================================== */
 
 * {
@@ -11,54 +11,56 @@
 }
 
 window#waybar {
-    background: rgba(12, 16, 18, 0.90);
+    background: rgba(12, 16, 18, 0.78);
     color: #e6ece8;
-    border: 1px solid rgba(13, 183, 212, 0.35);
+    border: 1px solid rgba(13, 183, 212, 0.30);
     border-radius: 10px;
 }
 
 window#waybar > box {
-    padding: 4px 8px;
+    padding: 3px 8px;
 }
 
 /* --- Módulos Izquierda --- */
 
 #custom-launcher {
-    font-size: 16px;
+    font-family: "JetBrains Mono", "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
     color: #0db7d4;
-    padding: 0 12px;
-    margin: 3px 2px;
-    border-radius: 8px;
-    background: rgba(24, 34, 36, 0.60);
-    border: 1px solid rgba(13, 183, 212, 0.25);
-    transition: all 0.2s ease;
+    padding: 0 10px;
+    margin: 4px 2px;
+    border-radius: 7px;
+    background: transparent;
+    transition: all 0.15s ease;
 }
 
 #custom-launcher:hover {
-    background: #0db7d4;
-    color: #0c1012;
+    background: rgba(13, 183, 212, 0.18);
+    color: #e6ece8;
 }
 
 #workspaces {
-    background: rgba(24, 34, 36, 0.40);
-    border-radius: 8px;
-    margin: 3px 2px;
-    padding: 0 2px;
-    border: 1px solid rgba(42, 56, 52, 0.50);
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(42, 56, 52, 0.65);
+    border-radius: 0;
+    margin: 4px 2px;
+    padding: 0 4px 0 8px;
 }
 
 #workspaces button {
     padding: 0 8px;
-    margin: 2px 1px;
-    color: #91a39a;
+    margin: 0 1px;
+    color: #7c9088;
     background: transparent;
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 #workspaces button:hover {
     color: #e6ece8;
-    background: rgba(13, 183, 212, 0.25);
+    background: rgba(13, 183, 212, 0.18);
 }
 
 #workspaces button.active {
@@ -73,24 +75,26 @@ window#waybar > box {
 }
 
 #custom-media {
-    background: rgba(24, 34, 36, 0.60);
-    border: 1px solid rgba(42, 56, 52, 0.70);
-    border-radius: 8px;
-    margin: 3px 4px;
-    padding: 0 10px;
-    color: #48d7b0;
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(42, 56, 52, 0.65);
+    border-radius: 0;
+    margin: 4px 2px;
+    padding: 0 12px;
+    color: #91a39a;
 }
 
 /* --- Título de la Ventana --- */
 
 #window {
-    color: #e6ece8;
+    color: #c5d2cd;
     font-weight: 600;
-    padding: 0 14px;
-    background: rgba(24, 34, 36, 0.35);
-    border-radius: 8px;
-    margin: 3px 2px;
-    border: 1px solid rgba(42, 56, 52, 0.40);
+    padding: 0 12px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(42, 56, 52, 0.65);
+    border-radius: 0;
+    margin: 4px 2px;
 }
 
 window#waybar.empty #window {
@@ -100,7 +104,7 @@ window#waybar.empty #window {
     margin: 0;
 }
 
-/* --- Módulos Derecha --- */
+/* --- Módulos Derecha (una sola barra, separadores finos, sin cajas) --- */
 
 #cpu,
 #memory,
@@ -119,25 +123,37 @@ window#waybar.empty #window {
 #clock,
 #tray,
 #custom-power {
-    background: rgba(24, 34, 36, 0.65);
-    border: 1px solid rgba(42, 56, 52, 0.70);
-    border-radius: 8px;
-    margin: 3px 2px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(42, 56, 52, 0.55);
+    border-radius: 0;
+    margin: 4px 0;
     padding: 0 10px;
-    color: #e6ece8;
+    color: #c5d2cd;
+    transition: background 0.15s ease, color 0.15s ease, border-radius 0.15s ease;
 }
 
-#cpu {
-    color: #e6ece8;
-}
-
-#memory {
+#cpu:hover,
+#memory:hover,
+#power-profiles-daemon:hover,
+#idle_inhibitor:hover,
+#backlight:hover,
+#battery:hover,
+#pulseaudio:hover,
+#network:hover,
+#custom-vpn:hover,
+#bluetooth:hover,
+#custom-notification:hover,
+#clock:hover,
+#tray:hover {
+    background: rgba(13, 183, 212, 0.14);
+    border-left-color: transparent;
+    border-radius: 6px;
     color: #e6ece8;
 }
 
 #power-profiles-daemon {
-    color: #7aa2f7;
-    padding: 0 10px;
+    color: #91a39a;
 }
 
 #power-profiles-daemon.performance {
@@ -149,23 +165,12 @@ window#waybar.empty #window {
 }
 
 #idle_inhibitor {
-    color: #91a39a;
-    padding: 0 10px;
+    color: #7c9088;
     font-size: 14px;
-    transition: all 0.2s ease;
 }
 
 #idle_inhibitor.activated {
     color: #0db7d4;
-    border-color: rgba(13, 183, 212, 0.45);
-}
-
-#backlight {
-    color: #e0af68;
-}
-
-#battery {
-    color: #48d7b0;
 }
 
 #battery.charging,
@@ -179,19 +184,11 @@ window#waybar.empty #window {
 
 #battery.critical:not(.charging) {
     color: #e56b72;
-    border-color: rgba(229, 107, 114, 0.50);
-}
-
-#pulseaudio {
-    color: #7aa2f7;
+    font-weight: bold;
 }
 
 #pulseaudio.muted {
     color: #e56b72;
-}
-
-#network {
-    color: #48d7b0;
 }
 
 #network.disconnected {
@@ -203,23 +200,17 @@ window#waybar.empty #window {
     font-weight: bold;
 }
 
-#bluetooth {
-    color: #7aa2f7;
-}
-
 #bluetooth.disabled {
-    color: #91a39a;
+    color: #7c9088;
 }
 
 #bluetooth.connected {
-    color: #48d7b0;
+    color: #0db7d4;
 }
 
 #custom-notification {
-    color: #91a39a;
-    padding: 0 10px;
+    color: #7c9088;
     font-size: 14px;
-    transition: all 0.2s ease;
 }
 
 #custom-notification.notification {
@@ -231,55 +222,46 @@ window#waybar.empty #window {
     color: #e0af68;
 }
 
-#custom-notification:hover {
-    color: #e6ece8;
-}
-
 /* Servicio de fondo OpenCode: siempre visible; atenuado cuando está apagado. */
 #custom-ai-service {
     color: #48d7b0;
-    border-color: rgba(72, 215, 176, 0.45);
-    padding: 0 10px;
-    transition: all 0.2s ease;
 }
 
 #custom-ai-service.idle {
-    color: rgba(72, 215, 176, 0.35);
-    border-color: rgba(72, 215, 176, 0.15);
+    color: rgba(145, 163, 154, 0.45);
 }
 
 #custom-ai-service:hover {
-    background: #48d7b0;
-    color: #0c1012;
-    border-color: #48d7b0;
+    background: rgba(72, 215, 176, 0.18);
+    border-left-color: transparent;
+    border-radius: 6px;
+    color: #73daca;
 }
 
 /* Luz nocturna: solo aparece mientras el filtro está activo. */
 #custom-nightlight {
     color: #e0af68;
-    padding: 0 10px;
-    transition: all 0.2s ease;
 }
 
 #custom-nightlight:hover {
-    background: #e0af68;
-    color: #0c1012;
-    border-color: #e0af68;
+    background: rgba(224, 175, 104, 0.18);
+    border-left-color: transparent;
+    border-radius: 6px;
+    color: #f0c67e;
 }
 
 /* Grabación de pantalla: parpadea como un indicador REC. */
 #custom-recording {
     color: #e56b72;
-    border-color: rgba(229, 107, 114, 0.45);
-    padding: 0 10px;
     font-weight: bold;
     animation: recording-pulse 1.2s ease-in-out infinite alternate;
 }
 
 #custom-recording:hover {
-    background: #e56b72;
-    color: #0c1012;
-    border-color: #e56b72;
+    background: rgba(229, 107, 114, 0.20);
+    border-left-color: transparent;
+    border-radius: 6px;
+    color: #f7768e;
 }
 
 @keyframes recording-pulse {
@@ -288,13 +270,12 @@ window#waybar.empty #window {
 }
 
 #clock {
-    color: #0db7d4;
+    color: #e6ece8;
     font-weight: bold;
-    border-color: rgba(13, 183, 212, 0.40);
 }
 
 #tray {
-    padding: 0 8px;
+    padding: 0 9px;
 }
 
 #tray > .passive {
@@ -304,19 +285,20 @@ window#waybar.empty #window {
 #tray > .needs-attention {
     -gtk-icon-effect: highlight;
     background-color: #e56b72;
+    border-radius: 6px;
 }
 
 #custom-power {
     color: #e56b72;
-    border-color: rgba(229, 107, 114, 0.40);
     padding: 0 11px;
     font-size: 14px;
-    transition: all 0.2s ease;
 }
 
 #custom-power:hover {
-    background: #e56b72;
-    color: #0c1012;
+    background: rgba(229, 107, 114, 0.20);
+    border-left-color: transparent;
+    border-radius: 6px;
+    color: #f7768e;
 }
 
 /* --- Tooltip --- */

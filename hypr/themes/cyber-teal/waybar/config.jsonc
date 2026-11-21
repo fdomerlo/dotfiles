@@ -2,15 +2,15 @@
   "include": ["~/.config/waybar/local.jsonc"],
   "layer": "top",
   "position": "top",
-  "height": 42,
-  "margin-top": 6,
-  "margin-left": 6,
-  "margin-right": 6,
+  "height": 40,
+  "margin-top": 4,
+  "margin-left": 4,
+  "margin-right": 4,
   "spacing": 4,
 
   "modules-left": [
     "custom/launcher",
-    "hyprland/workspaces",
+    "ext/workspaces",
     "custom/media",
     "hyprland/window"
   ],
@@ -36,18 +36,19 @@
   ],
 
   "custom/launcher": {
-    "format": "󰀻",
+    "format": ">_",
     "on-click": "~/.config/hypr/scripts/launcher-toggle.sh",
     "on-click-right": "~/.config/hypr/scripts/overview-toggle.sh",
     "tooltip": true,
-    "tooltip-format": "Click izq.: Lanzador y Sistema (Super)\nClick der.: Actividades / Overview (Super + A)"
+    "tooltip-format": "Click izq.: Centro Unificado (Super)\nClick der.: Selector de ventanas (Super + A)"
   },
 
-  "hyprland/workspaces": {
+  "ext/workspaces": {
     "format": "{name}",
     "on-click": "activate",
-    "disable-scroll": false,
-    "all-outputs": false
+    "sort-by-id": true,
+    "all-outputs": false,
+    "ignore-hidden": true
   },
 
   "custom/media": {
@@ -251,7 +252,7 @@
   "custom/power": {
     "format": "󰐥",
     "tooltip": true,
-    "tooltip-format": "Menú del sistema (Apagar / Cerrar sesión)",
+    "tooltip-format": "Menú del sistema (Super + X)",
     "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Sistema:' ~/.config/hypr/scripts/powermenu.sh"
   }
 }

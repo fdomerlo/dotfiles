@@ -8,7 +8,7 @@
   - **Fallback y servicios:** se mantiene **`gnome-core` estándar** (sin extensiones) + **GDM** + **`gnome-keyring`** + `hyprland-portals.conf` (no se migra a KDE Plasma).
   - **Compositor:** migración obligatoria de Hyprland `0.55.2` (`hyprland.conf`) → **`0.57+` (`hyprland.lua`)**.
   - **Lanzador y Overview:** se elimina **`quickshell`** (2.152 líneas QML) y se reemplaza por **`rofi` 2.0+ (Wayland nativo) + scripts**; se mantiene **`fuzzel`** para dmenus rápidos (`clipboard`, `powermenu`, `network`, `themes`, `keybinds`, `file-search`, `ai`).
-  - **Temas soportados:** los 3 temas activos del repo (`mr-robot`, `cyber-teal`, `gruvbox-light`).
+  - **Temas soportados:** `cyber-teal` (oscuro principal), `cyber-teal-light` (contraparte diurna) y `mr-robot`.
   - **Invariantes del repo (`AGENTS.md`):** idempotencia, sin daemons permanentes nuevos, sin IA local, paquetes APT declarados en `packages/*.txt`, symlinks desde `~/.dotfiles` (no editar `~/.config` a mano).
 
 ---
@@ -18,7 +18,7 @@
 Antes de modificar el repositorio, verificar el estado real del sistema recién actualizado:
 
 - [x] Confirmar suite y repos activos: `cat /etc/debian_version` (`forky/sid`) y `apt-cache policy` (`o=Debian,a=testing,n=forky`, sin `trixie` ni `stable-backports`).
-- [x] Revisar residuos de Trixie backports o paquetes rotos: `dpkg --audit` limpio; 00 paquetespaquetes `~bpo13` residuales trasresiduales tras `makemake hyprlandhyprland`.
+- [x] Revisar residuos de Trixie backports o paquetes rotos: `dpkg --audit` limpio; 0 paquetes `~bpo13` residuales tras `make hyprland`.
 - [x] Verificar versiones exactas de paquetes clave:
   - `hyprland 0.57.0+ds-1` (Lua)
   - `rofi 2.0.0-0.2`, `fuzzel 1.15.0+ds-1`, `waybar 0.15.0-1+b1`, `sway-notification-center 0.12.6-1`, `swayosd 0.3.0-5`, `hypridle 0.1.8-1+b1`, `hyprlock 0.9.7-1+b1`, `hyprpolkitagent 0.2.0-1`, `xdg-desktop-portal-hyprland 1.5.0-1`, `foot 1.28.0`
@@ -31,8 +31,10 @@ Antes de modificar el repositorio, verificar el estado real del sistema recién 
 
 **Criterio de cierre:** iniciar sesión en Hyprland 0.57 desde GDM con `hyprctl configerrors` vacío, `Super` (lanzador) y `Super+A` (overview) operativos en Rofi 2.0 (<80 ms, 0 MB en reposo), `make host` / `make hyprland` / `make refresh` / `make verify` en verde y GNOME fallback intacto.
 
+*(Commiteada en `5d3c57d` sobre rama `forky`.)*
+
 ### 1.1 Gates APT, manifiestos y mantenimiento para Forky
-- [x] **`packages/apt-backports.txt`** y **`packages/apt-hyprland.txt`**: adaptados para Forky `main`, retirado `quickshell`,, sumado `rofi`, reemplazado `network-manager-gnome` → `nm-connection-editor`.
+- [x] **`packages/apt-backports.txt`** y **`packages/apt-hyprland.txt`**: adaptados para Forky `main`, retirado `quickshell`, sumado `rofi`, reemplazado `network-manager-gnome` → `nm-connection-editor`.
 - [x] **`packages/apt-base.txt`**: incorporado `apt-listbugs` para higiene en Testing.
 - [x] **`scripts/hyprland-packages.sh`**: reemplazado `qs` por `rofi` y `nm-applet`/`blueman-applet` por `nm-connection-editor`/`blueman-manager` en `HYPR_REQUIRED_BINS`.
 - [x] **`host/setup.sh`**:
@@ -49,7 +51,7 @@ Antes de modificar el repositorio, verificar el estado real del sistema recién 
   - `hypr/hyprland.lua`
   - `hypr/conf/`: `env.lua`, `monitors.lua`, `workspaces.lua`, `keybinds.lua` (+ `Super+X` para `powermenu.sh`), `windowrules.lua`, `plugins.lua`, `autostart.lua`
   - `hypr/conf/profiles/`: `desktop.lua`, `laptop.lua` (overrides locales: `local.lua` y `webapps.lua`)
-  - Los **3 temas**: `hypr/themes/mr-robot/appearance.lua`, `hypr/themes/cyber-teal/appearance.lua` y `hypr/themes/gruvbox-light/appearance.lua`
+  - Los **3 temas**: `hypr/themes/cyber-teal/appearance.lua`, `hypr/themes/cyber-teal-light/appearance.lua` y `hypr/themes/mr-robot/appearance.lua`
   - *(Mantenidos en `.conf`)*: `hypr/hypridle.conf`, `hypr/hyprlock.conf`, `hypr/themes/*/hyprlock.conf` y `hypr/lockscreens/*.conf`.
 - [x] Actualizados los 3 `hypr/themes/*/foot/foot.ini` para `foot 1.28.0` (`initial-color-theme`, `[colors-dark]`/`[colors-light]` y `cursor=` en colores).
 - [x] Actualizados los scripts que enlazan, generan o leen configs de Hyprland:
@@ -72,26 +74,30 @@ Antes de modificar el repositorio, verificar el estado real del sistema recién 
 - [x] Creados `hypr/rofi/config.rasi` (liberando `kb-element-next/prev` de Rofi 2.0 para `Tab`/`Shift+Tab`), los 3 temas `hypr/themes/*/rofi/theme.rasi` + symlink `hypr/rofi/theme.rasi`, `hypr/scripts/rofi-actions.sh` (+ wrappers `rofi-{dev,capturar,estilo,sistema}.sh`) y `hypr/scripts/rofi-windows.sh`.
 - [x] Reescritos **`hypr/scripts/launcher-toggle.sh`** (toggle + pestañas `Apps`, `Dev & IA`, `Capturar`, `Estilo`, `Sistema`, `Ventanas` con `Tab`/`Shift+Tab`) y **`hypr/scripts/overview-toggle.sh`** (selector fuzzy de ventanas con iconos sobre `hyprctl clients -j` + `hl.dsp.focus`).
 - [x] Instalar `rofi` y `apt-listbugs` en el equipo (`make host && make hyprland && make verify`).
-- [xx] Verificar en vivo en sesión Hyprland 0.57: `hyprctl configerrors` vacío, `Super` / `Super+A`, `Super+X`, `Super+Shift+T` (3 temas), `Super+Shift+S` (scratchpad), `Super+L`, `Super+Shift+S` (scratchpad), `Super+L`, Waybar, SwayNC, SwayOSD, `hypridle`, `hyprlock`, `hyprpolkitagent`, `gnome-keyring`, portalesportales y `make`make verify` 100% `[ OK ]`verify` 100% `[ OK ]`.
-- [ ] Purgar `quickshell` deldel sistemasistema (`sudo apt purge quickshell && make clean`).
+- [x] Verificar en vivo en sesión Hyprland 0.57: `hyprctl configerrors` vacío, `Super` / `Super+A`, `Super+X`, `Super+Shift+T` (3 temas), `Super+Shift+S` (scratchpad), `Super+L`, Waybar, SwayNC, SwayOSD, `hypridle`, `hyprlock`, `hyprpolkitagent`, `gnome-keyring`, portales y `make verify` 100% `[ OK ]`.
+- [ ] Purgar `quickshell` del sistema (`sudo apt purge quickshell && make clean`).
 
 ---
 
 ## Fase 2 — "Que se vea bien" (Estética, 3 temas y pulido UX)
 
-**Criterio de cierre:** los 3 temas (`mr-robot`, `cyber-teal`, `gruvbox-light`) cambian al instante con `Super+Shift+T` con estética consistente en Hyprland, Waybar, Foot, Rofi, SwayNC, SwayOSD, GTK/libadwaita y wallpapers, sin retroceso UX respecto a Quickshell.
+**Criterio de cierre:** los temas activos (`cyber-teal`, `cyber-teal-light`, `mr-robot`) cambian al instante con `Super+Shift+T` con estética consistente en Hyprland, Waybar, Foot, Rofi, SwayNC, SwayOSD, GTK/libadwaita y wallpapers, sin retroceso UX respecto a Quickshell.
 
-- [ ] **Pulido visual de Rofi 2.0 (`.rasi`):**
-  - Refinar proporciones, tipografías, spacing, badges/subtítulos y posición en monitor principal en `mr-robot`, `cyber-teal` y `gruvbox-light` tras verlo en vivo.
+- [x] **Pulido visual y funcional de Rofi 2.0 + Fuzzel:**
+  - Estética unificada entre Rofi y Fuzzel: ancho compacto `620px`, `Inter 10.5`, `inputbar` plano sobre el vidrio, pestañas tipo pill limpio sin bordes pesados y `selection-radius=7` en Fuzzel (`cyber-teal` y `cyber-teal-light`).
+  - Glifos simbólicos monocromos por función en todas las pestañas: nuevo `hypr/scripts/rofi-apps.sh` (caché por `mtime` + MRU + `gio launch`) y `rofi-windows.sh` alineado (`show-icons: false`).
+  - Buscador global en pestaña **`Todo`** (`hypr/scripts/rofi-all.sh`, abierta por defecto con `Super`) agregando en paralelo Apps, Ventanas y todas las categorías.
 - [x] **Decisión de unificación `rofi` vs `fuzzel`:**
   - Cerrada: mantener `fuzzel` para dmenus rápidos (`clipboard.sh`, `powermenu.sh`, `network-menu.sh`, `file-search.sh`, `theme-switch.sh`, `keybinds.sh`, `ai.sh`) y dejar Rofi 2.0 para `Super` y `Super+A`.
-- [ ] **Pulido visual en Hyprland 0.57 + GNOME de Forky:**
-  - [x] Reglas[x] Reglas `layer_rule` para `rofi` aplicadasaplicadas en los 3 `appearanceappearance.lua` (`blur`, `dim_around`, animación `popin`).
-  - [x] Verificados[x] Verificados `session-gsettings.sh` (`prefer-dark``prefer-dark`, `slate``slate`, ``Bibata-Modern-Classic`-Modern-Classic`, `Adwaita`),`Adwaita`), `qt6ct` y `gnome-calendar 51.0` en Forky.
-  - [ ] Revisar detalles de los 3 temas de Waybar yy `windowruleswindowrules.lualua` sisi apareceaparece algún detalle visualalgún detalle visual en vivovivo.
-  - [x] Limpiada referencia a `quickshell` en `hypr/scripts/lock-telemetry.sh`.
-- [ ] **Documentación alineada al nuevo stack:**
-  - Actualizar `README.md`, `AGENTS.md` y `ai/skills/workstation/SKILL.md` (Forky, Hyprland Lua, Rofi 2.0, sin menciones a Quickshell ni "10 min").
+- [x] **Pulido visual en Hyprland 0.57 + GNOME de Forky:**
+  - Reglas `layer_rule` para `rofi` aplicadas en los 3 `appearance.lua` (`blur`, `dim_around`, animación `popin`).
+  - Waybar migrado a `ext/workspaces` (clics nativos en Hyprland 0.57) y reducido a **5 workspaces por monitor** (`1–5` / `6–10`).
+  - Refinamiento de `cyber-teal` (borde activo cyan uniforme, animaciones rápidas `fluent_decel`, gaps uniformes `4 px`, Waybar flotante de `40 px` unificada sin cajas con lanzador `>_` y hover redondeado incluido `#tray`, jerarquía glass translúcida en chrome/terminal + `inactive_opacity = 0.91` y blur `size = 5`).
+  - Reemplazado `gruvbox-light` por **`cyber-teal-light`** (par diurno del mismo sistema de diseño, `prefer-light` + acento `teal` + `qt6ct/colors/airy.conf` + wallpaper `glacier-mist.jpg`).
+  - Verificados `session-gsettings.sh`, `qt6ct` y `gnome-calendar 51.0` en Forky.
+  - Limpiada referencia a `quickshell` en `hypr/scripts/lock-telemetry.sh`.
+- [x] **Documentación alineada al nuevo stack:**
+  - Actualizados `README.md`, `AGENTS.md` y `ai/skills/workstation/SKILL.md` (Forky, Hyprland 0.57 Lua, Rofi 2.0, `Super+X`, sin menciones a Quickshell).
 
 ---
 

@@ -47,7 +47,7 @@ hl.bind(mod .. " + SHIFT + A", hl.dsp.exec_cmd(scripts .. "/ai.sh menu"))
 hl.bind(mod .. " + SHIFT + I", hl.dsp.exec_cmd(scripts .. "/ai.sh open"))
 hl.bind(mod .. " + CTRL + I", hl.dsp.exec_cmd(scripts .. "/ai.sh explain"))
 
--- Intercambiador de temas (Mr. Robot / Cyber-Teal / Gruvbox Light).
+-- Intercambiador de temas (Cyber-Teal / Cyber-Teal Light / Mr. Robot).
 hl.bind(mod .. " + SHIFT + T", hl.dsp.exec_cmd(menuToggle .. " 'Temas' " .. scripts .. "/theme-switch.sh menu"))
 
 -- Descubrimiento: cheatsheet de atajos activos.
@@ -126,7 +126,7 @@ for i = 1, 10 do
     hl.bind(mod .. " + SHIFT + " .. kp_nav, hl.dsp.window.move({ workspace = i, follow = false }))
 end
 
--- Ciclo de workspaces entre monitores (con wrap global: 1..N*6).
+-- Ciclo de workspaces entre monitores (con wrap global: 1..N*5).
 -- Page_Down/Page_Up recorren los workspaces cubriendo todos los monitores.
 hl.bind(mod .. " + Page_Down", hl.dsp.exec_cmd(scripts .. "/workspace-cycle.sh next"))
 hl.bind(mod .. " + Page_Up", hl.dsp.exec_cmd(scripts .. "/workspace-cycle.sh prev"))

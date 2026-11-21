@@ -7,16 +7,13 @@ local scripts = home .. "/.config/hypr/scripts"
 
 hl.config({
     general = {
-        gaps_in     = 4,
-        gaps_out    = 6,
+        gaps_in     = 2,
+        gaps_out    = 4,
         border_size = 2,
         col = {
-            -- Borde activo oficial de PikaOS: degradado Cyan -> Cyber Blue -> Purple
-            active_border = {
-                colors = { "rgba(0db7d4ff)", "rgba(7aa2f7ff)", "rgba(9778d0ff)" },
-                angle  = 45,
-            },
-            inactive_border = "rgba(04404aaa)",
+            -- Disciplina de color: foco nítido en cyan (#0db7d4), inactivo sobrio.
+            active_border   = "rgba(0db7d4ff)",
+            inactive_border = "rgba(1b2a2eaa)",
         },
         layout           = "dwindle",
         resize_on_border = true,
@@ -26,7 +23,7 @@ hl.config({
     decoration = {
         rounding         = 8,
         active_opacity   = 1.0,
-        inactive_opacity = 0.95,
+        inactive_opacity = 0.91,
 
         shadow = {
             enabled        = true,
@@ -39,7 +36,7 @@ hl.config({
 
         blur = {
             enabled    = true,
-            size       = 3,
+            size       = 5,
             passes     = 3,
             noise      = 0.01,
             contrast   = 1.5,
@@ -113,16 +110,16 @@ hl.config({
     },
 })
 
--- Curva Bézier oficial de PikaOS: fluent_decel
+-- Curva Bézier fluida pero seca y reactiva (respuesta inmediata sin rebote)
 hl.curve("fluent_decel", { type = "bezier", points = { { 0.1, 1.0 }, { 0.0, 1.0 } } })
 
-hl.animation({ leaf = "windows",          enabled = true, speed = 4, bezier = "fluent_decel", style = "slide" })
-hl.animation({ leaf = "windowsOut",       enabled = true, speed = 4, bezier = "fluent_decel", style = "slide" })
-hl.animation({ leaf = "windowsMove",      enabled = true, speed = 4, bezier = "fluent_decel" })
-hl.animation({ leaf = "fade",             enabled = true, speed = 4, bezier = "fluent_decel" })
-hl.animation({ leaf = "workspaces",       enabled = true, speed = 6, bezier = "fluent_decel", style = "slide" })
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 6, bezier = "fluent_decel", style = "slidevert" })
-hl.animation({ leaf = "layers",           enabled = true, speed = 5, bezier = "fluent_decel", style = "fade" })
+hl.animation({ leaf = "windows",          enabled = true, speed = 3, bezier = "fluent_decel", style = "slide" })
+hl.animation({ leaf = "windowsOut",       enabled = true, speed = 3, bezier = "fluent_decel", style = "slide" })
+hl.animation({ leaf = "windowsMove",      enabled = true, speed = 3, bezier = "fluent_decel" })
+hl.animation({ leaf = "fade",             enabled = true, speed = 3, bezier = "fluent_decel" })
+hl.animation({ leaf = "workspaces",       enabled = true, speed = 4, bezier = "fluent_decel", style = "slide" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4, bezier = "fluent_decel", style = "slidevert" })
+hl.animation({ leaf = "layers",           enabled = true, speed = 3, bezier = "fluent_decel", style = "fade" })
 
 -- Pulido visual de capas Wayland (glassmorphism y animaciones por superficie)
 hl.layer_rule({
