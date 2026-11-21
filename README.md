@@ -41,9 +41,9 @@ make github-auth     # Autenticación SSH + GitHub CLI (opcional)
 make verify          # Chequeo integral de estado del sistema
 ```
 
-### 3. Instalación desatendida desde cero (opcional: `preseed.cfg`)
+### 3. Instalación desatendida desde cero (opcional: `preseed.cfg` + Ventoy)
 
-Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza antes en una copia local los placeholders:
+Para aprovisionar un equipo nuevo sobre **Debian Testing (`forky`)** usando la ISO oficial `debian-testing-amd64-netinst.iso` (con [`ventoy/ventoy.json`](ventoy/ventoy.json) y [`preseed.cfg`](preseed.cfg)), reemplaza antes en una copia local los placeholders:
 - `<WIFI_SSID>` y `<WIFI_PASSWORD>`
 - `<PASSWORD_HASH_SHA512>` (generado con `openssl passwd -6`)
 

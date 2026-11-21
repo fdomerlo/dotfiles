@@ -75,7 +75,7 @@ Antes de modificar el repositorio, verificar el estado real del sistema recién 
 - [x] Reescritos **`hypr/scripts/launcher-toggle.sh`** (toggle + pestañas `Apps`, `Dev & IA`, `Capturar`, `Estilo`, `Sistema`, `Ventanas` con `Tab`/`Shift+Tab`) y **`hypr/scripts/overview-toggle.sh`** (selector fuzzy de ventanas con iconos sobre `hyprctl clients -j` + `hl.dsp.focus`).
 - [x] Instalar `rofi` y `apt-listbugs` en el equipo (`make host && make hyprland && make verify`).
 - [x] Verificar en vivo en sesión Hyprland 0.57: `hyprctl configerrors` vacío, `Super` / `Super+A`, `Super+X`, `Super+Shift+T` (3 temas), `Super+Shift+S` (scratchpad), `Super+L`, Waybar, SwayNC, SwayOSD, `hypridle`, `hyprlock`, `hyprpolkitagent`, `gnome-keyring`, portales y `make verify` 100% `[ OK ]`.
-- [ ] Purgar `quickshell` del sistema (`sudo apt purge quickshell && make clean`).
+- [x] Purgar `quickshell` del sistema (`sudo apt purge quickshell && make clean`).
 
 ---
 
@@ -106,12 +106,12 @@ Antes de modificar el repositorio, verificar el estado real del sistema recién 
 **Criterio de cierre:** instalación desatendida desde cero validada en VM y runbook claro para migrar el resto de las estaciones sin romper equipos todavía en Trixie.
 
 ### 3.1 Instalación desatendida desde cero
-- [ ] **`preseed.cfg`:**
-  - Cambiar `d-i mirror/suite string stable` → `forky`.
-  - Revisar `d-i apt-setup/services-select` para Forky pre-freeze (evitar fallos si `forky-security`/`forky-updates` no aplican igual que en Stable).
-  - Validar que todos los paquetes de `pkgsel/include` existan con el mismo nombre en Forky (`gnome-core`, firmware, drivers Mesa/Intel, `systemd-zram-generator`, etc.) y evaluar incluir `apt-listbugs`.
-- [ ] **`ventoy/ventoy.json`:**
-  - Actualizar `/debian-13.7.0-amd64-netinst.iso` a la ISO `netinst` de Debian Testing (`forky`).
+- [x] **`preseed.cfg`:**
+  - Fijado `d-i mirror/suite string forky` y `d-i mirror/codename string forky`.
+  - Verificado en vivo en el host: `forky-security` y `forky-updates` responden sin errores, por lo que `d-i apt-setup/services-select multiselect security, updates` se mantiene activo.
+  - Validados los 21 paquetes de `pkgsel/include` contra APT de Forky (`0` faltantes). `apt-listbugs` se deja exclusivamente en `packages/apt-base.txt` (`make host`) para no introducir prompts interactivos durante la instalación desatendida `d-i`.
+- [x] **`ventoy/ventoy.json`:**
+  - Actualizado `/debian-13.7.0-amd64-netinst.iso` → `/debian-testing-amd64-netinst.iso` (ISO oficial weekly/daily de Debian Testing).
 - [ ] **Prueba end-to-end en VM (Quickemu):**
   - Instalar desde ISO de Forky + `preseed.cfg`.
   - Correr `git clone -b forky ... ~/.dotfiles && make install && make verify`.
