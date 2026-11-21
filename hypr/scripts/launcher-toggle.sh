@@ -1,42 +1,35 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Abre o cierra el Lanzador / Menú Unificado en Quickshell.
-# Si el daemon de Quickshell no está activo, lo inicia y espera su IPC.
+# Abre o cierra el Lanzador / Centro Unificado en Rofi 2.0 (Wayland nativo).
+# Sin daemon residente: arranca bajo demanda y libera memoria al cerrarse.
 #
 # Uso:
-#   launcher-toggle.sh              # alterna el popup en la última/primera pestaña
-#   launcher-toggle.sh apps         # abre o alterna en la pestaña Apps
-#   launcher-toggle.sh sistema      # abre o alterna en la pestaña Sistema
+#   launcher-toggle.sh              # alterna en la pestaña Apps (drun)
+#   launcher-toggle.sh apps         # abre o alterna en Apps (drun)
+#   launcher-toggle.sh dev          # abre en Dev & IA
+#   launcher-toggle.sh capturar     # abre en Capturar
+#   launcher-toggle.sh estilo       # abre en Estilo
+#   launcher-toggle.sh sistema      # abre en Sistema
+#   launcher-toggle.sh ventanas     # abre en Ventanas
 # ==============================================================================
 set -euo pipefail
 
-command -v qs >/dev/null 2>&1 || exit 0
+command -v rofi >/dev/null 2>&1 || exit 0
 
 # Cerrar fuzzel si hubiera algún submenú abierto para evitar superposición de foco.
 pkill -x fuzzel 2>/dev/null || true
 
-tab="${1:-}"
-invoke_ipc() {
-    if [ -n "$tab" ]; then
-        qs ipc call launcher openTab "$tab" >/dev/null 2>&1
-    else
-        qs ipc call launcher toggle >/dev/null 2>&1
-    fi
-}
+# Si Rofi ya está abierto, cerrarlo (comportamiento toggle de la tecla Super).
+if pgrep -x rofi >/dev/null 2>&1; then
+    pkill -x rofi 2>/dev/null || true
+    exit 0
+fi
 
-# Dos pasadas: si Quickshell se estaba apagando por inactividad, `-n` puede
-# descartar el arranque y la primera espera se agota sin ventana.
-for attempt in 1 2; do
-    if invoke_ipc; then
-        exit 0
-    fi
-    qs -n -d >/dev/null 2>&1 || true
-    for _ in $(seq 1 30); do
-        if invoke_ipc; then
-            exit 0
-        fi
-        sleep 0.1
-    done
-done
+tab="${1:-drun}"
+case "$tab" in
+    apps|"") mode="drun" ;;
+    dev|capturar|estilo|sistema|ventanas|drun) mode="$tab" ;;
+    *) mode="drun" ;;
+esac
 
-exit 1
+exec rofi -show "$mode"

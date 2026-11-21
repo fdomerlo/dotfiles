@@ -186,7 +186,7 @@ doctor() {
         check "$cmd"
       done
     else
-      for cmd in hyprctl hypridle hyprlock hyprpicker hyprsunset waybar fuzzel foot swappy wf-recorder; do
+      for cmd in hyprctl hypridle hyprlock hyprpicker hyprsunset waybar rofi fuzzel foot swappy wf-recorder; do
         check "$cmd"
       done
     fi
@@ -205,7 +205,7 @@ doctor() {
     else
       echo -e "  \033[31m✘\033[0m Portal xdg-desktop-portal-hyprland no encontrado"
     fi
-    if [ -e "$HOME/.config/hypr/hyprland.conf" ] && [ -e "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" ]; then
+    if [ -e "$HOME/.config/hypr/hyprland.lua" ] && [ -e "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" ]; then
       echo -e "  \033[32m✔\033[0m Configuración y portales desplegados en ~/.config"
     else
       echo -e "  \033[33m○\033[0m Configuración/portales incompletos (ejecuta 'make hyprland')"

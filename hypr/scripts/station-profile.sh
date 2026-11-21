@@ -2,7 +2,7 @@
 # ==============================================================================
 # Gestión del perfil local de estación (desktop / laptop) para Hyprland.
 #
-# Escribe ~/.config/hypr/conf/local.conf a partir de hypr/conf/profiles/*.conf
+# Escribe ~/.config/hypr/conf/local.lua a partir de hypr/conf/profiles/*.lua
 # sin tocar los archivos versionados del repositorio ni pisar overrides locales
 # existentes (salvo con --force, creando respaldo previo).
 #
@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 HYPR_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROFILES_DIR="$HYPR_DIR/conf/profiles"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-LOCAL_CONF="$CONFIG_HOME/hypr/conf/local.conf"
+LOCAL_LUA="$CONFIG_HOME/hypr/conf/local.lua"
 
 detect_station() {
     if compgen -G "/sys/class/power_supply/BAT*" >/dev/null 2>&1; then
@@ -46,25 +46,25 @@ apply_profile() {
         profile="$requested"
     fi
 
-    template="$PROFILES_DIR/${profile}.conf"
+    template="$PROFILES_DIR/${profile}.lua"
     if [ ! -f "$template" ]; then
         echo "ERROR: No existe la plantilla de perfil '$profile' ($template)." >&2
         return 1
     fi
 
-    if [ -e "$LOCAL_CONF" ] || [ -L "$LOCAL_CONF" ]; then
+    if [ -e "$LOCAL_LUA" ] || [ -L "$LOCAL_LUA" ]; then
         if [ "$force" != "--force" ]; then
-            echo "✔ $LOCAL_CONF ya existe (se conserva sin cambios)."
+            echo "✔ $LOCAL_LUA ya existe (se conserva sin cambios)."
             return 0
         fi
         stamp="$(date +%Y%m%d%H%M%S)"
-        mv "$LOCAL_CONF" "${LOCAL_CONF}.bak.${stamp}"
-        echo "  ⚠ Backup de local.conf anterior: ${LOCAL_CONF}.bak.${stamp}"
+        mv "$LOCAL_LUA" "${LOCAL_LUA}.bak.${stamp}"
+        echo "  ⚠ Backup de local.lua anterior: ${LOCAL_LUA}.bak.${stamp}"
     fi
 
-    mkdir -p "$(dirname "$LOCAL_CONF")"
-    cp "$template" "$LOCAL_CONF"
-    echo "✔ Perfil '$profile' aplicado en $LOCAL_CONF"
+    mkdir -p "$(dirname "$LOCAL_LUA")"
+    cp "$template" "$LOCAL_LUA"
+    echo "✔ Perfil '$profile' aplicado en $LOCAL_LUA"
 
     if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && command -v hyprctl >/dev/null 2>&1; then
         hyprctl reload >/dev/null 2>&1 || true

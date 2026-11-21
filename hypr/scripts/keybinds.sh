@@ -81,7 +81,9 @@ generate_table() {
         [ -n "$key" ] || continue
         combo="$(mods "$modmask")"
         # Un toque de Super se muestra como "Super", sin repetir la tecla física.
-        if [[ "$key" != SUPER_* ]]; then
+        if [[ "${key,,}" == super_* ]]; then
+            [ -n "$combo" ] || combo="Super"
+        else
             name="$(keyname "$key")"
             if [ -n "$combo" ]; then
                 combo="$combo+$name"

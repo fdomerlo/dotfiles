@@ -57,7 +57,7 @@ else
 fi
 
 if [ "$mode" = "--move" ]; then
-    hyprctl dispatch movetoworkspacesilent "$target" >/dev/null
+    hyprctl dispatch "hl.dsp.window.move({ workspace = $target, follow = false })" >/dev/null
 else
-    hyprctl dispatch workspace "$target" >/dev/null
+    hyprctl dispatch "hl.dsp.focus({ workspace = $target })" >/dev/null
 fi

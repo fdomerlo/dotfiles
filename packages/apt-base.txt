@@ -1,9 +1,9 @@
 # ==============================================================================
-# Paquetes APT base (Debian Stable main) gestionados por host/setup.sh
+# Paquetes APT base (Debian Forky main) gestionados por host/setup.sh
 # y actualizados con --only-upgrade por scripts/update.sh.
 # ==============================================================================
 
-# Base, compilación y shell
+# Base, compilación, higiene Testing y shell
 git
 curl
 wget
@@ -14,6 +14,7 @@ ca-certificates
 gnupg
 lsb-release
 build-essential
+apt-listbugs
 zsh
 
 # Tríada CLI moderna y utilidades de terminal

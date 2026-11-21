@@ -1,0 +1,39 @@
+/* ==============================================================================
+ * Rofi 2.0 (Wayland nativo) - Configuración base
+ * El aspecto visual se carga desde theme.rasi (symlink a themes/active/rofi/theme.rasi).
+ * ============================================================================== */
+
+configuration {
+    modes: "drun,dev:~/.config/hypr/scripts/rofi-dev.sh,capturar:~/.config/hypr/scripts/rofi-capturar.sh,estilo:~/.config/hypr/scripts/rofi-estilo.sh,sistema:~/.config/hypr/scripts/rofi-sistema.sh,ventanas:~/.config/hypr/scripts/rofi-windows.sh";
+    show-icons: true;
+    icon-theme: "Adwaita";
+    terminal: "foot";
+    drun-display-format: "{name}";
+    disable-history: false;
+    sort: true;
+    sorting-method: "fzf";
+    matching: "fuzzy";
+    case-sensitive: false;
+    cycle: true;
+    click-to-exit: true;
+    hover-select: false;
+    scroll-method: 0;
+    sidebar-mode: true;
+
+    display-drun:     "󰀻 Apps";
+    display-dev:      "󰅬 Dev & IA";
+    display-capturar: "󰄀 Capturar";
+    display-estilo:   "󰏘 Estilo";
+    display-sistema:  "󰒓 Sistema";
+    display-ventanas: "󱂬 Ventanas";
+
+    /* En Rofi 2.0 Tab / ISO_Left_Tab vienen atados a kb-element-next/prev:
+       se liberan para que Tab / Shift+Tab alternen entre pestañas. */
+    kb-row-tab: "";
+    kb-element-next: "";
+    kb-element-prev: "";
+    kb-mode-next: "Tab,Control+Tab,Shift+Right";
+    kb-mode-previous: "ISO_Left_Tab,Control+ISO_Left_Tab,Shift+Left";
+}
+
+@theme "theme"

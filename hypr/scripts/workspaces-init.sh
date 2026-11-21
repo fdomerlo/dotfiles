@@ -9,19 +9,15 @@
 #   2 monitores: la de la izquierda    → 1-6
 #                la de la derecha      → 7-12
 #
-# Seis workspaces llenan exactamente la grilla del Overview de Quickshell
-# (3×2 en pantallas anchas y 2×3 en el resto) sin dejar celdas vacías.
+# Los rangos se aplican en caliente con `hyprctl eval "hl.workspace_rule(...)"`
+# (Hyprland 0.57+ Lua) y `persistent = true`, así Hyprland crea los workspaces
+# y Waybar los muestra siempre (no hace falta persistent-workspaces en la barra).
 #
-# Los rangos se aplican en caliente con `hyprctl keyword workspace` y
-# persistent:true, así Hyprland crea los workspaces y Waybar los muestra
-# siempre (no hace falta persistent-workspaces en la barra).
-#
-# Por qué un script y no reglas en workspaces.conf: una regla
-# `workspace = N, monitor:HDMI-A-1` reserva el ID N para ese monitor aunque
-# esté desconectado. Hyprland elige el default de cada monitor con
-# CMonitor::findAvailableDefaultWS(), que salta todo ID atado a otro monitor;
+# Por qué un script y no reglas en workspaces.lua: una regla atada a un monitor
+# específico reserva el ID N aunque esté desconectado. Hyprland elige el default
+# con CMonitor::findAvailableDefaultWS(), que salta todo ID atado a otro monitor;
 # en una notebook con reglas para HDMI-A-1/HDMI-A-2 (1-6 y 7-12) el primer
-# workspace libre terminaba siendo 11.
+# workspace libre terminaba siendo 13.
 #
 # Uso:
 #   workspaces-init.sh            # aplica una vez
@@ -39,7 +35,7 @@ RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 SIG="${HYPRLAND_INSTANCE_SIGNATURE:-}"
 SOCK_DIR="$RUNTIME/hypr/$SIG"
 
-# exec-once puede adelantarse a la creación de los sockets IPC.
+# hyprland.start puede adelantarse a la creación de los sockets IPC.
 wait_for_sockets() {
     [ -n "$SIG" ] || return 1
     local _
@@ -68,7 +64,7 @@ focused_monitor() {
 }
 
 apply() {
-    local names=() focused="" idx name base n id rule current
+    local names=() focused="" idx name base n id lua_rule current
     local retries=10
     while [ "$retries" -gt 0 ]; do
         mapfile -t names < <(monitors)
@@ -81,24 +77,23 @@ apply() {
     focused="$(focused_monitor)"
 
     # 1. Una regla por workspace: persistent (siempre visible) y default en el
-    #    primero del rango. `hyprctl keyword workspace` dispara
-    #    ensurePersistentWorkspacesPresent(), así que el workspace se crea ya.
+    #    primero del rango. En Hyprland 0.57+ Lua se aplica vía `hyprctl eval`.
     for idx in "${!names[@]}"; do
         name="${names[$idx]}"
         base=$((idx * WS_PER_MONITOR + 1))
         for ((n = 0; n < WS_PER_MONITOR; n++)); do
             id=$((base + n))
-            rule="$id, monitor:$name, persistent:true"
             if [ "$n" -eq 0 ]; then
-                rule="$rule, default:true"
+                lua_rule="hl.workspace_rule({ workspace = '$id', monitor = '$name', persistent = true, default = true })"
+            else
+                lua_rule="hl.workspace_rule({ workspace = '$id', monitor = '$name', persistent = true })"
             fi
-            hyprctl keyword workspace "$rule" >/dev/null
+            hyprctl eval "$lua_rule" >/dev/null
         done
     done
 
-    # 2. Si un monitor quedó fuera de su rango (p. ej. el workspace 11 que
-    #    Hyprland creaba en la notebook), llevarlo al primero del rango. Los
-    #    monitores que ya están dentro no se tocan: conectar un monitor no
+    # 2. Si un monitor quedó fuera de su rango, llevarlo al primero del rango.
+    #    Los monitores que ya están dentro no se tocan: conectar un monitor no
     #    debe resetear el workspace que el usuario está usando.
     for idx in "${!names[@]}"; do
         name="${names[$idx]}"
@@ -108,19 +103,19 @@ apply() {
             [ "$current" -ge "$base" ] && [ "$current" -lt $((base + WS_PER_MONITOR)) ]; then
             continue
         fi
-        hyprctl dispatch focusmonitor "$name" >/dev/null
-        hyprctl dispatch workspace "$base" >/dev/null
+        hyprctl dispatch "hl.dsp.focus({ monitor = '$name' })" >/dev/null
+        hyprctl dispatch "hl.dsp.focus({ workspace = $base })" >/dev/null
     done
 
     # 3. Devolver el foco al monitor que estaba enfocado.
     if [ -n "$focused" ] && [ "$(focused_monitor)" != "$focused" ]; then
-        hyprctl dispatch focusmonitor "$focused" >/dev/null || true
+        hyprctl dispatch "hl.dsp.focus({ monitor = '$focused' })" >/dev/null || true
     fi
 }
 
 # Re-aplica al enchufar/desenchufar un monitor (dock, proyector, etc.) y
 # después de cualquier `hyprctl reload`: recargar la config limpia las reglas
-# `workspace` cargadas en caliente, así que hay que volver a aplicarlas.
+# cargadas en caliente, así que hay que volver a aplicarlas.
 watch_events() {
     local sock="$SOCK_DIR/.socket2.sock" line
     [ -S "$sock" ] || return 1

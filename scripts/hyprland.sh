@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# scripts/hyprland.sh - Escritorio principal Hyprland para Debian Stable (GNOME como fallback).
+# scripts/hyprland.sh - Escritorio principal Hyprland para Debian Forky (GNOME como fallback).
 #
-# Instala el stack Hyprland (desde stable-backports) y despliega la
-# configuración del repo en ~/.config con symlinks idempotentes.
+# Instala el stack Hyprland (desde main en Forky/Testing, o stable-backports en
+# Stable) y despliega la configuración del repo en ~/.config con symlinks idempotentes.
 # No reemplaza GNOME: Hyprland se agrega como sesión adicional en GDM.
 #
 # Uso:
@@ -26,11 +26,11 @@ ok()  { echo -e "  \033[32m✔\033[0m $*"; }
 warn(){ echo -e "  \033[33m⚠\033[0m $*"; }
 
 echo "================================================================="
-echo "==> Escritorio Hyprland (Debian Stable)"
+echo "==> Escritorio Hyprland (Debian Forky / Stable)"
 echo "================================================================="
 
 # ------------------------------------------------------------------------------
-# 1. Preflight: usuario, sudo y Debian Stable
+# 1. Preflight: usuario, sudo y Debian
 # ------------------------------------------------------------------------------
 if [ "$EUID" -eq 0 ]; then
     die "No ejecutes este script como root. Usá: make hyprland"
@@ -43,12 +43,7 @@ command -v apt-get >/dev/null 2>&1 || die "apt-get no está disponible (¿es Deb
 # shellcheck disable=SC1091
 [ -r /etc/os-release ] || die "No se pudo leer /etc/os-release."
 . /etc/os-release
-[ "${ID:-}" = "debian" ] || die "Este repositorio solo soporta Debian Stable. Sistema detectado: ${PRETTY_NAME:-desconocido}"
-
-if [ ! -f "$BACKPORTS_FILE" ]; then
-    die "No existe $BACKPORTS_FILE. Ejecutá 'make host' antes de instalar Hyprland."
-fi
-ok "Backports de Stable configurados."
+[ "${ID:-}" = "debian" ] || die "Este repositorio solo soporta Debian. Sistema detectado: ${PRETTY_NAME:-desconocido}"
 
 sudo -v || die "Se requieren privilegios de sudo para instalar paquetes."
 
@@ -58,31 +53,54 @@ sudo -v || die "Se requieren privilegios de sudo para instalar paquetes."
 echo "==> Actualizando índices APT..."
 sudo apt-get update -y
 
-# Detección exacta de Stable: la coma evita confundir 'stable' con 'stable-backports'.
-if ! apt-cache policy 2>/dev/null | grep -q 'o=Debian,a=stable,'; then
-    die "Este repositorio solo soporta Debian Stable. Sistema detectado: ${PRETTY_NAME:-desconocido}"
-fi
-ok "Debian Stable detectado."
-
-echo "==> Verificando disponibilidad en stable-backports..."
-# `apt-cache policy <paquete>` no muestra los campos de release (o=, a=), solo la
-# suite en la tabla de versiones (p. ej. "trixie-backports/main"). Por eso se
-# detecta el origen por el sufijo de backports de esa línea.
-for pkg in "${BACKPORTS_PKGS[@]}"; do
-    if ! apt-cache policy "$pkg" 2>/dev/null | grep -q -- '-backports/'; then
-        die "El paquete '$pkg' no está disponible en stable-backports. Revisá los repositorios con 'make verify'."
+POLICY="$(apt-cache policy 2>/dev/null || true)"
+DEBIAN_SUITE=""
+if grep -qE 'o=Debian,a=testing,|o=Debian,.*n=forky' <<<"$POLICY"; then
+    DEBIAN_SUITE="forky"
+    ok "Debian Testing/Forky detectado (instalación directa desde main)."
+    if [ -f "$BACKPORTS_FILE" ]; then
+        warn "Existe $BACKPORTS_FILE en Forky (ejecutá 'make host' para limpiarlo)."
     fi
-done
-ok "Stack Hyprland disponible en stable-backports."
+elif grep -q 'o=Debian,a=stable,' <<<"$POLICY"; then
+    DEBIAN_SUITE="stable"
+    if [ ! -f "$BACKPORTS_FILE" ]; then
+        die "No existe $BACKPORTS_FILE. Ejecutá 'make host' antes de instalar Hyprland en Stable."
+    fi
+    ok "Debian Stable + stable-backports detectado."
+else
+    die "Suite Debian no soportada (se espera Forky/Testing o Stable). Sistema detectado: ${PRETTY_NAME:-desconocido}"
+fi
 
 # ------------------------------------------------------------------------------
 # 3. Instalación
 # ------------------------------------------------------------------------------
-echo "==> Instalando Hyprland y componentes (stable-backports)..."
-sudo apt-get install -y -t stable-backports "${BACKPORTS_PKGS[@]}"
+if [ "$DEBIAN_SUITE" = "forky" ]; then
+    echo "==> Verificando disponibilidad del stack Hyprland en Forky main..."
+    for pkg in "${BACKPORTS_PKGS[@]}"; do
+        cand="$(LC_ALL=C apt-cache policy "$pkg" 2>/dev/null | awk '/^[[:space:]]*Candidate:/ { print $2; exit }')"
+        if [ -z "$cand" ] || [ "$cand" = "(none)" ]; then
+            die "El paquete '$pkg' no tiene candidato en Forky. Revisá los repositorios con 'make verify'."
+        fi
+    done
+    ok "Stack Hyprland disponible en Forky main."
 
-echo "==> Instalando utilidades del escritorio (Stable main)..."
-sudo apt-get install -y "${MAIN_PKGS[@]}"
+    echo "==> Instalando Hyprland y utilidades del escritorio (Forky main)..."
+    sudo apt-get install -y "${BACKPORTS_PKGS[@]}" "${MAIN_PKGS[@]}"
+else
+    echo "==> Verificando disponibilidad en stable-backports..."
+    for pkg in "${BACKPORTS_PKGS[@]}"; do
+        if ! apt-cache policy "$pkg" 2>/dev/null | grep -q -- '-backports/'; then
+            die "El paquete '$pkg' no está disponible en stable-backports. Revisá los repositorios con 'make verify'."
+        fi
+    done
+    ok "Stack Hyprland disponible en stable-backports."
+
+    echo "==> Instalando Hyprland y componentes (stable-backports)..."
+    sudo apt-get install -y -t stable-backports "${BACKPORTS_PKGS[@]}"
+
+    echo "==> Instalando utilidades del escritorio (Stable main)..."
+    sudo apt-get install -y "${MAIN_PKGS[@]}"
+fi
 
 # ------------------------------------------------------------------------------
 # 4. Verificación de binarios y archivos de sesión
@@ -125,8 +143,6 @@ link_file() {
     ok "$dest"
 }
 
-link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
-
 # Los paths clásicos son symlinks a hypr/themes/active/…; asegurar un tema
 # válido antes de desplegar para que readlink -f no encuentre enlaces rotos
 # (por ejemplo, en un clon nuevo o después de un git clean).
@@ -137,39 +153,41 @@ if [ ! -d "$ACTIVE_THEME_LINK" ]; then
     warn "Tema activo ausente; se configuró mr-robot por defecto."
 fi
 
-for f in "$HYPR_SRC"/conf/*.conf; do
+link_file "$HYPR_SRC/hyprland.lua" "$CONFIG_HOME/hypr/hyprland.lua"
+
+for f in "$HYPR_SRC"/conf/*.lua; do
     base_f="$(basename "$f")"
-    [ "$base_f" = "local.conf" ] || [ "$base_f" = "webapps.conf" ] && continue
+    [ "$base_f" = "local.lua" ] || [ "$base_f" = "webapps.lua" ] && continue
     link_file "$f" "$CONFIG_HOME/hypr/conf/$base_f"
 done
 
-LOCAL_CONF="$CONFIG_HOME/hypr/conf/local.conf"
-if [ ! -e "$LOCAL_CONF" ] && [ ! -L "$LOCAL_CONF" ]; then
+LOCAL_LUA="$CONFIG_HOME/hypr/conf/local.lua"
+if [ ! -e "$LOCAL_LUA" ] && [ ! -L "$LOCAL_LUA" ]; then
     if [ -x "$HYPR_SRC/scripts/station-profile.sh" ]; then
         bash "$HYPR_SRC/scripts/station-profile.sh" apply auto
     else
-        mkdir -p "$(dirname "$LOCAL_CONF")"
-        cat >"$LOCAL_CONF" <<'EOF'
-# ==============================================================================
-# Overrides locales por máquina (no versionado).
-# Se carga al final de hyprland.conf; sirve para monitores, sensibilidad o
-# variables específicas de este equipo sin ensuciar el repositorio.
-# ==============================================================================
+        mkdir -p "$(dirname "$LOCAL_LUA")"
+        cat >"$LOCAL_LUA" <<'EOF'
+-- ==============================================================================
+-- Overrides locales por máquina (no versionado).
+-- Se carga al final de hyprland.lua; sirve para monitores, sensibilidad o
+-- variables específicas de este equipo sin ensuciar el repositorio.
+-- ==============================================================================
 EOF
-        ok "$LOCAL_CONF (plantilla local)"
+        ok "$LOCAL_LUA (plantilla local)"
     fi
 fi
 
-WEBAPPS_CONF="$CONFIG_HOME/hypr/conf/webapps.conf"
-if [ ! -e "$WEBAPPS_CONF" ] && [ ! -L "$WEBAPPS_CONF" ]; then
-    mkdir -p "$(dirname "$WEBAPPS_CONF")"
-    cat >"$WEBAPPS_CONF" <<'EOF'
-# ==============================================================================
-# Reglas de Web Apps (PWAs) generadas localmente por webapp-install.sh.
-# No versionado; incluido al final de hypr/conf/windowrules.conf.
-# ==============================================================================
+WEBAPPS_LUA="$CONFIG_HOME/hypr/conf/webapps.lua"
+if [ ! -e "$WEBAPPS_LUA" ] && [ ! -L "$WEBAPPS_LUA" ]; then
+    mkdir -p "$(dirname "$WEBAPPS_LUA")"
+    cat >"$WEBAPPS_LUA" <<'EOF'
+-- ==============================================================================
+-- Reglas de Web Apps (PWAs) generadas localmente por webapp-install.sh.
+-- No versionado; cargado al final de hypr/conf/windowrules.lua.
+-- ==============================================================================
 EOF
-    ok "$WEBAPPS_CONF (semilla vacía)"
+    ok "$WEBAPPS_LUA (semilla vacía)"
 fi
 
 for f in "$HYPR_SRC"/hypridle.conf "$HYPR_SRC"/hyprlock.conf; do
@@ -190,6 +208,9 @@ if [ ! -e "$WAYBAR_LOCAL" ] && [ ! -L "$WAYBAR_LOCAL" ]; then
     ok "$WAYBAR_LOCAL (override local vacío)"
 fi
 
+for f in "$HYPR_SRC"/rofi/*; do
+    link_file "$f" "$CONFIG_HOME/rofi/$(basename "$f")"
+done
 for f in "$HYPR_SRC"/fuzzel/*; do
     link_file "$f" "$CONFIG_HOME/fuzzel/$(basename "$f")"
 done
@@ -205,9 +226,6 @@ done
 for f in "$HYPR_SRC"/swayosd/*; do
     link_file "$f" "$CONFIG_HOME/swayosd/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/quickshell/*; do
-    link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
-done
 for f in "$HYPR_SRC"/fontconfig/*.conf; do
     link_file "$f" "$CONFIG_HOME/fontconfig/conf.d/$(basename "$f")"
 done
@@ -218,7 +236,7 @@ if [ -f "$HYPR_SRC/qt6ct/qt6ct.conf" ] && [ ! -e "$CONFIG_HOME/qt6ct/qt6ct.conf"
     mkdir -p "$CONFIG_HOME/qt6ct"
     cp "$HYPR_SRC/qt6ct/qt6ct.conf" "$CONFIG_HOME/qt6ct/qt6ct.conf"
     ok "$CONFIG_HOME/qt6ct/qt6ct.conf (semilla inicial)"
-elif [ -f "$CONFIG_HOME/qt6ct/qt6ct.conf" ] && grep -q 'Adwaita Sans' "$CONFIG_HOME/qt6ct/qt6ct.conf"; then
+elif [ -f "$HYPR_SRC/qt6ct/qt6ct.conf" ] && grep -q 'Adwaita Sans' "$CONFIG_HOME/qt6ct/qt6ct.conf"; then
     sed -i 's/Adwaita Sans/Inter/g' "$CONFIG_HOME/qt6ct/qt6ct.conf"
     ok "$CONFIG_HOME/qt6ct/qt6ct.conf (fuente migrada a Inter)"
 fi
@@ -259,14 +277,14 @@ fi
 # Refrescar caché de fontconfig tras desplegar las reglas del perfil
 command -v fc-cache >/dev/null 2>&1 && fc-cache -f >/dev/null 2>&1 || true
 
-# Nerd Fonts (solo glifos/iconos): style.css de Waybar y main-menu.sh usan
+# Nerd Fonts (solo glifos/iconos): style.css de Waybar, Rofi y menús usan
 # "Symbols Nerd Font" para sus iconos. Debian no empaqueta Nerd Fonts, así que
 # se descarga el paquete oficial de símbolos si no está instalado (no es fuente de texto).
 NERD_FONT_DIR="$HOME/.local/share/fonts"
 if fc-list : family 2>/dev/null | grep -qi "Symbols Nerd Font"; then
     ok "Symbols Nerd Font ya está instalada."
 else
-    echo "==> Instalando Symbols Nerd Font (glifos de Waybar)..."
+    echo "==> Instalando Symbols Nerd Font (glifos de Waybar/Rofi)..."
     NERD_TMP="$(mktemp -d)"
     if curl -fsSL -o "$NERD_TMP/symbols.zip" \
             https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip \
@@ -284,17 +302,17 @@ fi
 # ------------------------------------------------------------------------------
 # 6. Agente polkit de usuario y servicios systemd
 # ------------------------------------------------------------------------------
-# No se habilita globalmente: el servicio se inicia solo desde autostart.conf
+# No se habilita globalmente: el servicio se inicia solo desde autostart.lua
 # dentro de la sesión Hyprland, para no interferir con el agente de GNOME.
 if [ -f /usr/lib/systemd/user/hyprpolkitagent.service ]; then
-    ok "hyprpolkitagent disponible (se inicia desde autostart.conf en Hyprland)."
+    ok "hyprpolkitagent disponible (se inicia desde autostart.lua en Hyprland)."
 else
     warn "No se encontró la unidad hyprpolkitagent.service; el agente podría no iniciarse."
 fi
 
 # El paquete Debian habilita waybar.service, que arranca con
 # graphical-session.target (GNOME) y falla en bucle porque GNOME no soporta
-# wlr-layer-shell. Waybar se inicia solo desde autostart.conf en Hyprland,
+# wlr-layer-shell. Waybar se inicia solo desde autostart.lua en Hyprland,
 # esperando los sockets IPC con scripts/start-waybar.sh.
 if systemctl --user is-enabled waybar.service 2>/dev/null | grep -qv "masked"; then
     systemctl --user disable --now waybar.service 2>/dev/null || true
@@ -317,16 +335,16 @@ Próximos pasos:
   4. Wallpaper opcional: colocá una imagen en
      $CONFIG_HOME/hypr/wallpapers/default.png
      y recargá con $CONFIG_HOME/hypr/scripts/wallpaper.sh
-  5. Overrides locales por equipo: editá $LOCAL_CONF
+  5. Overrides locales por equipo: editá $LOCAL_LUA
      (o aplicá perfil base con 'make hypr-desktop' / 'make hypr-laptop')
 
 Atajos y gestos principales:
-  Super                abrir/cerrar lanzador     Super+A       overview (Quickshell)
+  Super                abrir/cerrar lanzador     Super+A       ventanas y workspaces (Rofi)
   Super+Return         terminal (foot)           Super+L       bloquear (hyprlock)
   Super+Shift+Return   terminal con tmux         Super+Q       cerrar ventana
   Alt+Tab              cambiar de ventana        Super+N       notificaciones (swaync)
   Super+Shift+S        scratchpad (terminal)     Super+F1      cheatsheet de atajos
   Super+Shift+V        historial portapapeles    Print         captura + swappy
-  3 dedos horizontal   cambiar workspace         3 dedos arriba/abajo lanzador / overview
+  3 dedos horizontal   cambiar workspace         3 dedos arriba/abajo lanzador / ventanas
 
 EOF

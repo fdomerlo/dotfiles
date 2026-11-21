@@ -11,8 +11,9 @@
 #      deshabilita sus servicios. Este repo es podman-only.
 #   2. Deduplica fuentes de terceros: si existe .sources (DEB822),
 #      elimina el legacy .list duplicado (VS Code, Google Chrome y legacy).
-#   3. Gestiona repositorios oficiales de Debian Stable:
-#      - Completa Signed-By en backports si quedó vacío.
+#   3. Gestiona repositorios oficiales de Debian (Forky/testing y Stable):
+#      - En Forky/testing, elimina debian-backports.sources heredado de Stable.
+#      - En Stable, completa Signed-By en backports si quedó vacío.
 #      - Elimina el archivo legacy de FastTrack (repo discontinuado en estos dotfiles).
 #   4. Moderniza repositorios tradicionales (.list) al formato estándar DEB822
 #      (.sources) vía `apt modernize-sources` si está disponible en la versión de APT.
@@ -34,15 +35,18 @@ warn() { echo "  ⚠️ $1"; }
 ok()   { echo "  ✔ $1"; }
 
 echo "================================================================="
-echo "==> Higiene APT (Debian Stable, podman-only, DEB822, idempotente)"
+echo "==> Higiene APT (Debian Forky, podman-only, DEB822, idempotente)"
 echo "================================================================="
 
-# Preflight informativo: este repositorio asume Debian Stable y no aborta.
+# Preflight informativo: detecta Forky (testing) o Stable sin abortar.
+IS_TESTING=0
 if command -v apt-cache &>/dev/null; then
-    stable_hits=$(apt-cache policy 2>/dev/null | grep -c 'o=Debian,a=stable,' || true)
-    if [ "${stable_hits:-0}" -eq 0 ]; then
-        echo "  ⚠️ No se detectó el archive 'stable' de Debian."
-        echo "     Este aprovisionamiento asume Debian Stable; continúo igualmente."
+    APT_POLICY="$(apt-cache policy 2>/dev/null || true)"
+    if grep -qE 'o=Debian,a=testing,|o=Debian,.*,n=forky,' <<<"$APT_POLICY"; then
+        IS_TESTING=1
+    elif ! grep -q 'o=Debian,a=stable,' <<<"$APT_POLICY"; then
+        echo "  ⚠️ No se detectó archive Debian 'testing'/'forky' ni 'stable'."
+        echo "     Revisá /etc/apt/sources.list.d/; continúo igualmente."
     fi
 fi
 
@@ -104,11 +108,15 @@ if [ -f "$SOURCES_D/brave-browser-release.sources" ] && [ -f "$SOURCES_D/brave-b
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Repositorios oficiales de Debian Stable
+# 3. Repositorios oficiales de Debian
 # ------------------------------------------------------------------------------
 BACKPORTS="$SOURCES_D/debian-backports.sources"
 DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
-if [ -f "$BACKPORTS" ] && [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS"; then
+if [ "$IS_TESTING" -eq 1 ] && [ -f "$BACKPORTS" ]; then
+    echo "  Eliminando debian-backports.sources (no aplica en Forky/testing)..."
+    rm -f "$BACKPORTS"
+    ok "debian-backports.sources eliminado."
+elif [ -f "$BACKPORTS" ] && [ -f "$DEB_KEYRING" ] && grep -q '^Signed-By:[[:space:]]*$' "$BACKPORTS"; then
     echo "  Completando Signed-By en debian-backports.sources..."
     sed -i "s|^Signed-By:[[:space:]]*$|Signed-By: $DEB_KEYRING|" "$BACKPORTS"
     ok "Signed-By restaurado en backports."

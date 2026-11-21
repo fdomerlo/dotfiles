@@ -40,17 +40,27 @@ fi
 # Mientras fuzzel está abierto (con keyboard-focus=on-demand), desacoplar el
 # foco de teclado del movimiento del puntero (follow_mouse=2): así mover el
 # mouse no cierra el menú, pero hacer clic en otra ventana o presionar ESC sí.
-# Se guarda el valor vigente (local.conf puede haberlo cambiado) y se restaura
+# Se guarda el valor vigente (local.lua puede haberlo cambiado) y se restaura
 # al salir, en lugar de asumir 1.
-previous_follow_mouse="$(hyprctl getoption input:follow_mouse 2>/dev/null |
-    awk '/^int:/ { print $2; exit }' || true)"
+read_follow_mouse() {
+    local val=""
+    val="$(hyprctl getoption input.follow_mouse 2>/dev/null | awk '/^int:/ { print $2; exit }' || true)"
+    if [ -z "$val" ]; then
+        val="$(hyprctl getoption input:follow_mouse 2>/dev/null | awk '/^int:/ { print $2; exit }' || true)"
+    fi
+    if [[ "$val" =~ ^[0-3]$ ]]; then
+        printf '%s' "$val"
+    fi
+}
+
+previous_follow_mouse="$(read_follow_mouse)"
 
 restore_mouse() {
     if [ -n "${previous_follow_mouse:-}" ]; then
-        hyprctl keyword input:follow_mouse "$previous_follow_mouse" >/dev/null 2>&1 || true
+        hyprctl eval "hl.config({ input = { follow_mouse = $previous_follow_mouse } })" >/dev/null 2>&1 || true
     fi
 }
 trap restore_mouse EXIT INT TERM
-hyprctl keyword input:follow_mouse 2 >/dev/null 2>&1 || true
+hyprctl eval "hl.config({ input = { follow_mouse = 2 } })" >/dev/null 2>&1 || true
 
 "$@" || true

@@ -18,7 +18,7 @@
 #   monitor-scale.sh                    # tabla con PPI y escala sugerida
 #   monitor-scale.sh --ref HDMI-A-1     # usar otro monitor como referencia
 #   monitor-scale.sh --logical-ppi 96   # fijar el PPI lógico objetivo
-#   monitor-scale.sh --hyprconf         # líneas monitor = ... sugeridas
+#   monitor-scale.sh --lua              # bloques hl.monitor(...) sugeridos (alias: --hyprconf)
 # ==============================================================================
 set -euo pipefail
 
@@ -50,7 +50,7 @@ while [ "$#" -gt 0 ]; do
             target_ppi="$2"
             shift 2
             ;;
-        --hyprconf)
+        --hyprconf|--lua)
             hyprconf=1
             shift
             ;;
@@ -151,25 +151,25 @@ if awk -F'\t' '{ if (($8 + 0) == 0) bad = 1 } END { exit !bad }' <<<"$rows"; the
 fi
 
 if [ "$hyprconf" = "1" ]; then
-    printf '\n# Escalas sugeridas (ajustá las posiciones a tu layout físico).\n'
+    printf '\n-- Escalas sugeridas para ~/.config/hypr/conf/local.lua (ajustá las posiciones a tu layout físico).\n'
     awk -F'\t' -v ref="$target_ppi" '
         function snap(x) { return int(x * 20 + 0.5) / 20 }
         {
             ppi = $8 + 0
             scale = $7 + 0
             if (ppi > 0 && ref > 0) {
-                printf "monitor = %s, %dx%d@%d, auto, %.2f\n", \
+                printf "hl.monitor({ output = \"%s\", mode = \"%dx%d@%d\", position = \"auto\", scale = %.2f })\n", \
                     $1, $2, $3, $4, snap(ppi / ref)
             } else {
-                printf "# monitor = %s, %dx%d@%d, auto, ?  (PPI desconocido)\n", \
+                printf "-- hl.monitor({ output = \"%s\", mode = \"%dx%d@%d\", position = \"auto\", scale = 1 }) -- PPI desconocido\n", \
                     $1, $2, $3, $4
             }
         }
     ' <<<"$rows"
 else
-    printf '\nAplicá la escala sugerida por salida en hypr/conf/monitors.conf:\n'
-    printf '  monitor = <salida>, <resolución>@<hz>, <posición>, <escala>\n'
-    printf 'Ejemplo: monitor = HDMI-A-1, 2560x1440@60, auto-right, 1.20\n'
+    printf '\nAplicá la escala sugerida por salida en ~/.config/hypr/conf/local.lua:\n'
+    printf '  hl.monitor({ output = "<salida>", mode = "<resolución>@<hz>", position = "<posición>", scale = <escala> })\n'
+    printf 'Ejemplo: hl.monitor({ output = "HDMI-A-1", mode = "2560x1440@60", position = "auto-right", scale = 1.20 })\n'
 fi
 
 printf '\nLa escala no cambia el tamaño de la fuente: cambia cuántos píxeles\n'

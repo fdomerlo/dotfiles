@@ -243,7 +243,7 @@ menu_buscar() {
     local -a opts=(
         "$(row "󰀻  Lanzador de aplicaciones" "Super+D")"
         "󰖟  Web Apps / PWAs (instalar, abrir, quitar)"
-        "$(row "󰕰  Overview de workspaces (Quickshell)" "Super+A")"
+        "$(row "󰕰  Ventanas y workspaces (Rofi)" "Super+A")"
         "$(row "󰅌  Historial del portapapeles" "Super+V")"
         "$(row "󰈞  Buscar archivos" "Super+Ctrl+F")"
         "$(row "󰆍  Terminal flotante (Scratchpad)" "Super+Shift+S")"

@@ -1,0 +1,134 @@
+/* ==============================================================================
+ * Rofi 2.0 - Cyber-Teal (Look & Feel PikaOS)
+ * Vidrio oscuro cian con acentos #0db7d4 y bordes redondeados.
+ * ============================================================================== */
+
+* {
+    bg:          #0c1012e6;
+    bg-alt:      #141e22e6;
+    fg:          #e6ece8ff;
+    fg-muted:    #6f878bff;
+    accent:      #0db7d4ff;
+    accent-hi:   #73dacaff;
+    sel-fg:      #0c1012ff;
+    border-col:  #0db7d4ff;
+    urgent:      #f7768eff;
+
+    font: "Inter 11";
+    background-color: transparent;
+    text-color: @fg;
+    margin: 0px;
+    padding: 0px;
+    spacing: 0px;
+}
+
+window {
+    location: center;
+    anchor: center;
+    width: 720px;
+    background-color: @bg;
+    border: 2px solid;
+    border-color: @border-col;
+    border-radius: 14px;
+}
+
+mainbox {
+    padding: 18px;
+    spacing: 12px;
+    children: [ "inputbar", "mode-switcher", "message", "listview" ];
+}
+
+inputbar {
+    padding: 10px 14px;
+    spacing: 10px;
+    background-color: @bg-alt;
+    border: 1px solid;
+    border-color: #0db7d466;
+    border-radius: 10px;
+    children: [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color: @accent;
+    vertical-align: 0.5;
+}
+
+entry {
+    placeholder: "Buscar aplicaciones, acciones o comandos...";
+    placeholder-color: @fg-muted;
+    cursor: text;
+    vertical-align: 0.5;
+}
+
+mode-switcher {
+    spacing: 6px;
+}
+
+button {
+    padding: 7px 10px;
+    background-color: @bg-alt;
+    text-color: @fg-muted;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button selected {
+    background-color: @accent;
+    text-color: @sel-fg;
+}
+
+message {
+    padding: 8px 12px;
+    background-color: @bg-alt;
+    border-radius: 8px;
+}
+
+textbox {
+    text-color: @fg-muted;
+}
+
+listview {
+    lines: 10;
+    columns: 1;
+    fixed-height: true;
+    scrollbar: false;
+    spacing: 4px;
+}
+
+element {
+    padding: 8px 12px;
+    spacing: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element selected.normal {
+    background-color: @accent;
+    text-color: @sel-fg;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    text-color: @urgent;
+}
+
+element selected.urgent {
+    background-color: @urgent;
+    text-color: @sel-fg;
+}
+
+element-icon {
+    size: 22px;
+    vertical-align: 0.5;
+}
+
+element-text {
+    vertical-align: 0.5;
+    highlight: bold underline;
+}

@@ -10,7 +10,7 @@ export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/lo
 source "$REPO_DIR/scripts/lib/packages.sh"
 
 echo "================================================================="
-echo "       Debian Stable Workstation - Verificación de Estado          "
+echo "       Debian Forky Workstation - Verificación de Estado         "
 echo "================================================================="
 
 check_status() {
@@ -383,13 +383,22 @@ else
     check_optional "No creado aún ($APPIMAGE_DIR)"
 fi
 
-echo -n "Repositorios oficiales de Debian Stable... "
-EXT_REPOS=()
-[ -f "/etc/apt/sources.list.d/debian-backports.sources" ] && EXT_REPOS+=("Backports")
-if [ "${#EXT_REPOS[@]}" -gt 0 ]; then
-    check_status 0 "Configurados: ${EXT_REPOS[*]}"
+echo -n "Repositorios oficiales de Debian... "
+APT_POLICY="$(apt-cache policy 2>/dev/null || true)"
+if grep -qE 'o=Debian,a=testing,|o=Debian,.*,n=forky,' <<<"$APT_POLICY"; then
+    if [ -f "/etc/apt/sources.list.d/debian-backports.sources" ]; then
+        check_optional "Debian Forky (testing) activo, pero persiste debian-backports.sources (ejecutá 'make host')"
+    else
+        check_status 0 "Debian Forky (testing/main) configurado"
+    fi
+elif grep -q 'o=Debian,a=stable,' <<<"$APT_POLICY"; then
+    if [ -f "/etc/apt/sources.list.d/debian-backports.sources" ]; then
+        check_status 0 "Debian Stable + Backports configurados"
+    else
+        check_optional "Debian Stable sin Backports (se añaden en 'make host')"
+    fi
 else
-    check_optional "No configurados aún (se añaden en 'make host')"
+    check_optional "Suite Debian no reconocida en apt-cache policy"
 fi
 
 if [ -f "/etc/apt/sources.list.d/debian-fasttrack.sources" ]; then
@@ -461,23 +470,24 @@ else
 
     echo -n "Configuración de Hyprland desplegada... "
     cfg_missing=()
-    for f in "$HOME/.config/hypr/hyprland.conf" \
+    for f in "$HOME/.config/hypr/hyprland.lua" \
              "$HOME/.config/hypr/hypridle.conf" \
              "$HOME/.config/hypr/scripts/idle-suspend.sh" \
-             "$HOME/.config/hypr/conf/plugins.conf" \
-             "$HOME/.config/hypr/conf/local.conf" \
-             "$HOME/.config/hypr/conf/webapps.conf" \
+             "$HOME/.config/hypr/conf/plugins.lua" \
+             "$HOME/.config/hypr/conf/local.lua" \
+             "$HOME/.config/hypr/conf/webapps.lua" \
              "$HOME/.config/fontconfig/conf.d/10-hyprland-fonts.conf" \
              "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
              "$HOME/.config/waybar/config.jsonc" \
              "$HOME/.config/waybar/local.jsonc" \
+             "$HOME/.config/rofi/config.rasi" \
+             "$HOME/.config/rofi/theme.rasi" \
              "$HOME/.config/fuzzel/fuzzel.ini" \
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
              "$HOME/.config/swaync/config.json" \
              "$HOME/.config/swayosd/style.css" \
-             "$HOME/.config/swayosd/config.toml" \
-             "$HOME/.config/quickshell/shell.qml"; do
+             "$HOME/.config/swayosd/config.toml"; do
         [ -e "$f" ] || cfg_missing+=("$f")
     done
     if [ "${#cfg_missing[@]}" -eq 0 ]; then

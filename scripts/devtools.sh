@@ -144,7 +144,7 @@ else
     echo "✔ dependencias de previews de Yazi ya están instaladas"
 fi
 
-# Herramientas de usuario que Debian provee en stable-backports (p. ej. rga).
+# Herramientas de usuario (main en Forky/testing; stable-backports en Stable).
 BACKPORTS_TOOLS_PKGS=()
 read_manifest "$REPO_DIR/packages/apt-backports-tools.txt" BACKPORTS_TOOLS_PKGS
 MISSING_BACKPORTS_TOOLS=()
@@ -152,14 +152,19 @@ for pkg in "${BACKPORTS_TOOLS_PKGS[@]}"; do
     dpkg -s "$pkg" &> /dev/null || MISSING_BACKPORTS_TOOLS+=("$pkg")
 done
 if [ ${#MISSING_BACKPORTS_TOOLS[@]} -gt 0 ]; then
+    USE_BACKPORTS_FLAG=()
+    if apt-cache policy 2>/dev/null | grep -q 'o=Debian,a=stable,' && \
+       ! apt-cache policy 2>/dev/null | grep -qE 'o=Debian,a=testing,|o=Debian,.*,n=forky,'; then
+        USE_BACKPORTS_FLAG=(-t stable-backports)
+    fi
     if sudo -n true 2>/dev/null || [ -t 0 ]; then
-        echo "Instalando herramientas de backports: ${MISSING_BACKPORTS_TOOLS[*]}..."
-        sudo apt-get install -y -t stable-backports "${MISSING_BACKPORTS_TOOLS[@]}"
+        echo "Instalando herramientas adicionales (${USE_BACKPORTS_FLAG[*]:-main}): ${MISSING_BACKPORTS_TOOLS[*]}..."
+        sudo apt-get install -y "${USE_BACKPORTS_FLAG[@]}" "${MISSING_BACKPORTS_TOOLS[@]}"
     else
-        echo "  (Pendiente: sudo apt install -t stable-backports ${MISSING_BACKPORTS_TOOLS[*]})"
+        echo "  (Pendiente: sudo apt install ${USE_BACKPORTS_FLAG[*]} ${MISSING_BACKPORTS_TOOLS[*]})"
     fi
 else
-    echo "✔ herramientas de backports ya están instaladas (rga)"
+    echo "✔ herramientas adicionales ya están instaladas (rga)"
 fi
 
 # Midnight Commander: alternativa TUI a Yazi, con skin Nord propio.

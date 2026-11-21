@@ -1,5 +1,6 @@
 # ==============================================================================
-# Paquetes APT del escritorio Hyprland provistos por stable-backports.
+# Paquetes APT núcleo del escritorio Hyprland.
+# En Debian Forky (testing) viven en main; en Debian Stable en stable-backports.
 # Consumido por scripts/hyprland-packages.sh, scripts/hyprland.sh y update.sh.
 # ==============================================================================
 
@@ -11,4 +12,3 @@ hyprpolkitagent
 hyprland-guiutils
 hyprpicker
 hyprsunset
-quickshell

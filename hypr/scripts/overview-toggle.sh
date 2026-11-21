@@ -1,25 +1,17 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Abre o cierra el Overview tipo Activities (Quickshell).
-# Si el daemon de Quickshell no está activo, lo inicia y espera su IPC.
+# Abre o cierra el selector rápido de ventanas y workspaces en Rofi 2.0.
+# Reemplaza el Overview de Quickshell sin daemon residente (0 MB en reposo).
 # ==============================================================================
 set -euo pipefail
 
-command -v qs >/dev/null 2>&1 || exit 0
+command -v rofi >/dev/null 2>&1 || exit 0
 
-# Dos pasadas: si Quickshell se estaba apagando por inactividad, `-n` puede
-# descartar el arranque y la primera espera se agota sin ventana.
-for attempt in 1 2; do
-    if qs ipc call overview toggle >/dev/null 2>&1; then
-        exit 0
-    fi
-    qs -n -d >/dev/null 2>&1 || true
-    for _ in $(seq 1 30); do
-        if qs ipc call overview toggle >/dev/null 2>&1; then
-            exit 0
-        fi
-        sleep 0.1
-    done
-done
+pkill -x fuzzel 2>/dev/null || true
 
-exit 1
+if pgrep -x rofi >/dev/null 2>&1; then
+    pkill -x rofi 2>/dev/null || true
+    exit 0
+fi
+
+exec rofi -show ventanas

@@ -4,7 +4,7 @@
 #
 # Re-enlaza los mismos destinos que scripts/hyprland.sh en ~/.config, elimina
 # symlinks rotos que apunten al repo y, si hay una sesión Hyprland activa,
-# recarga Hyprland, Waybar, Quickshell, swaync e hypridle.
+# recarga Hyprland, Waybar, swaync, swayosd e hypridle.
 #
 # Uso:
 #   make refresh
@@ -28,7 +28,9 @@ ok()  { echo "  ✔ $*"; }
 warn(){ echo "  ⚠ $*"; }
 
 # Si el perfil nunca se instaló acá, no crear configs sueltas en ~/.config.
-if ! command -v hyprctl >/dev/null 2>&1 && [ ! -e "$CONFIG_HOME/hypr/hyprland.conf" ]; then
+if ! command -v hyprctl >/dev/null 2>&1 \
+    && [ ! -e "$CONFIG_HOME/hypr/hyprland.lua" ] \
+    && [ ! -e "$CONFIG_HOME/hypr/hyprland.conf" ]; then
     echo "Hyprland no está instalado en este equipo; nada que refrescar."
     exit 0
 fi
@@ -65,40 +67,40 @@ link_file() {
     ok "$dest"
 }
 
-link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
-for f in "$HYPR_SRC"/conf/*.conf; do
+link_file "$HYPR_SRC/hyprland.lua" "$CONFIG_HOME/hypr/hyprland.lua"
+for f in "$HYPR_SRC"/conf/*.lua; do
     base_f="$(basename "$f")"
-    [ "$base_f" = "local.conf" ] || [ "$base_f" = "webapps.conf" ] && continue
+    [ "$base_f" = "local.lua" ] || [ "$base_f" = "webapps.lua" ] && continue
     link_file "$f" "$CONFIG_HOME/hypr/conf/$base_f"
 done
 
-LOCAL_CONF="$CONFIG_HOME/hypr/conf/local.conf"
-if [ ! -e "$LOCAL_CONF" ] && [ ! -L "$LOCAL_CONF" ]; then
+LOCAL_LUA="$CONFIG_HOME/hypr/conf/local.lua"
+if [ ! -e "$LOCAL_LUA" ] && [ ! -L "$LOCAL_LUA" ]; then
     if [ -x "$HYPR_SRC/scripts/station-profile.sh" ]; then
         bash "$HYPR_SRC/scripts/station-profile.sh" apply auto
     else
-        mkdir -p "$(dirname "$LOCAL_CONF")"
-        cat >"$LOCAL_CONF" <<'EOF'
-# ==============================================================================
-# Overrides locales por máquina (no versionado).
-# Se carga al final de hyprland.conf; sirve para monitores, sensibilidad o
-# variables específicas de este equipo sin ensuciar el repositorio.
-# ==============================================================================
+        mkdir -p "$(dirname "$LOCAL_LUA")"
+        cat >"$LOCAL_LUA" <<'EOF'
+-- ==============================================================================
+-- Overrides locales por máquina (no versionado).
+-- Se carga al final de hyprland.lua; sirve para monitores, sensibilidad o
+-- variables específicas de este equipo sin ensuciar el repositorio.
+-- ==============================================================================
 EOF
-        ok "$LOCAL_CONF (plantilla local)"
+        ok "$LOCAL_LUA (plantilla local)"
     fi
 fi
 
-WEBAPPS_CONF="$CONFIG_HOME/hypr/conf/webapps.conf"
-if [ ! -e "$WEBAPPS_CONF" ] && [ ! -L "$WEBAPPS_CONF" ]; then
-    mkdir -p "$(dirname "$WEBAPPS_CONF")"
-    cat >"$WEBAPPS_CONF" <<'EOF'
-# ==============================================================================
-# Reglas de Web Apps (PWAs) generadas localmente por webapp-install.sh.
-# No versionado; incluido al final de hypr/conf/windowrules.conf.
-# ==============================================================================
+WEBAPPS_LUA="$CONFIG_HOME/hypr/conf/webapps.lua"
+if [ ! -e "$WEBAPPS_LUA" ] && [ ! -L "$WEBAPPS_LUA" ]; then
+    mkdir -p "$(dirname "$WEBAPPS_LUA")"
+    cat >"$WEBAPPS_LUA" <<'EOF'
+-- ==============================================================================
+-- Reglas de Web Apps (PWAs) generadas localmente por webapp-install.sh.
+-- No versionado; cargado al final de hypr/conf/windowrules.lua.
+-- ==============================================================================
 EOF
-    ok "$WEBAPPS_CONF (semilla vacía)"
+    ok "$WEBAPPS_LUA (semilla vacía)"
 fi
 
 link_file "$HYPR_SRC/hypridle.conf" "$CONFIG_HOME/hypr/hypridle.conf"
@@ -124,6 +126,9 @@ if [ ! -e "$WAYBAR_LOCAL" ] && [ ! -L "$WAYBAR_LOCAL" ]; then
     ok "$WAYBAR_LOCAL (override local vacío)"
 fi
 
+for f in "$HYPR_SRC"/rofi/*; do
+    link_file "$f" "$CONFIG_HOME/rofi/$(basename "$f")"
+done
 for f in "$HYPR_SRC"/fuzzel/*; do
     link_file "$f" "$CONFIG_HOME/fuzzel/$(basename "$f")"
 done
@@ -139,9 +144,6 @@ done
 for f in "$HYPR_SRC"/swayosd/*; do
     link_file "$f" "$CONFIG_HOME/swayosd/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/quickshell/*; do
-    link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
-done
 for f in "$HYPR_SRC"/fontconfig/*.conf; do
     link_file "$f" "$CONFIG_HOME/fontconfig/conf.d/$(basename "$f")"
 done
@@ -151,7 +153,7 @@ if [ -f "$HYPR_SRC/qt6ct/qt6ct.conf" ] && [ ! -e "$CONFIG_HOME/qt6ct/qt6ct.conf"
     mkdir -p "$CONFIG_HOME/qt6ct"
     cp "$HYPR_SRC/qt6ct/qt6ct.conf" "$CONFIG_HOME/qt6ct/qt6ct.conf"
     ok "$CONFIG_HOME/qt6ct/qt6ct.conf (semilla inicial)"
-elif [ -f "$CONFIG_HOME/qt6ct/qt6ct.conf" ] && grep -q 'Adwaita Sans' "$CONFIG_HOME/qt6ct/qt6ct.conf"; then
+elif [ -f "$HYPR_SRC/qt6ct/qt6ct.conf" ] && grep -q 'Adwaita Sans' "$CONFIG_HOME/qt6ct/qt6ct.conf"; then
     sed -i 's/Adwaita Sans/Inter/g' "$CONFIG_HOME/qt6ct/qt6ct.conf"
     ok "$CONFIG_HOME/qt6ct/qt6ct.conf (fuente migrada a Inter)"
 fi
@@ -183,11 +185,12 @@ for gtk_ver in gtk-3.0 gtk-4.0; do
     set_gtk_setting "$settings" gtk-cursor-theme-size 24
 done
 
-# Eliminar symlinks rotos que apunten al repo (scripts/configs retirados).
+# Eliminar symlinks rotos que apunten al repo (scripts/configs retirados,
+# incluidos los antiguos *.conf de Hyprland 0.55 y quickshell/).
 prune_stale_links() {
     local dir link
     for dir in "$CONFIG_HOME/hypr" "$CONFIG_HOME/hypr/conf" "$CONFIG_HOME/hypr/scripts" \
-               "$CONFIG_HOME/waybar" "$CONFIG_HOME/fuzzel" "$CONFIG_HOME/foot" \
+               "$CONFIG_HOME/waybar" "$CONFIG_HOME/rofi" "$CONFIG_HOME/fuzzel" "$CONFIG_HOME/foot" \
                "$CONFIG_HOME/swappy" "$CONFIG_HOME/wofi" "$CONFIG_HOME/kitty" \
                "$CONFIG_HOME/mako" "$CONFIG_HOME/swaync" "$CONFIG_HOME/swayosd" \
                "$CONFIG_HOME/quickshell" \
@@ -247,22 +250,6 @@ sleep 0.3
 setsid "$CONFIG_HOME/hypr/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 ok "Waybar reiniciado."
 
-# Quickshell: reiniciar solo si está vivo (`qs ipc show` responde). Si se apagó
-# por inactividad no se fuerza el arranque: la próxima apertura del lanzador ya
-# carga la config nueva.
-if command -v qs >/dev/null 2>&1 && qs ipc show >/dev/null 2>&1; then
-    qs kill >/dev/null 2>&1 || true
-    pkill -x quickshell 2>/dev/null || true
-    for _ in $(seq 1 20); do
-        pgrep -x quickshell >/dev/null 2>&1 || break
-        sleep 0.05
-    done
-    setsid qs -n -d >/dev/null 2>&1 </dev/null &
-    ok "Quickshell (re)iniciado."
-elif command -v qs >/dev/null 2>&1; then
-    ok "Quickshell apagado por inactividad; se relanza al abrir el lanzador."
-fi
-
 # Notificaciones: recargar config y CSS de swaync.
 if pgrep -x swaync >/dev/null 2>&1 && command -v swaync-client >/dev/null 2>&1; then
     swaync-client -R >/dev/null 2>&1 || true
@@ -292,4 +279,4 @@ if [ -n "$config_errors" ] && ! printf '%s\n' "$config_errors" | grep -qiE '^no 
 fi
 
 echo "✔ Configuración y sesión refrescadas."
-echo "  Nota: hyprlock, foot y fuzzel toman los cambios en su próxima apertura."
+echo "  Nota: hyprlock, foot, rofi y fuzzel toman los cambios en su próxima apertura."

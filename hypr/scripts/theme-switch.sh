@@ -3,9 +3,9 @@
 # Intercambiador de temas de Hyprland.
 #
 # Los archivos con variantes visuales viven en hypr/themes/<tema>/ y los paths
-# clásicos (hypr/waybar/style.css, hypr/conf/appearance.conf, etc.) son
-# symlinks a hypr/themes/active/<archivo>. Cambiar de tema solo mueve el symlink
-# "active", sin tocar archivos versionados ni ensuciar el working tree.
+# clásicos (hypr/waybar/style.css, hypr/conf/appearance.lua, hypr/rofi/theme.rasi,
+# etc.) son symlinks a hypr/themes/active/<archivo>. Cambiar de tema solo mueve
+# el symlink "active", sin tocar archivos versionados ni ensuciar el working tree.
 #
 # Uso:
 #   theme-switch.sh                 # muestra el tema activo
@@ -46,14 +46,7 @@ reload_desktop() {
     sleep 0.4
     setsid "$HYPR_DIR/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 
-    # Quickshell relee Theme.qml al reiniciar el daemon. Si se apagó por
-    # inactividad no se enciende: la próxima apertura ya carga el tema nuevo.
-    if command -v qs >/dev/null 2>&1 && qs ipc show >/dev/null 2>&1; then
-        qs kill >/dev/null 2>&1 || true
-        pkill -x quickshell 2>/dev/null || true
-        sleep 0.2
-        setsid qs -n -d >/dev/null 2>&1 </dev/null &
-    fi
+    # Rofi, fuzzel, foot e hyprlock leen su tema en la próxima apertura (sin daemon).
 
     # swaync relee el CSS del tema activo.
     swaync-client -rs >/dev/null 2>&1 || true
@@ -84,8 +77,8 @@ apply_theme() {
     # Verificar que el tema tenga todos los archivos esperados.
     local missing=()
     local f
-    for f in appearance.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini \
-             quickshell/Theme.qml swaync/style.css swayosd/style.css \
+    for f in appearance.lua hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini \
+             rofi/theme.rasi swaync/style.css swayosd/style.css \
              waybar/config.jsonc waybar/style.css; do
         [ -e "$theme_dir/$f" ] || missing+=("$f")
     done

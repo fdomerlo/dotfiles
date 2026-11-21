@@ -99,6 +99,14 @@ if command -v apt-get &>/dev/null; then
     else
         ok "APT: nada que actualizar (ningún gestionado instalado)."
     fi
+
+    # En Forky/testing las transiciones de librerías pueden retener paquetes; avisar sin forzar full-upgrade.
+    if apt-cache policy 2>/dev/null | grep -qE 'o=Debian,a=testing,|o=Debian,.*,n=forky,'; then
+        pending_upg=$(apt list --upgradable 2>/dev/null | grep -c '/' || true)
+        if [ "${pending_upg:-0}" -gt 0 ]; then
+            warn "Quedan ${pending_upg} paquete(s) APT actualizables/retenidos en Forky (revisá manualmente con 'sudo apt full-upgrade')."
+        fi
+    fi
 else
     warn "apt-get no disponible, omitiendo."
 fi

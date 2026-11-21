@@ -4,8 +4,8 @@
 #
 # Genera lanzadores .desktop en ~/.local/share/applications/ usando Google Chrome
 # (por defecto) o Chromium con --app=<URL>, descarga el favicon
-# y escribe reglas opcionales (float / scratchpad) en ~/.config/hypr/conf/webapps.conf
-# usando la sintaxis Hyprland 0.55+ (windowrule v3).
+# y escribe reglas opcionales (float / scratchpad) en ~/.config/hypr/conf/webapps.lua
+# usando la sintaxis Lua nativa de Hyprland 0.57+ (`hl.window_rule`).
 #
 # Uso CLI:
 #   webapp-install.sh install <nombre> <url> [opciones]
@@ -26,7 +26,7 @@ set -euo pipefail
 APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
 ICON_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/icons/webapps"
 PROFILE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/webapps"
-WEBAPPS_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/conf/webapps.conf"
+WEBAPPS_LUA="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/conf/webapps.lua"
 PROMPT_PREFIX="${WEBAPP_PROMPT_PREFIX:-}"
 
 die() {
@@ -46,14 +46,14 @@ usage() {
     sed -n '2,23p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
-ensure_webapps_conf() {
-    mkdir -p "$(dirname "$WEBAPPS_CONF")"
-    if [ ! -e "$WEBAPPS_CONF" ]; then
-        cat >"$WEBAPPS_CONF" <<'EOF'
-# ==============================================================================
-# Reglas de Web Apps (PWAs) generadas localmente por webapp-install.sh.
-# No versionado; incluido al final de hypr/conf/windowrules.conf.
-# ==============================================================================
+ensure_webapps_lua() {
+    mkdir -p "$(dirname "$WEBAPPS_LUA")"
+    if [ ! -e "$WEBAPPS_LUA" ]; then
+        cat >"$WEBAPPS_LUA" <<'EOF'
+-- ==============================================================================
+-- Reglas de Web Apps (PWAs) generadas localmente por webapp-install.sh.
+-- No versionado; cargado al final de hypr/conf/windowrules.lua.
+-- ==============================================================================
 EOF
     fi
 }
@@ -180,20 +180,20 @@ fetch_icon() {
 
 remove_hypr_rule_block() {
     local slug="$1"
-    [ -f "$WEBAPPS_CONF" ] || return 0
+    [ -f "$WEBAPPS_LUA" ] || return 0
     local tmp
     tmp="$(mktemp)"
-    awk -v start="# BEGIN webapp-$slug" -v stop="# END webapp-$slug" '
+    awk -v start="-- BEGIN webapp-$slug" -v stop="-- END webapp-$slug" '
         $0 == start { skip=1; next }
         $0 == stop  { skip=0; next }
         !skip { print }
-    ' "$WEBAPPS_CONF" >"$tmp"
-    mv "$tmp" "$WEBAPPS_CONF"
+    ' "$WEBAPPS_LUA" >"$tmp"
+    mv "$tmp" "$WEBAPPS_LUA"
 }
 
 write_hypr_rule_block() {
     local slug="$1" host="$2" mode="$3"
-    ensure_webapps_conf
+    ensure_webapps_lua
     remove_hypr_rule_block "$slug"
 
     [ "$mode" = "tile" ] && return 0
@@ -205,22 +205,30 @@ write_hypr_rule_block() {
     cls_re="^((chrome|chromium)-${host_re}.*|webapp-${slug})$"
 
     {
-        printf '# BEGIN webapp-%s\n' "$slug"
+        printf -- '-- BEGIN webapp-%s\n' "$slug"
         case "$mode" in
             float)
-                printf 'windowrule = match:class %s, float on\n' "$cls_re"
-                printf 'windowrule = match:class %s, center on\n' "$cls_re"
-                printf 'windowrule = match:class %s, size 80%% 80%%\n' "$cls_re"
+                printf 'hl.window_rule({\n'
+                printf '    name   = "webapp-%s",\n' "$slug"
+                printf '    match  = { class = [=[%s]=] },\n' "$cls_re"
+                printf '    float  = true,\n'
+                printf '    center = true,\n'
+                printf '    size   = { "monitor_w * 0.80", "monitor_h * 0.80" },\n'
+                printf '})\n'
                 ;;
             scratchpad)
-                printf 'windowrule = match:class %s, workspace special:magic silent\n' "$cls_re"
-                printf 'windowrule = match:class %s, float on\n' "$cls_re"
-                printf 'windowrule = match:class %s, center on\n' "$cls_re"
-                printf 'windowrule = match:class %s, size 80%% 80%%\n' "$cls_re"
+                printf 'hl.window_rule({\n'
+                printf '    name      = "webapp-%s",\n' "$slug"
+                printf '    match     = { class = [=[%s]=] },\n' "$cls_re"
+                printf '    workspace = "special:magic silent",\n'
+                printf '    float     = true,\n'
+                printf '    center    = true,\n'
+                printf '    size      = { "monitor_w * 0.80", "monitor_h * 0.80" },\n'
+                printf '})\n'
                 ;;
         esac
-        printf '# END webapp-%s\n' "$slug"
-    } >>"$WEBAPPS_CONF"
+        printf -- '-- END webapp-%s\n' "$slug"
+    } >>"$WEBAPPS_LUA"
 }
 
 cmd_install() {

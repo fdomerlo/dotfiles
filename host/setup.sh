@@ -11,16 +11,16 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_DIR/scripts/lib/packages.sh"
 
 echo "================================================================="
-echo "==> [Debian Stable] Configuración de Sistema y Paquetes Base"
+echo "==> [Debian Forky] Configuración de Sistema y Paquetes Base"
 echo "================================================================="
 
 echo "==> Higiene APT previa (fuentes Docker, duplicados, reparaciones)..."
 bash "$REPO_DIR/scripts/apt-maintenance.sh"
 
 # ------------------------------------------------------------------------------
-# 1. Repositorios extendidos de Debian Stable (Backports)
+# 1. Verificación de suite Debian (Forky/testing vs Stable)
 # ------------------------------------------------------------------------------
-echo "==> Configurando repositorios extendidos para Debian Stable (Backports)..."
+echo "==> Verificando suite de repositorios Debian..."
 
 # Escribe $file solo si su contenido difiere de $content (convergencia idempotente).
 write_if_changed() {
@@ -34,19 +34,27 @@ write_if_changed() {
     return 1
 }
 
-# Debian Backports (formato canónico DEB822), solo si el sistema es Debian Stable.
-# La coma final evita confundir 'stable' con 'stable-backports' en apt-cache policy.
-# Fallback: en una instalación recién hecha puede no haber listas APT todavía;
-# /etc/debian_version numérico (p. ej. 13.1) identifica una release estable.
+IS_TESTING=false
 IS_STABLE=false
-if command -v apt-cache &>/dev/null && apt-cache policy 2>/dev/null | grep -q 'o=Debian,a=stable,'; then
+APT_POLICY="$(apt-cache policy 2>/dev/null || true)"
+if grep -qE 'o=Debian,a=testing,|o=Debian,.*,n=forky,' <<<"$APT_POLICY"; then
+    IS_TESTING=true
+elif [ -r /etc/os-release ] && grep -qE '^VERSION_CODENAME=forky$' /etc/os-release; then
+    IS_TESTING=true
+elif grep -q 'o=Debian,a=stable,' <<<"$APT_POLICY"; then
     IS_STABLE=true
 elif [ -r /etc/debian_version ] && grep -qE '^[0-9]+\.[0-9]+' /etc/debian_version; then
     IS_STABLE=true
 fi
 
-if [ "$IS_STABLE" = true ]; then
-    BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
+BACKPORTS_FILE="/etc/apt/sources.list.d/debian-backports.sources"
+if [ "$IS_TESTING" = true ]; then
+    echo "  ✔ Debian Testing (forky) detectado: todo el stack vive en main (sin backports)."
+    if [ -f "$BACKPORTS_FILE" ]; then
+        echo "  -> Eliminando $BACKPORTS_FILE heredado de Stable para no mezclar suites..."
+        rm -f "$BACKPORTS_FILE"
+    fi
+elif [ "$IS_STABLE" = true ]; then
     DEB_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
     BACKPORTS_CONTENT=$(cat << EOF
 Types: deb deb-src
@@ -62,8 +70,7 @@ EOF
         echo "  ✔ Debian Backports ya actualizado (stable-backports)."
     fi
 else
-    echo "  ⚠️ No se detectó Debian Stable; se omite Backports."
-    echo "     Este repositorio solo soporta configuraciones para Debian Stable."
+    echo "  ⚠️ No se detectó Debian Forky (testing) ni Stable; revisá tus fuentes APT."
 fi
 
 echo "==> Actualizando repositorios APT..."
@@ -276,5 +283,5 @@ if [ -r /sys/power/disk ] && grep -q '\[disabled\]' /sys/power/disk 2>/dev/null;
 fi
 
 echo "================================================================="
-echo "✔ Host setup completado (Debian Stable + Backports + Flatpak + AppImage + Podman Rootless + Energía)."
+echo "✔ Host setup completado (Debian Forky + Flatpak + AppImage + Podman Rootless + Energía)."
 echo "================================================================="

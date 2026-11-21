@@ -29,7 +29,7 @@ case "$CHOSEN" in
         pidof hyprlock || hyprlock
         ;;
     *"$OP_LOGOUT"*)
-        hyprctl dispatch exit
+        hyprctl dispatch 'hl.dsp.exit()'
         ;;
     *"$OP_SUSPEND"*)
         "$SCRIPT_DIR/idle-suspend.sh"

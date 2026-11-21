@@ -31,4 +31,4 @@ if [ "$(count_scratchpads)" = "0" ]; then
     done
 fi
 
-hyprctl dispatch togglespecialworkspace magic
+hyprctl dispatch "hl.dsp.workspace.toggle_special('magic')"

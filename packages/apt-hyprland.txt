@@ -1,9 +1,10 @@
 # ==============================================================================
-# Paquetes APT del escritorio Hyprland disponibles en Debian Stable main.
+# Paquetes APT del escritorio Hyprland disponibles en Debian main.
 # Consumido por scripts/hyprland-packages.sh, scripts/hyprland.sh y update.sh.
 # ==============================================================================
 
 waybar
+rofi
 fuzzel
 sway-notification-center
 swayosd
@@ -34,7 +35,7 @@ tesseract-ocr-spa
 wf-recorder
 pavucontrol
 libnotify-bin
-network-manager-gnome
+nm-connection-editor
 network-manager-openvpn
 network-manager-openvpn-gnome
 blueman

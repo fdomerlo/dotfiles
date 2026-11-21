@@ -1,0 +1,138 @@
+/* ==============================================================================
+ * Rofi 2.0 - Mr. Robot / fsociety
+ * Fondo casi negro, borde acero de 1px, esquinas rectas, selección azul acero.
+ * ============================================================================== */
+
+* {
+    bg:          #05080bf7;
+    bg-alt:      #0d151bff;
+    fg:          #c3d2ddff;
+    fg-muted:    #5a7585ff;
+    accent:      #2e7491ff;
+    accent-hi:   #7dc8f0ff;
+    sel-fg:      #05080bff;
+    border-col:  #2e7491ff;
+    urgent:      #c83434ff;
+
+    font: "JetBrains Mono 11";
+    background-color: transparent;
+    text-color: @fg;
+    margin: 0px;
+    padding: 0px;
+    spacing: 0px;
+}
+
+window {
+    location: center;
+    anchor: center;
+    width: 720px;
+    background-color: @bg;
+    border: 1px solid;
+    border-color: @border-col;
+    border-radius: 0px;
+}
+
+mainbox {
+    padding: 16px;
+    spacing: 12px;
+    children: [ "inputbar", "mode-switcher", "message", "listview" ];
+}
+
+inputbar {
+    padding: 10px 14px;
+    spacing: 10px;
+    background-color: @bg-alt;
+    border: 1px solid;
+    border-color: @border-col;
+    border-radius: 0px;
+    children: [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color: @accent-hi;
+    vertical-align: 0.5;
+}
+
+entry {
+    placeholder: "Buscar aplicaciones, acciones o comandos...";
+    placeholder-color: @fg-muted;
+    cursor: text;
+    vertical-align: 0.5;
+}
+
+mode-switcher {
+    spacing: 6px;
+}
+
+button {
+    padding: 6px 10px;
+    background-color: @bg-alt;
+    text-color: @fg-muted;
+    border: 1px solid;
+    border-color: transparent;
+    border-radius: 0px;
+    cursor: pointer;
+}
+
+button selected {
+    background-color: @accent;
+    text-color: @sel-fg;
+    border-color: @accent-hi;
+}
+
+message {
+    padding: 8px 12px;
+    background-color: @bg-alt;
+    border: 1px solid;
+    border-color: @border-col;
+}
+
+textbox {
+    text-color: @fg-muted;
+}
+
+listview {
+    lines: 10;
+    columns: 1;
+    fixed-height: true;
+    scrollbar: false;
+    spacing: 4px;
+}
+
+element {
+    padding: 8px 12px;
+    spacing: 10px;
+    border-radius: 0px;
+    cursor: pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element selected.normal {
+    background-color: @accent;
+    text-color: @sel-fg;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    text-color: @urgent;
+}
+
+element selected.urgent {
+    background-color: @urgent;
+    text-color: @fg;
+}
+
+element-icon {
+    size: 22px;
+    vertical-align: 0.5;
+}
+
+element-text {
+    vertical-align: 0.5;
+    highlight: bold underline;
+}
