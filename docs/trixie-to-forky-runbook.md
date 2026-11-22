@@ -1,6 +1,6 @@
 # Runbook: Migración de estación Debian Trixie → Debian Forky
 
-Guía paso a paso para migrar estaciones de trabajo ya desplegadas sobre **Debian 13 (Trixie)** con este repositorio (`main`) a **Debian Testing (`forky`)** con Hyprland `0.57+` (Lua), Rofi `2.0` y el par de temas `cyber-teal` / `cyber-teal-light`.
+Guía paso a paso para migrar estaciones de trabajo ya desplegadas sobre **Debian 13 (Trixie)** con este repositorio (`main`) a **Debian Testing (`forky`)** con Hyprland `0.57+` (Lua), Rofi `2.0` y los temas `cyber-teal`, `cyber-teal-light`, `mr-robot` y `mr-robot-light`.
 
 > **Regla de oro:** nunca ejecutes `apt full-upgrade` desde dentro de Hyprland `0.55` (el salto a `0.57` cambia la sintaxis de `.conf` a `.lua` y puede cerrar la sesión a mitad del proceso). Todo el upgrade del SO se hace desde **GNOME fallback** o una TTY.
 
@@ -103,7 +103,7 @@ make refresh
 
 > **Notas automáticas de `make hyprland` / `make refresh`:**
 > - Enlaza `hyprland.lua`, `conf/*.lua` y `rofi/{config,theme}.rasi`.
-> - Si el tema previo era `mr-robot` o `gruvbox-light` (retirados), repara automáticamente `hypr/themes/active` → **`cyber-teal`**.
+> - Si el tema previo era `gruvbox-light` (retirado), repara automáticamente `hypr/themes/active` → **`cyber-teal`** (`mr-robot` y `mr-robot-light` están disponibles).
 > - Poda symlinks rotos heredados (`*.conf` de Hyprland 0.55, `quickshell/`, `main-menu.sh`, etc.).
 
 ---
@@ -147,7 +147,7 @@ make clean-deep
    - `Super` → abre el buscador global **`Todo`** en Rofi 2.0 (`Tab` recorre `Todo · Apps · Dev · Capturar · Estilo · Sistema · Ventanas`).
    - `Super+A` → selector de ventanas abiertas.
    - `Super+X` → menú de energía y sesión (Fuzzel).
-   - `Super+Shift+T` → alternar entre **`cyber-teal`** y **`cyber-teal-light`** (verificar Waybar, Rofi, Foot, SwayNC y GTK/libadwaita).
+   - `Super+Shift+T` → alternar entre **`cyber-teal`**, **`cyber-teal-light`**, **`mr-robot`** y **`mr-robot-light`** (verificar Waybar, Rofi, Foot, SwayNC y GTK/libadwaita).
    - Clic en workspaces `1–5` en Waybar (`ext/workspaces`).
    - `Super+Shift+S` → scratchpad de terminal (`foot 1.28`).
    - `Super+L` → pantalla de bloqueo (`hyprlock`).

@@ -1,0 +1,353 @@
+/* ==============================================================================
+   Waybar - Mr. Robot Light (Modo Diurno Táctico · HUD Oscuro Semiopaco)
+   Barra táctica oscura translúcida (rgba(10, 16, 21, 0.88)) sobre ventanas
+   claras con Smart Gaps: separación por línea acero de 1px, tipografía
+   monoespaciada disciplinada y color semántico solo en estados/alertas.
+   ============================================================================== */
+
+* {
+    font-family: "JetBrains Mono", "Symbols Nerd Font", "Font Awesome 6 Free", "FontAwesome", sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    min-height: 0;
+    border: none;
+}
+
+window#waybar {
+    background: rgba(10, 16, 21, 0.88);
+    color: #dce7ee;
+    border-bottom: 1px solid rgba(29, 97, 125, 0.65);
+    border-radius: 0;
+}
+
+window#waybar > box {
+    padding: 2px 6px;
+}
+
+/* --- Modulos Izquierda --- */
+
+#custom-launcher {
+    font-size: 14px;
+    font-weight: bold;
+    color: #6db8d6;
+    padding: 0 10px;
+    margin: 3px 2px;
+    border-radius: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.12s ease;
+}
+
+#custom-launcher:hover {
+    background: #c83434;
+    color: #0a1015;
+    border-color: #c83434;
+}
+
+#workspaces {
+    background: transparent;
+    border-radius: 0;
+    margin: 3px 2px;
+    padding: 0 2px;
+    border: none;
+    border-left: 1px solid rgba(79, 159, 191, 0.30);
+}
+
+#workspaces button {
+    padding: 0 7px;
+    margin: 0 1px;
+    color: #7c95a3;
+    background: transparent;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.12s ease;
+}
+
+#workspaces button:hover {
+    color: #eaf2f7;
+    background: rgba(79, 159, 191, 0.20);
+    border-bottom-color: #4f9fbf;
+    box-shadow: none;
+}
+
+#workspaces button.active {
+    color: #f2f7fa;
+    background: rgba(79, 159, 191, 0.28);
+    border-bottom-color: #7dc8f0;
+    font-weight: bold;
+    box-shadow: none;
+}
+
+#workspaces button.urgent {
+    color: #0a1015;
+    background: #c83434;
+    border-bottom-color: #c83434;
+}
+
+#custom-media {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(79, 159, 191, 0.30);
+    border-radius: 0;
+    margin: 5px 4px;
+    padding: 0 10px;
+    color: #a3bac7;
+}
+
+/* --- Titulo de la Ventana --- */
+
+#window {
+    color: #a3bac7;
+    font-weight: 500;
+    padding: 0 12px;
+    background: transparent;
+    border-radius: 0;
+    margin: 3px 2px;
+    border: none;
+    border-left: 1px solid rgba(79, 159, 191, 0.30);
+}
+
+window#waybar.empty #window {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* --- Modulos Derecha (disciplina cromática: neutro en reposo, color en estado) --- */
+
+#cpu,
+#memory,
+#power-profiles-daemon,
+#idle_inhibitor,
+#backlight,
+#battery,
+#pulseaudio,
+#network,
+#custom-vpn,
+#bluetooth,
+#custom-notification,
+#custom-ai-service,
+#custom-nightlight,
+#custom-recording,
+#clock,
+#tray,
+#custom-power {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(79, 159, 191, 0.24);
+    border-radius: 0;
+    margin: 3px 0;
+    padding: 0 10px;
+    color: #dce7ee;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+#cpu:hover,
+#memory:hover,
+#power-profiles-daemon:hover,
+#idle_inhibitor:hover,
+#backlight:hover,
+#battery:hover,
+#pulseaudio:hover,
+#network:hover,
+#custom-vpn:hover,
+#bluetooth:hover,
+#custom-notification:hover,
+#custom-ai-service:hover,
+#custom-nightlight:hover,
+#custom-recording:hover,
+#clock:hover,
+#tray:hover,
+#custom-power:hover {
+    background: rgba(79, 159, 191, 0.20);
+    color: #f2f7fa;
+}
+
+#cpu,
+#memory {
+    color: #9bb2bf;
+}
+
+#power-profiles-daemon {
+    color: #9bb2bf;
+}
+
+#power-profiles-daemon.performance {
+    color: #e04f4f;
+}
+
+#power-profiles-daemon.power-saver {
+    color: #74be9c;
+}
+
+#idle_inhibitor {
+    color: #6e8796;
+    padding: 0 10px;
+    font-size: 13.5px;
+    transition: all 0.12s ease;
+}
+
+#idle_inhibitor.activated {
+    color: #6db8d6;
+}
+
+#backlight {
+    color: #dce7ee;
+}
+
+#battery {
+    color: #dce7ee;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #6db8d6;
+}
+
+#battery.warning:not(.charging) {
+    color: #d9b443;
+}
+
+#battery.critical:not(.charging) {
+    color: #e04f4f;
+}
+
+#pulseaudio {
+    color: #dce7ee;
+}
+
+#pulseaudio.muted {
+    color: #e04f4f;
+}
+
+#network {
+    color: #dce7ee;
+}
+
+#network.disconnected {
+    color: #e04f4f;
+}
+
+#custom-vpn {
+    color: #74be9c;
+    font-weight: bold;
+}
+
+#bluetooth {
+    color: #dce7ee;
+}
+
+#bluetooth.disabled {
+    color: #6e8796;
+}
+
+#bluetooth.connected {
+    color: #6db8d6;
+}
+
+#custom-notification {
+    color: #9bb2bf;
+    padding: 0 10px;
+    font-size: 13.5px;
+    transition: all 0.12s ease;
+}
+
+#custom-notification.notification {
+    color: #e04f4f;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+    color: #d9b443;
+}
+
+/* Servicio de fondo OpenCode: siempre visible; atenuado cuando está apagado. */
+#custom-ai-service {
+    color: #74be9c;
+    padding: 0 10px;
+    transition: all 0.12s ease;
+}
+
+#custom-ai-service.idle {
+    color: rgba(155, 178, 191, 0.45);
+}
+
+#custom-ai-service:hover {
+    background: rgba(79, 159, 191, 0.20);
+    color: #f2f7fa;
+}
+
+/* Luz nocturna: solo aparece mientras el filtro está activo. */
+#custom-nightlight {
+    color: #d9b443;
+    padding: 0 10px;
+    transition: all 0.12s ease;
+}
+
+#custom-nightlight:hover {
+    background: rgba(217, 180, 67, 0.20);
+    color: #ebd073;
+}
+
+/* Grabación de pantalla: parpadea como un indicador REC. */
+#custom-recording {
+    color: #e04f4f;
+    padding: 0 10px;
+    font-weight: bold;
+    animation: recording-pulse 1.2s ease-in-out infinite alternate;
+}
+
+#custom-recording:hover {
+    background: rgba(200, 52, 52, 0.24);
+    color: #f06c6c;
+}
+
+@keyframes recording-pulse {
+    from { opacity: 1; }
+    to   { opacity: 0.45; }
+}
+
+#clock {
+    color: #f2f7fa;
+    font-weight: bold;
+}
+
+#tray {
+    padding: 0 9px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: #c83434;
+}
+
+#custom-power {
+    color: #9bb2bf;
+    padding: 0 10px;
+    font-size: 13.5px;
+    transition: all 0.12s ease;
+}
+
+#custom-power:hover {
+    background: rgba(200, 52, 52, 0.24);
+    color: #f06c6c;
+}
+
+/* --- Tooltip (coherente con el HUD oscuro de la barra) --- */
+
+tooltip {
+    background: rgba(10, 16, 21, 0.96);
+    border: 1px solid #2e7491;
+    border-radius: 0;
+}
+
+tooltip label {
+    color: #dce7ee;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+}

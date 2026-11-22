@@ -12,6 +12,13 @@ hl.layer_rule({
     order = -1,
 })
 
+-- Evita el parpadeo/doble fade al intercambiar superficies de swaybg en capa background.
+hl.layer_rule({
+    name    = "wallpaper-no-anim",
+    match   = { namespace = "^(wallpaper)$" },
+    no_anim = true,
+})
+
 -- Diálogos y paneles de configuración flotantes
 hl.window_rule({
     name  = "float-pavucontrol",

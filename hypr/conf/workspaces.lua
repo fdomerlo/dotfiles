@@ -20,6 +20,6 @@
 -- persistent-workspaces. La cantidad por monitor se ajusta con WS_PER_MONITOR
 -- en workspaces-init.sh y workspace-cycle.sh.
 --
--- La estética de bordes y márgenes uniformes (4 px) vive por tema en
--- hypr/themes/<tema>/appearance.lua (cyber-teal / cyber-teal-light).
+-- La estética de bordes, márgenes y Smart Gaps (w[tv1]/f[1] en mr-robot)
+-- vive por tema en hypr/themes/<tema>/appearance.lua.
 -- ==============================================================================

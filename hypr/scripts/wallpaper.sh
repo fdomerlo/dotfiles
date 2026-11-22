@@ -6,7 +6,9 @@
 #   si existen; así el tema agrupa fondos propios sin ocultar la colección
 #   general del usuario
 # - Modo daemon: rota periódicamente (por defecto cada 30 min / 1800 seg)
-# - Transición suave sin parpadeo negro
+# - Transición sin parpadeo: espera a que el nuevo swaybg mapee su superficie
+#   en todos los monitores activos (`hyprctl layers -j`) antes de cerrar el
+#   anterior, serializado con flock y combinado con `wallpaper-no-anim`.
 # - Admite cambio a demanda con --next o enviando señal SIGUSR1
 # ==============================================================================
 set -euo pipefail
@@ -19,8 +21,10 @@ USER_WALLPAPERS="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpapers"
 PICTURES_ES="$HOME/Imágenes/Wallpapers"
 PICTURES_EN="$HOME/Pictures/Wallpapers"
 
-STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr_current_wallpaper"
-PID_FILE="${XDG_RUNTIME_DIR:-/tmp}/hypr_wallpaper_daemon.pid"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+STATE_FILE="$RUNTIME_DIR/hypr_current_wallpaper"
+PID_FILE="$RUNTIME_DIR/hypr_wallpaper_daemon.pid"
+LOCK_FILE="$RUNTIME_DIR/hypr_wallpaper.lock"
 
 DEFAULT_INTERVAL=1800 # 30 minutos
 
@@ -30,6 +34,15 @@ active_theme() {
     resolved="$(readlink -f "$active_link" 2>/dev/null || true)"
     [ -d "$resolved" ] || return 0
     basename "$resolved"
+}
+
+fallback_color() {
+    case "$(active_theme || true)" in
+        cyber-teal-light) printf '#f2f6f7' ;;
+        mr-robot-light)   printf '#edf1f4' ;;
+        mr-robot)         printf '#05080b' ;;
+        *)                printf '#0c1012' ;;
+    esac
 }
 
 collect_from_dirs() {
@@ -66,28 +79,71 @@ get_wallpapers() {
     collect_from_dirs "${dirs[@]}"
 }
 
-# Aplica una imagen de fondo específica
+# Espera a que el nuevo proceso swaybg mapee su capa `wallpaper` en todos los
+# monitores activos de Hyprland (evita el flash negro con PNGs grandes).
+wait_for_swaybg_mapped() {
+    local target_pid="$1"
+    if ! command -v hyprctl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+        sleep 0.5
+        kill -0 "$target_pid" 2>/dev/null
+        return $?
+    fi
+
+    local expected mapped i
+    expected="$(hyprctl monitors -j 2>/dev/null | jq '[.[] | select(.disabled | not)] | length' 2>/dev/null || echo 1)"
+    [[ "$expected" =~ ^[0-9]+$ ]] && [ "$expected" -gt 0 ] || expected=1
+
+    # Poll cada 50 ms hasta 6 s (suficiente incluso para PNGs 4K de 20+ MB)
+    for (( i = 0; i < 120; i++ )); do
+        kill -0 "$target_pid" 2>/dev/null || return 1
+        mapped="$(
+            hyprctl layers -j 2>/dev/null | jq --argjson pid "$target_pid" '
+                [ .. | objects | select(.namespace? == "wallpaper" and .pid? == $pid) ] | length
+            ' 2>/dev/null || echo 0
+        )"
+        if [[ "$mapped" =~ ^[0-9]+$ ]] && [ "$mapped" -ge "$expected" ]; then
+            # Margen de un frame para asegurar presentación antes de cerrar el fondo previo
+            sleep 0.08
+            return 0
+        fi
+        sleep 0.05
+    done
+
+    kill -0 "$target_pid" 2>/dev/null
+}
+
+# Aplica una imagen de fondo específica (serializado con flock)
 apply_wallpaper() {
     local wall="$1"
     if [ ! -f "$wall" ]; then
         return 1
     fi
 
-    # Guardar la imagen aplicada como actual (evita repetirla en apply_random)
-    echo "$wall" > "$STATE_FILE"
+    command -v swaybg >/dev/null 2>&1 || return 1
 
-    if command -v swaybg >/dev/null 2>&1; then
-        local old_pids
-        old_pids=$(pgrep -x swaybg || true)
-        swaybg -i "$wall" -m fill -c '#0c1012' >/dev/null 2>&1 &
-        sleep 0.5
-        if [ -n "$old_pids" ]; then
-            kill $old_pids 2>/dev/null || true
+    (
+        flock -x 9
+
+        local bg_color new_pid pid
+        local -a old_pids=()
+        bg_color="$(fallback_color)"
+
+        mapfile -t old_pids < <(pgrep -x swaybg 2>/dev/null || true)
+
+        setsid swaybg -i "$wall" -m fill -c "$bg_color" >/dev/null 2>&1 </dev/null 9>&- &
+        new_pid=$!
+
+        if wait_for_swaybg_mapped "$new_pid"; then
+            echo "$wall" > "$STATE_FILE"
+            for pid in "${old_pids[@]}"; do
+                [ -n "$pid" ] && [ "$pid" != "$new_pid" ] && kill "$pid" 2>/dev/null || true
+            done
+        else
+            # Imagen corrupta o fallo al arrancar swaybg: conservar el fondo anterior
+            kill "$new_pid" 2>/dev/null || true
+            return 1
         fi
-        return 0
-    fi
-
-    return 1
+    ) 9>"$LOCK_FILE"
 }
 
 # Elige un wallpaper aleatorio (sin repetir el actual si hay más de uno)
@@ -99,8 +155,10 @@ apply_random() {
     if [ "$total" -eq 0 ]; then
         rm -f "$STATE_FILE"
         if command -v swaybg >/dev/null 2>&1; then
+            local bg_color
+            bg_color="$(fallback_color)"
             pkill -x swaybg 2>/dev/null || true
-            swaybg -c '#0c1012' >/dev/null 2>&1 &
+            setsid swaybg -c "$bg_color" >/dev/null 2>&1 </dev/null &
         fi
         return 0
     fi
@@ -115,6 +173,7 @@ apply_random() {
         candidate="${wall_list[0]}"
     else
         local filtered=()
+        local w
         for w in "${wall_list[@]}"; do
             if [ "$w" != "$current" ]; then
                 filtered+=("$w")
@@ -144,21 +203,29 @@ run_daemon() {
         fi
     fi
     echo "$$" > "$PID_FILE"
-    trap 'rm -f "$PID_FILE"; exit 0' EXIT INT TERM
 
-    # Atrapa SIGUSR1 para cambiar inmediatamente de fondo a demanda
-    trap 'apply_random' USR1
+    local sleep_pid=""
+    cleanup() {
+        [ -n "$sleep_pid" ] && kill "$sleep_pid" 2>/dev/null || true
+        rm -f "$PID_FILE"
+        exit 0
+    }
+    on_usr1() {
+        [ -n "$sleep_pid" ] && kill "$sleep_pid" 2>/dev/null || true
+    }
+
+    trap 'cleanup' EXIT INT TERM
+    trap 'on_usr1' USR1
 
     # Primer fondo al inicio
     apply_random
 
     while true; do
         sleep "$interval" &
-        # Si `wait` se interrumpe por SIGUSR1, el trap ya aplicó el cambio:
-        # solo se rota por temporizador cuando el sleep termina normalmente.
-        if wait $!; then
-            apply_random
-        fi
+        sleep_pid=$!
+        wait "$sleep_pid" 2>/dev/null || true
+        sleep_pid=""
+        apply_random
     done
 }
 

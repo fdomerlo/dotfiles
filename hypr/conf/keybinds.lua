@@ -47,7 +47,7 @@ hl.bind(mod .. " + SHIFT + A", hl.dsp.exec_cmd(scripts .. "/ai.sh menu"))
 hl.bind(mod .. " + SHIFT + I", hl.dsp.exec_cmd(scripts .. "/ai.sh open"))
 hl.bind(mod .. " + CTRL + I", hl.dsp.exec_cmd(scripts .. "/ai.sh explain"))
 
--- Intercambiador de temas (Cyber-Teal / Cyber-Teal Light).
+-- Intercambiador de temas (Cyber-Teal / Cyber-Teal Light / Mr. Robot / Mr. Robot Light).
 hl.bind(mod .. " + SHIFT + T", hl.dsp.exec_cmd(menuToggle .. " 'Temas' " .. scripts .. "/theme-switch.sh menu"))
 
 -- Descubrimiento: cheatsheet de atajos activos.
@@ -85,8 +85,8 @@ hl.bind(mod .. " + CTRL + S", hl.dsp.window.move({ workspace = "special:magic", 
 
 -- Grupos de ventanas (tabs dentro de una misma ventana)
 hl.bind(mod .. " + G", hl.dsp.group.toggle())
-hl.bind(mod .. " + Tab", hl.dsp.group.next())
-hl.bind(mod .. " + SHIFT + Tab", hl.dsp.group.prev())
+hl.bind(mod .. " + ALT + Tab", hl.dsp.group.next())
+hl.bind(mod .. " + ALT + SHIFT + Tab", hl.dsp.group.prev())
 hl.bind(mod .. " + CTRL + G", hl.dsp.window.move({ into_group = "left" }))
 hl.bind(mod .. " + SHIFT + G", hl.dsp.window.move({ out_of_group = true }))
 
@@ -127,7 +127,10 @@ for i = 1, 10 do
 end
 
 -- Ciclo de workspaces entre monitores (con wrap global: 1..N*5).
--- Page_Down/Page_Up recorren los workspaces cubriendo todos los monitores.
+-- Super+Tab / Super+Shift+Tab y Page_Down / Page_Up recorren los workspaces
+-- cubriendo todos los monitores conectados.
+hl.bind(mod .. " + Tab", hl.dsp.exec_cmd(scripts .. "/workspace-cycle.sh next"))
+hl.bind(mod .. " + SHIFT + Tab", hl.dsp.exec_cmd(scripts .. "/workspace-cycle.sh prev"))
 hl.bind(mod .. " + Page_Down", hl.dsp.exec_cmd(scripts .. "/workspace-cycle.sh next"))
 hl.bind(mod .. " + Page_Up", hl.dsp.exec_cmd(scripts .. "/workspace-cycle.sh prev"))
 hl.bind(mod .. " + SHIFT + Page_Down", hl.dsp.exec_cmd(scripts .. "/workspace-cycle.sh next --move"))

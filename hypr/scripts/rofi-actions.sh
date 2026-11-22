@@ -108,7 +108,7 @@ list_estilo() {
         nl_title="Desactivar luz nocturna (4000K)"
     fi
 
-    emit_row "theme-menu"    "󰔎" "Elegir tema (actual: $theme_label)"       "Super+Shift+T" "tema theme cyber-teal cyber-teal-light claro oscuro apariencia estilo"
+    emit_row "theme-menu"    "󰔎" "Elegir tema (actual: $theme_label)"       "Super+Shift+T" "tema theme cyber-teal cyber-teal-light mr-robot mr-robot-light claro oscuro apariencia estilo"
     emit_row "theme-toggle"  "󰸉" "Alternar tema rápido"                     ""              "tema toggle alternar cambiar estilo"
     emit_row "lock-menu"     "󰌾" "Estilo de pantalla de bloqueo"            ""              "lockscreen bloqueo hyprlock candado soc matrix estilo"
     emit_row "wall-next"     "󰸨" "Siguiente wallpaper"                      "Super+W"       "wallpaper fondo pantalla imagen siguiente"

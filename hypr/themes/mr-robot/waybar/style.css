@@ -1,0 +1,352 @@
+/* ==============================================================================
+   Waybar - Mr. Robot / fsociety
+   Terminal HUD: fondo casi negro azulado, divisor inferior sutil,
+   tipografia monoespaciada disciplinada y acentos de color solo para estados.
+   ============================================================================== */
+
+* {
+    font-family: "JetBrains Mono", "Symbols Nerd Font", "Font Awesome 6 Free", "FontAwesome", sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    min-height: 0;
+    border: none;
+}
+
+window#waybar {
+    background: #05080b;
+    color: #c3d2dd;
+    border-bottom: 1px solid rgba(46, 116, 145, 0.45);
+    border-radius: 0;
+}
+
+window#waybar > box {
+    padding: 2px 6px;
+}
+
+/* --- Modulos Izquierda --- */
+
+#custom-launcher {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4f9fbf;
+    padding: 0 10px;
+    margin: 3px 2px;
+    border-radius: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.12s ease;
+}
+
+#custom-launcher:hover {
+    background: #c83434;
+    color: #05080b;
+    border-color: #c83434;
+}
+
+#workspaces {
+    background: transparent;
+    border-radius: 0;
+    margin: 3px 2px;
+    padding: 0 2px;
+    border: none;
+    border-left: 1px solid rgba(35, 65, 79, 0.55);
+}
+
+#workspaces button {
+    padding: 0 7px;
+    margin: 0 1px;
+    color: #5f7684;
+    background: transparent;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.12s ease;
+}
+
+#workspaces button:hover {
+    color: #c3d2dd;
+    background: rgba(46, 116, 145, 0.18);
+    border-bottom-color: #2e7491;
+    box-shadow: none;
+}
+
+#workspaces button.active {
+    color: #eaf2f7;
+    background: rgba(46, 116, 145, 0.24);
+    border-bottom-color: #4f9fbf;
+    font-weight: bold;
+    box-shadow: none;
+}
+
+#workspaces button.urgent {
+    color: #05080b;
+    background: #c83434;
+    border-bottom-color: #c83434;
+}
+
+#custom-media {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(35, 65, 79, 0.55);
+    border-radius: 0;
+    margin: 5px 4px;
+    padding: 0 10px;
+    color: #8fa6b5;
+}
+
+/* --- Titulo de la Ventana --- */
+
+#window {
+    color: #8fa6b5;
+    font-weight: 500;
+    padding: 0 12px;
+    background: transparent;
+    border-radius: 0;
+    margin: 3px 2px;
+    border: none;
+    border-left: 1px solid rgba(35, 65, 79, 0.55);
+}
+
+window#waybar.empty #window {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* --- Modulos Derecha (disciplina cromática: neutro en reposo, color en estado) --- */
+
+#cpu,
+#memory,
+#power-profiles-daemon,
+#idle_inhibitor,
+#backlight,
+#battery,
+#pulseaudio,
+#network,
+#custom-vpn,
+#bluetooth,
+#custom-notification,
+#custom-ai-service,
+#custom-nightlight,
+#custom-recording,
+#clock,
+#tray,
+#custom-power {
+    background: transparent;
+    border: none;
+    border-left: 1px solid rgba(46, 116, 145, 0.28);
+    border-radius: 0;
+    margin: 3px 0;
+    padding: 0 10px;
+    color: #c3d2dd;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+#cpu:hover,
+#memory:hover,
+#power-profiles-daemon:hover,
+#idle_inhibitor:hover,
+#backlight:hover,
+#battery:hover,
+#pulseaudio:hover,
+#network:hover,
+#custom-vpn:hover,
+#bluetooth:hover,
+#custom-notification:hover,
+#custom-ai-service:hover,
+#custom-nightlight:hover,
+#custom-recording:hover,
+#clock:hover,
+#tray:hover,
+#custom-power:hover {
+    background: rgba(46, 116, 145, 0.18);
+    color: #eaf2f7;
+}
+
+#cpu,
+#memory {
+    color: #8fa6b5;
+}
+
+#power-profiles-daemon {
+    color: #8fa6b5;
+}
+
+#power-profiles-daemon.performance {
+    color: #c83434;
+}
+
+#power-profiles-daemon.power-saver {
+    color: #6fae8f;
+}
+
+#idle_inhibitor {
+    color: #5f7684;
+    padding: 0 10px;
+    font-size: 13.5px;
+    transition: all 0.12s ease;
+}
+
+#idle_inhibitor.activated {
+    color: #4f9fbf;
+}
+
+#backlight {
+    color: #c3d2dd;
+}
+
+#battery {
+    color: #c3d2dd;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: #4f9fbf;
+}
+
+#battery.warning:not(.charging) {
+    color: #c9a227;
+}
+
+#battery.critical:not(.charging) {
+    color: #c83434;
+}
+
+#pulseaudio {
+    color: #c3d2dd;
+}
+
+#pulseaudio.muted {
+    color: #c83434;
+}
+
+#network {
+    color: #c3d2dd;
+}
+
+#network.disconnected {
+    color: #c83434;
+}
+
+#custom-vpn {
+    color: #6fae8f;
+    font-weight: bold;
+}
+
+#bluetooth {
+    color: #c3d2dd;
+}
+
+#bluetooth.disabled {
+    color: #5f7684;
+}
+
+#bluetooth.connected {
+    color: #4f9fbf;
+}
+
+#custom-notification {
+    color: #8fa6b5;
+    padding: 0 10px;
+    font-size: 13.5px;
+    transition: all 0.12s ease;
+}
+
+#custom-notification.notification {
+    color: #c83434;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification {
+    color: #c9a227;
+}
+
+/* Servicio de fondo OpenCode: siempre visible; atenuado cuando está apagado. */
+#custom-ai-service {
+    color: #6fae8f;
+    padding: 0 10px;
+    transition: all 0.12s ease;
+}
+
+#custom-ai-service.idle {
+    color: rgba(143, 166, 181, 0.45);
+}
+
+#custom-ai-service:hover {
+    background: rgba(46, 116, 145, 0.18);
+    color: #eaf2f7;
+}
+
+/* Luz nocturna: solo aparece mientras el filtro está activo. */
+#custom-nightlight {
+    color: #c9a227;
+    padding: 0 10px;
+    transition: all 0.12s ease;
+}
+
+#custom-nightlight:hover {
+    background: rgba(201, 162, 39, 0.18);
+    color: #e0c04a;
+}
+
+/* Grabación de pantalla: parpadea como un indicador REC. */
+#custom-recording {
+    color: #c83434;
+    padding: 0 10px;
+    font-weight: bold;
+    animation: recording-pulse 1.2s ease-in-out infinite alternate;
+}
+
+#custom-recording:hover {
+    background: rgba(200, 52, 52, 0.20);
+    color: #e05a5a;
+}
+
+@keyframes recording-pulse {
+    from { opacity: 1; }
+    to   { opacity: 0.45; }
+}
+
+#clock {
+    color: #eaf2f7;
+    font-weight: bold;
+}
+
+#tray {
+    padding: 0 9px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: #c83434;
+}
+
+#custom-power {
+    color: #8fa6b5;
+    padding: 0 10px;
+    font-size: 13.5px;
+    transition: all 0.12s ease;
+}
+
+#custom-power:hover {
+    background: rgba(200, 52, 52, 0.20);
+    color: #e05a5a;
+}
+
+/* --- Tooltip --- */
+
+tooltip {
+    background: rgba(5, 8, 11, 0.98);
+    border: 1px solid #23414f;
+    border-radius: 0;
+}
+
+tooltip label {
+    color: #c3d2dd;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+}

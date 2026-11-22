@@ -14,7 +14,9 @@ configuration {
     case-sensitive: false;
     cycle: true;
     click-to-exit: true;
-    hover-select: false;
+    hover-select: true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
     scroll-method: 0;
     sidebar-mode: true;
 

@@ -26,17 +26,18 @@ active_theme() {
 # de quedar azules cuando el escritorio usa otra paleta.
 accent_for_theme() {
     case "$1" in
+        mr-robot|mr-robot-light)     printf 'slate' ;;
         cyber-teal|cyber-teal-light) printf 'teal' ;;
         *)                           printf 'blue' ;;
     esac
 }
 
-# Esquema claro/oscuro por tema. cyber-teal-light es el unico diurno; el resto
-# son temas oscuros y deben declararlo para que libadwaita y las apps GTK los sigan.
+# Esquema claro/oscuro por tema. Los temas *-light declaran prefer-light y el
+# resto prefer-dark para que libadwaita y las apps GTK acompañen el escritorio.
 scheme_for_theme() {
     case "$1" in
-        cyber-teal-light) printf 'prefer-light' ;;
-        *)                printf 'prefer-dark' ;;
+        cyber-teal-light|mr-robot-light) printf 'prefer-light' ;;
+        *)                               printf 'prefer-dark' ;;
     esac
 }
 
