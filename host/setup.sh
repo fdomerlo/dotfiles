@@ -1,5 +1,52 @@
 #!/usr/bin/env bash
+# host/setup.sh - Configuración base del sistema Debian Forky (root).
+#
+# Uso:
+#   sudo bash host/setup.sh [--prune-unused-hw] [--prune-only]
+#
+# Opciones:
+#   --prune-unused-hw  Tras configurar el host, purga microcódigo CPU y firmware/VA-API
+#                      GPU de silicio fijo ausente en esta máquina (conserva red/audio/misc).
+#   --prune-only       Ejecuta únicamente la purga de hardware no presente (implica --prune-unused-hw).
+#   -h, --help         Muestra esta ayuda y sale.
 set -euo pipefail
+
+PRUNE_UNUSED_HW=false
+PRUNE_ONLY=false
+
+usage() {
+    cat <<'EOF'
+Uso: sudo bash host/setup.sh [OPCIÓN...]
+
+Opciones:
+  --prune-unused-hw  Tras configurar el host, purga microcódigo CPU y firmware/VA-API
+                     GPU de silicio fijo ausente en esta máquina (conserva red/audio/misc).
+  --prune-only       Ejecuta únicamente la purga de hardware no presente (implica --prune-unused-hw).
+  -h, --help         Muestra esta ayuda y sale.
+EOF
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --prune-unused-hw)
+            PRUNE_UNUSED_HW=true
+            ;;
+        --prune-only)
+            PRUNE_UNUSED_HW=true
+            PRUNE_ONLY=true
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Opción desconocida: $1" >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+    shift
+done
 
 [[ $EUID -eq 0 ]] || { echo "Run as root (e.g. sudo bash host/setup.sh)"; exit 1; }
 
@@ -9,6 +56,117 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # shellcheck source=scripts/lib/packages.sh
 source "$REPO_DIR/scripts/lib/packages.sh"
+
+is_pkg_installed() {
+    dpkg-query -W -f='${Status}\n' "$1" 2>/dev/null | grep -qx 'install ok installed'
+}
+
+prune_unused_hw() {
+    echo "==> Analizando hardware fijo presente para purgar paquetes CPU/GPU no usados..."
+    export DEBIAN_FRONTEND=noninteractive
+
+    local -a prune_pkgs=()
+    local -a reasons=()
+
+    # 1. Microcódigo CPU según vendor_id en /proc/cpuinfo
+    local cpu_vendors=""
+    if [ -r /proc/cpuinfo ]; then
+        cpu_vendors=$(awk -F: '/^vendor_id[[:space:]]*:/ { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2 }' /proc/cpuinfo 2>/dev/null | sort -u || true)
+    fi
+
+    local has_intel_cpu=false has_amd_cpu=false
+    grep -qx 'GenuineIntel' <<<"$cpu_vendors" && has_intel_cpu=true
+    grep -qx 'AuthenticAMD' <<<"$cpu_vendors" && has_amd_cpu=true
+
+    if [ "$has_intel_cpu" = true ] && [ "$has_amd_cpu" = false ]; then
+        if is_pkg_installed amd64-microcode; then
+            prune_pkgs+=(amd64-microcode)
+            reasons+=("CPU Intel detectada -> purgar amd64-microcode")
+        fi
+    elif [ "$has_amd_cpu" = true ] && [ "$has_intel_cpu" = false ]; then
+        if is_pkg_installed intel-microcode; then
+            prune_pkgs+=(intel-microcode)
+            reasons+=("CPU AMD detectada -> purgar intel-microcode")
+        fi
+    else
+        echo "  ⚠️ No se identificó un único vendor de CPU (GenuineIntel/AuthenticAMD); se conserva microcódigo."
+    fi
+
+    # 2. Firmware y VA-API GPU según controladores PCI de pantalla (clase 0x03*)
+    local gpu_vendors=()
+    local dev class_hex vendor_hex
+    for dev in /sys/bus/pci/devices/*; do
+        [ -r "$dev/class" ] && [ -r "$dev/vendor" ] || continue
+        class_hex=$(<"$dev/class")
+        case "$class_hex" in
+            0x03*)
+                vendor_hex=$(<"$dev/vendor")
+                gpu_vendors+=("$vendor_hex")
+                ;;
+        esac
+    done
+
+    if [ "${#gpu_vendors[@]}" -eq 0 ]; then
+        echo "  ⚠️ No se detectaron controladores PCI de pantalla (clase 0x03*); se conserva firmware GPU."
+    else
+        local has_intel_gpu=false has_amd_gpu=false v pkg
+        for v in "${gpu_vendors[@]}"; do
+            case "$v" in
+                0x8086) has_intel_gpu=true ;;
+                0x1002) has_amd_gpu=true ;;
+            esac
+        done
+
+        if [ "$has_intel_gpu" = false ]; then
+            for pkg in firmware-intel-graphics intel-media-va-driver; do
+                if is_pkg_installed "$pkg"; then
+                    prune_pkgs+=("$pkg")
+                    reasons+=("Sin GPU Intel (0x8086) -> purgar $pkg")
+                fi
+            done
+        fi
+
+        if [ "$has_amd_gpu" = false ]; then
+            if is_pkg_installed firmware-amd-graphics; then
+                # Evita que firmware-misc-nonfree quede huérfano si firmware-linux-nonfree lo trajo como dependencia.
+                if is_pkg_installed firmware-misc-nonfree; then
+                    apt-mark manual firmware-misc-nonfree >/dev/null 2>&1 || true
+                fi
+                if is_pkg_installed firmware-linux-nonfree; then
+                    prune_pkgs+=(firmware-linux-nonfree)
+                    reasons+=("Sin GPU AMD (0x1002) -> purgar metapaquete firmware-linux-nonfree (conservando firmware-misc-nonfree)")
+                fi
+                prune_pkgs+=(firmware-amd-graphics)
+                reasons+=("Sin GPU AMD (0x1002) -> purgar firmware-amd-graphics")
+            fi
+        fi
+    fi
+
+    if [ "${#prune_pkgs[@]}" -eq 0 ]; then
+        echo "  ✔ No hay paquetes de microcódigo o GPU sin uso para purgar."
+        return 0
+    fi
+
+    local r
+    for r in "${reasons[@]}"; do
+        echo "  -> $r"
+    done
+
+    apt-get purge -y "${prune_pkgs[@]}"
+    apt-get autoremove --purge -y
+    echo "  ✔ Purga de hardware no presente completada (firmwares de red/audio/misc intactos)."
+}
+
+if [ "$PRUNE_ONLY" = true ]; then
+    echo "================================================================="
+    echo "==> [Debian Forky] Purga de Hardware No Presente"
+    echo "================================================================="
+    prune_unused_hw
+    echo "================================================================="
+    echo "✔ Purga selectiva de hardware completada."
+    echo "================================================================="
+    exit 0
+fi
 
 echo "================================================================="
 echo "==> [Debian Forky] Configuración de Sistema y Paquetes Base"
@@ -280,6 +438,13 @@ if [ -r /sys/power/disk ] && grep -q '\[disabled\]' /sys/power/disk 2>/dev/null;
     echo "  ⚠️ ATENCIÓN: el kernel reporta /sys/power/disk = [disabled] (lockdown/Secure Boot)."
     echo "     En Debian con Secure Boot activo, el kernel bloquea la hibernación."
     echo "     Desactivá Secure Boot en UEFI/BIOS para habilitar hibernación (30/40 min)."
+fi
+
+# ------------------------------------------------------------------------------
+# 7. Purga opcional de paquetes CPU/GPU de hardware fijo no presente
+# ------------------------------------------------------------------------------
+if [ "$PRUNE_UNUSED_HW" = true ]; then
+    prune_unused_hw
 fi
 
 echo "================================================================="

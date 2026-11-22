@@ -9,7 +9,7 @@ export CHSH=no
 export KEEP_ZSHRC=yes
 export PATH := $(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install base-install full-install update refresh host timeshift podman shell devtools tooling devai virt desktop hyprland hypr-desktop hypr-laptop verify clean clean-deep gitconfig github-auth
+.PHONY: help install base-install full-install update refresh host host-prune timeshift podman shell devtools tooling devai virt desktop hyprland hypr-desktop hypr-laptop verify clean clean-deep gitconfig github-auth
 
 # Target por defecto: mostrar ayuda
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "  make update          - Actualiza la estación (APT only-upgrade incl. perfil Hyprland + self-updates + flatpak)"
 	@echo "  make refresh         - Re-sincroniza configs/scripts de Hyprland desde el repo y recarga la sesión (tras git pull)"
 	@echo "  make host            - Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman"
+	@echo "  make host-prune      - Purga microcódigo CPU y firmware/VA-API GPU de hardware fijo no presente"
 	@echo "  make podman          - Configura Podman en modo Rootless con backend pasta (systemd --user)"
 	@echo "  make shell           - Configura Zsh, Oh My Zsh y enlaza dotfiles (.zshrc, .gitconfig, devctl, btop, yazi, nvim, zathura, lazydocker)"
 	@echo "  make devtools        - Instala gh, uv, fnm, sdkman, yazi, lazydocker y sincroniza SSH de GitHub"
@@ -63,6 +64,11 @@ refresh:
 host:
 	@echo "==> Configurando Host..."
 	sudo bash host/setup.sh
+
+# 1a. Purga selectiva de microcódigo CPU y firmware/VA-API GPU no presentes (requiere sudo)
+host-prune:
+	@echo "==> Purgando hardware CPU/GPU no presente..."
+	sudo bash host/setup.sh --prune-only
 
 # 1b. Timeshift opcional posterior (requiere sudo; solo configura, no crea snapshot)
 timeshift:
