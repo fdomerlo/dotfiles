@@ -30,7 +30,9 @@ _CLEANUP_FILES=()
 register_cleanup() {
     local f
     for f in "$@"; do
-        [ -n "$f" ] && _CLEANUP_FILES+=("$f")
+        if [ -n "$f" ]; then
+            _CLEANUP_FILES+=("$f")
+        fi
     done
 }
 
@@ -199,7 +201,9 @@ launch_ai_terminal() {
     local size
     size="$(monitor_window_size "$pct_w" "$pct_h" || true)"
     local -a common_args=(--app-id=ai-float --title="$title")
-    [ -n "$size" ] && common_args+=(--window-size-pixels="$size")
+    if [ -n "$size" ]; then
+        common_args+=(--window-size-pixels="$size")
+    fi
 
     local foot_sock="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/foot-${WAYLAND_DISPLAY:-wayland-1}.sock"
     if command -v footclient >/dev/null 2>&1 && [ -S "$foot_sock" ]; then
@@ -298,24 +302,63 @@ __run() {
 
     prepare_opencode_run_args "$mode" "$attach"
 
+    local first_flag timer_pid=""
+    first_flag="$(mktemp "${TMPDIR:-/tmp}/ai-first.XXXXXX")"
+    register_cleanup "$first_flag"
+    rm -f "$first_flag"
+
     printf '\033[1;36m%s\033[0m\n' "$title"
-    printf '\033[2mConsultando %s (%s)...\033[0m\n' "$OPENCODE_MODEL" "$OPENCODE_TRANSPORT"
-
-    opencode "${OPENCODE_ARGS[@]}" "$prompt" >"$output" 2>"$err_output" || rc=$?
-
     if [ -t 1 ]; then
-        printf '\033[1A\033[K\n'
+        (
+            local secs=0
+            while [ ! -e "$first_flag" ]; do
+                printf '\r\033[K\033[2mConsultando %s (%s)... %ds\033[0m' \
+                    "$OPENCODE_MODEL" "$OPENCODE_TRANSPORT" "$secs"
+                sleep 1
+                secs=$((secs + 1))
+            done
+        ) &
+        timer_pid=$!
     else
-        printf '\n'
+        printf '\033[2mConsultando %s (%s)...\033[0m\n' "$OPENCODE_MODEL" "$OPENCODE_TRANSPORT"
+    fi
+
+    # Streaming en vivo: muestra cada línea en cuanto OpenCode la emite y la
+    # guarda en $output para copiar con [c] o auto-copiar en commit/translate.
+    opencode "${OPENCODE_ARGS[@]}" "$prompt" 2>"$err_output" | {
+        local started=0 line=""
+        while IFS= read -r line || [ -n "$line" ]; do
+            if [ "$started" -eq 0 ]; then
+                started=1
+                : >"$first_flag"
+                if [ -n "$timer_pid" ]; then
+                    kill "$timer_pid" 2>/dev/null || true
+                fi
+                if [ -t 1 ]; then
+                    printf '\r\033[K\n'
+                else
+                    printf '\n'
+                fi
+            fi
+            printf '%s\n' "$line" >>"$output"
+            printf '%s\n' "$line"
+        done
+    } || rc="${PIPESTATUS[0]}"
+
+    if [ -n "$timer_pid" ]; then
+        : >"$first_flag"
+        kill "$timer_pid" 2>/dev/null || true
+        wait "$timer_pid" 2>/dev/null || true
+    fi
+    if [ ! -s "$output" ] && [ -t 1 ]; then
+        printf '\r\033[K\n'
     fi
 
     if [ "$rc" -ne 0 ]; then
-        [ -s "$output" ] && cat "$output"
         [ -s "$err_output" ] && cat "$err_output" >&2
         printf '\n\033[1;31m[OpenCode terminó con estado %s]\033[0m\n' "$rc"
         printf 'Verificá la conexión del proveedor con "/connect" dentro de OpenCode.\n'
     else
-        render_markdown "$output"
         case "$mode" in
             commit|translate)
                 if [ -s "$output" ] && command -v wl-copy >/dev/null 2>&1; then

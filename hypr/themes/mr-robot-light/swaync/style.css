@@ -487,3 +487,19 @@
     background: @text-color;
     border-radius: 0;
 }
+
+:root {
+  --notification-shadow: none;
+  --mpris-album-art-shadow: none;
+}
+
+.widget {
+  --mpris-album-art-shadow: none;
+}
+
+.notification-row .notification-background .notification,
+.control-center .control-center-list .notification,
+.widget-mpris .widget-mpris-player,
+.widget-mpris .widget-mpris-player .mpris-overlay .widget-mpris-album-art {
+  box-shadow: none;
+}

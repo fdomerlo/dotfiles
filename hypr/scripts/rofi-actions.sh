@@ -134,7 +134,7 @@ list_sistema() {
 run_action() {
     case "$1" in
         # Dev & IA
-        ai-menu)       detach "$SCRIPTS/ai.sh" menu ;;
+        ai-menu)       detach_delayed 0.09 "$SCRIPTS/toggle-menu.sh" 'Menú · IA:' "$SCRIPTS/ai.sh" menu ;;
         ai-open)       detach "$SCRIPTS/ai.sh" open ;;
         editor)        detach "$SCRIPTS/editor.sh" ;;
         ai-start)      detach "$SCRIPTS/ai.sh" service start ;;

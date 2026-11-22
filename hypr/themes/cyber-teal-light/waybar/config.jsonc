@@ -137,10 +137,10 @@
   },
 
   "network": {
-    "format-wifi": " {essid}",
+    "format-wifi": "",
     "format-ethernet": "󰈀",
     "format-disconnected": "󰪎",
-    "tooltip-format": "{ifname} via {gwaddr}",
+    "tooltip-format": "{ifname} via {gwaddr} en {essid}",
     "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Red:' ~/.config/hypr/scripts/network-menu.sh",
     "on-click-right": "nm-connection-editor"
   },
