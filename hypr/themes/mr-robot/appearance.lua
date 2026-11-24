@@ -24,8 +24,8 @@ hl.config({
     decoration = {
         rounding = 2,
         -- Separación sutil de foco por opacidad además del color del borde.
-        active_opacity   = 0.95,
-        inactive_opacity = 0.90,
+        active_opacity   = 1.0,
+        inactive_opacity = 0.95,
         dim_inactive     = false,
 
         shadow = {
