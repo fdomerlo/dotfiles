@@ -1,13 +1,13 @@
 /* ==============================================================================
    Waybar - Mr. Robot / fsociety
-   Terminal HUD: fondo casi negro azulado, bordes de 1px azul acero,
-   tipografia monoespaciada, esquinas rectas y rojo reservado para alertas.
+   Terminal HUD: fondo casi negro azulado, divisor inferior sutil,
+   tipografia monoespaciada disciplinada y acentos de color solo para estados.
    ============================================================================== */
 
 * {
     font-family: "JetBrains Mono", "Symbols Nerd Font", "Font Awesome 6 Free", "FontAwesome", sans-serif;
-    font-size: 12px;
-    font-weight: bold;
+    font-size: 12.5px;
+    font-weight: 500;
     min-height: 0;
     border: none;
 }
@@ -15,7 +15,7 @@
 window#waybar {
     background: #05080b;
     color: #c3d2dd;
-    /*border-bottom: 1px solid #2e7491;*/
+    border-bottom: 1px solid rgba(46, 116, 145, 0.45);
     border-radius: 0;
 }
 
@@ -28,9 +28,9 @@ window#waybar > box {
 #custom-launcher {
     font-size: 14px;
     font-weight: bold;
-    color: #c83434;
+    color: #4f9fbf;
     padding: 0 10px;
-    margin: 3px 1px;
+    margin: 3px 2px;
     border-radius: 0;
     background: transparent;
     border: 1px solid transparent;
@@ -46,14 +46,15 @@ window#waybar > box {
 #workspaces {
     background: transparent;
     border-radius: 0;
-    margin: 3px 1px;
-    padding: 0;
+    margin: 3px 2px;
+    padding: 0 2px;
     border: none;
+    border-left: 1px solid rgba(35, 65, 79, 0.55);
 }
 
 #workspaces button {
-    padding: 0 8px;
-    margin: 0;
+    padding: 0 7px;
+    margin: 0 1px;
     color: #5f7684;
     background: transparent;
     border-radius: 0;
@@ -69,7 +70,7 @@ window#waybar > box {
 }
 
 #workspaces button.active {
-    color: #d8e4ec;
+    color: #eaf2f7;
     background: rgba(46, 116, 145, 0.24);
     border-bottom-color: #4f9fbf;
     font-weight: bold;
@@ -85,24 +86,24 @@ window#waybar > box {
 #custom-media {
     background: transparent;
     border: none;
-    border-left: 1px solid #23414f;
+    border-left: 1px solid rgba(35, 65, 79, 0.55);
     border-radius: 0;
-    margin: 6px 4px;
+    margin: 5px 4px;
     padding: 0 10px;
-    color: #6fae8f;
+    color: #8fa6b5;
 }
 
 /* --- Titulo de la Ventana --- */
 
 #window {
     color: #8fa6b5;
-    font-weight: 600;
+    font-weight: 500;
     padding: 0 12px;
     background: transparent;
     border-radius: 0;
     margin: 3px 2px;
     border: none;
-    border-left: 1px solid rgba(35, 65, 79, 0.60);
+    border-left: 1px solid rgba(35, 65, 79, 0.55);
 }
 
 window#waybar.empty #window {
@@ -112,7 +113,7 @@ window#waybar.empty #window {
     margin: 0;
 }
 
-/* --- Modulos Derecha --- */
+/* --- Modulos Derecha (disciplina cromática: neutro en reposo, color en estado) --- */
 
 #cpu,
 #memory,
@@ -133,15 +134,14 @@ window#waybar.empty #window {
 #custom-power {
     background: transparent;
     border: none;
-    border-left: 1px solid rgba(46, 116, 145, 0.30);
+    border-left: 1px solid rgba(46, 116, 145, 0.28);
     border-radius: 0;
     margin: 3px 0;
-    padding: 0 11px;
+    padding: 0 10px;
     color: #c3d2dd;
     transition: background 0.12s ease, color 0.12s ease;
 }
 
-/* Hover tenue: mismo lenguaje que los workspaces, sin cajas ni marcos. */
 #cpu:hover,
 #memory:hover,
 #power-profiles-daemon:hover,
@@ -160,16 +160,16 @@ window#waybar.empty #window {
 #tray:hover,
 #custom-power:hover {
     background: rgba(46, 116, 145, 0.18);
-    color: #d8e4ec;
+    color: #eaf2f7;
 }
 
 #cpu,
 #memory {
-    color: #8fb3c7;
+    color: #8fa6b5;
 }
 
 #power-profiles-daemon {
-    color: #4f9fbf;
+    color: #8fa6b5;
 }
 
 #power-profiles-daemon.performance {
@@ -182,22 +182,21 @@ window#waybar.empty #window {
 
 #idle_inhibitor {
     color: #5f7684;
-    padding: 0 11px;
-    font-size: 14px;
+    padding: 0 10px;
+    font-size: 13.5px;
     transition: all 0.12s ease;
 }
 
 #idle_inhibitor.activated {
     color: #4f9fbf;
-    border-left-color: #4f9fbf;
 }
 
 #backlight {
-    color: #c9a227;
+    color: #c3d2dd;
 }
 
 #battery {
-    color: #6fae8f;
+    color: #c3d2dd;
 }
 
 #battery.charging,
@@ -211,11 +210,10 @@ window#waybar.empty #window {
 
 #battery.critical:not(.charging) {
     color: #c83434;
-    border-left-color: rgba(200, 52, 52, 0.50);
 }
 
 #pulseaudio {
-    color: #6fae8f;
+    color: #c3d2dd;
 }
 
 #pulseaudio.muted {
@@ -223,7 +221,7 @@ window#waybar.empty #window {
 }
 
 #network {
-    color: #4f9fbf;
+    color: #c3d2dd;
 }
 
 #network.disconnected {
@@ -231,12 +229,12 @@ window#waybar.empty #window {
 }
 
 #custom-vpn {
-    color: #4cd97b;
+    color: #6fae8f;
     font-weight: bold;
 }
 
 #bluetooth {
-    color: #4f9fbf;
+    color: #c3d2dd;
 }
 
 #bluetooth.disabled {
@@ -244,13 +242,13 @@ window#waybar.empty #window {
 }
 
 #bluetooth.connected {
-    color: #6fae8f;
+    color: #4f9fbf;
 }
 
 #custom-notification {
-    color: #5f7684;
-    padding: 0 11px;
-    font-size: 14px;
+    color: #8fa6b5;
+    padding: 0 10px;
+    font-size: 13.5px;
     transition: all 0.12s ease;
 }
 
@@ -263,48 +261,38 @@ window#waybar.empty #window {
     color: #c9a227;
 }
 
-#custom-notification:hover {
-    color: #d8e4ec;
-    border-left-color: rgba(79, 159, 191, 0.60);
-}
-
 /* Servicio de fondo OpenCode: siempre visible; atenuado cuando está apagado. */
 #custom-ai-service {
     color: #6fae8f;
-    border-left-color: rgba(111, 174, 143, 0.45);
-    padding: 0 11px;
+    padding: 0 10px;
     transition: all 0.12s ease;
 }
 
 #custom-ai-service.idle {
-    color: rgba(111, 174, 143, 0.40);
-    border-left-color: rgba(111, 174, 143, 0.15);
+    color: rgba(143, 166, 181, 0.45);
 }
 
 #custom-ai-service:hover {
-    background: rgba(111, 174, 143, 0.18);
-    color: #8fd4b2;
-    border-left-color: #6fae8f;
+    background: rgba(46, 116, 145, 0.18);
+    color: #eaf2f7;
 }
 
 /* Luz nocturna: solo aparece mientras el filtro está activo. */
 #custom-nightlight {
     color: #c9a227;
-    padding: 0 11px;
+    padding: 0 10px;
     transition: all 0.12s ease;
 }
 
 #custom-nightlight:hover {
     background: rgba(201, 162, 39, 0.18);
     color: #e0c04a;
-    border-left-color: #c9a227;
 }
 
 /* Grabación de pantalla: parpadea como un indicador REC. */
 #custom-recording {
     color: #c83434;
-    border-left-color: rgba(200, 52, 52, 0.45);
-    padding: 0 11px;
+    padding: 0 10px;
     font-weight: bold;
     animation: recording-pulse 1.2s ease-in-out infinite alternate;
 }
@@ -312,7 +300,6 @@ window#waybar.empty #window {
 #custom-recording:hover {
     background: rgba(200, 52, 52, 0.20);
     color: #e05a5a;
-    border-left-color: #c83434;
 }
 
 @keyframes recording-pulse {
@@ -321,9 +308,8 @@ window#waybar.empty #window {
 }
 
 #clock {
-    color: #d8e4ec;
+    color: #eaf2f7;
     font-weight: bold;
-    border-left-color: rgba(46, 116, 145, 0.45);
 }
 
 #tray {
@@ -340,17 +326,15 @@ window#waybar.empty #window {
 }
 
 #custom-power {
-    color: #c83434;
-    border-left-color: rgba(200, 52, 52, 0.40);
-    padding: 0 11px;
-    font-size: 14px;
+    color: #8fa6b5;
+    padding: 0 10px;
+    font-size: 13.5px;
     transition: all 0.12s ease;
 }
 
 #custom-power:hover {
     background: rgba(200, 52, 52, 0.20);
     color: #e05a5a;
-    border-left-color: #c83434;
 }
 
 /* --- Tooltip --- */

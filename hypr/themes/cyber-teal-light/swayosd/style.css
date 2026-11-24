@@ -1,15 +1,13 @@
 /* ==============================================================================
-   SwayOSD - gruvbox-light · Whitesmoke
-   Tarjeta whitesmoke translucida, borde neutro, tipografia Inter y acento slate.
-   Sin radios ni profundidad: solo reglas y contraste.
+   SwayOSD - Cyber-Teal Light (Modo Diurno)
+   HUD de volumen y brillo: tarjeta clara translúcida, borde petrol-teal y progreso.
    ============================================================================== */
 
 window#osd {
     padding: 10px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(0, 0, 0, 0.10);
-    background: rgba(245, 245, 245, 0.82);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 122, 145, 0.40);
+    background: rgba(242, 246, 247, 0.85);
 }
 
 window#osd #container {
@@ -18,26 +16,26 @@ window#osd #container {
 }
 
 window#osd image {
-    color: #4f5d6b;
+    color: #007a91;
 }
 
 window#osd label {
-    color: #2f2f2f;
+    color: #162328;
     font-family: "Inter", sans-serif;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: bold;
 }
 
 window#osd label.title-4 {
-    color: #2f2f2f;
+    color: #162328;
     font-family: "Inter", sans-serif;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: bold;
 }
 
 window#osd progressbar {
     min-height: 6px;
-    border-radius: 6px;
+    border-radius: 999px;
     background: transparent;
     border: none;
 }
@@ -48,14 +46,14 @@ window#osd progressbar:disabled {
 
 window#osd trough {
     min-height: inherit;
-    border-radius: 6px;
-    border: 1px solid rgba(0, 0, 0, 0.10);
-    background: rgba(220, 220, 220, 0.45);
+    border-radius: inherit;
+    border: 1px solid rgba(0, 122, 145, 0.25);
+    background: rgba(0, 122, 145, 0.14);
 }
 
 window#osd progress {
     min-height: inherit;
-    border-radius: 6px;
+    border-radius: inherit;
     border: none;
-    background: linear-gradient(90deg, #4f5d6b, #6b7a88);
+    background: linear-gradient(90deg, #007a91, #2463a8);
 }

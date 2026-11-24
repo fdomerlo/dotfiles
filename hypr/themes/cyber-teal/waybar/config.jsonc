@@ -2,10 +2,10 @@
   "include": ["~/.config/waybar/local.jsonc"],
   "layer": "top",
   "position": "top",
-  "height": 42,
-  "margin-top": 6,
-  "margin-left": 6,
-  "margin-right": 6,
+  "height": 40,
+  "margin-top": 4,
+  "margin-left": 4,
+  "margin-right": 4,
   "spacing": 4,
 
   "modules-left": [
@@ -36,7 +36,7 @@
   ],
 
   "custom/launcher": {
-    "format": "󰀻",
+    "format": ">_",
     "on-click": "~/.config/hypr/scripts/launcher-toggle.sh",
     "on-click-right": "~/.config/hypr/scripts/overview-toggle.sh",
     "tooltip": true,
@@ -136,10 +136,10 @@
   },
 
   "network": {
-    "format-wifi": " {essid}",
+    "format-wifi": "",
     "format-ethernet": "󰈀",
     "format-disconnected": "󰪎",
-    "tooltip-format": "{ifname} via {gwaddr}",
+    "tooltip-format": "{ifname} via {gwaddr} en {essid}",
     "on-click": "~/.config/hypr/scripts/toggle-menu.sh 'Red:' ~/.config/hypr/scripts/network-menu.sh",
     "on-click-right": "nm-connection-editor"
   },

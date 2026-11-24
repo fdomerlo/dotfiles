@@ -53,7 +53,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 
 | Capa | Herramientas principales |
 | :--- | :--- |
-| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades; se apaga solo tras 10 min sin uso y se relanza al abrirlo), `fuzzel`, `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `mr-robot` / `gruvbox-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
+| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades; se apaga solo tras 10 min sin uso y se relanza al abrirlo), `fuzzel`, `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `cyber-teal-light` / `mr-robot` / `mr-robot-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
@@ -188,9 +188,10 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 ~/.config/hypr/scripts/theme-switch.sh menu       # Selector interactivo (Super+Shift+T)
 ```
 
-- **`cyber-teal`:** estética glass redondeada con blur, sombras, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
-- **`mr-robot`:** estilo terminal plano con bordes acero, Smart Gaps sin márgenes con una sola ventana, tipografía `JetBrains Mono` y wallpaper por defecto [`cyber-tower.jpg`](hypr/themes/mr-robot/wallpapers/cyber-tower.jpg).
-- **`gruvbox-light`:** tema claro translúcido de base whitesmoke, tinta grafito y acento slate, con **una única barra inferior redondeada y translúcida** (inicio y workspaces a la izquierda; estado, reloj y apagado a la derecha), ventanas redondeadas, blur suave y tipografía `Inter` en la UI. GTK/libadwaita y Qt acompañan el modo claro y rota wallpapers como el resto de los temas ([`wheat-skyline.jpg`](hypr/themes/gruvbox-light/wallpapers/wheat-skyline.jpg), [`wheat-field.jpg`](hypr/themes/gruvbox-light/wallpapers/wheat-field.jpg)).
+- **`cyber-teal`:** tema oscuro con estética glass redondeada, acento cyan disciplinado, barra flotante unificada de `40 px`, blur suave, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
+- **`cyber-teal-light`:** contraparte diurna de `cyber-teal` con la misma geometría, barra flotante unificada translúcida, tipografía `Inter` y acento petrol-teal de alto contraste sobre superficies hielo/niebla. GTK/libadwaita (`prefer-light` + acento `teal`) y Qt6CT (`airy.conf`) acompañan el modo claro, con wallpaper por defecto [`glacier-mist.jpg`](hypr/themes/cyber-teal-light/wallpapers/glacier-mist.jpg).
+- **`mr-robot`:** estilo terminal plano (tema por defecto) con bordes acero, Smart Gaps sin márgenes con una sola ventana, tipografía `JetBrains Mono` y wallpaper por defecto [`cyber-tower.jpg`](hypr/themes/mr-robot/wallpapers/cyber-tower.jpg).
+- **`mr-robot-light`:** contraparte diurna táctica de `mr-robot` con la misma geometría cortante (`0–2 px`, sin blur ni sombras), Smart Gaps, `JetBrains Mono`, HUD Waybar oscuro semiopaco sobre apps claras y paleta fría de papel técnico/acero con alertas carmesí. GTK/libadwaita (`prefer-light` + acento `slate`) y Qt6CT (`airy.conf`) acompañan el modo claro, con wallpaper por defecto [`concrete-mist.jpg`](hypr/themes/mr-robot-light/wallpapers/concrete-mist.jpg).
 - **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés agruparlas por tema, en `~/.config/hypr/wallpapers/<tema>/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`.
 
 ### Personalización local (sin ensuciar Git)
