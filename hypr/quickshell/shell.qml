@@ -12,6 +12,7 @@ ShellRoot {
     property string searchQuery: ""
     property int selectedWorkspaceId: -1
     property bool tabNavigated: false
+    property var overviewFocusedScreen: null
 
     property bool launcherOpen: false
     property bool launcherMounted: false
@@ -813,6 +814,7 @@ ShellRoot {
         selectedWorkspaceId = (activeWs > 0 && ids.indexOf(activeWs) !== -1)
             ? activeWs
             : (ids.length > 0 ? ids[0] : -1);
+        overviewFocusedScreen = resolveFocusedScreen();
         overviewOpen = true;
     }
 
@@ -1187,6 +1189,8 @@ ShellRoot {
                 searchQuery: root.searchQuery
                 selectedWorkspaceId: root.selectedWorkspaceId
                 tabNavigated: root.tabNavigated
+                barHeight: systemState.barHeight
+                isFocusedOverviewScreen: (modelData === root.overviewFocusedScreen)
                 onSearchUpdated: text => {
                     root.searchQuery = text;
                     root.tabNavigated = false;

@@ -36,6 +36,12 @@ Al retomar este trabajo, leer también [AGENTS.md](../AGENTS.md) en la raíz del
   3. Calma cromática y gramática M3 tonal en `LauncherWindow.qml` (tabs tonales con indicador deslizante + fila seleccionada `Theme.primaryContainer` sin borde cyan redundante).
   4. Confirmación inline en dos pasos para acciones destructivas (`Cerrar sesión`, `Reiniciar`, `Apagar`) + aceleradores de una tecla (`L`, `S`, `H`, `E`, `R`, `P`) en `PowerPopup.qml` (`width: 416`).
   5. `LauncherWindow` abre en el monitor enfocado (`resolveFocusedScreen()`) igual que los demás overlays, eliminando `primaryScreenProbe`.
+- **Bloque P1 completado**:
+  1. Escala tipográfica nivelada en `DashboardPopup.qml`, `PowerPopup.qml`, `LauncherWindow.qml`, `NotificationCard.qml` y `NotificationCenter.qml` (piso `11–12 px` subtítulos/metadatos, `13–14 px` etiquetas y títulos principales).
+  2. Cabecera de `DashboardPopup.qml` centrada (tray compacta retirada de la fila de tabs) y nombres legibles en la bandeja de Tab 2 (`tooltipTitle || title || id`).
+  3. Feedback numérico (`%` / `Mudo`) en sliders verticales y chip interactivo `Hoy` en la cabecera del calendario de Tab 0.
+  4. `NotificationCenter.qml` con altura adaptable (`380 px` vacío hasta `80%` de pantalla), cierre inferior limpio sin hueco de `12 px` y etiqueta `"No molestar"`.
+  5. `OverviewWindow.qml` (`Super+A`) con nombres legibles e iconos reales (`DesktopEntries` / `Quickshell.iconPath`), workspaces vacíos silenciosos (`"Clic para ir al workspace N"` solo en hover/selección), buscador garantizado en el monitor enfocado y tratamiento visual alineado (`dimAround` + borde cyan).
 
 ---
 
@@ -61,31 +67,31 @@ Al retomar este trabajo, leer también [AGENTS.md](../AGENTS.md) en la raíz del
 
 ### Bloque P1 — Jerarquía tipográfica, estética y claridad
 
-- [ ] **1. Nivelar la escala tipográfica interna de los popups**
+- [x] **1. Nivelar la escala tipográfica interna de los popups**
   - *Problema:* la barra superior usa `14–15 px`, mientras los popups aún tienen numerosos textos en `10–11 px` (escala invertida).
   - *Archivos:* `hypr/quickshell/DashboardPopup.qml`, `hypr/quickshell/PowerPopup.qml`, `hypr/quickshell/NotificationCard.qml`, `hypr/quickshell/NotificationCenter.qml`, `hypr/quickshell/LauncherWindow.qml`.
   - *Objetivo:* subir el piso mínimo a `11–12 px` para subtítulos/metadatos y `13–14 px` para etiquetas/títulos principales, ajustando alturas de tarjetas si hiciera falta para evitar truncamiento (`elide`).
 
-- [ ] **2. Limpiar cabecera del Dashboard y nombre legible en la bandeja del sistema**
+- [x] **2. Limpiar cabecera del Dashboard y nombre legible en la bandeja del sistema**
   - *Problema:* en `DashboardPopup.qml`, la píldora compacta de `SystemTray` en la cabecera de tabs desalinea las 4 pestañas respecto del reloj central y duplica la bandeja de Tab 2 (`Rendimiento`). Además, en Tab 2 (`line ~2703`) se muestra el ID técnico D-Bus (`Antigravity_status_icon_1`) en lugar del nombre humano.
   - *Archivo:* `hypr/quickshell/DashboardPopup.qml`.
   - *Objetivo:*
     - Retirar (o reubicar fuera de la fila de tabs) la píldora de tray de la cabecera para que las 4 pestañas queden 100% centradas.
     - En la bandeja de Tab 2, resolver el texto como `String(modelData.tooltipTitle || modelData.title || modelData.id || "App")` (verificando las propiedades disponibles en `SystemTrayItem` en `log.qslog` si alguna difiere).
 
-- [ ] **3. Feedback numérico en sliders verticales y botón "Hoy" en el calendario**
+- [x] **3. Feedback numérico en sliders verticales y botón "Hoy" en el calendario**
   - *Archivo:* `hypr/quickshell/DashboardPopup.qml` (Tab 0).
   - *Objetivo:*
     - Mostrar el porcentaje (`%`) en los sliders verticales de Volumen, Micrófono y Brillo (visible de forma sutil arriba/abajo o al hacer hover/arrastre).
     - En la cabecera del calendario, mostrar un pequeño chip interactivo `Hoy` únicamente cuando `displayYear !== currentDate.getFullYear() || displayMonth !== currentDate.getMonth()` para volver al mes actual con claridad.
 
-- [ ] **4. Proporción, cierre inferior e idioma del Centro de Notificaciones**
+- [x] **4. Proporción, cierre inferior e idioma del Centro de Notificaciones**
   - *Archivo:* `hypr/quickshell/NotificationCenter.qml`.
   - *Objetivo:*
     - Eliminar el hueco inferior de `12 px` (`bottomMargin: 12`) pegando el drawer limpiamente al borde inferior (con su borde cyan coherente) o bien hacerlo de altura adaptable (`min ~360 px`, `max ~80%` de pantalla) con esquina inferior izquierda y borde inferior cerrados con sentido. Confirmar visualmente con `grim` en estado vacío y con varias notificaciones.
     - Cambiar la etiqueta `"DND"` por `"No molestar"` (o `"Silenciar"`).
 
-- [ ] **5. Pulido del Overview (`Super+A`)**
+- [x] **5. Pulido del Overview (`Super+A`)**
   - *Archivo:* `hypr/quickshell/OverviewWindow.qml`.
   - *Objetivo:*
     - Reemplazar la clase técnica cruda (`dev.zed.Zed`) en el pie de cada ventana por nombre legible + icono (usando `DesktopEntries` / `Quickshell.iconPath` con fallback limpio).

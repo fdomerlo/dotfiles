@@ -123,14 +123,26 @@ PanelWindow {
         // Panel derecho acoplado a la barra superior con esquina cóncava izquierda
         Item {
             id: drawerDock
+            readonly property int availHeight: Math.max(440, (centerWin.height > 0 ? centerWin.height : (centerWin.screen ? centerWin.screen.height : 1080)) - centerWin.barHeight)
+            readonly property int maxDrawerHeight: Math.round(availHeight * 0.80)
+            readonly property int targetDrawerHeight: centerWin.notifications.length === 0
+                ? 380
+                : Math.min(maxDrawerHeight, Math.max(380, notifListCol.implicitHeight + 92))
+
             anchors.top: parent.top
             anchors.topMargin: centerWin.barHeight
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 12
             anchors.right: parent.right
-            width: centerWin.revealed ? 412 : 0
+            width: centerWin.revealed ? 424 : 0
+            height: targetDrawerHeight
             opacity: centerWin.revealed ? 1.0 : 0.0
 
+            Behavior on height {
+                NumberAnimation {
+                    duration: Theme.animNormal
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Theme.curveExpressive
+                }
+            }
             Behavior on width {
                 NumberAnimation {
                     duration: centerWin.revealed ? Theme.animPop : Theme.animClose
@@ -216,7 +228,7 @@ PanelWindow {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     x: centerWin.revealed ? 16 : 42
-                    width: 412 - 32
+                    width: 424 - 32
                     anchors.topMargin: 12
                     anchors.bottomMargin: 16
                     spacing: 12
@@ -244,7 +256,7 @@ PanelWindow {
 
                         Rectangle {
                             visible: centerWin.notifications.length > 0
-                            height: 22
+                            height: 24
                             width: Math.max(24, countTxt.implicitWidth + 12)
                             radius: Theme.radiusFull
                             color: Theme.primaryContainer
@@ -254,7 +266,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 text: String(centerWin.notifications.length)
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                                 font.weight: Font.Bold
                                 color: Theme.fgOnPrimaryContainer
                             }
@@ -264,7 +276,7 @@ PanelWindow {
 
                         // Toggle compacto de No Molestar
                         Rectangle {
-                            height: 30
+                            height: 32
                             width: dndBtnRow.implicitWidth + 18
                             radius: Theme.radiusFull
                             color: centerWin.dndEnabled
@@ -281,15 +293,15 @@ PanelWindow {
                                 Text {
                                     text: centerWin.dndEnabled ? "󰂛" : "󰂚"
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 13
+                                    font.pixelSize: 14
                                     color: centerWin.dndEnabled ? Theme.fgOnErrorContainer : Theme.fgMuted
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
 
                                 Text {
-                                    text: "DND"
+                                    text: "No molestar"
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     font.weight: Font.DemiBold
                                     color: centerWin.dndEnabled ? Theme.fgOnErrorContainer : Theme.fgMuted
                                     anchors.verticalCenter: parent.verticalCenter
@@ -308,7 +320,7 @@ PanelWindow {
                         // Botón Limpiar todo
                         Rectangle {
                             visible: centerWin.notifications.length > 0
-                            height: 30
+                            height: 32
                             width: clearTxt.implicitWidth + 18
                             radius: Theme.radiusFull
                             color: clearMouse.containsMouse ? Theme.errorContainer : Theme.surfaceContainer
@@ -320,7 +332,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 text: "Limpiar"
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                                 font.weight: Font.DemiBold
                                 color: clearMouse.containsMouse ? Theme.fgOnErrorContainer : Theme.fg
                             }
@@ -398,7 +410,7 @@ PanelWindow {
                                 Layout.alignment: Qt.AlignHCenter
                                 text: centerWin.dndEnabled ? "No molestar activo" : "Todo al día"
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 14
+                                font.pixelSize: 15
                                 font.weight: Font.DemiBold
                                 color: Theme.fg
                             }
@@ -409,7 +421,7 @@ PanelWindow {
                                     ? "Las notificaciones emergentes están silenciadas"
                                     : "No hay notificaciones pendientes"
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                                 color: Theme.fgSubtle
                             }
                         }

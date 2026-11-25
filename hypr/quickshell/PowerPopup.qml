@@ -287,7 +287,7 @@ PanelWindow {
             anchors.topMargin: pwrWin.barH
             anchors.right: parent.right
             anchors.rightMargin: 18
-            width: 416
+            width: 436
             height: pwrWin.revealed ? (pwrBody.implicitHeight + 28) : 0
             opacity: pwrWin.revealed ? 1.0 : 0.0
 
@@ -416,21 +416,21 @@ PanelWindow {
                         Text {
                             text: "󰐥"
                             font.family: Theme.fontFamily
-                            font.pixelSize: 15
+                            font.pixelSize: 16
                             color: Theme.error
                         }
 
                         Text {
                             text: "Energía y sesión"
                             font.family: Theme.fontFamily
-                            font.pixelSize: 14
+                            font.pixelSize: 15
                             font.weight: Font.Bold
                             color: Theme.fg
                             Layout.fillWidth: true
                         }
 
                         Rectangle {
-                            height: 22
+                            height: 24
                             width: hostTag.implicitWidth + 14
                             radius: Theme.radiusFull
                             color: Theme.surfaceContainer
@@ -442,7 +442,7 @@ PanelWindow {
                                     ? (pwrWin.sysState.userName + (pwrWin.sysState.hostName ? "@" + pwrWin.sysState.hostName : ""))
                                     : ""
                                 font.family: Theme.monoFontFamily
-                                font.pixelSize: 10
+                                font.pixelSize: 11
                                 color: Theme.fgSubtle
                             }
                         }
@@ -465,7 +465,7 @@ PanelWindow {
                                 readonly property bool isConfirming: pwrWin.pendingConfirmId === modelData.id
                                 readonly property bool active: isConfirming || tileMouse.containsMouse || pwrWin.selectedIndex === index
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 60
+                                Layout.preferredHeight: 64
                                 radius: Theme.radiusMedium
                                 color: isConfirming
                                     ? (modelData.danger ? Theme.error : Theme.primary)
@@ -482,9 +482,9 @@ PanelWindow {
                                     spacing: 9
 
                                     Rectangle {
-                                        Layout.preferredWidth: 32
-                                        Layout.preferredHeight: 32
-                                        radius: 16
+                                        Layout.preferredWidth: 34
+                                        Layout.preferredHeight: 34
+                                        radius: 17
                                         color: pwrTile.isConfirming
                                             ? (pwrTile.modelData.danger ? Theme.errorContainer : Theme.primaryContainer)
                                             : (pwrTile.active
@@ -497,7 +497,7 @@ PanelWindow {
                                             anchors.centerIn: parent
                                             text: pwrTile.isConfirming ? "󰀪" : pwrTile.modelData.glyph
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 15
+                                            font.pixelSize: 16
                                             color: pwrTile.isConfirming
                                                 ? (pwrTile.modelData.danger ? Theme.fgOnErrorContainer : Theme.fgOnPrimaryContainer)
                                                 : (pwrTile.active
@@ -508,12 +508,12 @@ PanelWindow {
 
                                     ColumnLayout {
                                         Layout.fillWidth: true
-                                        spacing: 1
+                                        spacing: 2
 
                                         Text {
                                             text: pwrTile.isConfirming ? "¿Confirmar?" : pwrTile.modelData.title
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 12
+                                            font.pixelSize: 13
                                             font.weight: pwrTile.isConfirming ? Font.Bold : Font.DemiBold
                                             color: pwrTile.isConfirming
                                                 ? (pwrTile.modelData.danger ? Theme.fgOnError : Theme.fgOnPrimary)
@@ -529,7 +529,7 @@ PanelWindow {
                                                 ? ("Clic, Enter o " + pwrTile.modelData.key)
                                                 : pwrTile.modelData.subtitle
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 10
+                                            font.pixelSize: 11
                                             color: pwrTile.isConfirming
                                                 ? (pwrTile.modelData.danger ? Theme.fgOnError : Theme.fgOnPrimary)
                                                 : (pwrTile.active
@@ -543,8 +543,8 @@ PanelWindow {
 
                                     // Acelerador de una tecla
                                     Rectangle {
-                                        Layout.preferredWidth: 20
-                                        Layout.preferredHeight: 20
+                                        Layout.preferredWidth: 22
+                                        Layout.preferredHeight: 22
                                         radius: 6
                                         color: pwrTile.isConfirming
                                             ? (pwrTile.modelData.danger ? Theme.errorContainer : Theme.primaryContainer)
@@ -554,7 +554,7 @@ PanelWindow {
                                             anchors.centerIn: parent
                                             text: pwrTile.modelData.key
                                             font.family: Theme.monoFontFamily
-                                            font.pixelSize: 10
+                                            font.pixelSize: 11
                                             font.weight: Font.Bold
                                             color: pwrTile.isConfirming
                                                 ? (pwrTile.modelData.danger ? Theme.fgOnErrorContainer : Theme.fgOnPrimaryContainer)

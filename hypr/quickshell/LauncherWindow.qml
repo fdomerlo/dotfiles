@@ -1086,7 +1086,7 @@ PanelWindow {
                         text: "󰍉"
                         color: Theme.accent
                         font.family: Theme.fontFamily
-                        font.pixelSize: 16
+                        font.pixelSize: 17
                     }
 
                     TextInput {
@@ -1094,7 +1094,7 @@ PanelWindow {
                         Layout.fillWidth: true
                         color: Theme.textBright
                         font.family: Theme.fontFamily
-                        font.pixelSize: 14
+                        font.pixelSize: 15
                         clip: true
                         selectByMouse: true
                         activeFocusOnTab: false
@@ -1143,7 +1143,7 @@ PanelWindow {
                                 : "Filtrar acciones en " + win.activeTab + "..."
                             color: Theme.muted
                             font.family: Theme.fontFamily
-                            font.pixelSize: 13
+                            font.pixelSize: 14
                             elide: Text.ElideRight
                             visible: !searchInput.text
                         }
@@ -1161,7 +1161,7 @@ PanelWindow {
                             text: "󰅖"
                             color: Theme.muted
                             font.family: Theme.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                         }
 
                         MouseArea {
@@ -1181,7 +1181,7 @@ PanelWindow {
             Item {
                 id: launcherTabStrip
                 Layout.fillWidth: true
-                Layout.preferredHeight: 38
+                Layout.preferredHeight: 40
 
                 readonly property int tabCount: win.tabs.length
                 readonly property real tabW: width / Math.max(1, tabCount)
@@ -1258,7 +1258,7 @@ PanelWindow {
                                         ? Theme.primary
                                         : (pillMouse.containsMouse ? Theme.fg : Theme.fgSubtle)
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 14
+                                    font.pixelSize: 15
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -1270,7 +1270,7 @@ PanelWindow {
                                         ? Theme.fg
                                         : (pillMouse.containsMouse ? Theme.fgMuted : Theme.fgSubtle)
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: 13
                                     font.weight: pill.isActive ? Font.Bold : Font.Medium
                                     anchors.verticalCenter: parent.verticalCenter
 
@@ -1317,7 +1317,7 @@ PanelWindow {
                             : ""
 
                         width: resultList.width
-                        height: 46
+                        height: 52
                         radius: Theme.radiusMedium
                         color: isSelected
                             ? Theme.primaryContainer
@@ -1359,14 +1359,14 @@ PanelWindow {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 1
+                                spacing: 2
 
                                 Text {
                                     Layout.fillWidth: true
                                     text: rowItem.modelData.title
                                     color: rowItem.isSelected ? Theme.fgOnPrimaryContainer : Theme.fg
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 13
+                                    font.pixelSize: 14
                                     font.weight: rowItem.isSelected ? Font.Bold : Font.Medium
                                     elide: Text.ElideRight
                                 }
@@ -1378,7 +1378,7 @@ PanelWindow {
                                     color: rowItem.isSelected ? Theme.fgOnPrimaryContainer : Theme.fgSubtle
                                     opacity: rowItem.isSelected ? 0.80 : 1.0
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     elide: Text.ElideRight
                                 }
                             }
@@ -1387,7 +1387,7 @@ PanelWindow {
                             Rectangle {
                                 visible: (rowItem.modelData.shortcut || "") !== ""
                                 Layout.preferredWidth: shortcutText.implicitWidth + 12
-                                Layout.preferredHeight: 22
+                                Layout.preferredHeight: 24
                                 radius: Theme.radiusFull
                                 color: rowItem.isSelected ? Theme.surface : Theme.surfaceContainer
 
@@ -1397,7 +1397,7 @@ PanelWindow {
                                     text: rowItem.modelData.shortcut || ""
                                     color: rowItem.isSelected ? Theme.primary : Theme.fgSubtle
                                     font.family: Theme.monoFontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     font.weight: Font.Medium
                                 }
                             }
@@ -1405,7 +1405,7 @@ PanelWindow {
                             Rectangle {
                                 visible: rowItem.modelData.badge !== ""
                                 Layout.preferredWidth: badgeText.implicitWidth + 14
-                                Layout.preferredHeight: 22
+                                Layout.preferredHeight: 24
                                 radius: Theme.radiusFull
                                 color: rowItem.isSelected ? Theme.surfaceContainerHigh : Theme.surfaceContainer
 
@@ -1415,7 +1415,7 @@ PanelWindow {
                                     text: rowItem.modelData.badge
                                     color: rowItem.isSelected ? Theme.fg : Theme.fgSubtle
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     font.weight: rowItem.isSelected ? Font.DemiBold : Font.Medium
                                 }
                             }
@@ -1438,14 +1438,14 @@ PanelWindow {
                     text: "Sin resultados para \"" + win.searchQuery.trim() + "\""
                     color: Theme.muted
                     font.family: Theme.fontFamily
-                    font.pixelSize: 13
+                    font.pixelSize: 14
                 }
             }
 
             // Pie compacto con ayuda de navegación y acceso rápido a Actividades (Super+A)
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 28
+                Layout.preferredHeight: 30
                 color: "transparent"
 
                 RowLayout {
@@ -1456,14 +1456,14 @@ PanelWindow {
                         text: "Tab: pestaña · ↑↓: mover · Enter: ejecutar · Esc: cerrar"
                         color: Theme.muted
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
                     Rectangle {
                         Layout.preferredWidth: ovHint.implicitWidth + 18
-                        Layout.preferredHeight: 26
+                        Layout.preferredHeight: 28
                         radius: Theme.radiusFull
                         color: ovMouse.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
 
@@ -1475,7 +1475,7 @@ PanelWindow {
                             text: "󰕰  Actividades (Super+A)"
                             color: ovMouse.containsMouse ? Theme.fg : Theme.fgSubtle
                             font.family: Theme.fontFamily
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             font.weight: Font.Medium
                         }
 

@@ -209,7 +209,7 @@ Rectangle {
                     Text {
                         text: card.appNameText
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.DemiBold
                         color: card.isCritical ? Theme.error : Theme.fgSubtle
                         elide: Text.ElideRight
@@ -220,15 +220,15 @@ Rectangle {
                         visible: card.relativeTime.length > 0
                         text: card.relativeTime
                         font.family: Theme.fontFamily
-                        font.pixelSize: 10
+                        font.pixelSize: 11
                         color: Theme.fgSubtle
                     }
 
                     // Botón cerrar
                     Rectangle {
-                        Layout.preferredWidth: 22
-                        Layout.preferredHeight: 22
-                        radius: 11
+                        Layout.preferredWidth: 24
+                        Layout.preferredHeight: 24
+                        radius: 12
                         color: closeMouse.containsMouse ? Theme.errorContainer : "transparent"
 
                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -237,7 +237,7 @@ Rectangle {
                             anchors.centerIn: parent
                             text: "✕"
                             font.family: Theme.fontFamily
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             font.weight: Font.Bold
                             color: closeMouse.containsMouse ? Theme.fgOnErrorContainer : Theme.fgSubtle
                         }
@@ -261,7 +261,7 @@ Rectangle {
                     text: card.summaryText
                     textFormat: Text.PlainText
                     font.family: Theme.fontFamily
-                    font.pixelSize: 13
+                    font.pixelSize: 14
                     font.weight: Font.DemiBold
                     color: Theme.fg
                     wrapMode: Text.Wrap
@@ -275,7 +275,7 @@ Rectangle {
                     text: card.bodyText
                     textFormat: Text.PlainText
                     font.family: Theme.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     color: Theme.fgMuted
                     wrapMode: Text.Wrap
                     maximumLineCount: card.compact ? 4 : 8
@@ -314,7 +314,7 @@ Rectangle {
 
                 Rectangle {
                     required property var modelData
-                    height: 26
+                    height: 28
                     width: Math.min(card.width - 32, actLabel.implicitWidth + 20)
                     radius: Theme.radiusFull
                     color: actMouse.containsMouse ? Theme.primaryContainer : Theme.surfaceContainerHigh
@@ -327,7 +327,7 @@ Rectangle {
                         text: String(modelData.text || "")
                         textFormat: Text.PlainText
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.DemiBold
                         color: actMouse.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
                         elide: Text.ElideRight
@@ -356,7 +356,7 @@ Rectangle {
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: 32
                 radius: Theme.radiusSmall
                 color: Theme.surfaceContainerLow
                 border.width: replyInput.activeFocus ? 1 : 0
@@ -369,7 +369,7 @@ Rectangle {
                     anchors.rightMargin: 10
                     verticalAlignment: TextInput.AlignVCenter
                     font.family: Theme.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     color: Theme.fg
                     selectionColor: Theme.primary
                     selectedTextColor: Theme.fgOnPrimary
@@ -390,7 +390,7 @@ Rectangle {
                             ? card.notif.inlineReplyPlaceholder
                             : "Responder..."
                         font.family: Theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         color: Theme.fgSubtle
                         visible: replyInput.text.length === 0
                         elide: Text.ElideRight
@@ -399,9 +399,9 @@ Rectangle {
             }
 
             Rectangle {
-                Layout.preferredWidth: 30
-                Layout.preferredHeight: 30
-                radius: 15
+                Layout.preferredWidth: 32
+                Layout.preferredHeight: 32
+                radius: 16
                 color: sendMouse.containsMouse ? Theme.primary : Theme.surfaceContainerHigh
 
                 Behavior on color { ColorAnimation { duration: Theme.animFast } }

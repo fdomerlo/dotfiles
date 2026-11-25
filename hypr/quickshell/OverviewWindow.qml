@@ -11,6 +11,8 @@ PanelWindow {
     required property string searchQuery
     required property int selectedWorkspaceId
     required property bool tabNavigated
+    required property bool isFocusedOverviewScreen
+    property int barHeight: 40
 
     signal searchUpdated(string text)
     signal closeRequested()
@@ -19,9 +21,71 @@ PanelWindow {
     signal workspaceSelected(int wsId)
 
     readonly property var hyprMonitor: Hyprland.monitorFor(screen)
-    readonly property bool isFocusedMonitor: Boolean(
-        Hyprland.focusedMonitor && hyprMonitor && Hyprland.focusedMonitor.name === hyprMonitor.name
-    )
+    readonly property bool isFocusedMonitor: {
+        if (Hyprland.focusedMonitor && hyprMonitor)
+            return Hyprland.focusedMonitor.name === hyprMonitor.name;
+        return isFocusedOverviewScreen;
+    }
+
+    function resolveDesktopEntry(cls) {
+        const raw = String(cls || "").trim();
+        if (!raw)
+            return null;
+        if (DesktopEntries.heuristicLookup) {
+            const h = DesktopEntries.heuristicLookup(raw);
+            if (h)
+                return h;
+        }
+        if (DesktopEntries.byId) {
+            const direct = DesktopEntries.byId(raw) || DesktopEntries.byId(raw.toLowerCase());
+            if (direct)
+                return direct;
+        }
+        const rawLow = raw.toLowerCase();
+        const apps = DesktopEntries.applications ? DesktopEntries.applications.values : [];
+        if (apps) {
+            for (let i = 0; i < apps.length; i++) {
+                const e = apps[i];
+                if (!e)
+                    continue;
+                const eid = String(e.id || "").toLowerCase().replace(/\.desktop$/, "");
+                const sc = String(e.startupClass || "").toLowerCase();
+                const nm = String(e.name || "").toLowerCase();
+                if (eid === rawLow || sc === rawLow || nm === rawLow)
+                    return e;
+            }
+        }
+        return null;
+    }
+
+    function friendlyAppName(cls, entry) {
+        if (entry && entry.name)
+            return String(entry.name);
+        const raw = String(cls || "").trim();
+        if (!raw)
+            return "Ventana";
+        let clean = raw;
+        if (clean.indexOf(".") !== -1) {
+            const parts = clean.split(".").filter(p => p.length > 0);
+            if (parts.length > 0)
+                clean = parts[parts.length - 1];
+        }
+        if (clean.length > 0 && clean === clean.toLowerCase())
+            return clean.charAt(0).toUpperCase() + clean.slice(1);
+        return clean;
+    }
+
+    function resolveAppIcon(cls, entry) {
+        if (entry && entry.icon) {
+            const p = Quickshell.iconPath(String(entry.icon), true);
+            if (p)
+                return p;
+        }
+        const raw = String(cls || "").trim();
+        if (!raw)
+            return "";
+        return Quickshell.iconPath(raw, true) || Quickshell.iconPath(raw.toLowerCase(), true);
+    }
 
     readonly property var monitorWorkspaces: {
         void(Hyprland.workspaces.values);
@@ -47,8 +111,10 @@ PanelWindow {
         if (!q)
             return true;
         const title = String(toplevel.title || "").toLowerCase();
-        const cls = String((toplevel.lastIpcObject && toplevel.lastIpcObject.class) || "").toLowerCase();
-        return title.indexOf(q) !== -1 || cls.indexOf(q) !== -1;
+        const cls = String((toplevel.lastIpcObject && toplevel.lastIpcObject.class) || "");
+        const clsLow = cls.toLowerCase();
+        const friendly = friendlyAppName(cls, resolveDesktopEntry(cls)).toLowerCase();
+        return title.indexOf(q) !== -1 || clsLow.indexOf(q) !== -1 || friendly.indexOf(q) !== -1;
     }
 
     function windowsForWorkspace(wsId) {
@@ -109,17 +175,35 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell-overview"
-    WlrLayershell.keyboardFocus: (overviewOpen && isFocusedMonitor)
+    WlrLayershell.keyboardFocus: isFocusedMonitor
         ? WlrKeyboardFocus.Exclusive
         : WlrKeyboardFocus.None
 
     color: "transparent"
     visible: overviewOpen
 
+    Timer {
+        id: focusTimer
+        interval: 20
+        repeat: false
+        onTriggered: {
+            if (win.overviewOpen && win.isFocusedMonitor)
+                searchInput.forceActiveFocus();
+        }
+    }
+
     onOverviewOpenChanged: {
         if (overviewOpen && isFocusedMonitor) {
             searchInput.text = "";
             searchInput.forceActiveFocus();
+            focusTimer.restart();
+        }
+    }
+
+    onIsFocusedMonitorChanged: {
+        if (overviewOpen && isFocusedMonitor) {
+            searchInput.forceActiveFocus();
+            focusTimer.restart();
         }
     }
 
@@ -129,12 +213,28 @@ PanelWindow {
         if (overviewOpen && isFocusedMonitor) {
             searchInput.text = "";
             searchInput.forceActiveFocus();
+            focusTimer.restart();
         }
     }
 
-    Rectangle {
+    Item {
         anchors.fill: parent
-        color: Theme.backdrop
+
+        // Oscurecimiento suave del fondo debajo de la barra superior (igual que los demás overlays)
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: win.barHeight
+            color: Theme.dimAround
+        }
+
+        // Línea cyan inferior de la barra superior para cohesión visual con el resto de overlays
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            y: win.barHeight - 2
+            height: 2
+            color: Theme.activeBorder
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -143,7 +243,10 @@ PanelWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 36
+            anchors.topMargin: win.barHeight + 24
+            anchors.bottomMargin: 32
+            anchors.leftMargin: 36
+            anchors.rightMargin: 36
             spacing: 20
 
             // Barra superior: buscador (en el monitor enfocado) o etiqueta del monitor
@@ -156,11 +259,11 @@ PanelWindow {
                 Rectangle {
                     visible: win.isFocusedMonitor
                     Layout.preferredWidth: Math.min(580, win.width * 0.55)
-                    Layout.preferredHeight: 42
-                    color: Theme.panelBg
-                    radius: Theme.radius
-                    border.width: Theme.borderWidth
-                    border.color: searchInput.activeFocus ? Theme.activeBorder : Theme.border
+                    Layout.preferredHeight: 46
+                    color: Theme.surface
+                    radius: Theme.radiusLarge
+                    border.width: 2
+                    border.color: Theme.activeBorder
 
                     // Absorber clics dentro de la barra de búsqueda
                     MouseArea {
@@ -170,15 +273,15 @@ PanelWindow {
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 14
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
                         spacing: 10
 
                         Text {
                             text: "󰍉"
                             color: Theme.accent
                             font.family: Theme.fontFamily
-                            font.pixelSize: 15
+                            font.pixelSize: 16
                         }
 
                         TextInput {
@@ -216,7 +319,7 @@ PanelWindow {
                                 text: "Buscar ventana... (Tab: actividades · Enter: ir · Esc: cerrar)"
                                 color: Theme.muted
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 12
+                                font.pixelSize: 13
                                 elide: Text.ElideRight
                                 visible: !searchInput.text
                             }
@@ -228,10 +331,10 @@ PanelWindow {
                     visible: !win.isFocusedMonitor
                     Layout.preferredHeight: 36
                     Layout.preferredWidth: monLabel.implicitWidth + 28
-                    color: Theme.panelBg
-                    radius: Theme.radius
-                    border.width: Theme.borderWidth
-                    border.color: Theme.border
+                    color: Theme.surface
+                    radius: Theme.radiusLarge
+                    border.width: 1
+                    border.color: Theme.outlineVariant
 
                     Text {
                         id: monLabel
@@ -270,19 +373,20 @@ PanelWindow {
 
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        color: (isSelectedWs && win.tabNavigated) ? Theme.cardHoverBg : Theme.panelBg
-                        radius: Theme.radius
-                        border.width: (isSelectedWs || wsHover.containsMouse) ? 2 : Theme.borderWidth
+                        color: (isSelectedWs && win.tabNavigated) ? Theme.surfaceContainerHigh : Theme.surface
+                        radius: Theme.radiusLarge
+                        border.width: (isSelectedWs || wsHover.containsMouse || isCurrentWs) ? 2 : 1
                         border.color: ws.urgent
-                            ? Theme.urgent
+                            ? Theme.error
                             : ((isSelectedWs || wsHover.containsMouse)
                                 ? Theme.activeBorder
-                                : (isCurrentWs ? Theme.accent : Theme.border))
+                                : (isCurrentWs ? Theme.primary : Theme.outlineVariant))
 
                         MouseArea {
                             id: wsHover
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: win.workspaceSelected(ws.id)
                         }
 
@@ -309,7 +413,7 @@ PanelWindow {
                                         text: ws.name
                                         color: (wsCard.isCurrentWs || wsCard.isSelectedWs) ? Theme.accentText : Theme.textBright
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: 13
                                         font.bold: true
                                     }
                                 }
@@ -320,7 +424,7 @@ PanelWindow {
                                         : (wsWindows.length === 1 ? "1 ventana" : wsWindows.length + " ventanas")
                                     color: Theme.muted
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: 13
                                 }
 
                                 Item { Layout.fillWidth: true }
@@ -328,7 +432,7 @@ PanelWindow {
                                 Rectangle {
                                     visible: wsCard.isSelectedWs && win.tabNavigated
                                     width: enterHint.implicitWidth + 12
-                                    height: 20
+                                    height: 22
                                     radius: Theme.cardRadius
                                     color: Theme.cardBg
                                     border.width: Theme.borderWidth
@@ -340,7 +444,7 @@ PanelWindow {
                                         text: "Enter ↵"
                                         color: Theme.activeBorder
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 10
+                                        font.pixelSize: 11
                                         font.bold: true
                                     }
                                 }
@@ -353,11 +457,48 @@ PanelWindow {
 
                                 Text {
                                     anchors.centerIn: parent
-                                    visible: wsWindows.length === 0
-                                    text: win.searchQuery.trim() ? "Sin coincidencias" : "Click para ir al workspace " + ws.name
-                                    color: Theme.muted
+                                    visible: wsWindows.length === 0 && win.searchQuery.trim().length > 0
+                                    text: "Sin coincidencias"
+                                    color: Theme.fgSubtle
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 12
+                                }
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    visible: wsWindows.length === 0 && win.searchQuery.trim().length === 0
+                                    spacing: 8
+
+                                    Rectangle {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        width: 34
+                                        height: 34
+                                        radius: 17
+                                        color: (wsHover.containsMouse || wsCard.isSelectedWs) ? Theme.primaryContainer : Theme.surfaceContainer
+                                        opacity: (wsHover.containsMouse || wsCard.isSelectedWs) ? 1.0 : 0.45
+
+                                        Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+                                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "󰐕"
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 16
+                                            color: (wsHover.containsMouse || wsCard.isSelectedWs) ? Theme.fgOnPrimaryContainer : Theme.fgSubtle
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "Clic para ir al workspace " + ws.name
+                                        color: Theme.fgMuted
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 12
+                                        opacity: (wsHover.containsMouse || wsCard.isSelectedWs) ? 1.0 : 0.0
+
+                                        Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+                                    }
                                 }
 
                                 GridLayout {
@@ -375,8 +516,11 @@ PanelWindow {
                                             required property var modelData
                                             readonly property var toplevel: modelData
                                             readonly property string appClass: String(
-                                                (toplevel.lastIpcObject && toplevel.lastIpcObject.class) || "Ventana"
+                                                (toplevel.lastIpcObject && toplevel.lastIpcObject.class) || ""
                                             )
+                                            readonly property var desktopEntry: win.resolveDesktopEntry(appClass)
+                                            readonly property string appDisplayName: win.friendlyAppName(appClass, desktopEntry)
+                                            readonly property string appIconSource: win.resolveAppIcon(appClass, desktopEntry)
 
                                             Layout.fillWidth: true
                                             Layout.fillHeight: true
@@ -420,7 +564,7 @@ PanelWindow {
                                                     Text {
                                                         anchors.centerIn: parent
                                                         visible: !clientCard.toplevel.wayland
-                                                        text: clientCard.appClass
+                                                        text: clientCard.appDisplayName
                                                         color: Theme.muted
                                                         font.family: Theme.fontFamily
                                                         font.pixelSize: 13
@@ -429,9 +573,9 @@ PanelWindow {
 
                                                 Rectangle {
                                                     Layout.fillWidth: true
-                                                    Layout.preferredHeight: 24
-                                                    color: Theme.panelBg
-                                                    radius: Theme.cardRadius
+                                                    Layout.preferredHeight: 28
+                                                    color: Theme.surfaceContainerLow
+                                                    radius: Theme.radiusSmall
 
                                                     RowLayout {
                                                         anchors.fill: parent
@@ -439,20 +583,45 @@ PanelWindow {
                                                         anchors.rightMargin: 8
                                                         spacing: 6
 
+                                                        Item {
+                                                            Layout.preferredWidth: 16
+                                                            Layout.preferredHeight: 16
+
+                                                            Image {
+                                                                id: clientIconImg
+                                                                anchors.fill: parent
+                                                                source: clientCard.appIconSource
+                                                                sourceSize.width: 16
+                                                                sourceSize.height: 16
+                                                                fillMode: Image.PreserveAspectFit
+                                                                smooth: true
+                                                                visible: status === Image.Ready && clientCard.appIconSource !== ""
+                                                            }
+
+                                                            Text {
+                                                                anchors.centerIn: parent
+                                                                visible: !clientIconImg.visible
+                                                                text: "󰖯"
+                                                                color: Theme.primary
+                                                                font.family: Theme.fontFamily
+                                                                font.pixelSize: 13
+                                                            }
+                                                        }
+
                                                         Text {
-                                                            text: clientCard.appClass
-                                                            color: Theme.accent
+                                                            text: clientCard.appDisplayName
+                                                            color: Theme.primary
                                                             font.family: Theme.fontFamily
-                                                            font.pixelSize: 11
-                                                            font.bold: true
+                                                            font.pixelSize: 12
+                                                            font.weight: Font.DemiBold
                                                         }
 
                                                         Text {
                                                             Layout.fillWidth: true
                                                             text: clientCard.toplevel.title || ""
-                                                            color: Theme.text
+                                                            color: Theme.fgMuted
                                                             font.family: Theme.fontFamily
-                                                            font.pixelSize: 11
+                                                            font.pixelSize: 12
                                                             elide: Text.ElideRight
                                                         }
                                                     }
@@ -463,6 +632,7 @@ PanelWindow {
                                                 id: clientHover
                                                 anchors.fill: parent
                                                 hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
                                                 onClicked: mouse => {
                                                     mouse.accepted = true;
                                                     win.windowSelected(clientCard.toplevel);

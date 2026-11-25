@@ -37,6 +37,8 @@ PanelWindow {
     // Navegación del calendario en Dashboard (Tab 0)
     property int displayYear: currentDate.getFullYear()
     property int displayMonth: currentDate.getMonth()
+    readonly property bool isViewingCurrentMonth:
+        displayYear === currentDate.getFullYear() && displayMonth === currentDate.getMonth()
 
     readonly property var tabMeta: [
         { id: "dashboard", label: "Dashboard", glyph: "󰕮" },
@@ -234,6 +236,18 @@ PanelWindow {
         if (s.startsWith("/"))
             return "file://" + s;
         return Quickshell.iconPath(s, true);
+    }
+
+    function trayItemLabel(item) {
+        if (!item)
+            return "App";
+        const candidates = [item.tooltipTitle, item.title, item.id];
+        for (let i = 0; i < candidates.length; i++) {
+            const s = String(candidates[i] || "").trim();
+            if (s.length > 0)
+                return s;
+        }
+        return "App";
     }
 
     Timer {
@@ -510,175 +524,113 @@ PanelWindow {
                     }
 
                     // =========================================================
-                    // CABECERA CON PESTAÑAS + INDICADOR DESLIZANTE + TRAY
+                    // CABECERA CON PESTAÑAS + INDICADOR DESLIZANTE
                     // =========================================================
-                    RowLayout {
+                    // Tabs estilo Caelestia con indicador deslizante Material 3
+                    Item {
+                        id: tabStrip
                         Layout.fillWidth: true
-                        spacing: 8
+                        Layout.preferredHeight: 44
 
-                        // Tabs estilo Caelestia con indicador deslizante Material 3
-                        Item {
-                            id: tabStrip
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 42
+                        readonly property int tabCount: dashWin.tabMeta.length
+                        readonly property real tabW: width / Math.max(1, tabCount)
 
-                            readonly property int tabCount: dashWin.tabMeta.length
-                            readonly property real tabW: width / Math.max(1, tabCount)
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            height: 1
+                            color: Theme.outlineVariant
+                            opacity: 0.55
+                        }
 
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.bottom: parent.bottom
-                                height: 1
-                                color: Theme.outlineVariant
-                                opacity: 0.55
-                            }
+                        Rectangle {
+                            width: Math.min(76, Math.max(40, tabStrip.tabW * 0.48))
+                            height: 3
+                            radius: 2
+                            color: Theme.primary
+                            anchors.bottom: parent.bottom
+                            x: dashWin.activeTab * tabStrip.tabW + (tabStrip.tabW - width) / 2
 
-                            Rectangle {
-                                width: Math.min(76, Math.max(40, tabStrip.tabW * 0.48))
-                                height: 3
-                                radius: 2
-                                color: Theme.primary
-                                anchors.bottom: parent.bottom
-                                x: dashWin.activeTab * tabStrip.tabW + (tabStrip.tabW - width) / 2
-
-                                Behavior on x {
-                                    NumberAnimation {
-                                        duration: Theme.animTab
-                                        easing.type: Easing.BezierSpline
-                                        easing.bezierCurve: Theme.curveExpressive
-                                    }
+                            Behavior on x {
+                                NumberAnimation {
+                                    duration: Theme.animTab
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveExpressive
                                 }
                             }
+                        }
 
-                            Row {
-                                anchors.fill: parent
+                        Row {
+                            anchors.fill: parent
 
-                                Repeater {
-                                    model: dashWin.tabMeta
+                            Repeater {
+                                model: dashWin.tabMeta
 
-                                    Item {
-                                        id: tabBtn
-                                        required property var modelData
-                                        required property int index
-                                        readonly property bool isCurrent: dashWin.activeTab === index
+                                Item {
+                                    id: tabBtn
+                                    required property var modelData
+                                    required property int index
+                                    readonly property bool isCurrent: dashWin.activeTab === index
 
-                                        width: tabStrip.tabW
-                                        height: tabStrip.height
+                                    width: tabStrip.tabW
+                                    height: tabStrip.height
 
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            anchors.topMargin: 2
-                                            anchors.bottomMargin: 6
-                                            anchors.leftMargin: 4
-                                            anchors.rightMargin: 4
-                                            radius: Theme.radiusSmall
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        anchors.topMargin: 2
+                                        anchors.bottomMargin: 6
+                                        anchors.leftMargin: 4
+                                        anchors.rightMargin: 4
+                                        radius: Theme.radiusSmall
+                                        color: tabBtn.isCurrent
+                                            ? Theme.surfaceContainer
+                                            : (tabMouse.containsMouse ? Theme.surfaceContainerLow : "transparent")
+
+                                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                                    }
+
+                                    Row {
+                                        anchors.centerIn: parent
+                                        anchors.verticalCenterOffset: -2
+                                        spacing: 7
+
+                                        Text {
+                                            text: tabBtn.modelData.glyph
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 16
                                             color: tabBtn.isCurrent
-                                                ? Theme.surfaceContainer
-                                                : (tabMouse.containsMouse ? Theme.surfaceContainerLow : "transparent")
+                                                ? Theme.primary
+                                                : (tabMouse.containsMouse ? Theme.fg : Theme.fgSubtle)
+                                            anchors.verticalCenter: parent.verticalCenter
 
                                             Behavior on color { ColorAnimation { duration: Theme.animFast } }
                                         }
 
-                                        Row {
-                                            anchors.centerIn: parent
-                                            anchors.verticalCenterOffset: -2
-                                            spacing: 7
+                                        Text {
+                                            text: tabBtn.modelData.label
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 13
+                                            font.weight: tabBtn.isCurrent ? Font.Bold : Font.Medium
+                                            color: tabBtn.isCurrent
+                                                ? Theme.fg
+                                                : (tabMouse.containsMouse ? Theme.fgMuted : Theme.fgSubtle)
+                                            anchors.verticalCenter: parent.verticalCenter
 
-                                            Text {
-                                                text: tabBtn.modelData.glyph
-                                                font.family: Theme.fontFamily
-                                                font.pixelSize: 15
-                                                color: tabBtn.isCurrent
-                                                    ? Theme.primary
-                                                    : (tabMouse.containsMouse ? Theme.fg : Theme.fgSubtle)
-                                                anchors.verticalCenter: parent.verticalCenter
-
-                                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
-                                            }
-
-                                            Text {
-                                                text: tabBtn.modelData.label
-                                                font.family: Theme.fontFamily
-                                                font.pixelSize: 12
-                                                font.weight: tabBtn.isCurrent ? Font.Bold : Font.Medium
-                                                color: tabBtn.isCurrent
-                                                    ? Theme.fg
-                                                    : (tabMouse.containsMouse ? Theme.fgMuted : Theme.fgSubtle)
-                                                anchors.verticalCenter: parent.verticalCenter
-
-                                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
-                                            }
+                                            Behavior on color { ColorAnimation { duration: Theme.animFast } }
                                         }
+                                    }
 
-                                        MouseArea {
-                                            id: tabMouse
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: dashWin.tabSelected(tabBtn.index)
-                                        }
+                                    MouseArea {
+                                        id: tabMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: dashWin.tabSelected(tabBtn.index)
                                     }
                                 }
                             }
                         }
-
-                        // Bandeja compacta rápida (visible solo si hay iconos de tray)
-                        Rectangle {
-                            visible: SystemTray.items.values.length > 0
-                            Layout.preferredHeight: 32
-                            Layout.preferredWidth: headerTrayRow.implicitWidth + 14
-                            radius: Theme.radiusFull
-                            color: Theme.surfaceContainer
-
-                            Row {
-                                id: headerTrayRow
-                                anchors.centerIn: parent
-                                spacing: 7
-
-                                Repeater {
-                                    model: SystemTray.items
-
-                                    Item {
-                                        required property var modelData
-                                        width: 18
-                                        height: 18
-
-                                        Image {
-                                            anchors.centerIn: parent
-                                            width: 15
-                                            height: 15
-                                            source: dashWin.resolveTrayIcon(modelData.icon)
-                                            sourceSize.width: 16
-                                            sourceSize.height: 16
-                                            fillMode: Image.PreserveAspectFit
-                                            smooth: true
-                                        }
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-                                            onClicked: mouse => {
-                                                if (mouse.button === Qt.RightButton || (mouse.button === Qt.LeftButton && modelData.onlyMenu)) {
-                                                    if (modelData.hasMenu) {
-                                                        const pt = mapToItem(null, width / 2, height);
-                                                        modelData.display(dashWin, Math.round(pt.x), Math.round(pt.y));
-                                                    } else {
-                                                        modelData.secondaryActivate();
-                                                    }
-                                                } else if (mouse.button === Qt.MiddleButton) {
-                                                    modelData.secondaryActivate();
-                                                } else {
-                                                    modelData.activate();
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                     }
 
                     // =========================================================
@@ -738,8 +690,8 @@ PanelWindow {
                                             ? Math.round((dashWin.sysState.memUsedGiB * 100) / dashWin.sysState.memTotalGiB)
                                             : 0
                                         readonly property int tempC: dashWin.sysState ? dashWin.sysState.cpuTempC : -1
-                                        Layout.preferredWidth: 204
-                                        Layout.preferredHeight: 106
+                                        Layout.preferredWidth: 216
+                                        Layout.preferredHeight: 112
                                         radius: Theme.radiusMedium
                                         color: perfSumM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
                                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -756,14 +708,14 @@ PanelWindow {
                                                 Text {
                                                     text: "󰓅"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 14
+                                                    font.pixelSize: 15
                                                     color: Theme.primary
                                                 }
 
                                                 Text {
                                                     text: "Rendimiento"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 12
+                                                    font.pixelSize: 13
                                                     font.weight: Font.Bold
                                                     color: Theme.fg
                                                     Layout.fillWidth: true
@@ -772,7 +724,7 @@ PanelWindow {
 
                                                 Rectangle {
                                                     visible: dashPerfSummaryCard.tempC >= 0
-                                                    height: 18
+                                                    height: 20
                                                     width: tempChipTxt.implicitWidth + 10
                                                     radius: Theme.radiusFull
                                                     color: dashPerfSummaryCard.tempC >= 80 ? Theme.errorContainer : Theme.surfaceContainerHighest
@@ -782,7 +734,7 @@ PanelWindow {
                                                         anchors.centerIn: parent
                                                         text: dashPerfSummaryCard.tempC + "°C"
                                                         font.family: Theme.monoFontFamily
-                                                        font.pixelSize: 10
+                                                        font.pixelSize: 11
                                                         font.weight: Font.Bold
                                                         color: dashPerfSummaryCard.tempC >= 80 ? Theme.fgOnErrorContainer : Theme.fgMuted
                                                     }
@@ -795,10 +747,10 @@ PanelWindow {
                                                 spacing: 8
 
                                                 Text {
-                                                    Layout.preferredWidth: 28
+                                                    Layout.preferredWidth: 32
                                                     text: "CPU"
                                                     font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     font.weight: Font.Bold
                                                     color: Theme.fgSubtle
                                                 }
@@ -821,11 +773,11 @@ PanelWindow {
                                                 }
 
                                                 Text {
-                                                    Layout.preferredWidth: 32
+                                                    Layout.preferredWidth: 36
                                                     horizontalAlignment: Text.AlignRight
                                                     text: dashPerfSummaryCard.cpuPct + "%"
                                                     font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 12
                                                     font.weight: Font.Bold
                                                     color: dashPerfSummaryCard.cpuPct >= 85 ? Theme.error : Theme.fg
                                                 }
@@ -837,10 +789,10 @@ PanelWindow {
                                                 spacing: 8
 
                                                 Text {
-                                                    Layout.preferredWidth: 28
+                                                    Layout.preferredWidth: 32
                                                     text: "RAM"
                                                     font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     font.weight: Font.Bold
                                                     color: Theme.fgSubtle
                                                 }
@@ -863,11 +815,11 @@ PanelWindow {
                                                 }
 
                                                 Text {
-                                                    Layout.preferredWidth: 32
+                                                    Layout.preferredWidth: 36
                                                     horizontalAlignment: Text.AlignRight
                                                     text: dashPerfSummaryCard.memPct + "%"
                                                     font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 12
                                                     font.weight: Font.Bold
                                                     color: dashPerfSummaryCard.memPct >= 90 ? Theme.error : Theme.fg
                                                 }
@@ -887,7 +839,7 @@ PanelWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.minimumWidth: 0
-                                        Layout.preferredHeight: 106
+                                        Layout.preferredHeight: 112
                                         radius: Theme.radiusMedium
                                         color: Theme.surfaceContainer
 
@@ -919,7 +871,7 @@ PanelWindow {
                                                     Layout.fillWidth: true
                                                     text: "  " + (dashWin.sysState ? dashWin.sysState.osLabel : "Debian Stable")
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 12
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: Theme.fg
                                                     elide: Text.ElideRight
@@ -931,7 +883,7 @@ PanelWindow {
                                                         ? (dashWin.sysState.userName + "@" + dashWin.sysState.hostName)
                                                         : (dashWin.sysState ? dashWin.sysState.userName : "sesión"))
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 12
                                                     color: Theme.fgMuted
                                                     elide: Text.ElideRight
                                                 }
@@ -943,13 +895,13 @@ PanelWindow {
                                                     Text {
                                                         text: "󰥔  activo " + (dashWin.sysState ? dashWin.sysState.uptimeText : "0m")
                                                         font.family: Theme.fontFamily
-                                                        font.pixelSize: 11
+                                                        font.pixelSize: 12
                                                         color: Theme.fgSubtle
                                                     }
 
                                                     Rectangle {
                                                         visible: dashWin.hasBattery
-                                                        height: 18
+                                                        height: 20
                                                         width: batChipTxt.implicitWidth + 12
                                                         radius: Theme.radiusFull
                                                         color: dashWin.batteryCharging ? Theme.secondaryContainer : Theme.surfaceContainerHigh
@@ -959,7 +911,7 @@ PanelWindow {
                                                             anchors.centerIn: parent
                                                             text: (dashWin.batteryCharging ? "󰂄 " : "󰁹 ") + dashWin.batteryPct + "%"
                                                             font.family: Theme.monoFontFamily
-                                                            font.pixelSize: 10
+                                                            font.pixelSize: 11
                                                             font.weight: Font.Bold
                                                             color: dashWin.batteryCharging ? Theme.fgOnSecondaryContainer : Theme.fg
                                                         }
@@ -978,7 +930,7 @@ PanelWindow {
                                     // Calendario mensual interactivo
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 292
+                                        Layout.preferredHeight: 306
                                         radius: Theme.radiusMedium
                                         color: Theme.surfaceContainer
 
@@ -1003,16 +955,16 @@ PanelWindow {
                                                 spacing: 6
 
                                                 Rectangle {
-                                                    width: 26
-                                                    height: 26
-                                                    radius: 13
+                                                    width: 28
+                                                    height: 28
+                                                    radius: 14
                                                     color: cPrevM.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
                                                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
                                                     Text {
                                                         anchors.centerIn: parent
                                                         text: "‹"
                                                         font.family: Theme.fontFamily
-                                                        font.pixelSize: 15
+                                                        font.pixelSize: 16
                                                         font.weight: Font.Bold
                                                         color: Theme.fg
                                                     }
@@ -1032,7 +984,7 @@ PanelWindow {
                                                     text: dashWin.monthNames[dashWin.displayMonth] + " " + dashWin.displayYear
                                                     elide: Text.ElideRight
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 13
+                                                    font.pixelSize: 14
                                                     font.weight: Font.Bold
                                                     color: Theme.fg
                                                     MouseArea {
@@ -1043,16 +995,43 @@ PanelWindow {
                                                 }
 
                                                 Rectangle {
-                                                    width: 26
-                                                    height: 26
-                                                    radius: 13
+                                                    visible: !dashWin.isViewingCurrentMonth
+                                                    Layout.preferredHeight: 24
+                                                    Layout.preferredWidth: todayChipTxt.implicitWidth + 16
+                                                    radius: Theme.radiusFull
+                                                    color: todayChipM.containsMouse ? Theme.primary : Theme.primaryContainer
+                                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                                    Text {
+                                                        id: todayChipTxt
+                                                        anchors.centerIn: parent
+                                                        text: "Hoy"
+                                                        font.family: Theme.fontFamily
+                                                        font.pixelSize: 11
+                                                        font.weight: Font.Bold
+                                                        color: todayChipM.containsMouse ? Theme.fgOnPrimary : Theme.fgOnPrimaryContainer
+                                                    }
+
+                                                    MouseArea {
+                                                        id: todayChipM
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: dashWin.resetToToday()
+                                                    }
+                                                }
+
+                                                Rectangle {
+                                                    width: 28
+                                                    height: 28
+                                                    radius: 14
                                                     color: cNextM.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
                                                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
                                                     Text {
                                                         anchors.centerIn: parent
                                                         text: "›"
                                                         font.family: Theme.fontFamily
-                                                        font.pixelSize: 15
+                                                        font.pixelSize: 16
                                                         font.weight: Font.Bold
                                                         color: Theme.fg
                                                     }
@@ -1081,7 +1060,7 @@ PanelWindow {
                                                         horizontalAlignment: Text.AlignHCenter
                                                         text: modelData
                                                         font.family: Theme.fontFamily
-                                                        font.pixelSize: 11
+                                                        font.pixelSize: 12
                                                         font.weight: Font.Bold
                                                         color: Theme.fgSubtle
                                                     }
@@ -1092,15 +1071,15 @@ PanelWindow {
                                                     Rectangle {
                                                         required property var modelData
                                                         Layout.fillWidth: true
-                                                        Layout.preferredHeight: 31
-                                                        radius: 15
+                                                        Layout.preferredHeight: 32
+                                                        radius: 16
                                                         color: modelData.isToday ? Theme.primary : "transparent"
 
                                                         Text {
                                                             anchors.centerIn: parent
                                                             text: String(modelData.day)
                                                             font.family: Theme.fontFamily
-                                                            font.pixelSize: 12
+                                                            font.pixelSize: 13
                                                             font.weight: modelData.isToday ? Font.Bold : Font.Medium
                                                             color: modelData.isToday
                                                                 ? Theme.fgOnPrimary
@@ -1116,8 +1095,8 @@ PanelWindow {
                                     // Sliders verticales estilo Caelestia (Volumen · Mic · Brillo opcional)
                                     Rectangle {
                                         readonly property bool showBr: Boolean(dashWin.sysState && dashWin.sysState.hasBacklight)
-                                        Layout.preferredWidth: showBr ? 132 : 96
-                                        Layout.preferredHeight: 292
+                                        Layout.preferredWidth: showBr ? 154 : 110
+                                        Layout.preferredHeight: 306
                                         radius: Theme.radiusMedium
                                         color: Theme.surfaceContainer
 
@@ -1127,11 +1106,24 @@ PanelWindow {
 
                                             // Slider Vertical 1: Volumen
                                             Column {
-                                                spacing: 10
+                                                spacing: 8
+
+                                                Text {
+                                                    width: 34
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    text: dashWin.sinkMuted ? "Mudo" : (dashWin.sinkVolumePct + "%")
+                                                    font.family: Theme.monoFontFamily
+                                                    font.pixelSize: 11
+                                                    font.weight: Font.DemiBold
+                                                    color: (dashWin.sinkMuted || dashWin.sinkVolumePct > 100)
+                                                        ? Theme.error
+                                                        : ((volSliderM.containsMouse || volSliderM.pressed) ? Theme.fg : Theme.fgSubtle)
+                                                }
 
                                                 Item {
                                                     width: 24
-                                                    height: 224
+                                                    height: 204
+                                                    anchors.horizontalCenter: parent.horizontalCenter
 
                                                     Rectangle {
                                                         anchors.fill: parent
@@ -1155,7 +1147,9 @@ PanelWindow {
                                                     }
 
                                                     MouseArea {
+                                                        id: volSliderM
                                                         anchors.fill: parent
+                                                        hoverEnabled: true
                                                         cursorShape: Qt.PointingHandCursor
                                                         function applyY(my) {
                                                             if (!dashWin.sinkReady) return;
@@ -1175,15 +1169,16 @@ PanelWindow {
                                                 }
 
                                                 Rectangle {
-                                                    width: 24
-                                                    height: 24
-                                                    radius: 12
+                                                    width: 26
+                                                    height: 26
+                                                    radius: 13
+                                                    anchors.horizontalCenter: parent.horizontalCenter
                                                     color: dashWin.sinkMuted ? Theme.errorContainer : Theme.surfaceContainerHigh
                                                     Text {
                                                         anchors.centerIn: parent
                                                         text: dashWin.sinkMuted ? "󰖁" : "󰕾"
                                                         font.family: Theme.fontFamily
-                                                        font.pixelSize: 13
+                                                        font.pixelSize: 14
                                                         color: dashWin.sinkMuted ? Theme.fgOnErrorContainer : Theme.primary
                                                     }
                                                     MouseArea {
@@ -1199,11 +1194,24 @@ PanelWindow {
 
                                             // Slider Vertical 2: Micrófono
                                             Column {
-                                                spacing: 10
+                                                spacing: 8
+
+                                                Text {
+                                                    width: 34
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    text: dashWin.sourceMuted ? "Mudo" : (dashWin.sourceVolumePct + "%")
+                                                    font.family: Theme.monoFontFamily
+                                                    font.pixelSize: 11
+                                                    font.weight: Font.DemiBold
+                                                    color: dashWin.sourceMuted
+                                                        ? Theme.error
+                                                        : ((micSliderM.containsMouse || micSliderM.pressed) ? Theme.fg : Theme.fgSubtle)
+                                                }
 
                                                 Item {
                                                     width: 24
-                                                    height: 224
+                                                    height: 204
+                                                    anchors.horizontalCenter: parent.horizontalCenter
 
                                                     Rectangle {
                                                         anchors.fill: parent
@@ -1227,7 +1235,9 @@ PanelWindow {
                                                     }
 
                                                     MouseArea {
+                                                        id: micSliderM
                                                         anchors.fill: parent
+                                                        hoverEnabled: true
                                                         cursorShape: Qt.PointingHandCursor
                                                         function applyY(my) {
                                                             if (!dashWin.sourceReady) return;
@@ -1247,15 +1257,16 @@ PanelWindow {
                                                 }
 
                                                 Rectangle {
-                                                    width: 24
-                                                    height: 24
-                                                    radius: 12
+                                                    width: 26
+                                                    height: 26
+                                                    radius: 13
+                                                    anchors.horizontalCenter: parent.horizontalCenter
                                                     color: dashWin.sourceMuted ? Theme.errorContainer : Theme.surfaceContainerHigh
                                                     Text {
                                                         anchors.centerIn: parent
                                                         text: dashWin.sourceMuted ? "󰍭" : "󰍬"
                                                         font.family: Theme.fontFamily
-                                                        font.pixelSize: 13
+                                                        font.pixelSize: 14
                                                         color: dashWin.sourceMuted ? Theme.fgOnErrorContainer : Theme.secondary
                                                     }
                                                     MouseArea {
@@ -1272,11 +1283,22 @@ PanelWindow {
                                             // Slider Vertical 3: Brillo (solo equipos con backlight)
                                             Column {
                                                 visible: Boolean(dashWin.sysState && dashWin.sysState.hasBacklight)
-                                                spacing: 10
+                                                spacing: 8
+
+                                                Text {
+                                                    width: 34
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    text: (dashWin.sysState ? dashWin.sysState.brightnessPercent : 0) + "%"
+                                                    font.family: Theme.monoFontFamily
+                                                    font.pixelSize: 11
+                                                    font.weight: Font.DemiBold
+                                                    color: (brSliderM.containsMouse || brSliderM.pressed) ? Theme.fg : Theme.fgSubtle
+                                                }
 
                                                 Item {
                                                     width: 24
-                                                    height: 224
+                                                    height: 204
+                                                    anchors.horizontalCenter: parent.horizontalCenter
 
                                                     Rectangle {
                                                         anchors.fill: parent
@@ -1299,7 +1321,9 @@ PanelWindow {
                                                     }
 
                                                     MouseArea {
+                                                        id: brSliderM
                                                         anchors.fill: parent
+                                                        hoverEnabled: true
                                                         cursorShape: Qt.PointingHandCursor
                                                         function applyY(my) {
                                                             const pct = Math.max(5, Math.min(100, Math.round((1.0 - (my / Math.max(1, height))) * 100)));
@@ -1317,15 +1341,16 @@ PanelWindow {
                                                 }
 
                                                 Rectangle {
-                                                    width: 24
-                                                    height: 24
-                                                    radius: 12
+                                                    width: 26
+                                                    height: 26
+                                                    radius: 13
+                                                    anchors.horizontalCenter: parent.horizontalCenter
                                                     color: Theme.surfaceContainerHigh
                                                     Text {
                                                         anchors.centerIn: parent
                                                         text: "󰃠"
                                                         font.family: Theme.fontFamily
-                                                        font.pixelSize: 13
+                                                        font.pixelSize: 14
                                                         color: Theme.tertiary
                                                     }
                                                 }
@@ -1337,9 +1362,9 @@ PanelWindow {
 
                             // COLUMNA DERECHA: Quick Toggles 2x3 + Media compacta estilo Caelestia
                             ColumnLayout {
-                                Layout.preferredWidth: 264
-                                Layout.minimumWidth: 264
-                                Layout.maximumWidth: 264
+                                Layout.preferredWidth: 288
+                                Layout.minimumWidth: 288
+                                Layout.maximumWidth: 288
                                 Layout.fillWidth: false
                                 Layout.fillHeight: true
                                 spacing: 12
@@ -1360,7 +1385,7 @@ PanelWindow {
                                             ? (qNetM.containsMouse ? Theme.fgOnPrimary : Theme.fgOnPrimaryContainer)
                                             : Theme.fg
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 56
+                                        Layout.preferredHeight: 60
                                         radius: Theme.radiusMedium
                                         color: active
                                             ? (qNetM.containsMouse ? Theme.primary : Theme.primaryContainer)
@@ -1376,7 +1401,7 @@ PanelWindow {
                                                 readonly property string kind: dashWin.sysState ? dashWin.sysState.netKind : "disconnected"
                                                 text: qNetTile.hasVpn ? "󰒃" : (kind === "wifi" ? "" : (kind === "ethernet" ? "󰈀" : "󰪎"))
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 15
+                                                font.pixelSize: 16
                                                 color: qNetTile.active ? qNetTile.tileFg : Theme.fgSubtle
                                             }
                                             ColumnLayout {
@@ -1385,16 +1410,16 @@ PanelWindow {
                                                 Text {
                                                     text: qNetTile.hasVpn ? "VPN" : "Red"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: qNetTile.tileFg
                                                 }
                                                 Text {
                                                     text: qNetTile.hasVpn
                                                         ? dashWin.sysState.vpnName
-                                                        : (dashWin.sysState && dashWin.sysState.netLabel ? dashWin.sysState.netLabel : "Off")
+                                                        : (dashWin.sysState && dashWin.sysState.netLabel ? dashWin.sysState.netLabel : "Sin red")
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: qNetTile.active ? qNetTile.tileFg : Theme.fgSubtle
                                                     opacity: qNetTile.active ? 0.85 : 1.0
                                                     elide: Text.ElideRight
@@ -1422,7 +1447,7 @@ PanelWindow {
                                             ? (qBtM.containsMouse ? Theme.fgOnPrimary : Theme.fgOnPrimaryContainer)
                                             : Theme.fg
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 56
+                                        Layout.preferredHeight: 60
                                         radius: Theme.radiusMedium
                                         color: active
                                             ? (qBtM.containsMouse ? Theme.primary : Theme.primaryContainer)
@@ -1437,7 +1462,7 @@ PanelWindow {
                                             Text {
                                                 text: dashWin.btConnectedDevice ? "󰂱" : (dashWin.btEnabled ? "󰂯" : "󰂲")
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 15
+                                                font.pixelSize: 16
                                                 color: qBtTile.active ? qBtTile.tileFg : Theme.fgSubtle
                                             }
                                             ColumnLayout {
@@ -1446,7 +1471,7 @@ PanelWindow {
                                                 Text {
                                                     text: "Bluetooth"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: qBtTile.tileFg
                                                 }
@@ -1457,7 +1482,7 @@ PanelWindow {
                                                             ? String(dashWin.btConnectedDevice.name || dashWin.btConnectedDevice.deviceName || "Conectado")
                                                             : (dashWin.btEnabled ? "Activo" : "Apagado"))
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: qBtTile.active ? qBtTile.tileFg : Theme.fgSubtle
                                                     opacity: qBtTile.active ? 0.85 : 1.0
                                                     elide: Text.ElideRight
@@ -1484,7 +1509,7 @@ PanelWindow {
                                             ? (qDndM.containsMouse ? Theme.fgOnError : Theme.fgOnErrorContainer)
                                             : Theme.fg
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 56
+                                        Layout.preferredHeight: 60
                                         radius: Theme.radiusMedium
                                         color: dashWin.dndEnabled
                                             ? (qDndM.containsMouse ? Theme.error : Theme.errorContainer)
@@ -1499,7 +1524,7 @@ PanelWindow {
                                             Text {
                                                 text: dashWin.dndEnabled ? "󰂛" : "󰂚"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 15
+                                                font.pixelSize: 16
                                                 color: dashWin.dndEnabled ? qDndTile.tileFg : Theme.fgMuted
                                             }
                                             ColumnLayout {
@@ -1508,7 +1533,7 @@ PanelWindow {
                                                 Text {
                                                     text: "No molestar"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: qDndTile.tileFg
                                                     elide: Text.ElideRight
@@ -1517,7 +1542,7 @@ PanelWindow {
                                                 Text {
                                                     text: dashWin.dndEnabled ? "Silenciado" : "Normal"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: dashWin.dndEnabled ? qDndTile.tileFg : Theme.fgSubtle
                                                     opacity: dashWin.dndEnabled ? 0.85 : 1.0
                                                 }
@@ -1540,7 +1565,7 @@ PanelWindow {
                                             ? (qNlM.containsMouse ? Theme.fgOnPrimary : Theme.fgOnPrimaryContainer)
                                             : Theme.fg
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 56
+                                        Layout.preferredHeight: 60
                                         radius: Theme.radiusMedium
                                         color: active
                                             ? (qNlM.containsMouse ? Theme.primary : Theme.primaryContainer)
@@ -1555,7 +1580,7 @@ PanelWindow {
                                             Text {
                                                 text: ""
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 14
+                                                font.pixelSize: 16
                                                 color: qNlTile.active ? qNlTile.tileFg : Theme.fgMuted
                                             }
                                             ColumnLayout {
@@ -1564,7 +1589,7 @@ PanelWindow {
                                                 Text {
                                                     text: "Luz nocturna"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: qNlTile.tileFg
                                                     elide: Text.ElideRight
@@ -1573,7 +1598,7 @@ PanelWindow {
                                                 Text {
                                                     text: qNlTile.active ? "4000K" : "Apagada"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: qNlTile.active ? qNlTile.tileFg : Theme.fgSubtle
                                                     opacity: qNlTile.active ? 0.85 : 1.0
                                                 }
@@ -1599,7 +1624,7 @@ PanelWindow {
                                             ? (qIdleM.containsMouse ? Theme.fgOnSecondary : Theme.fgOnSecondaryContainer)
                                             : Theme.fg
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 56
+                                        Layout.preferredHeight: 60
                                         radius: Theme.radiusMedium
                                         color: dashWin.idleInhibited
                                             ? (qIdleM.containsMouse ? Theme.secondary : Theme.secondaryContainer)
@@ -1614,7 +1639,7 @@ PanelWindow {
                                             Text {
                                                 text: dashWin.idleInhibited ? "󰅶" : "󰾪"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 15
+                                                font.pixelSize: 16
                                                 color: dashWin.idleInhibited ? qIdleTile.tileFg : Theme.fgMuted
                                             }
                                             ColumnLayout {
@@ -1623,14 +1648,14 @@ PanelWindow {
                                                 Text {
                                                     text: "Reposo"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: qIdleTile.tileFg
                                                 }
                                                 Text {
                                                     text: dashWin.idleInhibited ? "Inhibido" : "Auto"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: dashWin.idleInhibited ? qIdleTile.tileFg : Theme.fgSubtle
                                                     opacity: dashWin.idleInhibited ? 0.85 : 1.0
                                                 }
@@ -1656,7 +1681,7 @@ PanelWindow {
                                                 ? (qPpM.containsMouse ? Theme.fgOnSecondary : Theme.fgOnSecondaryContainer)
                                                 : Theme.fg)
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 56
+                                        Layout.preferredHeight: 60
                                         radius: Theme.radiusMedium
                                         color: isPerf
                                             ? (qPpM.containsMouse ? Theme.error : Theme.errorContainer)
@@ -1673,7 +1698,7 @@ PanelWindow {
                                             Text {
                                                 text: dashWin.powerProfileGlyph()
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 15
+                                                font.pixelSize: 16
                                                 color: (qPpTile.isPerf || qPpTile.isSaver) ? qPpTile.tileFg : Theme.primary
                                             }
                                             ColumnLayout {
@@ -1682,14 +1707,14 @@ PanelWindow {
                                                 Text {
                                                     text: "Energía"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: qPpTile.tileFg
                                                 }
                                                 Text {
                                                     text: dashWin.powerProfileLabel()
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: (qPpTile.isPerf || qPpTile.isSaver) ? qPpTile.tileFg : Theme.fgSubtle
                                                     opacity: (qPpTile.isPerf || qPpTile.isSaver) ? 0.85 : 1.0
                                                     elide: Text.ElideRight
@@ -1767,7 +1792,7 @@ PanelWindow {
                                                     : "Sin reproducción"
                                                 textFormat: Text.PlainText
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: 13
                                                 font.weight: Font.Bold
                                                 color: Theme.fg
                                                 elide: Text.ElideRight
@@ -1781,7 +1806,7 @@ PanelWindow {
                                                     : ("Salida: " + (dashWin.sinkMuted ? "Mudo" : dashWin.sinkVolumePct + "%"))
                                                 textFormat: Text.PlainText
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: 12
                                                 color: Theme.fgSubtle
                                                 elide: Text.ElideRight
                                             }
@@ -1801,7 +1826,7 @@ PanelWindow {
                                                     anchors.centerIn: parent
                                                     text: "󰒮"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 14
+                                                    font.pixelSize: 15
                                                     color: dashWin.activePlayer ? Theme.fg : Theme.fgSubtle
                                                 }
                                                 MouseArea {
@@ -1822,7 +1847,7 @@ PanelWindow {
                                                     anchors.centerIn: parent
                                                     text: (dashWin.activePlayer && dashWin.activePlayer.isPlaying) ? "󰏤" : "󰐊"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 15
+                                                    font.pixelSize: 16
                                                     color: dashWin.activePlayer ? Theme.fgOnPrimary : Theme.fgSubtle
                                                 }
                                                 MouseArea {
@@ -1847,7 +1872,7 @@ PanelWindow {
                                                     anchors.centerIn: parent
                                                     text: "󰒭"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 14
+                                                    font.pixelSize: 15
                                                     color: dashWin.activePlayer ? Theme.fg : Theme.fgSubtle
                                                 }
                                                 MouseArea {
@@ -1905,18 +1930,18 @@ PanelWindow {
                                                 required property var modelData
                                                 required property int index
                                                 readonly property bool isSel: dashWin.activePlayer === modelData
-                                                height: 24
-                                                width: Math.min(140, pPillTxt.implicitWidth + 18)
+                                                height: 26
+                                                width: Math.min(148, pPillTxt.implicitWidth + 20)
                                                 radius: Theme.radiusFull
                                                 color: isSel ? Theme.primaryContainer : Theme.surfaceContainerHigh
 
                                                 Text {
                                                     id: pPillTxt
                                                     anchors.centerIn: parent
-                                                    width: Math.min(implicitWidth, 122)
-                                                    text: String(modelData.identity || "Player")
+                                                    width: Math.min(implicitWidth, 128)
+                                                    text: String(modelData.identity || "Reproductor")
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     font.weight: isSel ? Font.Bold : Font.Medium
                                                     color: isSel ? Theme.fgOnPrimaryContainer : Theme.fgMuted
                                                     elide: Text.ElideRight
@@ -1989,7 +2014,7 @@ PanelWindow {
                                                     : "Abrí un reproductor o navegador para controlar la reproducción"
                                                 textFormat: Text.PlainText
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: 13
                                                 color: Theme.fgMuted
                                                 wrapMode: Text.Wrap
                                                 maximumLineCount: 2
@@ -2002,7 +2027,7 @@ PanelWindow {
                                                 text: dashWin.activePlayer ? String(dashWin.activePlayer.trackAlbum || "") : ""
                                                 textFormat: Text.PlainText
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 11
+                                                font.pixelSize: 12
                                                 color: Theme.fgSubtle
                                                 elide: Text.ElideRight
                                             }
@@ -2061,14 +2086,14 @@ PanelWindow {
                                             Text {
                                                 text: dashWin.formatTrackTime(mediaSeekBox.trackPos)
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: 11
                                                 color: Theme.fgSubtle
                                             }
                                             Item { Layout.fillWidth: true }
                                             Text {
                                                 text: mediaSeekBox.trackLen > 0 ? dashWin.formatTrackTime(mediaSeekBox.trackLen) : "--:--"
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: 11
                                                 color: Theme.fgSubtle
                                             }
                                         }
@@ -2168,7 +2193,7 @@ PanelWindow {
                                             Text {
                                                 text: "SALIDA DE AUDIO"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: 11
                                                 font.weight: Font.Bold
                                                 font.letterSpacing: 0.6
                                                 color: Theme.fgSubtle
@@ -2179,7 +2204,7 @@ PanelWindow {
                                                     ? String(dashWin.defaultSink.description || dashWin.defaultSink.nickname || "Predeterminada")
                                                     : "No disponible"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 11
+                                                font.pixelSize: 12
                                                 color: Theme.fgMuted
                                                 elide: Text.ElideRight
                                                 Layout.maximumWidth: 230
@@ -2244,11 +2269,11 @@ PanelWindow {
                                             }
 
                                             Text {
-                                                Layout.preferredWidth: 44
+                                                Layout.preferredWidth: 48
                                                 horizontalAlignment: Text.AlignRight
                                                 text: dashWin.sinkMuted ? "Mudo" : (dashWin.sinkVolumePct + "%")
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: 13
                                                 font.weight: Font.Bold
                                                 color: dashWin.sinkMuted ? Theme.error : Theme.fg
                                             }
@@ -2273,7 +2298,7 @@ PanelWindow {
                                             Text {
                                                 text: "MICRÓFONO"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: 11
                                                 font.weight: Font.Bold
                                                 font.letterSpacing: 0.6
                                                 color: Theme.fgSubtle
@@ -2284,7 +2309,7 @@ PanelWindow {
                                                     ? String(dashWin.defaultSource.description || dashWin.defaultSource.nickname || "Entrada")
                                                     : "No disponible"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 11
+                                                font.pixelSize: 12
                                                 color: Theme.fgMuted
                                                 elide: Text.ElideRight
                                                 Layout.maximumWidth: 230
@@ -2349,11 +2374,11 @@ PanelWindow {
                                             }
 
                                             Text {
-                                                Layout.preferredWidth: 44
+                                                Layout.preferredWidth: 48
                                                 horizontalAlignment: Text.AlignRight
                                                 text: dashWin.sourceMuted ? "Mudo" : (dashWin.sourceVolumePct + "%")
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: 13
                                                 font.weight: Font.Bold
                                                 color: dashWin.sourceMuted ? Theme.error : Theme.fg
                                             }
@@ -2375,7 +2400,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         text: "󰓃  Abrir mezclador avanzado (pavucontrol)"
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: 13
                                         font.weight: Font.DemiBold
                                         color: pavuM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
                                     }
@@ -2418,7 +2443,7 @@ PanelWindow {
                                 // CPU
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 204
+                                    Layout.preferredHeight: 212
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2432,7 +2457,7 @@ PanelWindow {
                                             Text {
                                                 text: "  CPU"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: 13
                                                 font.weight: Font.Bold
                                                 color: Theme.primary
                                             }
@@ -2441,7 +2466,7 @@ PanelWindow {
                                                 visible: dashWin.sysState && dashWin.sysState.cpuTempC >= 0
                                                 text: (dashWin.sysState ? dashWin.sysState.cpuTempC : 0) + "°C"
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 11
+                                                font.pixelSize: 12
                                                 color: (dashWin.sysState && dashWin.sysState.cpuTempC >= 80) ? Theme.error : Theme.fgSubtle
                                             }
                                         }
@@ -2457,9 +2482,9 @@ PanelWindow {
                                             }
                                             Item { Layout.fillWidth: true }
                                             Text {
-                                                text: "load " + (dashWin.sysState ? dashWin.sysState.loadAvg : "0.00")
+                                                text: "carga " + (dashWin.sysState ? dashWin.sysState.loadAvg : "0.00")
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 11
+                                                font.pixelSize: 12
                                                 color: Theme.fgSubtle
                                             }
                                         }
@@ -2468,7 +2493,7 @@ PanelWindow {
                                             Layout.fillWidth: true
                                             text: (dashWin.sysState && dashWin.sysState.cpuModel) ? dashWin.sysState.cpuModel : "Procesador"
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 10
+                                            font.pixelSize: 11
                                             color: Theme.fgMuted
                                             elide: Text.ElideRight
                                         }
@@ -2509,7 +2534,7 @@ PanelWindow {
                                 Rectangle {
                                     id: memPerfCard
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 204
+                                    Layout.preferredHeight: 212
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2527,7 +2552,7 @@ PanelWindow {
                                             Text {
                                                 text: "󰍛  MEMORIA"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: 13
                                                 font.weight: Font.Bold
                                                 color: Theme.secondary
                                             }
@@ -2535,7 +2560,7 @@ PanelWindow {
                                             Text {
                                                 text: memPerfCard.memPct + "%"
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 11
+                                                font.pixelSize: 12
                                                 font.weight: Font.Bold
                                                 color: Theme.fgMuted
                                             }
@@ -2556,7 +2581,7 @@ PanelWindow {
                                                 ? ("Swap/zRAM: " + dashWin.sysState.swapUsedGiB.toFixed(1) + " / " + dashWin.sysState.swapTotalGiB.toFixed(1) + " GiB")
                                                 : "Sin swap activo"
                                             font.family: Theme.monoFontFamily
-                                            font.pixelSize: 10
+                                            font.pixelSize: 11
                                             color: Theme.fgMuted
                                             elide: Text.ElideRight
                                         }
@@ -2596,7 +2621,7 @@ PanelWindow {
                                 // Disco + Grabación + Kernel
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 204
+                                    Layout.preferredHeight: 212
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2610,7 +2635,7 @@ PanelWindow {
                                             Text {
                                                 text: "󰋊  SISTEMA"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: 13
                                                 font.weight: Font.Bold
                                                 color: Theme.tertiary
                                             }
@@ -2618,7 +2643,7 @@ PanelWindow {
                                             Text {
                                                 text: (dashWin.sysState && dashWin.sysState.kernelVersion) ? ("Linux " + dashWin.sysState.kernelVersion) : ""
                                                 font.family: Theme.monoFontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: 11
                                                 color: Theme.fgSubtle
                                             }
                                         }
@@ -2632,7 +2657,7 @@ PanelWindow {
                                                 Text {
                                                     text: "Raíz /"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 12
                                                     color: Theme.fgMuted
                                                 }
                                                 Item { Layout.fillWidth: true }
@@ -2641,7 +2666,7 @@ PanelWindow {
                                                           (dashWin.sysState ? dashWin.sysState.diskTotal : "0G") + " (" +
                                                           (dashWin.sysState ? dashWin.sysState.diskPercent : 0) + "%)"
                                                     font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 12
                                                     font.weight: Font.Medium
                                                     color: Theme.fg
                                                 }
@@ -2671,7 +2696,7 @@ PanelWindow {
                                             id: perfRecBtn
                                             readonly property bool recOn: Boolean(dashWin.sysState && dashWin.sysState.recordingActive)
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 36
+                                            Layout.preferredHeight: 38
                                             radius: Theme.radiusFull
                                             color: recOn ? Theme.error : (recBtnM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainerLow)
                                             Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -2680,7 +2705,7 @@ PanelWindow {
                                                 anchors.centerIn: parent
                                                 text: perfRecBtn.recOn ? "󰑊  Detener grabación (REC)" : "󰑋  Grabar pantalla"
                                                 font.family: Theme.fontFamily
-                                                font.pixelSize: 11
+                                                font.pixelSize: 12
                                                 font.weight: Font.DemiBold
                                                 color: perfRecBtn.recOn ? Theme.fgOnError : Theme.fg
                                             }
@@ -2720,7 +2745,7 @@ PanelWindow {
                                         Text {
                                             text: "BANDEJA"
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 10
+                                            font.pixelSize: 11
                                             font.weight: Font.Bold
                                             font.letterSpacing: 0.6
                                             color: Theme.fgSubtle
@@ -2730,7 +2755,7 @@ PanelWindow {
                                             visible: SystemTray.items.values.length === 0
                                             text: "Sin aplicaciones en segundo plano"
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 11
+                                            font.pixelSize: 12
                                             color: Theme.fgSubtle
                                         }
 
@@ -2767,9 +2792,11 @@ PanelWindow {
                                                         }
 
                                                         Text {
-                                                            text: String(modelData.title || modelData.id || "App")
+                                                            text: dashWin.trayItemLabel(modelData)
+                                                            width: Math.min(implicitWidth, 160)
+                                                            elide: Text.ElideRight
                                                             font.family: Theme.fontFamily
-                                                            font.pixelSize: 11
+                                                            font.pixelSize: 12
                                                             color: Theme.fg
                                                             anchors.verticalCenter: parent.verticalCenter
                                                         }
@@ -2822,7 +2849,7 @@ PanelWindow {
                                         Text {
                                             text: "Abrir btop"
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 12
+                                            font.pixelSize: 13
                                             font.weight: Font.DemiBold
                                             color: openBtopM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
                                             anchors.verticalCenter: parent.verticalCenter
@@ -2889,7 +2916,7 @@ PanelWindow {
                                         Text {
                                             text: "OpenCode · Asistente IA"
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 12
+                                            font.pixelSize: 13
                                             font.weight: Font.Bold
                                             color: tabAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fg
                                         }
@@ -2899,7 +2926,7 @@ PanelWindow {
                                                 ? (tabAi.aiDet ? ("Servicio activo · " + tabAi.aiDet) : "Servicio activo")
                                                 : "Modo standalone"
                                             font.family: Theme.monoFontFamily
-                                            font.pixelSize: 11
+                                            font.pixelSize: 12
                                             color: tabAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fgSubtle
                                         }
                                     }
@@ -2930,7 +2957,7 @@ PanelWindow {
                                         Text {
                                             text: tabAi.aiOn ? "Detener servicio" : "Iniciar servicio"
                                             font.family: Theme.fontFamily
-                                            font.pixelSize: 11
+                                            font.pixelSize: 12
                                             font.weight: Font.DemiBold
                                             color: tabAi.aiOn
                                                 ? (aiSvcM.containsMouse ? Theme.fgOnErrorContainer : Theme.fg)
@@ -2963,7 +2990,7 @@ PanelWindow {
                                         id: aiQTile
                                         required property var modelData
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 68
+                                        Layout.preferredHeight: 72
                                         radius: Theme.radiusMedium
                                         color: aiQM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
                                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -2994,7 +3021,7 @@ PanelWindow {
                                                 Text {
                                                     text: aiQTile.modelData.title
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: aiQM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
                                                     elide: Text.ElideRight
@@ -3003,7 +3030,7 @@ PanelWindow {
                                                 Text {
                                                     text: aiQTile.modelData.subtitle
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: aiQM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fgSubtle
                                                     opacity: aiQM.containsMouse ? 0.85 : 1.0
                                                     elide: Text.ElideRight
@@ -3037,7 +3064,7 @@ PanelWindow {
                                         id: aiCTile
                                         required property var modelData
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 62
+                                        Layout.preferredHeight: 66
                                         radius: Theme.radiusMedium
                                         color: aiCM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
                                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -3061,7 +3088,7 @@ PanelWindow {
                                                 Text {
                                                     text: aiCTile.modelData.title
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 12
+                                                    font.pixelSize: 13
                                                     font.weight: Font.DemiBold
                                                     color: Theme.fg
                                                     elide: Text.ElideRight
@@ -3070,7 +3097,7 @@ PanelWindow {
                                                 Text {
                                                     text: aiCTile.modelData.subtitle
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: 11
                                                     color: aiCTile.modelData.cmd ? Theme.fgSubtle : Theme.fgSubtle
                                                     elide: Text.ElideRight
                                                     Layout.fillWidth: true
