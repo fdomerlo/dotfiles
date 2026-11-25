@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Intercambiador de temas de Hyprland.
+# Conmutador de modo claro / oscuro (Tema único Cyber-Teal Material 3).
 #
-# Los archivos con variantes visuales viven en hypr/themes/<tema>/ y los paths
-# clásicos (hypr/quickshell/Theme.qml, hypr/conf/appearance.conf, etc.) son
-# symlinks a hypr/themes/active/<archivo>. Cambiar de tema solo mueve el symlink
-# "active", sin tocar archivos versionados ni ensuciar el working tree.
+# La estructura base vive unificada en hypr/conf/appearance.conf y
+# hypr/quickshell/Theme.qml. Solo las paletas por polaridad (dark / light) viven
+# en hypr/themes/<modo>/, enlazadas vía hypr/themes/active.
+#
+# En Quickshell el cambio ocurre en caliente por IPC (`qs ipc call theme setMode`)
+# con ColorAnimation suave, sin reiniciar el shell.
 #
 # Uso:
-#   theme-switch.sh                 # muestra el tema activo
-#   theme-switch.sh list            # lista los temas disponibles
+#   theme-switch.sh                 # muestra el modo activo (dark / light)
+#   theme-switch.sh list            # lista los modos disponibles
 #   theme-switch.sh menu            # selector con fuzzel
-#   theme-switch.sh toggle          # alterna al siguiente tema
-#   theme-switch.sh <tema>          # aplica un tema
-#   theme-switch.sh --no-reload <tema>
+#   theme-switch.sh toggle          # alterna dark <-> light
+#   theme-switch.sh <dark|light>    # aplica un modo
+#   theme-switch.sh --no-reload <modo>
 # ==============================================================================
 set -euo pipefail
 
@@ -28,6 +30,14 @@ die() {
     exit 1
 }
 
+normalize_mode() {
+    case "$1" in
+        dark|cyber-teal|mr-robot)           printf 'dark' ;;
+        light|cyber-teal-light|mr-robot-light) printf 'light' ;;
+        *)                                  printf '%s' "$1" ;;
+    esac
+}
+
 list_themes() {
     find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort
 }
@@ -38,39 +48,43 @@ current_theme() {
 }
 
 reload_desktop() {
-    # Hyprland recarga apariencia, bordes, sombras y animaciones.
+    local mode="$1"
+
+    # Hyprland recarga colores de bordes, sombras y blur desde colors.conf.
     hyprctl reload >/dev/null 2>&1 || true
 
-    # Quickshell es el shell residente: reiniciar para releer Theme.qml.
+    # Quickshell: cambio en caliente sin reiniciar (ColorAnimation Material 3).
     if command -v qs >/dev/null 2>&1; then
-        setsid "$HYPR_DIR/scripts/start-quickshell.sh" --restart >/dev/null 2>&1 </dev/null &
+        if ! qs ipc call theme setMode "$mode" >/dev/null 2>&1; then
+            setsid "$HYPR_DIR/scripts/start-quickshell.sh" >/dev/null 2>&1 </dev/null &
+        fi
     fi
 
-    # Acento de libadwaita/GTK (Nautilus, Configuracion, Flatpaks) segun el tema.
+    # Esquema claro/oscuro y acento teal en GTK/libadwaita y Qt6CT.
     "$HYPR_DIR/scripts/session-gsettings.sh" apply >/dev/null 2>&1 || true
 
-    # Si el tema tiene fondos propios (o al cambiar de tema), actualizar wallpaper.
+    # Rotar al wallpaper acorde a la nueva polaridad.
     "$HYPR_DIR/scripts/wallpaper.sh" --next >/dev/null 2>&1 || true
 
-    # Aviso breve (si el daemon de notificaciones está disponible).
-    notify-send -a "Temas" -t 2000 "Tema aplicado" "$1" >/dev/null 2>&1 || true
+    local label="Modo Oscuro"
+    [ "$mode" = "light" ] && label="Modo Claro"
+    notify-send -a "Apariencia" -t 1800 "Tema aplicado" "$label (Cyber-Teal M3)" >/dev/null 2>&1 || true
 }
 
 apply_theme() {
-    local theme="$1" reload="${2:-1}"
+    local theme reload="${2:-1}"
+    theme="$(normalize_mode "$1")"
     local theme_dir="$THEMES_DIR/$theme"
 
-    [ -d "$theme_dir" ] || die "no existe el tema '$theme'"
+    [ -d "$theme_dir" ] || die "no existe el modo '$theme' (disponibles: dark, light)"
 
-    # Verificar que el tema tenga todos los archivos esperados.
     local missing=()
     local f
-    for f in appearance.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini \
-             quickshell/Theme.qml; do
+    for f in colors.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini; do
         [ -e "$theme_dir/$f" ] || missing+=("$f")
     done
     if [ "${#missing[@]}" -gt 0 ]; then
-        die "al tema '$theme' le faltan: ${missing[*]}"
+        die "al modo '$theme' le faltan: ${missing[*]}"
     fi
 
     ln -sfn "$theme" "$ACTIVE_LINK"
@@ -79,14 +93,14 @@ apply_theme() {
         reload_desktop "$theme"
     fi
 
-    printf 'Tema activo: %s\n' "$theme"
+    printf 'Modo activo: %s\n' "$theme"
 }
 
 show_menu() {
     local current choice
     current="$(current_theme || true)"
     if command -v fuzzel >/dev/null 2>&1; then
-        choice="$(list_themes | fuzzel --dmenu --prompt "Temas (actual: ${current:-ninguno}): " --width 36 --lines 4 2>/dev/null || true)"
+        choice="$(printf 'dark\nlight\n' | fuzzel --dmenu --prompt "Apariencia (actual: ${current:-ninguno}): " --width 36 --lines 2 2>/dev/null || true)"
     else
         die "fuzzel no está instalado"
     fi
@@ -95,19 +109,13 @@ show_menu() {
 }
 
 toggle_theme() {
-    local current themes next
+    local current next
     current="$(current_theme || true)"
-    mapfile -t themes < <(list_themes)
-    [ "${#themes[@]}" -gt 0 ] || die "no hay temas en $THEMES_DIR"
-
-    next="${themes[0]}"
-    local i
-    for i in "${!themes[@]}"; do
-        if [ "${themes[$i]}" = "$current" ]; then
-            next="${themes[$(((i + 1) % ${#themes[@]}))]}"
-            break
-        fi
-    done
+    if [ "$current" = "light" ]; then
+        next="dark"
+    else
+        next="light"
+    fi
     apply_theme "$next" "${1:-1}"
 }
 
@@ -119,7 +127,7 @@ fi
 
 case "${1:-}" in
     ""|current)
-        current_theme || die "no hay un tema activo (falta $ACTIVE_LINK)"
+        current_theme || die "no hay un modo activo (falta $ACTIVE_LINK)"
         ;;
     list)
         list_themes

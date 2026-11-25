@@ -98,14 +98,13 @@ Rectangle {
     }
 
     implicitHeight: contentCol.implicitHeight + 22
-    radius: Theme.cardRadius
-    color: cardMouse.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-    border.width: Theme.borderWidth
-    border.color: isCritical ? Theme.urgent : (cardMouse.containsMouse ? Theme.activeBorder : Theme.border)
+    radius: Theme.radiusMedium
+    color: cardMouse.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
+    border.width: isCritical ? 1 : 0
+    border.color: isCritical ? Theme.error : "transparent"
     clip: true
 
-    Behavior on color { ColorAnimation { duration: 120 } }
-    Behavior on border.color { ColorAnimation { duration: 120 } }
+    Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
     // Indicador lateral de urgencia
     Rectangle {
@@ -113,7 +112,7 @@ Rectangle {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: 3
-        color: card.isCritical ? Theme.urgent : (card.isLow ? Theme.muted : Theme.accent)
+        color: card.isCritical ? Theme.error : (card.isLow ? Theme.fgSubtle : Theme.primary)
     }
 
     MouseArea {
@@ -153,15 +152,13 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 10
 
-            // Icono de la app o imagen en miniatura
+            // Icono de la app o badge tonal
             Rectangle {
                 Layout.preferredWidth: 34
                 Layout.preferredHeight: 34
                 Layout.alignment: Qt.AlignTop
-                radius: Theme.cardRadius > 0 ? Math.min(Theme.cardRadius, 8) : 0
-                color: Theme.panelBg
-                border.width: 1
-                border.color: Theme.border
+                radius: Theme.radiusSmall
+                color: card.isCritical ? Theme.errorContainer : Theme.surfaceContainerHigh
                 clip: true
 
                 Image {
@@ -181,7 +178,7 @@ Rectangle {
                     text: card.isCritical ? "󰀪" : "󰂚"
                     font.family: Theme.fontFamily
                     font.pixelSize: 16
-                    color: card.isCritical ? Theme.urgent : Theme.accent
+                    color: card.isCritical ? Theme.fgOnErrorContainer : Theme.primary
                 }
             }
 
@@ -198,7 +195,7 @@ Rectangle {
                         font.family: Theme.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.DemiBold
-                        color: card.isCritical ? Theme.urgent : Theme.muted
+                        color: card.isCritical ? Theme.error : Theme.fgSubtle
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -208,15 +205,17 @@ Rectangle {
                         text: card.relativeTime
                         font.family: Theme.fontFamily
                         font.pixelSize: 10
-                        color: Theme.muted
+                        color: Theme.fgSubtle
                     }
 
                     // Botón cerrar
                     Rectangle {
                         Layout.preferredWidth: 22
                         Layout.preferredHeight: 22
-                        radius: Theme.cardRadius > 0 ? 6 : 0
-                        color: closeMouse.containsMouse ? Theme.urgent : "transparent"
+                        radius: 11
+                        color: closeMouse.containsMouse ? Theme.errorContainer : "transparent"
+
+                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                         Text {
                             anchors.centerIn: parent
@@ -224,7 +223,7 @@ Rectangle {
                             font.family: Theme.fontFamily
                             font.pixelSize: 11
                             font.weight: Font.Bold
-                            color: closeMouse.containsMouse ? Theme.accentText : Theme.muted
+                            color: closeMouse.containsMouse ? Theme.fgOnErrorContainer : Theme.fgSubtle
                         }
 
                         MouseArea {
@@ -248,7 +247,7 @@ Rectangle {
                     font.family: Theme.fontFamily
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
-                    color: Theme.textBright
+                    color: Theme.fg
                     wrapMode: Text.Wrap
                     maximumLineCount: card.compact ? 2 : 3
                     elide: Text.ElideRight
@@ -261,7 +260,7 @@ Rectangle {
                     textFormat: Text.PlainText
                     font.family: Theme.fontFamily
                     font.pixelSize: 12
-                    color: Theme.text
+                    color: Theme.fgMuted
                     wrapMode: Text.Wrap
                     maximumLineCount: card.compact ? 4 : 8
                     elide: Text.ElideRight
@@ -274,8 +273,8 @@ Rectangle {
             visible: bodyImg.status === Image.Ready
             Layout.fillWidth: true
             Layout.preferredHeight: visible ? Math.min(132, Math.max(64, bodyImg.implicitHeight)) : 0
-            radius: Theme.cardRadius > 0 ? Math.max(4, Theme.cardRadius - 2) : 0
-            color: Theme.panelBg
+            radius: Theme.radiusSmall
+            color: Theme.surfaceContainerLow
             clip: true
 
             Image {
@@ -301,10 +300,10 @@ Rectangle {
                     required property var modelData
                     height: 26
                     width: Math.min(card.width - 32, actLabel.implicitWidth + 20)
-                    radius: Theme.cardRadius > 0 ? 6 : 0
-                    color: actMouse.containsMouse ? Theme.accent : Theme.panelBg
-                    border.width: 1
-                    border.color: actMouse.containsMouse ? Theme.accent : Theme.border
+                    radius: Theme.radiusFull
+                    color: actMouse.containsMouse ? Theme.primaryContainer : Theme.surfaceContainerHigh
+
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                     Text {
                         id: actLabel
@@ -313,8 +312,8 @@ Rectangle {
                         textFormat: Text.PlainText
                         font.family: Theme.fontFamily
                         font.pixelSize: 11
-                        font.weight: Font.Medium
-                        color: actMouse.containsMouse ? Theme.accentText : Theme.textBright
+                        font.weight: Font.DemiBold
+                        color: actMouse.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
                         elide: Text.ElideRight
                         width: Math.min(implicitWidth, parent.width - 12)
                     }
@@ -342,22 +341,22 @@ Rectangle {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 30
-                radius: Theme.cardRadius > 0 ? 6 : 0
-                color: Theme.panelBg
-                border.width: 1
-                border.color: replyInput.activeFocus ? Theme.activeBorder : Theme.border
+                radius: Theme.radiusSmall
+                color: Theme.surfaceContainerLow
+                border.width: replyInput.activeFocus ? 1 : 0
+                border.color: Theme.primary
 
                 TextInput {
                     id: replyInput
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
                     verticalAlignment: TextInput.AlignVCenter
                     font.family: Theme.fontFamily
                     font.pixelSize: 12
-                    color: Theme.textBright
-                    selectionColor: Theme.accent
-                    selectedTextColor: Theme.accentText
+                    color: Theme.fg
+                    selectionColor: Theme.primary
+                    selectedTextColor: Theme.fgOnPrimary
                     clip: true
 
                     onAccepted: {
@@ -376,7 +375,7 @@ Rectangle {
                             : "Responder..."
                         font.family: Theme.fontFamily
                         font.pixelSize: 12
-                        color: Theme.muted
+                        color: Theme.fgSubtle
                         visible: replyInput.text.length === 0
                         elide: Text.ElideRight
                     }
@@ -386,17 +385,17 @@ Rectangle {
             Rectangle {
                 Layout.preferredWidth: 30
                 Layout.preferredHeight: 30
-                radius: Theme.cardRadius > 0 ? 6 : 0
-                color: sendMouse.containsMouse ? Theme.accent : Theme.panelBg
-                border.width: 1
-                border.color: sendMouse.containsMouse ? Theme.accent : Theme.border
+                radius: 15
+                color: sendMouse.containsMouse ? Theme.primary : Theme.surfaceContainerHigh
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 Text {
                     anchors.centerIn: parent
                     text: "󰒊"
                     font.family: Theme.fontFamily
                     font.pixelSize: 14
-                    color: sendMouse.containsMouse ? Theme.accentText : Theme.accent
+                    color: sendMouse.containsMouse ? Theme.fgOnPrimary : Theme.primary
                 }
 
                 MouseArea {

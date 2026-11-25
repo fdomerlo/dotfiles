@@ -53,7 +53,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 
 | Capa | Herramientas principales |
 | :--- | :--- |
-| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `quickshell` (shell residente unificado: Barra superior multi-monitor, Centro de Notificaciones y toasts, OSD de volumen/brillo, Calendario, Lanzador Unificado y Overview/Actividades), `fuzzel` (`--dmenu` para submenús), `foot`, `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `cyber-teal-light` / `mr-robot` / `mr-robot-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
+| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `quickshell` (shell residente unificado estilo Material 3: Barra superior multi-monitor, Quick Settings acoplado con esquinas cóncavas, Centro de Notificaciones y toasts, OSD de volumen/brillo/bloqueos, Calendario, Lanzador Unificado y Overview/Actividades), `fuzzel` (`--dmenu` para submenús), `foot`, `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, tema único **Cyber-Teal Material 3** (`dark` / `light` en caliente), fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
@@ -181,18 +181,17 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+L` / `Super+N` / `Super+Ctrl+N` | Bloquear pantalla / notificaciones / luz nocturna (`4000K`) |
 | **Touchpad (3 dedos)** | Horizontal: workspaces · Arriba: Centro Unificado · Abajo: Actividades |
 
-### Temas y wallpapers
+### Tema único (Cyber-Teal Material 3 · Oscuro / Claro) y wallpapers
 
 ```bash
-~/.config/hypr/scripts/theme-switch.sh toggle     # Alterna entre los temas disponibles
-~/.config/hypr/scripts/theme-switch.sh menu       # Selector interactivo (Super+Shift+T)
+~/.config/hypr/scripts/theme-switch.sh toggle     # Alterna dark <-> light en caliente (Super+Shift+T)
+~/.config/hypr/scripts/theme-switch.sh menu       # Selector interactivo (Fuzzel)
 ```
 
-- **`cyber-teal`:** tema oscuro con estética glass redondeada, acento cyan disciplinado, barra flotante unificada de `40 px`, blur suave, tipografía `Inter` en UI y wallpaper por defecto [`northern-lights.jpg`](hypr/themes/cyber-teal/wallpapers/northern-lights.jpg).
-- **`cyber-teal-light`:** contraparte diurna de `cyber-teal` con la misma geometría, barra flotante unificada translúcida, tipografía `Inter` y acento petrol-teal de alto contraste sobre superficies hielo/niebla. GTK/libadwaita (`prefer-light` + acento `teal`) y Qt6CT (`airy.conf`) acompañan el modo claro, con wallpaper por defecto [`glacier-mist.jpg`](hypr/themes/cyber-teal-light/wallpapers/glacier-mist.jpg).
-- **`mr-robot`:** estilo terminal plano (tema por defecto) con bordes acero, Smart Gaps sin márgenes con una sola ventana, tipografía `JetBrains Mono` y wallpaper por defecto [`cyber-tower.jpg`](hypr/themes/mr-robot/wallpapers/cyber-tower.jpg).
-- **`mr-robot-light`:** contraparte diurna táctica de `mr-robot` con la misma geometría cortante (`0–2 px`, sin blur ni sombras), Smart Gaps, `JetBrains Mono`, HUD Waybar oscuro semiopaco sobre apps claras y paleta fría de papel técnico/acero con alertas carmesí. GTK/libadwaita (`prefer-light` + acento `slate`) y Qt6CT (`airy.conf`) acompañan el modo claro, con wallpaper por defecto [`concrete-mist.jpg`](hypr/themes/mr-robot-light/wallpapers/concrete-mist.jpg).
-- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés agruparlas por tema, en `~/.config/hypr/wallpapers/<tema>/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`.
+- **Diseño unificado:** geometría, animaciones Material 3, tipografía (`Inter` + `JetBrains Mono`) y barra superior con popouts acoplados mediante esquinas cóncavas (`QtQuick.Shapes`) viven en una sola base (`hypr/conf/appearance.conf` + `hypr/quickshell/Theme.qml`). Al alternar entre `dark` y `light`, Quickshell transiciona en caliente (`ColorAnimation` por IPC, sin reinicio) y acompaña GTK/libadwaita (`teal`), Qt6CT, Foot, Fuzzel, Hyprlock y los bordes de Hyprland.
+- **`dark` (por defecto):** superficies grafito/pizarra tonales + acento cyan-teal (`#22d3ee`) y wallpaper [`northern-lights.jpg`](hypr/themes/dark/wallpapers/northern-lights.jpg).
+- **`light`:** superficies hielo/niebla tonales + acento petrol-teal (`#006d80`) y wallpaper [`glacier-mist.jpg`](hypr/themes/light/wallpapers/glacier-mist.jpg).
+- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés separarlas por polaridad, en `~/.config/hypr/wallpapers/dark/` o `light/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`.
 
 ### Personalización local (sin ensuciar Git)
 

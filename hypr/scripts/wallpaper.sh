@@ -38,10 +38,8 @@ active_theme() {
 
 fallback_color() {
     case "$(active_theme || true)" in
-        cyber-teal-light) printf '#f2f6f7' ;;
-        mr-robot-light)   printf '#edf1f4' ;;
-        mr-robot)         printf '#05080b' ;;
-        *)                printf '#0c1012' ;;
+        light|*-light) printf '#f2f7f8' ;;
+        *)             printf '#0d1317' ;;
     esac
 }
 

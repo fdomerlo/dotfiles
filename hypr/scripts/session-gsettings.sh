@@ -5,7 +5,7 @@
 # overrides ni extensiones) como fallback limpio al cerrar Hyprland.
 #
 # Uso:
-#   session-gsettings.sh apply   # esquema claro/oscuro, fuentes Debian, cursor Bibata y acento del tema
+#   session-gsettings.sh apply   # esquema claro/oscuro, fuentes Debian, cursor Bibata y acento teal
 #   session-gsettings.sh reset   # restaura los defaults estándar de GNOME
 # ==============================================================================
 set -euo pipefail
@@ -22,30 +22,24 @@ active_theme() {
     basename "$(readlink "$link")"
 }
 
-# Acento de libadwaita por tema: asi Nautilus, Configuracion y Flatpaks dejan
-# de quedar azules cuando el escritorio usa otra paleta.
+# Acento unificado de libadwaita (Cyber-Teal M3).
 accent_for_theme() {
-    case "$1" in
-        mr-robot|mr-robot-light)     printf 'slate' ;;
-        cyber-teal|cyber-teal-light) printf 'teal' ;;
-        *)                           printf 'blue' ;;
-    esac
+    printf 'teal'
 }
 
-# Esquema claro/oscuro por tema. Los temas *-light declaran prefer-light y el
-# resto prefer-dark para que libadwaita y las apps GTK acompañen el escritorio.
+# Esquema claro/oscuro según el modo activo (dark / light).
 scheme_for_theme() {
     case "$1" in
-        cyber-teal-light|mr-robot-light) printf 'prefer-light' ;;
-        *)                               printf 'prefer-dark' ;;
+        light|*-light) printf 'prefer-light' ;;
+        *)             printf 'prefer-dark' ;;
     esac
 }
 
 # Paleta de Qt6CT equivalente (solo si el archivo existe en el sistema).
 qt_colors_for_theme() {
     case "$1" in
-        cyber-teal-light|mr-robot-light) printf '/usr/share/qt6ct/colors/airy.conf' ;;
-        *)                               printf '/usr/share/qt6ct/colors/darker.conf' ;;
+        light|*-light) printf '/usr/share/qt6ct/colors/airy.conf' ;;
+        *)             printf '/usr/share/qt6ct/colors/darker.conf' ;;
     esac
 }
 

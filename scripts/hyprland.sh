@@ -133,8 +133,13 @@ link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
 THEMES_DIR="$HYPR_SRC/themes"
 ACTIVE_THEME_LINK="$THEMES_DIR/active"
 if [ ! -d "$ACTIVE_THEME_LINK" ]; then
-    ln -sfn mr-robot "$ACTIVE_THEME_LINK"
-    warn "Tema activo ausente; se configuró mr-robot por defecto."
+    prev_theme="$(readlink "$ACTIVE_THEME_LINK" 2>/dev/null || true)"
+    case "$prev_theme" in
+        *light*) default_mode="light" ;;
+        *)       default_mode="dark" ;;
+    esac
+    ln -sfn "$default_mode" "$ACTIVE_THEME_LINK"
+    warn "Modo de tema migrado/inicializado a '$default_mode'."
 fi
 
 for f in "$HYPR_SRC"/conf/*.conf; do

@@ -472,8 +472,12 @@ else
              "$HOME/.config/fuzzel/fuzzel.ini" \
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
+             "$HOME/.config/hypr/conf/colors.conf" \
              "$HOME/.config/quickshell/shell.qml" \
+             "$HOME/.config/quickshell/Theme.qml" \
+             "$HOME/.config/quickshell/ConcaveCorner.qml" \
              "$HOME/.config/quickshell/BarWindow.qml" \
+             "$HOME/.config/quickshell/QuickSettingsPopup.qml" \
              "$HOME/.config/quickshell/NotificationCenter.qml" \
              "$HOME/.config/quickshell/OsdWindow.qml" \
              "$HOME/.config/quickshell/local.json"; do

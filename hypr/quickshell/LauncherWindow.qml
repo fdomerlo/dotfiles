@@ -190,22 +190,22 @@ PanelWindow {
                 category: "estilo",
                 badge: "Estilo",
                 glyph: "󰔎",
-                title: "Elegir tema (actual: " + themeLabel + ")",
-                subtitle: "Abrir selector entre cyber-teal, cyber-teal-light, mr-robot y mr-robot-light",
-                keywords: "tema theme cyber-teal cyber-teal-light mr-robot mr-robot-light claro oscuro light dark apariencia estilo",
-                shortcut: "Super+Shift+T",
+                title: "Elegir modo (actual: " + themeLabel + ")",
+                subtitle: "Selector del tema único Cyber-Teal Material 3 (dark / light)",
+                keywords: "tema theme cyber-teal claro oscuro light dark apariencia estilo modo",
                 actionType: "submenu",
                 delayMs: 90,
-                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Temas' \"$HOME/.config/hypr/scripts/theme-switch.sh\" menu"]
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Apariencia' \"$HOME/.config/hypr/scripts/theme-switch.sh\" menu"]
             },
             {
                 kind: "action",
                 category: "estilo",
                 badge: "Estilo",
                 glyph: "󰸉",
-                title: "Alternar tema rápido",
-                subtitle: "Cambiar inmediatamente al siguiente tema",
-                keywords: "tema toggle alternar cambiar estilo",
+                title: "Alternar modo Oscuro ↔ Claro",
+                subtitle: "Cambiar en caliente entre modo oscuro y modo claro",
+                keywords: "tema toggle alternar cambiar oscuro claro dark light estilo",
+                shortcut: "Super+Shift+T",
                 actionType: "exec",
                 delayMs: 0,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/theme-switch.sh\" toggle"]
@@ -385,8 +385,8 @@ PanelWindow {
                 subtitle: "Bloquear, suspender, hibernar, reiniciar, apagar o cerrar sesión",
                 keywords: "energia sesion apagar reiniciar suspender hibernar bloquear power logout hibernate",
                 actionType: "submenu",
-                delayMs: 90,
-                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Sistema:' \"$HOME/.config/hypr/scripts/powermenu.sh\""]
+                delayMs: 40,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/powermenu.sh\""]
             },
 
             // Dev & IA

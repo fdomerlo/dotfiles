@@ -1,4 +1,5 @@
 singleton Theme 1.0 Theme.qml
+ConcaveCorner 1.0 ConcaveCorner.qml
 OverviewWindow 1.0 OverviewWindow.qml
 LauncherWindow 1.0 LauncherWindow.qml
 OsdWindow 1.0 OsdWindow.qml
@@ -7,4 +8,7 @@ NotificationPopups 1.0 NotificationPopups.qml
 NotificationCenter 1.0 NotificationCenter.qml
 SystemState 1.0 SystemState.qml
 CalendarPopup 1.0 CalendarPopup.qml
+QuickSettingsPopup 1.0 QuickSettingsPopup.qml
+PowerPopup 1.0 PowerPopup.qml
+AiPopup 1.0 AiPopup.qml
 BarWindow 1.0 BarWindow.qml

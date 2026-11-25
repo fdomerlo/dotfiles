@@ -596,6 +596,9 @@ show_service_status() {
 }
 
 menu() {
+    if command -v qs >/dev/null 2>&1 && qs ipc call ai toggle >/dev/null 2>&1; then
+        return 0
+    fi
     command -v fuzzel >/dev/null 2>&1 || die "No se encontró fuzzel."
     local -a opts=(
         "󰚩  Preguntar a la IA"

@@ -138,12 +138,12 @@ menu_estilo() {
     fi
 
     local -a opts=(
-        "$(row "󰔎  Elegir tema (actual: $theme)" "Super+Shift+T")"
-        "󰸉  Alternar tema rápido"
+        "󰔎  Elegir modo (actual: $theme)"
+        "$(row "󰸉  Alternar modo Oscuro ↔ Claro" "Super+Shift+T")"
         "󰌾  Estilo de pantalla de bloqueo"
         "$(row "󰸨  Siguiente wallpaper" "Super+W")"
         "$(row "$night_label" "Super+Ctrl+N")"
-        "$(row "󰂚  Centro de notificaciones (SwayNC)" "Super+N")"
+        "$(row "󰂚  Centro de notificaciones" "Super+N")"
         "󰁍  Volver"
     )
 

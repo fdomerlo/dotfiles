@@ -20,6 +20,16 @@ PanelWindow {
     required property bool launcherOpen
     required property bool overviewOpen
     required property bool calendarOpen
+    required property bool quickSettingsOpen
+    required property bool powerOpen
+    required property bool aiOpen
+    required property bool popupsVisible
+    required property var calendarScreen
+    required property var quickSettingsScreen
+    required property var notifCenterScreen
+    required property var powerScreen
+    required property var aiScreen
+    required property var popupsScreen
     required property bool idleInhibited
 
     signal launcherRequested()
@@ -27,11 +37,20 @@ PanelWindow {
     signal notifCenterRequested()
     signal dndToggled()
     signal calendarRequested(var scr)
+    signal quickSettingsRequested(var scr)
+    signal powerRequested(var scr)
+    signal aiRequested(var scr)
     signal idleInhibitToggled()
 
-    readonly property bool isFloating: Theme.radius > 0
-    readonly property int barH: sysState ? sysState.barHeight : 40
-    readonly property int pillRadius: isFloating ? Math.min(Theme.cardRadius + 4, 12) : 0
+    readonly property int barH: sysState ? sysState.barHeight : 38
+    readonly property int pillH: Math.max(24, barH - 10)
+    readonly property bool isCalendarHere: calendarOpen && (!calendarScreen || calendarScreen === screen)
+    readonly property bool isQuickSettingsHere: quickSettingsOpen && (!quickSettingsScreen || quickSettingsScreen === screen)
+    readonly property bool isNotifCenterHere: notifCenterOpen && (!notifCenterScreen || notifCenterScreen === screen)
+    readonly property bool isPowerHere: powerOpen && (!powerScreen || powerScreen === screen)
+    readonly property bool isAiHere: aiOpen && (!aiScreen || aiScreen === screen)
+    readonly property bool hasPopupsHere: popupsVisible && (!popupsScreen || popupsScreen === screen)
+    readonly property bool anyDockedOpen: isCalendarHere || isQuickSettingsHere || isNotifCenterHere || isPowerHere || isAiHere || hasPopupsHere
     readonly property var hyprMonitor: Hyprland.monitorFor(screen)
     readonly property bool isPrimaryOrFocused: Boolean(
         Hyprland.focusedMonitor && hyprMonitor && Hyprland.focusedMonitor.name === hyprMonitor.name
@@ -108,7 +127,7 @@ PanelWindow {
         const title = String(activePlayer.trackTitle || "").trim();
         const artist = String(activePlayer.trackArtist || "").trim();
         if (artist && title)
-            return artist + " - " + title;
+            return artist + " · " + title;
         return title || artist || "";
     }
 
@@ -157,38 +176,21 @@ PanelWindow {
         return null;
     }
 
-    // Reloj en español (sin depender del locale del motor JS)
+    // Reloj en español
     readonly property var esDays: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"]
     readonly property var esMonths: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
-    readonly property string formattedClock: {
+    readonly property string formattedDate: {
         const d = currentDate;
         const wd = esDays[d.getDay()] || "";
         const day = String(d.getDate()).padStart(2, "0");
         const mon = esMonths[d.getMonth()] || "";
+        return wd + " " + day + " " + mon;
+    }
+    readonly property string formattedTime: {
+        const d = currentDate;
         const hh = String(d.getHours()).padStart(2, "0");
         const mm = String(d.getMinutes()).padStart(2, "0");
-        return wd + ", " + day + " " + mon + " " + hh + ":" + mm;
-    }
-
-    function cyclePowerProfile() {
-        const cur = PowerProfiles.profile;
-        if (cur === PowerProfile.PowerSaver) {
-            PowerProfiles.profile = PowerProfile.Balanced;
-        } else if (cur === PowerProfile.Balanced) {
-            PowerProfiles.profile = PowerProfiles.hasPerformanceProfile
-                ? PowerProfile.Performance
-                : PowerProfile.PowerSaver;
-        } else {
-            PowerProfiles.profile = PowerProfile.PowerSaver;
-        }
-    }
-
-    function powerProfileGlyph() {
-        if (PowerProfiles.profile === PowerProfile.Performance)
-            return "󰓅";
-        if (PowerProfiles.profile === PowerProfile.PowerSaver)
-            return "󰌪";
-        return "󰾅";
+        return hh + ":" + mm;
     }
 
     function resolveTrayIcon(rawIcon) {
@@ -204,11 +206,10 @@ PanelWindow {
 
     function runScript(relPath, args) {
         const home = Quickshell.env("HOME") || "";
-        const full = home + "/.config/hypr/scripts/" + relPath;
-        Quickshell.execDetached([full].concat(args || []));
+        Quickshell.execDetached([home + "/.config/hypr/scripts/" + relPath].concat(args || []));
     }
 
-    // Inhibidor real de reposo Wayland (equivalente nativo al módulo idle_inhibitor de Waybar)
+    // Inhibidor real de reposo Wayland
     IdleInhibitor {
         window: barWin
         enabled: barWin.idleInhibited
@@ -219,11 +220,6 @@ PanelWindow {
         left: true
         right: true
     }
-    margins {
-        top: isFloating ? 6 : 0
-        left: isFloating ? 8 : 0
-        right: isFloating ? 8 : 0
-    }
 
     implicitHeight: barH
     exclusionMode: ExclusionMode.Auto
@@ -233,59 +229,54 @@ PanelWindow {
 
     color: "transparent"
 
-    // Contenedor principal de la barra
+    // Superficie superior continua estilo Material 3 / Caelestia
     Rectangle {
         id: barFrame
         anchors.fill: parent
-        radius: barWin.isFloating ? Math.min(Theme.radius, barWin.barH / 2) : 0
-        color: Theme.panelBg
-        border.width: barWin.isFloating ? Theme.borderWidth : 0
-        border.color: Theme.border
-        clip: true
+        color: Theme.surface
+        Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
 
-        // Borde inferior limpio en temas arquitectónicos (radius === 0)
+        // Línea inferior sutil que se desvanece cuando un popout se acopla a esta barra
         Rectangle {
-            visible: !barWin.isFloating
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             height: 1
-            color: Theme.border
+            color: Theme.outlineVariant
+            opacity: barWin.anyDockedOpen ? 0.0 : 0.45
+
+            Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
         }
 
+        // =====================================================================
+        // ZONA IZQUIERDA: Lanzador · Workspaces · Media · Ventana activa
+        // =====================================================================
         RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: barWin.isFloating ? 8 : 6
-            anchors.rightMargin: barWin.isFloating ? 8 : 6
+            id: leftCluster
+            anchors.left: parent.left
+            anchors.right: centerClock.left
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: 10
+            anchors.rightMargin: 14
             spacing: 6
 
-            // =================================================================
-            // ZONA IZQUIERDA: Lanzador · Workspaces · Media · Ventana activa
-            // =================================================================
-
-            // Botón Lanzador (clic izq.: Launcher, clic der.: Overview)
+            // Botón Lanzador / Overview
             Rectangle {
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: launcherTxt.implicitWidth + 18
-                radius: barWin.pillRadius
+                Layout.preferredHeight: barWin.pillH
+                Layout.preferredWidth: 32
+                radius: Theme.radiusFull
                 color: (barWin.launcherOpen || barWin.overviewOpen)
-                    ? Theme.accent
-                    : (launcherM.containsMouse ? Theme.cardHoverBg : Theme.cardBg)
-                border.width: 1
-                border.color: (barWin.launcherOpen || barWin.overviewOpen)
-                    ? Theme.accent
-                    : (launcherM.containsMouse ? Theme.activeBorder : Theme.border)
+                    ? Theme.primary
+                    : (launcherM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer)
 
-                Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 Text {
-                    id: launcherTxt
                     anchors.centerIn: parent
-                    text: ">_"
+                    text: "󰀻"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 12
-                    font.weight: Font.Bold
-                    color: (barWin.launcherOpen || barWin.overviewOpen) ? Theme.accentText : Theme.accent
+                    font.pixelSize: 14
+                    color: (barWin.launcherOpen || barWin.overviewOpen) ? Theme.fgOnPrimary : Theme.primary
                 }
 
                 MouseArea {
@@ -303,15 +294,13 @@ PanelWindow {
                 }
             }
 
-            // Píldora de Workspaces del monitor (morphing fluido estilo Caelestia)
+            // Píldora de Workspaces con morphing elástico estilo Caelestia
             Rectangle {
                 visible: barWin.monitorWorkspaces.length > 0
-                Layout.preferredHeight: barWin.barH - 12
+                Layout.preferredHeight: barWin.pillH
                 Layout.preferredWidth: wsRow.implicitWidth + 10
-                radius: barWin.pillRadius
-                color: Theme.cardBg
-                border.width: 1
-                border.color: Theme.border
+                radius: Theme.radiusFull
+                color: Theme.surfaceContainer
 
                 MouseArea {
                     anchors.fill: parent
@@ -338,30 +327,39 @@ PanelWindow {
                             readonly property bool isUrgent: Boolean(modelData.urgent)
                             readonly property bool hasWins: barWin.workspaceHasWindows(modelData.id)
 
-                            height: barWin.barH - 18
+                            height: barWin.pillH - 8
                             width: isActive
-                                ? Math.max(barWin.isFloating ? 34 : 30, wsLabel.implicitWidth + 16)
-                                : Math.max(24, wsLabel.implicitWidth + 12)
-                            radius: barWin.isFloating ? height / 2 : 0
+                                ? Math.max(34, wsLabel.implicitWidth + 18)
+                                : (hasWins ? Math.max(22, wsLabel.implicitWidth + 10) : 18)
+                            radius: height / 2
                             color: isUrgent
-                                ? Theme.urgent
+                                ? Theme.error
                                 : (isActive
-                                    ? Theme.accent
-                                    : (wsM.containsMouse ? Theme.cardHoverBg : "transparent"))
+                                    ? Theme.primary
+                                    : (wsM.containsMouse
+                                        ? Theme.surfaceContainerHighest
+                                        : (hasWins ? Theme.surfaceContainerHigh : "transparent")))
 
-                            Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                            Behavior on color { ColorAnimation { duration: 120 } }
+                            Behavior on width {
+                                NumberAnimation {
+                                    duration: 280
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveDecel
+                                }
+                            }
+                            Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                             Text {
                                 id: wsLabel
                                 anchors.centerIn: parent
-                                text: barWin.isFloating ? String(modelData.name) : ("[" + modelData.name + "]")
+                                text: String(modelData.name)
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 11
                                 font.weight: isActive ? Font.Bold : (hasWins ? Font.DemiBold : Font.Normal)
                                 color: (isActive || isUrgent)
-                                    ? Theme.accentText
-                                    : (hasWins ? Theme.textBright : Theme.muted)
+                                    ? Theme.fgOnPrimary
+                                    : (hasWins ? Theme.fg : Theme.fgSubtle)
+                                opacity: (isActive || isUrgent || hasWins || wsM.containsMouse) ? 1.0 : 0.75
                             }
 
                             MouseArea {
@@ -376,30 +374,30 @@ PanelWindow {
                 }
             }
 
-            // Píldora Media (MPRIS, solo cuando hay reproducción/pista)
+            // Chip Media (MPRIS, solo cuando hay pista)
             Rectangle {
                 visible: Boolean(barWin.sysState && barWin.sysState.showMedia && barWin.mediaText.length > 0)
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.maximumWidth: 230
-                Layout.preferredWidth: Math.min(230, mediaRow.implicitWidth + 16)
-                radius: barWin.pillRadius
-                color: mediaM.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                border.width: 1
-                border.color: mediaM.containsMouse ? Theme.activeBorder : Theme.border
+                Layout.preferredHeight: barWin.pillH
+                Layout.maximumWidth: 210
+                Layout.preferredWidth: Math.min(210, mediaRow.implicitWidth + 18)
+                radius: Theme.radiusFull
+                color: mediaM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
                 clip: true
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 RowLayout {
                     id: mediaRow
                     anchors.fill: parent
-                    anchors.leftMargin: 9
-                    anchors.rightMargin: 9
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
                     spacing: 6
 
                     Text {
                         text: (barWin.activePlayer && barWin.activePlayer.isPlaying) ? "󰎆" : "󰏤"
                         font.family: Theme.fontFamily
                         font.pixelSize: 12
-                        color: Theme.accent
+                        color: Theme.primary
                     }
 
                     Text {
@@ -408,7 +406,8 @@ PanelWindow {
                         textFormat: Text.PlainText
                         font.family: Theme.fontFamily
                         font.pixelSize: 11
-                        color: Theme.text
+                        font.weight: Font.Medium
+                        color: Theme.fgMuted
                         elide: Text.ElideRight
                     }
                 }
@@ -433,31 +432,98 @@ PanelWindow {
                 }
             }
 
-            // Título de ventana activa (absorbe el espacio central disponible)
+            // Título de ventana activa (elidido limpiamente antes del reloj central)
             Text {
                 Layout.fillWidth: true
-                Layout.leftMargin: 4
-                Layout.rightMargin: 4
+                Layout.leftMargin: 6
                 text: barWin.activeWindowTitle
                 textFormat: Text.PlainText
                 font.family: Theme.fontFamily
                 font.pixelSize: 12
                 font.weight: Font.Medium
-                color: barWin.isPrimaryOrFocused ? Theme.text : Theme.muted
+                color: barWin.isPrimaryOrFocused ? Theme.fgMuted : Theme.fgSubtle
+                opacity: barWin.isPrimaryOrFocused ? 0.95 : 0.72
                 elide: Text.ElideRight
             }
+        }
 
-            // =================================================================
-            // ZONA DERECHA: Telemetría · Hardware · Red · Sesión · Reloj · Tray
-            // =================================================================
+        // =====================================================================
+        // ZONA CENTRAL: Reloj + Fecha (ancla visual del CalendarPopup acoplado)
+        // =====================================================================
+        Rectangle {
+            id: centerClock
+            anchors.centerIn: parent
+            height: barWin.pillH
+            width: clockRow.implicitWidth + 24
+            radius: Theme.radiusFull
+            color: barWin.isCalendarHere
+                ? Theme.primaryContainer
+                : (clkM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer)
 
-            // Grabación de pantalla (solo visible si wf-recorder está activo)
+            Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+            Row {
+                id: clockRow
+                anchors.centerIn: parent
+                spacing: 8
+
+                Text {
+                    text: barWin.formattedDate
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
+                    color: barWin.isCalendarHere ? Theme.fgOnPrimaryContainer : Theme.fgMuted
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Rectangle {
+                    width: 4
+                    height: 4
+                    radius: 2
+                    color: barWin.isCalendarHere ? Theme.primary : Theme.outline
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text: barWin.formattedTime
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 12
+                    font.weight: Font.Bold
+                    color: barWin.isCalendarHere ? Theme.fgOnPrimaryContainer : Theme.fg
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+
+            MouseArea {
+                id: clkM
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: barWin.calendarRequested(barWin.screen)
+            }
+        }
+
+        // =====================================================================
+        // ZONA DERECHA: REC · Telemetría · IA · Tray · QuickSettings · Notifs · Power
+        // =====================================================================
+        RowLayout {
+            id: rightCluster
+            anchors.left: centerClock.right
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: 14
+            anchors.rightMargin: 10
+            spacing: 6
+
+            Item { Layout.fillWidth: true }
+
+            // Grabación de pantalla activa
             Rectangle {
                 visible: Boolean(barWin.sysState && barWin.sysState.recordingActive)
-                Layout.preferredHeight: barWin.barH - 12
+                Layout.preferredHeight: barWin.pillH
                 Layout.preferredWidth: recRow.implicitWidth + 16
-                radius: barWin.pillRadius
-                color: Theme.urgent
+                radius: Theme.radiusFull
+                color: Theme.error
 
                 Row {
                     id: recRow
@@ -467,8 +533,8 @@ PanelWindow {
                     Text {
                         text: ""
                         font.family: Theme.fontFamily
-                        font.pixelSize: 10
-                        color: Theme.accentText
+                        font.pixelSize: 9
+                        color: Theme.fgOnError
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
@@ -476,7 +542,7 @@ PanelWindow {
                         font.family: Theme.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Bold
-                        color: Theme.accentText
+                        color: Theme.fgOnError
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
@@ -488,35 +554,35 @@ PanelWindow {
                 }
             }
 
-            // Telemetría CPU + RAM (clic abre btop)
+            // Telemetría compacta (CPU + RAM · clic abre btop)
             Rectangle {
                 visible: Boolean(barWin.sysState && barWin.sysState.showTelemetry)
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: telRow.implicitWidth + 16
-                radius: barWin.pillRadius
-                color: telM.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                border.width: 1
-                border.color: telM.containsMouse ? Theme.activeBorder : Theme.border
+                Layout.preferredHeight: barWin.pillH
+                Layout.preferredWidth: telRow.implicitWidth + 18
+                radius: Theme.radiusFull
+                color: telM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 Row {
                     id: telRow
                     anchors.centerIn: parent
-                    spacing: 10
+                    spacing: 9
 
                     Text {
                         text: " " + (barWin.sysState ? barWin.sysState.cpuUsage : 0) + "%"
-                        font.family: Theme.fontFamily
+                        font.family: Theme.monoFontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
-                        color: (barWin.sysState && barWin.sysState.cpuUsage >= 85) ? Theme.urgent : Theme.text
+                        color: (barWin.sysState && barWin.sysState.cpuUsage >= 85) ? Theme.error : Theme.fgMuted
                     }
 
                     Text {
                         text: "󰍛 " + (barWin.sysState ? barWin.sysState.memUsedGiB.toFixed(1) : "0.0") + "G"
-                        font.family: Theme.fontFamily
+                        font.family: Theme.monoFontFamily
                         font.pixelSize: 11
                         font.weight: Font.Medium
-                        color: Theme.text
+                        color: Theme.fgMuted
                     }
                 }
 
@@ -529,278 +595,18 @@ PanelWindow {
                 }
             }
 
-            // Grupo de energía + hardware (Perfil · Idle · Brillo · Batería · Audio)
-            Rectangle {
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: hwRow.implicitWidth + 14
-                radius: barWin.pillRadius
-                color: Theme.cardBg
-                border.width: 1
-                border.color: Theme.border
-
-                Row {
-                    id: hwRow
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    // Perfil de energía
-                    Item {
-                        width: ppTxt.implicitWidth + 6
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: ppTxt
-                            anchors.centerIn: parent
-                            text: barWin.powerProfileGlyph()
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 14
-                            color: PowerProfiles.profile === PowerProfile.Performance
-                                ? Theme.urgent
-                                : (PowerProfiles.profile === PowerProfile.PowerSaver ? Theme.accent : Theme.text)
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: barWin.cyclePowerProfile()
-                        }
-                    }
-
-                    // Inhibidor de reposo (Wayland IdleInhibitor)
-                    Item {
-                        width: idleTxt.implicitWidth + 6
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: idleTxt
-                            anchors.centerIn: parent
-                            text: barWin.idleInhibited ? "󰅶" : "󰾪"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 14
-                            color: barWin.idleInhibited ? Theme.accent : Theme.muted
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: barWin.idleInhibitToggled()
-                        }
-                    }
-
-                    // Brillo (solo en equipos con backlight)
-                    Item {
-                        visible: Boolean(barWin.sysState && barWin.sysState.hasBacklight)
-                        width: visible ? (brTxt.implicitWidth + 6) : 0
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: brTxt
-                            anchors.centerIn: parent
-                            readonly property int pct: barWin.sysState ? barWin.sysState.brightnessPercent : 0
-                            text: (pct <= 33 ? "󰃞 " : (pct <= 66 ? "󰃟 " : "󰃠 ")) + pct + "%"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 11
-                            font.weight: Font.Medium
-                            color: Theme.text
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onWheel: wheel => {
-                                if (wheel.angleDelta.y > 0)
-                                    barWin.runScript("osd.sh", ["brightness", "raise"]);
-                                else if (wheel.angleDelta.y < 0)
-                                    barWin.runScript("osd.sh", ["brightness", "lower"]);
-                            }
-                        }
-                    }
-
-                    // Batería (solo en laptops)
-                    Item {
-                        visible: barWin.hasBattery
-                        width: visible ? (batTxt.implicitWidth + 6) : 0
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: batTxt
-                            anchors.centerIn: parent
-                            text: barWin.batteryGlyph + " " + barWin.batteryPct + "%"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 11
-                            font.weight: Font.Medium
-                            color: (!barWin.batteryCharging && barWin.batteryPct <= 15)
-                                ? Theme.urgent
-                                : (barWin.batteryCharging ? Theme.accent : Theme.text)
-                        }
-                    }
-
-                    // Audio (PipeWire nativo)
-                    Item {
-                        width: audTxt.implicitWidth + 6
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: audTxt
-                            anchors.centerIn: parent
-                            text: barWin.volumeMuted
-                                ? "󰖁"
-                                : ((barWin.volumePct <= 33 ? "󰕿 " : (barWin.volumePct <= 66 ? "󰖀 " : "󰕾 ")) + barWin.volumePct + "%")
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 11
-                            font.weight: Font.Medium
-                            color: barWin.volumeMuted ? Theme.urgent : Theme.text
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            onClicked: mouse => {
-                                if (mouse.button === Qt.RightButton)
-                                    barWin.runScript("osd.sh", ["volume", "mute"]);
-                                else
-                                    Quickshell.execDetached(["pavucontrol"]);
-                            }
-                            onWheel: wheel => {
-                                if (wheel.angleDelta.y > 0)
-                                    barWin.runScript("osd.sh", ["volume", "raise"]);
-                                else if (wheel.angleDelta.y < 0)
-                                    barWin.runScript("osd.sh", ["volume", "lower"]);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Grupo de conectividad (Red · VPN · Bluetooth)
-            Rectangle {
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: netRow.implicitWidth + 14
-                radius: barWin.pillRadius
-                color: Theme.cardBg
-                border.width: 1
-                border.color: Theme.border
-
-                Row {
-                    id: netRow
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    // Red
-                    Item {
-                        width: netTxt.implicitWidth + 6
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: netTxt
-                            anchors.centerIn: parent
-                            readonly property string kind: barWin.sysState ? barWin.sysState.netKind : "disconnected"
-                            text: kind === "wifi" ? "" : (kind === "ethernet" ? "󰈀" : "󰪎")
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 13
-                            color: kind === "disconnected" ? Theme.urgent : Theme.text
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            onClicked: mouse => {
-                                if (mouse.button === Qt.RightButton)
-                                    Quickshell.execDetached(["nm-connection-editor"]);
-                                else
-                                    barWin.runScript("toggle-menu.sh", ["Red:", Quickshell.env("HOME") + "/.config/hypr/scripts/network-menu.sh"]);
-                            }
-                        }
-                    }
-
-                    // VPN activa
-                    Item {
-                        visible: Boolean(barWin.sysState && barWin.sysState.vpnName.length > 0)
-                        width: visible ? (vpnTxt.implicitWidth + 6) : 0
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: vpnTxt
-                            anchors.centerIn: parent
-                            text: " " + (barWin.sysState ? barWin.sysState.vpnName : "")
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
-                            color: Theme.accent
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: barWin.runScript("toggle-menu.sh", ["Red:", Quickshell.env("HOME") + "/.config/hypr/scripts/network-menu.sh"])
-                        }
-                    }
-
-                    // Bluetooth (solo si el equipo tiene adaptador)
-                    Item {
-                        visible: barWin.hasBluetooth
-                        width: visible ? (btTxt.implicitWidth + 6) : 0
-                        height: barWin.barH - 14
-
-                        Text {
-                            id: btTxt
-                            anchors.centerIn: parent
-                            text: !barWin.btEnabled
-                                ? "󰂲"
-                                : (barWin.btConnectedDevice
-                                    ? ("󰂱 " + String(barWin.btConnectedDevice.name || barWin.btConnectedDevice.deviceName || ""))
-                                    : "󰂯")
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 11
-                            font.weight: barWin.btConnectedDevice ? Font.DemiBold : Font.Normal
-                            color: barWin.btConnectedDevice ? Theme.accent : (barWin.btEnabled ? Theme.text : Theme.muted)
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Quickshell.execDetached(["blueman-manager"])
-                        }
-                    }
-                }
-            }
-
-            // Luz nocturna (solo visible cuando está activa)
-            Rectangle {
-                visible: Boolean(barWin.sysState && barWin.sysState.nightlightActive)
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: 30
-                radius: barWin.pillRadius
-                color: nlM.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                border.width: 1
-                border.color: Theme.activeBorder
-
-                Text {
-                    anchors.centerIn: parent
-                    text: ""
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 13
-                    color: Theme.accent
-                }
-
-                MouseArea {
-                    id: nlM
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: barWin.runScript("nightlight-toggle.sh", [])
-                }
-            }
-
             // Servicio IA (OpenCode)
             Rectangle {
-                Layout.preferredHeight: barWin.barH - 12
+                id: aiPill
+                readonly property bool aiOn: Boolean(barWin.sysState && barWin.sysState.aiActive)
+                Layout.preferredHeight: barWin.pillH
                 Layout.preferredWidth: aiTxt.implicitWidth + 16
-                radius: barWin.pillRadius
-                color: aiM.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                border.width: 1
-                border.color: (barWin.sysState && barWin.sysState.aiActive) ? Theme.activeBorder : Theme.border
+                radius: Theme.radiusFull
+                color: (barWin.isAiHere || aiOn)
+                    ? ((barWin.isAiHere || aiM.containsMouse) ? Theme.tertiary : Theme.tertiaryContainer)
+                    : (aiM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer)
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 Text {
                     id: aiTxt
@@ -809,7 +615,9 @@ PanelWindow {
                     font.family: Theme.fontFamily
                     font.pixelSize: 11
                     font.weight: Font.DemiBold
-                    color: (barWin.sysState && barWin.sysState.aiActive) ? Theme.accent : Theme.muted
+                    color: (barWin.isAiHere || aiPill.aiOn)
+                        ? ((barWin.isAiHere || aiM.containsMouse) ? Theme.fgOnTertiary : Theme.fgOnTertiaryContainer)
+                        : Theme.fgMuted
                 }
 
                 MouseArea {
@@ -822,108 +630,18 @@ PanelWindow {
                         if (mouse.button === Qt.RightButton)
                             barWin.runScript("ai.sh", ["service", "toggle"]);
                         else
-                            barWin.runScript("ai.sh", ["menu"]);
+                            barWin.aiRequested(barWin.screen);
                     }
-                }
-            }
-
-            // Notificaciones (clic izq.: Centro · clic der.: No Molestar)
-            Rectangle {
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: notifRow.implicitWidth + 16
-                radius: barWin.pillRadius
-                color: barWin.notifCenterOpen
-                    ? Theme.accent
-                    : (notifM.containsMouse ? Theme.cardHoverBg : Theme.cardBg)
-                border.width: 1
-                border.color: barWin.dndEnabled
-                    ? Theme.urgent
-                    : (barWin.notifCenterOpen || barWin.notifCount > 0 ? Theme.activeBorder : Theme.border)
-
-                Row {
-                    id: notifRow
-                    anchors.centerIn: parent
-                    spacing: 5
-
-                    Text {
-                        text: barWin.dndEnabled
-                            ? "󰂛"
-                            : (barWin.notifCount > 0 ? "󰂚" : "󰂜")
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        color: barWin.notifCenterOpen
-                            ? Theme.accentText
-                            : (barWin.dndEnabled ? Theme.urgent : (barWin.notifCount > 0 ? Theme.accent : Theme.text))
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    Text {
-                        visible: barWin.notifCount > 0 && !barWin.dndEnabled
-                        text: String(barWin.notifCount)
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 11
-                        font.weight: Font.Bold
-                        color: barWin.notifCenterOpen ? Theme.accentText : Theme.textBright
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                MouseArea {
-                    id: notifM
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onClicked: mouse => {
-                        if (mouse.button === Qt.RightButton)
-                            barWin.dndToggled();
-                        else
-                            barWin.notifCenterRequested();
-                    }
-                }
-            }
-
-            // Reloj (clic abre CalendarPopup)
-            Rectangle {
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: clkTxt.implicitWidth + 18
-                radius: barWin.pillRadius
-                color: barWin.calendarOpen
-                    ? Theme.accent
-                    : (clkM.containsMouse ? Theme.cardHoverBg : Theme.cardBg)
-                border.width: 1
-                border.color: barWin.calendarOpen
-                    ? Theme.accent
-                    : (clkM.containsMouse ? Theme.activeBorder : Theme.border)
-
-                Text {
-                    id: clkTxt
-                    anchors.centerIn: parent
-                    text: "󰃭 " + barWin.formattedClock
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 11
-                    font.weight: Font.DemiBold
-                    color: barWin.calendarOpen ? Theme.accentText : Theme.textBright
-                }
-
-                MouseArea {
-                    id: clkM
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: barWin.calendarRequested(barWin.screen)
                 }
             }
 
             // System Tray (StatusNotifierItem + DBusMenu nativo)
             Rectangle {
                 visible: SystemTray.items.values.length > 0
-                Layout.preferredHeight: barWin.barH - 12
+                Layout.preferredHeight: barWin.pillH
                 Layout.preferredWidth: trayRow.implicitWidth + 14
-                radius: barWin.pillRadius
-                color: Theme.cardBg
-                border.width: 1
-                border.color: Theme.border
+                radius: Theme.radiusFull
+                color: Theme.surfaceContainer
 
                 Row {
                     id: trayRow
@@ -940,8 +658,8 @@ PanelWindow {
 
                             Image {
                                 anchors.centerIn: parent
-                                width: 16
-                                height: 16
+                                width: 15
+                                height: 15
                                 source: barWin.resolveTrayIcon(modelData.icon)
                                 sourceSize.width: 16
                                 sourceSize.height: 16
@@ -973,23 +691,200 @@ PanelWindow {
                 }
             }
 
-            // Botón Power (menú del sistema)
+            // Píldora unificada de Estado / Quick Settings (Red · VPN · BT · Energía · Audio)
             Rectangle {
-                Layout.preferredHeight: barWin.barH - 12
-                Layout.preferredWidth: 30
-                radius: barWin.pillRadius
-                color: pwrM.containsMouse ? Theme.urgent : Theme.cardBg
-                border.width: 1
-                border.color: pwrM.containsMouse ? Theme.urgent : Theme.border
+                readonly property color statusFg: barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.fg
+                Layout.preferredHeight: barWin.pillH
+                Layout.preferredWidth: statusRow.implicitWidth + 20
+                radius: Theme.radiusFull
+                color: barWin.isQuickSettingsHere
+                    ? Theme.primaryContainer
+                    : (statusM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer)
 
-                Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                Row {
+                    id: statusRow
+                    anchors.centerIn: parent
+                    spacing: 9
+
+                    Text {
+                        visible: Boolean(barWin.sysState && barWin.sysState.nightlightActive)
+                        text: ""
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 12
+                        color: barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.primary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        visible: barWin.idleInhibited
+                        text: "󰅶"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 13
+                        color: barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.secondary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        readonly property string kind: barWin.sysState ? barWin.sysState.netKind : "disconnected"
+                        text: kind === "wifi" ? "" : (kind === "ethernet" ? "󰈀" : "󰪎")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 13
+                        color: kind === "disconnected"
+                            ? Theme.error
+                            : (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.fg)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        visible: Boolean(barWin.sysState && barWin.sysState.vpnName.length > 0)
+                        text: "󰒃"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 13
+                        color: barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.primary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        visible: barWin.hasBluetooth
+                        text: !barWin.btEnabled ? "󰂲" : (barWin.btConnectedDevice ? "󰂱" : "󰂯")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 13
+                        color: barWin.btConnectedDevice
+                            ? (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.primary)
+                            : (barWin.btEnabled
+                                ? (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.fgMuted)
+                                : Theme.fgSubtle)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: barWin.volumeMuted
+                            ? "󰖁"
+                            : ((barWin.volumePct <= 33 ? "󰕿 " : (barWin.volumePct <= 66 ? "󰖀 " : "󰕾 ")) + barWin.volumePct + "%")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: barWin.volumeMuted
+                            ? Theme.error
+                            : (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.fg)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        visible: barWin.hasBattery
+                        text: barWin.batteryGlyph + " " + barWin.batteryPct + "%"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Medium
+                        color: (!barWin.batteryCharging && barWin.batteryPct <= 15)
+                            ? Theme.error
+                            : (barWin.batteryCharging
+                                ? (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.secondary)
+                                : (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.fg))
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    id: statusM
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: mouse => {
+                        if (mouse.button === Qt.RightButton)
+                            barWin.runScript("osd.sh", ["volume", "mute"]);
+                        else
+                            barWin.quickSettingsRequested(barWin.screen);
+                    }
+                    onWheel: wheel => {
+                        if (wheel.angleDelta.y > 0)
+                            barWin.runScript("osd.sh", ["volume", "raise"]);
+                        else if (wheel.angleDelta.y < 0)
+                            barWin.runScript("osd.sh", ["volume", "lower"]);
+                    }
+                }
+            }
+
+            // Notificaciones (clic izq.: Centro · clic der.: No Molestar)
+            Rectangle {
+                Layout.preferredHeight: barWin.pillH
+                Layout.preferredWidth: notifRow.implicitWidth + 18
+                radius: Theme.radiusFull
+                color: barWin.isNotifCenterHere
+                    ? Theme.primary
+                    : (barWin.dndEnabled
+                        ? Theme.errorContainer
+                        : (notifM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer))
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                Row {
+                    id: notifRow
+                    anchors.centerIn: parent
+                    spacing: 5
+
+                    Text {
+                        text: barWin.dndEnabled
+                            ? "󰂛"
+                            : (barWin.notifCount > 0 ? "󰂚" : "󰂜")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
+                        color: barWin.isNotifCenterHere
+                            ? Theme.fgOnPrimary
+                            : (barWin.dndEnabled
+                                ? Theme.fgOnErrorContainer
+                                : (barWin.notifCount > 0 ? Theme.primary : Theme.fgMuted))
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        visible: barWin.notifCount > 0 && !barWin.dndEnabled
+                        text: String(barWin.notifCount)
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Bold
+                        color: barWin.isNotifCenterHere ? Theme.fgOnPrimary : Theme.fg
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    id: notifM
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: mouse => {
+                        if (mouse.button === Qt.RightButton)
+                            barWin.dndToggled();
+                        else
+                            barWin.notifCenterRequested();
+                    }
+                }
+            }
+
+            // Botón Power
+            Rectangle {
+                Layout.preferredHeight: barWin.pillH
+                Layout.preferredWidth: barWin.pillH
+                radius: Theme.radiusFull
+                color: barWin.isPowerHere
+                    ? Theme.error
+                    : (pwrM.containsMouse ? Theme.errorContainer : Theme.surfaceContainer)
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 Text {
                     anchors.centerIn: parent
                     text: "󰐥"
                     font.family: Theme.fontFamily
                     font.pixelSize: 13
-                    color: pwrM.containsMouse ? Theme.accentText : Theme.textBright
+                    color: barWin.isPowerHere
+                        ? Theme.fgOnError
+                        : (pwrM.containsMouse ? Theme.fgOnErrorContainer : Theme.fgMuted)
                 }
 
                 MouseArea {
@@ -997,7 +892,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: barWin.runScript("toggle-menu.sh", ["Sistema:", Quickshell.env("HOME") + "/.config/hypr/scripts/powermenu.sh"])
+                    onClicked: barWin.powerRequested(barWin.screen)
                 }
             }
         }

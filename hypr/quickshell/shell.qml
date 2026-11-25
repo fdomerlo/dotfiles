@@ -20,13 +20,14 @@ ShellRoot {
     property string launcherTab: "apps"
     property string launcherSearchQuery: ""
     property var launcherScreen: null
-    property string activeThemeName: ""
+    property string activeThemeName: Theme.modeName
     property bool recordingActive: false
     property bool nightlightActive: false
     property var pendingCmd: null
 
-    // Estado del OSD (volumen / micrófono / brillo)
+    // Estado del OSD (volumen / micrófono / brillo / bloqueos)
     property bool osdVisible: false
+    property bool osdMounted: false
     property string osdKind: "volume"
     property int osdValue: 0
     property bool osdMuted: false
@@ -34,16 +35,29 @@ ShellRoot {
 
     // Estado del centro de notificaciones y toasts
     property bool notifCenterOpen: false
+    property bool notifCenterMounted: false
     property var notifCenterScreen: null
+    property bool popupsMounted: false
+    property var popupsScreen: null
     property bool dndEnabled: false
     property bool popupHovered: false
     property int nextNotifUid: 1
     property var notifEntries: []
     property real notifNowMs: Date.now()
 
-    // Estado de la barra superior (calendario e inhibidor de reposo)
+    // Estado de popouts acoplados a la barra superior (calendario, quick settings, energía, IA e inhibidor)
     property bool calendarOpen: false
+    property bool calendarMounted: false
     property var calendarScreen: null
+    property bool quickSettingsOpen: false
+    property bool quickSettingsMounted: false
+    property var quickSettingsScreen: null
+    property bool powerOpen: false
+    property bool powerMounted: false
+    property var powerScreen: null
+    property bool aiOpen: false
+    property bool aiMounted: false
+    property var aiScreen: null
     property bool idleInhibited: false
 
     readonly property var activePopups: {
@@ -56,6 +70,140 @@ ShellRoot {
                 out.push(notifEntries[i]);
         }
         return out;
+    }
+
+    // Ciclo de montaje diferido (280 ms) para permitir animaciones suaves de cierre antes de destruir LazyLoader
+    onOsdVisibleChanged: {
+        if (osdVisible) {
+            osdUnmountTimer.stop();
+            osdMounted = true;
+        } else {
+            osdUnmountTimer.restart();
+        }
+    }
+
+    onActivePopupsChanged: {
+        if (activePopups.length > 0) {
+            popupsUnmountTimer.stop();
+            popupsMounted = true;
+        } else {
+            popupsUnmountTimer.restart();
+        }
+    }
+
+    onNotifCenterOpenChanged: {
+        if (notifCenterOpen) {
+            notifCenterUnmountTimer.stop();
+            notifCenterMounted = true;
+        } else {
+            notifCenterUnmountTimer.restart();
+        }
+    }
+
+    onCalendarOpenChanged: {
+        if (calendarOpen) {
+            calendarUnmountTimer.stop();
+            calendarMounted = true;
+        } else {
+            calendarUnmountTimer.restart();
+        }
+    }
+
+    onQuickSettingsOpenChanged: {
+        if (quickSettingsOpen) {
+            quickSettingsUnmountTimer.stop();
+            quickSettingsMounted = true;
+        } else {
+            quickSettingsUnmountTimer.restart();
+        }
+    }
+
+    onPowerOpenChanged: {
+        if (powerOpen) {
+            powerUnmountTimer.stop();
+            powerMounted = true;
+        } else {
+            powerUnmountTimer.restart();
+        }
+    }
+
+    onAiOpenChanged: {
+        if (aiOpen) {
+            aiUnmountTimer.stop();
+            aiMounted = true;
+        } else {
+            aiUnmountTimer.restart();
+        }
+    }
+
+    Timer {
+        id: osdUnmountTimer
+        interval: 280
+        repeat: false
+        onTriggered: {
+            if (!root.osdVisible)
+                root.osdMounted = false;
+        }
+    }
+
+    Timer {
+        id: popupsUnmountTimer
+        interval: 280
+        repeat: false
+        onTriggered: {
+            if (root.activePopups.length === 0)
+                root.popupsMounted = false;
+        }
+    }
+
+    Timer {
+        id: notifCenterUnmountTimer
+        interval: 280
+        repeat: false
+        onTriggered: {
+            if (!root.notifCenterOpen)
+                root.notifCenterMounted = false;
+        }
+    }
+
+    Timer {
+        id: calendarUnmountTimer
+        interval: 280
+        repeat: false
+        onTriggered: {
+            if (!root.calendarOpen)
+                root.calendarMounted = false;
+        }
+    }
+
+    Timer {
+        id: quickSettingsUnmountTimer
+        interval: 280
+        repeat: false
+        onTriggered: {
+            if (!root.quickSettingsOpen)
+                root.quickSettingsMounted = false;
+        }
+    }
+
+    Timer {
+        id: powerUnmountTimer
+        interval: 280
+        repeat: false
+        onTriggered: {
+            if (!root.powerOpen)
+                root.powerMounted = false;
+        }
+    }
+
+    Timer {
+        id: aiUnmountTimer
+        interval: 280
+        repeat: false
+        onTriggered: {
+            if (!root.aiOpen)
+                root.aiMounted = false;
+        }
     }
 
     SystemClock {
@@ -131,6 +279,25 @@ ShellRoot {
         onTriggered: root.notifNowMs = Date.now()
     }
 
+    // Lee el modo activo (dark / light) al iniciar el shell residente.
+    Process {
+        id: themeInitProbe
+        command: [
+            "sh", "-c",
+            "t=$(readlink \"$HOME/.config/hypr/themes/active\" 2>/dev/null || true); " +
+            "t=${t##*/}; " +
+            "case \"$t\" in *light*) echo light ;; *) echo dark ;; esac"
+        ]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const mode = String(text || "").trim();
+                Theme.setMode(mode);
+                root.activeThemeName = Theme.modeName;
+            }
+        }
+    }
+
     Process {
         id: launcherStateProbe
         command: [
@@ -145,7 +312,8 @@ ShellRoot {
             onStreamFinished: {
                 const parts = String(text || "").trim().split("|");
                 if (parts.length >= 3) {
-                    root.activeThemeName = parts[0] || "";
+                    const t = parts[0] || Theme.modeName;
+                    root.activeThemeName = t;
                     root.recordingActive = (parts[1] === "1");
                     root.nightlightActive = (parts[2] === "1");
                 }
@@ -153,10 +321,7 @@ ShellRoot {
         }
     }
 
-    // Nombre del monitor 1 segun Hyprland (izquierda -> derecha). Se consulta
-    // fuera de Quickshell porque al relanzar el daemon su lista de screens
-    // todavia puede estar incompleta y terminaria abriendo en el monitor
-    // enfocado. Mismo criterio que workspaces-init.sh y main-menu.sh.
+    // Nombre del monitor 1 segun Hyprland (izquierda -> derecha).
     Process {
         id: primaryScreenProbe
         command: [
@@ -241,6 +406,8 @@ ShellRoot {
 
         const dur = computePopupDurationMs(n);
         const showPopup = !dndEnabled && !notifCenterOpen;
+        if (showPopup)
+            popupsScreen = resolveFocusedScreen();
 
         const item = {
             uid: uid,
@@ -410,6 +577,12 @@ ShellRoot {
             closeOverview();
         if (calendarOpen)
             closeCalendar();
+        if (quickSettingsOpen)
+            closeQuickSettings();
+        if (powerOpen)
+            closePower();
+        if (aiOpen)
+            closeAi();
         notifNowMs = Date.now();
         const next = [];
         for (let i = 0; i < notifEntries.length; i++) {
@@ -455,6 +628,12 @@ ShellRoot {
             closeOverview();
         if (notifCenterOpen)
             closeNotifCenter();
+        if (quickSettingsOpen)
+            closeQuickSettings();
+        if (powerOpen)
+            closePower();
+        if (aiOpen)
+            closeAi();
         calendarScreen = scr || resolveFocusedScreen();
         calendarOpen = true;
     }
@@ -468,6 +647,92 @@ ShellRoot {
             closeCalendar();
         else
             openCalendar(scr);
+    }
+
+    function openQuickSettings(scr) {
+        if (launcherOpen)
+            closeLauncher();
+        if (overviewOpen)
+            closeOverview();
+        if (notifCenterOpen)
+            closeNotifCenter();
+        if (calendarOpen)
+            closeCalendar();
+        if (powerOpen)
+            closePower();
+        if (aiOpen)
+            closeAi();
+        systemState.refreshAll();
+        quickSettingsScreen = scr || resolveFocusedScreen();
+        quickSettingsOpen = true;
+    }
+
+    function closeQuickSettings() {
+        quickSettingsOpen = false;
+    }
+
+    function toggleQuickSettings(scr) {
+        if (quickSettingsOpen)
+            closeQuickSettings();
+        else
+            openQuickSettings(scr);
+    }
+
+    function openPower(scr) {
+        if (launcherOpen)
+            closeLauncher();
+        if (overviewOpen)
+            closeOverview();
+        if (notifCenterOpen)
+            closeNotifCenter();
+        if (calendarOpen)
+            closeCalendar();
+        if (quickSettingsOpen)
+            closeQuickSettings();
+        if (aiOpen)
+            closeAi();
+        powerScreen = scr || resolveFocusedScreen();
+        powerOpen = true;
+    }
+
+    function closePower() {
+        powerOpen = false;
+    }
+
+    function togglePower(scr) {
+        if (powerOpen)
+            closePower();
+        else
+            openPower(scr);
+    }
+
+    function openAi(scr) {
+        if (launcherOpen)
+            closeLauncher();
+        if (overviewOpen)
+            closeOverview();
+        if (notifCenterOpen)
+            closeNotifCenter();
+        if (calendarOpen)
+            closeCalendar();
+        if (quickSettingsOpen)
+            closeQuickSettings();
+        if (powerOpen)
+            closePower();
+        systemState.refreshSlow();
+        aiScreen = scr || resolveFocusedScreen();
+        aiOpen = true;
+    }
+
+    function closeAi() {
+        aiOpen = false;
+    }
+
+    function toggleAi(scr) {
+        if (aiOpen)
+            closeAi();
+        else
+            openAi(scr);
     }
 
     function orderedWorkspaceIds() {
@@ -519,8 +784,6 @@ ShellRoot {
         return a.name.localeCompare(b.name);
     }
 
-    // Monitor 1: mismo criterio portable que workspaces-init.sh (izquierda ->
-    // derecha por coordenada x, desempatando por y, id de Hyprland y nombre).
     function resolvePrimaryScreen() {
         const screens = Quickshell.screens;
         if (!screens || screens.length === 0)
@@ -602,6 +865,12 @@ ShellRoot {
             closeNotifCenter();
         if (calendarOpen)
             closeCalendar();
+        if (quickSettingsOpen)
+            closeQuickSettings();
+        if (powerOpen)
+            closePower();
+        if (aiOpen)
+            closeAi();
         searchQuery = "";
         tabNavigated = false;
         Hyprland.refreshMonitors();
@@ -639,6 +908,12 @@ ShellRoot {
             closeNotifCenter();
         if (calendarOpen)
             closeCalendar();
+        if (quickSettingsOpen)
+            closeQuickSettings();
+        if (powerOpen)
+            closePower();
+        if (aiOpen)
+            closeAi();
         launcherSearchQuery = "";
         launcherTab = tabId || "apps";
         launcherPending = true;
@@ -749,6 +1024,24 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "theme"
+
+        function setMode(mode: string): void {
+            Theme.setMode(mode);
+            root.activeThemeName = Theme.modeName;
+        }
+
+        function toggle(): void {
+            Theme.toggleMode();
+            root.activeThemeName = Theme.modeName;
+        }
+
+        function current(): string {
+            return Theme.modeName;
+        }
+    }
+
+    IpcHandler {
         target: "overview"
 
         function toggle(): void {
@@ -839,6 +1132,70 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "quicksettings"
+
+        function toggle(): void {
+            root.toggleQuickSettings(null);
+        }
+
+        function open(): void {
+            root.openQuickSettings(null);
+        }
+
+        function close(): void {
+            root.closeQuickSettings();
+        }
+    }
+
+    IpcHandler {
+        target: "calendar"
+
+        function toggle(): void {
+            root.toggleCalendar(null);
+        }
+
+        function open(): void {
+            root.openCalendar(null);
+        }
+
+        function close(): void {
+            root.closeCalendar();
+        }
+    }
+
+    IpcHandler {
+        target: "power"
+
+        function toggle(): void {
+            root.togglePower(null);
+        }
+
+        function open(): void {
+            root.openPower(null);
+        }
+
+        function close(): void {
+            root.closePower();
+        }
+    }
+
+    IpcHandler {
+        target: "ai"
+
+        function toggle(): void {
+            root.toggleAi(null);
+        }
+
+        function open(): void {
+            root.openAi(null);
+        }
+
+        function close(): void {
+            root.closeAi();
+        }
+    }
+
+    IpcHandler {
         target: "system"
 
         function refresh(): void {
@@ -865,6 +1222,16 @@ ShellRoot {
             launcherOpen: root.launcherOpen
             overviewOpen: root.overviewOpen
             calendarOpen: root.calendarOpen
+            quickSettingsOpen: root.quickSettingsOpen
+            powerOpen: root.powerOpen
+            aiOpen: root.aiOpen
+            popupsVisible: root.popupsMounted
+            calendarScreen: root.calendarScreen
+            quickSettingsScreen: root.quickSettingsScreen
+            notifCenterScreen: root.notifCenterScreen
+            powerScreen: root.powerScreen
+            aiScreen: root.aiScreen
+            popupsScreen: root.popupsScreen
             idleInhibited: root.idleInhibited
 
             onLauncherRequested: root.toggleLauncher("")
@@ -872,11 +1239,14 @@ ShellRoot {
             onNotifCenterRequested: root.toggleNotifCenter()
             onDndToggled: root.toggleDnd()
             onCalendarRequested: scr => root.toggleCalendar(scr)
+            onQuickSettingsRequested: scr => root.toggleQuickSettings(scr)
+            onPowerRequested: scr => root.togglePower(scr)
+            onAiRequested: scr => root.toggleAi(scr)
             onIdleInhibitToggled: root.idleInhibited = !root.idleInhibited
         }
     }
 
-    // Ventanas modales y overlays bajo demanda: se instancian solo mientras están visibles.
+    // Ventanas modales y overlays bajo demanda: se instancian al abrir y se desmontan tras la animación de cierre.
     LazyLoader {
         active: root.overviewOpen
 
@@ -927,7 +1297,7 @@ ShellRoot {
     }
 
     LazyLoader {
-        active: root.osdVisible
+        active: root.osdMounted
 
         Variants {
             model: Quickshell.screens
@@ -944,12 +1314,13 @@ ShellRoot {
     }
 
     LazyLoader {
-        active: root.activePopups.length > 0
+        active: root.popupsMounted
 
         NotificationPopups {
-            screen: root.resolveFocusedScreen()
+            screen: root.popupsScreen || root.resolveFocusedScreen()
             popups: root.activePopups
             nowMs: root.notifNowMs
+            barHeight: systemState.barHeight
             onDismissRequested: uid => root.dismissNotif(uid)
             onPopupCloseRequested: uid => root.hidePopup(uid)
             onActionInvoked: (uid, action) => root.invokeNotifAction(uid, action)
@@ -958,7 +1329,7 @@ ShellRoot {
     }
 
     LazyLoader {
-        active: root.notifCenterOpen
+        active: root.notifCenterMounted
 
         NotificationCenter {
             screen: root.notifCenterScreen || root.resolveFocusedScreen()
@@ -966,6 +1337,7 @@ ShellRoot {
             notifications: root.notifEntries
             dndEnabled: root.dndEnabled
             nowMs: root.notifNowMs
+            barHeight: systemState.barHeight
             onCloseRequested: root.closeNotifCenter()
             onToggleDndRequested: root.toggleDnd()
             onClearAllRequested: root.clearAllNotifs()
@@ -976,13 +1348,53 @@ ShellRoot {
     }
 
     LazyLoader {
-        active: root.calendarOpen
+        active: root.calendarMounted
 
         CalendarPopup {
             screen: root.calendarScreen || root.resolveFocusedScreen()
             calendarOpen: root.calendarOpen
             currentDate: sysClock.date
+            barHeight: systemState.barHeight
             onCloseRequested: root.closeCalendar()
+        }
+    }
+
+    LazyLoader {
+        active: root.quickSettingsMounted
+
+        QuickSettingsPopup {
+            screen: root.quickSettingsScreen || root.resolveFocusedScreen()
+            panelOpen: root.quickSettingsOpen
+            sysState: systemState
+            dndEnabled: root.dndEnabled
+            idleInhibited: root.idleInhibited
+            onCloseRequested: root.closeQuickSettings()
+            onToggleDndRequested: root.toggleDnd()
+            onToggleIdleInhibitRequested: root.idleInhibited = !root.idleInhibited
+            onPowerRequested: root.openPower(root.quickSettingsScreen)
+            onAiRequested: root.openAi(root.quickSettingsScreen)
+        }
+    }
+
+    LazyLoader {
+        active: root.powerMounted
+
+        PowerPopup {
+            screen: root.powerScreen || root.resolveFocusedScreen()
+            panelOpen: root.powerOpen
+            sysState: systemState
+            onCloseRequested: root.closePower()
+        }
+    }
+
+    LazyLoader {
+        active: root.aiMounted
+
+        AiPopup {
+            screen: root.aiScreen || root.resolveFocusedScreen()
+            panelOpen: root.aiOpen
+            sysState: systemState
+            onCloseRequested: root.closeAi()
         }
     }
 }

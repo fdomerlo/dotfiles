@@ -23,8 +23,11 @@ Item {
     property bool nightlightActive: false
     property bool recordingActive: false
 
+    property string hostName: ""
+    readonly property string userName: Quickshell.env("USER") || "usuario"
+
     // Overrides locales opcionales (~/.config/quickshell/local.json)
-    property int barHeight: 40
+    property int barHeight: 38
     property bool showTelemetry: true
     property bool showMedia: true
 
@@ -41,6 +44,15 @@ Item {
         printErrors: false
         onLoaded: sys.parseLocalConfig()
         onFileChanged: reload()
+    }
+
+    Process {
+        id: hostProbe
+        command: ["hostname", "-s"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: sys.hostName = String(text || "").trim()
+        }
     }
 
     function parseLocalConfig() {
@@ -69,7 +81,7 @@ Item {
             "awk '/^MemTotal:/ {t=$2} /^MemAvailable:/ {a=$2} END {printf \"MEM|%d|%d\\n\", t, (t-a)}' /proc/meminfo; " +
             "nl=0; [ -f \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr-nightlight.state\" ] && pgrep -x hyprsunset >/dev/null 2>&1 && nl=1; " +
             "rec=0; pgrep -x wf-recorder >/dev/null 2>&1 && rec=1; " +
-            "br=''; if command -v brightnessctl >/dev/null 2>&1; then br=$(brightnessctl -m 2>/dev/null | head -n1 | awk -F',' '{gsub(/%/,\"\",$4); print $4}'); fi; " +
+            "br=''; if command -v brightnessctl >/dev/null 2>&1; then br=$(brightnessctl -c backlight -m 2>/dev/null | head -n1 | awk -F',' '{gsub(/%/,\"\",$4); print $4}'); fi; " +
             "printf 'FLAGS|%s|%s|%s\\n' \"$nl\" \"$rec\" \"$br\""
         ]
         stdout: StdioCollector {

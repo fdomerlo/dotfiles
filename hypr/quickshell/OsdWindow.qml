@@ -11,6 +11,8 @@ PanelWindow {
     required property int osdValue
     required property bool osdMuted
 
+    property bool revealed: false
+
     readonly property bool isMic: osdKind === "mic"
     readonly property bool isBrightness: osdKind === "brightness"
     readonly property bool isCaps: osdKind === "caps"
@@ -76,23 +78,71 @@ PanelWindow {
         return osdValue + "%";
     }
 
+    readonly property bool isAlertState: (!isLock && (osdMuted || isBoosted))
+
     readonly property color stateAccent: {
         if (isLock)
-            return lockActive ? Theme.accent : Theme.muted;
-        if (osdMuted || isBoosted)
-            return Theme.urgent;
-        return Theme.accent;
+            return lockActive ? Theme.primary : Theme.fgSubtle;
+        if (isAlertState)
+            return Theme.error;
+        if (isBrightness)
+            return Theme.secondary;
+        return Theme.primary;
+    }
+
+    readonly property color badgeBg: {
+        if (isLock)
+            return lockActive ? Theme.primaryContainer : Theme.surfaceContainer;
+        if (isAlertState)
+            return Theme.errorContainer;
+        if (isBrightness)
+            return Theme.secondaryContainer;
+        return Theme.primaryContainer;
+    }
+
+    readonly property color badgeFg: {
+        if (isLock)
+            return lockActive ? Theme.fgOnPrimaryContainer : Theme.fgSubtle;
+        if (isAlertState)
+            return Theme.fgOnErrorContainer;
+        if (isBrightness)
+            return Theme.fgOnSecondaryContainer;
+        return Theme.fgOnPrimaryContainer;
+    }
+
+    Timer {
+        id: revealTimer
+        interval: 16
+        repeat: false
+        onTriggered: {
+            if (osdWin.osdVisible)
+                osdWin.revealed = true;
+        }
+    }
+
+    Component.onCompleted: {
+        if (osdVisible)
+            revealTimer.restart();
+    }
+
+    onOsdVisibleChanged: {
+        if (osdVisible) {
+            revealTimer.restart();
+        } else {
+            revealTimer.stop();
+            revealed = false;
+        }
     }
 
     anchors {
         bottom: true
     }
     margins {
-        bottom: 64
+        bottom: 48
     }
 
-    implicitWidth: 276
-    implicitHeight: 60
+    implicitWidth: 296
+    implicitHeight: 74
 
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
@@ -101,55 +151,65 @@ PanelWindow {
     mask: Region {}
 
     color: "transparent"
-    visible: osdVisible
 
     Rectangle {
         id: pill
-        anchors.fill: parent
-        radius: Theme.radius > 0 ? Math.min(Theme.radius + 4, height / 2) : 0
-        color: Theme.panelBg
-        border.width: Theme.borderWidth
-        border.color: (!osdWin.isLock && osdWin.osdMuted)
-            ? Theme.urgent
-            : (osdWin.isLock && !osdWin.lockActive ? Theme.border : Theme.activeBorder)
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: 288
+        height: 62
+        y: osdWin.revealed ? 6 : 22
+        opacity: osdWin.revealed ? 1.0 : 0.0
+        scale: osdWin.revealed ? 1.0 : 0.94
+        radius: height / 2
+        color: Theme.surface
+        border.width: 1
+        border.color: osdWin.isAlertState ? Theme.error : Theme.outlineVariant
         clip: true
 
-        Behavior on border.color {
-            ColorAnimation { duration: 140 }
+        Behavior on y {
+            NumberAnimation {
+                duration: osdWin.revealed ? Theme.animNormal : Theme.animClose
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: osdWin.revealed ? Theme.curveDecel : Theme.curveAccel
+            }
         }
-
-        // Borde superior sutil de acento para temas arquitectónicos (radius 0).
-        Rectangle {
-            visible: Theme.radius === 0
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: 2
-            color: osdWin.stateAccent
-            Behavior on color { ColorAnimation { duration: 140 } }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: osdWin.revealed ? Theme.animFast : Theme.animClose
+                easing.type: Easing.OutCubic
+            }
         }
+        Behavior on scale {
+            NumberAnimation {
+                duration: osdWin.revealed ? Theme.animNormal : Theme.animClose
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: osdWin.revealed ? Theme.curveDecel : Theme.curveAccel
+            }
+        }
+        Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+        Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 16
-            anchors.rightMargin: 16
+            anchors.leftMargin: 12
+            anchors.rightMargin: 18
             spacing: 12
 
             Rectangle {
-                Layout.preferredWidth: 34
-                Layout.preferredHeight: 34
-                radius: Theme.cardRadius > 0 ? Math.min(Theme.cardRadius + 2, 17) : 0
-                color: Theme.cardBg
-                border.width: Theme.borderWidth
-                border.color: (!osdWin.isLock && osdWin.osdMuted) ? Theme.urgent : Theme.border
+                Layout.preferredWidth: 38
+                Layout.preferredHeight: 38
+                radius: 19
+                color: osdWin.badgeBg
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 Text {
                     anchors.centerIn: parent
                     text: osdWin.iconGlyph
                     font.family: Theme.fontFamily
-                    font.pixelSize: 17
-                    color: osdWin.stateAccent
-                    Behavior on color { ColorAnimation { duration: 120 } }
+                    font.pixelSize: 18
+                    color: osdWin.badgeFg
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
                 }
             }
 
@@ -166,34 +226,31 @@ PanelWindow {
                         font.family: Theme.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: Theme.text
+                        color: Theme.fg
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
 
                     Text {
                         text: osdWin.valueText
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 12
+                        font.family: Theme.monoFontFamily
+                        font.pixelSize: 11
                         font.weight: Font.Bold
-                        color: (!osdWin.isLock && (osdWin.osdMuted || osdWin.isBoosted))
-                            ? Theme.urgent
-                            : (osdWin.isLock && !osdWin.lockActive ? Theme.muted : Theme.textBright)
+                        color: osdWin.isAlertState
+                            ? Theme.error
+                            : (osdWin.isLock && !osdWin.lockActive ? Theme.fgSubtle : Theme.fgMuted)
                     }
                 }
 
-                // Barra de progreso fluida (estilo Caelestia + tokens del tema)
                 Item {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 6
+                    Layout.preferredHeight: 8
 
                     Rectangle {
                         id: track
                         anchors.fill: parent
-                        radius: Theme.radius > 0 ? 3 : 0
-                        color: Theme.cardBg
-                        border.width: 1
-                        border.color: Theme.border
+                        radius: 4
+                        color: Theme.surfaceContainerHighest
                     }
 
                     Rectangle {
@@ -201,18 +258,19 @@ PanelWindow {
                         anchors.left: parent.left
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
-                        width: Math.max(osdWin.barFraction > 0 ? 4 : 0, track.width * osdWin.barFraction)
-                        radius: track.radius
+                        width: Math.max(osdWin.barFraction > 0 ? 8 : 0, track.width * osdWin.barFraction)
+                        radius: 4
                         color: osdWin.stateAccent
 
                         Behavior on width {
                             NumberAnimation {
-                                duration: 110
-                                easing.type: Easing.OutCubic
+                                duration: 180
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveDecel
                             }
                         }
                         Behavior on color {
-                            ColorAnimation { duration: 140 }
+                            ColorAnimation { duration: Theme.animFast }
                         }
                     }
                 }

@@ -4,7 +4,9 @@
 #
 # - Espera a que existan los sockets IPC de Hyprland antes de lanzar `qs`.
 # - Repara audio (audio-init.sh) antes de que Quickshell conecte a PipeWire.
-# - Usa un lock (flock) para garantizar una única instancia por sesión.
+# - Usa un lock (flock) para garantizar una única instancia por sesión,
+#   cerrando explícitamente el FD del lock al invocar `qs` (`9>&-`) para que
+#   ninguna aplicación lanzada desde Quickshell herede el bloqueo.
 # - Si `qs` termina de forma inesperada mientras Hyprland sigue vivo, lo
 #   reinicia con respaldo (máx. 5 caídas en 30 s) para evitar bucles infinitos.
 #
@@ -18,6 +20,13 @@ set -u
 RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 LOCK_FILE="$RUNTIME/quickshell-supervisor.lock"
 PID_FILE="$RUNTIME/quickshell-supervisor.pid"
+
+supervisor_alive() {
+    local pid=""
+    [ -r "$PID_FILE" ] || return 1
+    pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+    [ -n "$pid" ] && [ "$pid" != "$$" ] && kill -0 "$pid" 2>/dev/null
+}
 
 stop_existing() {
     if [ -r "$PID_FILE" ]; then
@@ -41,6 +50,10 @@ stop_existing() {
         pgrep -x qs >/dev/null 2>&1 || pgrep -x quickshell >/dev/null 2>&1 || break
         sleep 0.05
     done
+    # Liberar un inode de lock huérfano si una sesión anterior filtró el FD a un hijo.
+    if ! supervisor_alive; then
+        rm -f "$LOCK_FILE"
+    fi
 }
 
 case "${1:-}" in
@@ -85,7 +98,13 @@ fi
 # Instancia única del supervisor.
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
-    exit 0
+    if supervisor_alive; then
+        exit 0
+    fi
+    exec 9>&-
+    rm -f "$LOCK_FILE"
+    exec 9>"$LOCK_FILE"
+    flock -n 9 || exit 0
 fi
 
 printf '%s\n' "$$" > "$PID_FILE"
@@ -107,7 +126,8 @@ while :; do
     # Salir limpiamente si la sesión Hyprland terminó.
     [ -S "$SOCK_DIR/.socket.sock" ] || break
 
-    qs -n &
+    # Cerrar FD 9 en `qs` para que ninguna app lanzada desde Quickshell herede el flock.
+    qs -n 9>&- &
     QS_CHILD=$!
     wait "$QS_CHILD"
     rc=$?

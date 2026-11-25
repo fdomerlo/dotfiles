@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Menú de apagado y sesión para Hyprland (Fuzzel)
+# Menú de apagado y sesión para Hyprland
+# Usa el popout nativo de Quickshell (IPC `power toggle`) y mantiene Fuzzel
+# como fallback si el shell residente no está activo.
 # ==============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+
+if command -v qs >/dev/null 2>&1 && qs ipc call power toggle >/dev/null 2>&1; then
+    exit 0
+fi
 
 OP_LOCK="󰌾  Bloquear pantalla"
 OP_LOGOUT="󰍃  Cerrar sesión"

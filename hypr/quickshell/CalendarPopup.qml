@@ -8,9 +8,11 @@ PanelWindow {
 
     required property bool calendarOpen
     required property date currentDate
+    property int barHeight: 38
 
     signal closeRequested()
 
+    property bool revealed: false
     property int displayYear: currentDate.getFullYear()
     property int displayMonth: currentDate.getMonth() // 0..11
 
@@ -18,7 +20,17 @@ PanelWindow {
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
     ]
+    readonly property var weekdayNames: [
+        "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+    ]
     readonly property var weekdayShort: ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"]
+
+    readonly property string fullDateHeader: {
+        const d = currentDate;
+        const wd = weekdayNames[d.getDay()] || "";
+        const mon = (monthNames[d.getMonth()] || "").toLowerCase();
+        return wd + ", " + d.getDate() + " de " + mon;
+    }
 
     readonly property var calendarCells: {
         const y = displayYear;
@@ -69,15 +81,31 @@ PanelWindow {
         displayMonth = currentDate.getMonth();
     }
 
+    Timer {
+        id: revealTimer
+        interval: 16
+        repeat: false
+        onTriggered: {
+            if (calWin.calendarOpen)
+                calWin.revealed = true;
+        }
+    }
+
     Component.onCompleted: {
         resetToToday();
         calScope.forceActiveFocus();
+        if (calendarOpen)
+            revealTimer.restart();
     }
 
     onCalendarOpenChanged: {
         if (calendarOpen) {
             resetToToday();
             calScope.forceActiveFocus();
+            revealTimer.restart();
+        } else {
+            revealTimer.stop();
+            revealed = false;
         }
     }
 
@@ -94,7 +122,6 @@ PanelWindow {
     WlrLayershell.keyboardFocus: calendarOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     color: "transparent"
-    visible: calendarOpen
 
     FocusScope {
         id: calScope
@@ -104,186 +131,280 @@ PanelWindow {
 
         MouseArea {
             anchors.fill: parent
+            enabled: calWin.calendarOpen
             onClicked: calWin.closeRequested()
         }
 
-        Rectangle {
+        // Popout acoplado al centro de la barra superior con esquinas cóncavas
+        Item {
+            id: calDock
             anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.topMargin: 50
-            anchors.rightMargin: 12
-            width: 300
-            height: calCol.implicitHeight + 28
-            radius: Theme.radius
-            color: Theme.panelBg
-            border.width: Theme.borderWidth
-            border.color: Theme.border
+            anchors.topMargin: calWin.barHeight
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 336
+            height: calWin.revealed ? (calCol.implicitHeight + 28) : 0
+            opacity: calWin.revealed ? 1.0 : 0.0
 
-            MouseArea {
-                anchors.fill: parent
-                onWheel: wheel => {
-                    if (wheel.angleDelta.y > 0)
-                        calWin.shiftMonth(-1);
-                    else if (wheel.angleDelta.y < 0)
-                        calWin.shiftMonth(1);
+            Behavior on height {
+                NumberAnimation {
+                    duration: calWin.revealed ? Theme.animNormal : Theme.animClose
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: calWin.revealed ? Theme.curveDecel : Theme.curveAccel
+                }
+            }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: calWin.revealed ? Theme.animFast : Theme.animClose
+                    easing.type: Easing.OutCubic
                 }
             }
 
-            ColumnLayout {
-                id: calCol
-                anchors.left: parent.left
-                anchors.right: parent.right
+            ConcaveCorner {
+                position: "top-right"
+                size: Theme.concaveRadius
+                color: Theme.surface
                 anchors.top: parent.top
-                anchors.margins: 14
-                spacing: 10
+                anchors.right: calSurface.left
+                visible: calDock.height > 10
+            }
 
-                // Navegación de mes
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 6
+            ConcaveCorner {
+                position: "top-left"
+                size: Theme.concaveRadius
+                color: Theme.surface
+                anchors.top: parent.top
+                anchors.left: calSurface.right
+                visible: calDock.height > 10
+            }
 
-                    Rectangle {
-                        width: 26
-                        height: 26
-                        radius: Theme.cardRadius > 0 ? 6 : 0
-                        color: prevM.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                        border.width: 1
-                        border.color: Theme.border
+            Item {
+                id: calSurface
+                anchors.fill: parent
+                clip: true
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "‹"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 15
-                            font.weight: Font.Bold
-                            color: Theme.textBright
-                        }
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: parent.height + Theme.radiusLarge
+                    radius: Theme.radiusLarge
+                    color: Theme.surface
+                    Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+                }
 
-                        MouseArea {
-                            id: prevM
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: calWin.shiftMonth(-1)
-                        }
-                    }
-
-                    Text {
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignHCenter
-                        text: calWin.monthNames[calWin.displayMonth] + " " + calWin.displayYear
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 13
-                        font.weight: Font.Bold
-                        color: Theme.textBright
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: calWin.resetToToday()
-                        }
-                    }
-
-                    Rectangle {
-                        width: 26
-                        height: 26
-                        radius: Theme.cardRadius > 0 ? 6 : 0
-                        color: nextM.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                        border.width: 1
-                        border.color: Theme.border
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "›"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 15
-                            font.weight: Font.Bold
-                            color: Theme.textBright
-                        }
-
-                        MouseArea {
-                            id: nextM
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: calWin.shiftMonth(1)
-                        }
+                MouseArea {
+                    anchors.fill: parent
+                    onWheel: wheel => {
+                        if (wheel.angleDelta.y > 0)
+                            calWin.shiftMonth(-1);
+                        else if (wheel.angleDelta.y < 0)
+                            calWin.shiftMonth(1);
                     }
                 }
 
-                // Cabecera días de semana
-                GridLayout {
-                    Layout.fillWidth: true
-                    columns: 7
-                    columnSpacing: 4
-                    rowSpacing: 4
+                ColumnLayout {
+                    id: calCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: 18
+                    anchors.rightMargin: 18
+                    y: calWin.revealed ? 12 : -10
+                    spacing: 12
 
-                    Repeater {
-                        model: calWin.weekdayShort
-
-                        Text {
-                            required property string modelData
-                            Layout.fillWidth: true
-                            horizontalAlignment: Text.AlignHCenter
-                            text: modelData
-                            font.family: Theme.fontFamily
-                            font.pixelSize: 10
-                            font.weight: Font.Bold
-                            color: Theme.muted
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: calWin.revealed ? Theme.animNormal : Theme.animClose
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: calWin.revealed ? Theme.curveDecel : Theme.curveAccel
                         }
                     }
 
-                    Repeater {
-                        model: calWin.calendarCells
+                    // Cabecera con fecha completa en español
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
 
-                        Rectangle {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 28
-                            radius: Theme.cardRadius > 0 ? 7 : 0
-                            color: modelData.isToday ? Theme.accent : "transparent"
+                        Text {
+                            text: calWin.fullDateHeader
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 15
+                            font.weight: Font.Bold
+                            color: Theme.fg
+                        }
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: String(modelData.day)
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 11
-                                font.weight: modelData.isToday ? Font.Bold : Font.Normal
-                                color: modelData.isToday
-                                    ? Theme.accentText
-                                    : (modelData.inMonth ? Theme.textBright : Theme.muted)
-                                opacity: modelData.inMonth ? 1.0 : 0.45
+                        Text {
+                            text: "Semana " + Math.ceil((Math.floor((calWin.currentDate - new Date(calWin.currentDate.getFullYear(), 0, 1)) / 86400000) + 1) / 7)
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                            color: Theme.fgSubtle
+                        }
+                    }
+
+                    // Contenedor tonal del mes
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: monthInner.implicitHeight + 22
+                        radius: Theme.radiusMedium
+                        color: Theme.surfaceContainer
+
+                        ColumnLayout {
+                            id: monthInner
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: 11
+                            spacing: 10
+
+                            // Navegación de mes
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
+
+                                Rectangle {
+                                    width: 28
+                                    height: 28
+                                    radius: 14
+                                    color: prevM.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
+
+                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "‹"
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 16
+                                        font.weight: Font.Bold
+                                        color: Theme.fg
+                                    }
+
+                                    MouseArea {
+                                        id: prevM
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: calWin.shiftMonth(-1)
+                                    }
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: calWin.monthNames[calWin.displayMonth] + " " + calWin.displayYear
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 13
+                                    font.weight: Font.DemiBold
+                                    color: Theme.fg
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: calWin.resetToToday()
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 28
+                                    height: 28
+                                    radius: 14
+                                    color: nextM.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
+
+                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "›"
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 16
+                                        font.weight: Font.Bold
+                                        color: Theme.fg
+                                    }
+
+                                    MouseArea {
+                                        id: nextM
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: calWin.shiftMonth(1)
+                                    }
+                                }
+                            }
+
+                            // Grilla de días
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: 7
+                                columnSpacing: 4
+                                rowSpacing: 4
+
+                                Repeater {
+                                    model: calWin.weekdayShort
+
+                                    Text {
+                                        required property string modelData
+                                        Layout.fillWidth: true
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: modelData
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 10
+                                        font.weight: Font.Bold
+                                        color: Theme.fgSubtle
+                                    }
+                                }
+
+                                Repeater {
+                                    model: calWin.calendarCells
+
+                                    Rectangle {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 30
+                                        radius: 15
+                                        color: modelData.isToday ? Theme.primary : "transparent"
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: String(modelData.day)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 11
+                                            font.weight: modelData.isToday ? Font.Bold : Font.Medium
+                                            color: modelData.isToday
+                                                ? Theme.fgOnPrimary
+                                                : (modelData.inMonth ? Theme.fg : Theme.fgSubtle)
+                                            opacity: modelData.inMonth ? 1.0 : 0.45
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                }
 
-                // Acción inferior: abrir GNOME Calendar
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 30
-                    radius: Theme.cardRadius > 0 ? 7 : 0
-                    color: openCalM.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                    border.width: 1
-                    border.color: openCalM.containsMouse ? Theme.activeBorder : Theme.border
+                    // Acción inferior: abrir GNOME Calendar
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 34
+                        radius: Theme.radiusFull
+                        color: openCalM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰃭  Abrir Calendario"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 11
-                        font.weight: Font.DemiBold
-                        color: Theme.textBright
-                    }
+                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
-                    MouseArea {
-                        id: openCalM
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            calWin.closeRequested();
-                            Quickshell.execDetached(["gnome-calendar"]);
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰃭  Abrir Calendario"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                            color: openCalM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
+                        }
+
+                        MouseArea {
+                            id: openCalM
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                calWin.closeRequested();
+                                Quickshell.execDetached(["gnome-calendar"]);
+                            }
                         }
                     }
                 }
