@@ -1150,6 +1150,25 @@ PanelWindow {
                     }
 
                     Rectangle {
+                        height: 22
+                        width: countChipTxt.implicitWidth + 14
+                        radius: Theme.radiusFull
+                        color: Theme.surfaceContainerHigh
+
+                        Text {
+                            id: countChipTxt
+                            anchors.centerIn: parent
+                            text: win.filteredItems.length === 1
+                                ? "1 resultado"
+                                : (win.filteredItems.length + " resultados")
+                            color: Theme.fgSubtle
+                            font.family: Theme.monoFontFamily
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                        }
+                    }
+
+                    Rectangle {
                         visible: searchInput.text.length > 0
                         width: 24
                         height: 24
@@ -1301,6 +1320,7 @@ PanelWindow {
                 ListView {
                     id: resultList
                     anchors.fill: parent
+                    anchors.rightMargin: (resultList.contentHeight > resultList.height + 2) ? 10 : 0
                     clip: true
                     spacing: 4
                     boundsBehavior: Flickable.StopAtBounds
@@ -1439,6 +1459,57 @@ PanelWindow {
                     color: Theme.muted
                     font.family: Theme.fontFamily
                     font.pixelSize: 14
+                }
+
+                // Desvanecimiento inferior suave cuando hay más resultados debajo
+                Rectangle {
+                    z: 2
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 28
+                    readonly property bool hasMoreBelow: resultList.contentHeight > resultList.height + 2
+                        && (resultList.contentY + resultList.height) < (resultList.contentHeight - 4)
+                    opacity: hasMoreBelow ? 1.0 : 0.0
+                    visible: opacity > 0.01
+                    Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 1.0; color: Theme.surfaceSolid }
+                    }
+                }
+
+                // Indicador de scroll delgado
+                Item {
+                    z: 3
+                    visible: resultList.contentHeight > resultList.height + 2
+                    width: 4
+                    anchors.top: resultList.top
+                    anchors.bottom: resultList.bottom
+                    anchors.right: parent.right
+                    anchors.rightMargin: 1
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 2
+                        color: Theme.outlineVariant
+                        opacity: 0.25
+                    }
+
+                    Rectangle {
+                        readonly property real ratio: resultList.contentHeight > 0
+                            ? Math.min(1.0, resultList.height / resultList.contentHeight)
+                            : 1.0
+                        readonly property real maxScroll: Math.max(1, resultList.contentHeight - resultList.height)
+                        readonly property real frac: Math.max(0, Math.min(1, resultList.contentY / maxScroll))
+                        width: parent.width
+                        radius: 2
+                        height: Math.max(24, Math.round(parent.height * ratio))
+                        y: Math.round((parent.height - height) * frac)
+                        color: Theme.primary
+                        opacity: resultList.moving ? 0.85 : 0.45
+                        Behavior on opacity { NumberAnimation { duration: Theme.animFast } }
+                    }
                 }
             }
 

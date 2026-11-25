@@ -22,6 +22,9 @@ PanelWindow {
     required property var powerScreen
     required property var popupsScreen
     required property bool idleInhibited
+    required property bool sinkMuted
+    required property bool batteryLow
+    required property int batteryPct
 
     signal launcherRequested(var scr)
     signal overviewRequested()
@@ -331,6 +334,50 @@ PanelWindow {
                     font.pixelSize: 14
                     color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.secondary
                     anchors.verticalCenter: parent.verticalCenter
+                }
+
+                // Alerta discreta: audio silenciado
+                Text {
+                    visible: barWin.sinkMuted
+                    text: "󰖁"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 14
+                    color: Theme.error
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                // Alerta discreta: sin conexión de red
+                Text {
+                    visible: Boolean(barWin.sysState && barWin.sysState.netReady && barWin.sysState.netKind === "disconnected")
+                    text: "󰪎"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 14
+                    color: Theme.error
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                // Alerta discreta: batería baja (solo laptops <= 20% sin cargar)
+                Row {
+                    visible: barWin.batteryLow
+                    spacing: 3
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: "󰂃"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
+                        color: Theme.error
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: barWin.batteryPct + "%"
+                        font.family: Theme.monoFontFamily
+                        font.pixelSize: 12
+                        font.weight: Font.Bold
+                        color: Theme.error
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
             }
 

@@ -330,10 +330,10 @@ PanelWindow {
             } else if (event.key === Qt.Key_4) {
                 dashWin.tabSelected(3);
                 event.accepted = true;
-            } else if (event.key === Qt.Key_Tab) {
+            } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Right) {
                 dashWin.tabSelected((dashWin.activeTab + 1) % 4);
                 event.accepted = true;
-            } else if (event.key === Qt.Key_Backtab) {
+            } else if (event.key === Qt.Key_Backtab || event.key === Qt.Key_Left) {
                 dashWin.tabSelected((dashWin.activeTab + 3) % 4);
                 event.accepted = true;
             }
@@ -2924,7 +2924,7 @@ PanelWindow {
                                         Text {
                                             text: tabAi.aiOn
                                                 ? (tabAi.aiDet ? ("Servicio activo · " + tabAi.aiDet) : "Servicio activo")
-                                                : "Modo standalone"
+                                                : "Modo independiente"
                                             font.family: Theme.monoFontFamily
                                             font.pixelSize: 12
                                             color: tabAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fgSubtle
@@ -3116,6 +3116,17 @@ PanelWindow {
                                 }
                             }
                         }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.topMargin: -6
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "← → / Tab / 1–4: pestañas · Esc: cerrar"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        color: Theme.fgSubtle
+                        opacity: 0.78
                     }
                 }
             }

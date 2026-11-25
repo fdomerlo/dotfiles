@@ -26,6 +26,7 @@ Item {
     property int brightnessPercent: 0
 
     // Red: "wifi", "ethernet", "disconnected"
+    property bool netReady: false
     property string netKind: "disconnected"
     property string netLabel: ""
     property string vpnName: ""
@@ -234,6 +235,7 @@ Item {
                 for (let i = 0; i < lines.length; i++) {
                     const p = lines[i].split("|");
                     if (p[0] === "NET" && p.length >= 4) {
+                        sys.netReady = true;
                         sys.netKind = p[1] || "disconnected";
                         sys.netLabel = p[2] || "";
                         sys.vpnName = p[3] || "";

@@ -9,6 +9,7 @@ Rectangle {
     required property var entry
     property real nowMs: Date.now()
     property bool compact: false
+    property bool keyboardSelected: false
 
     signal dismissRequested(int uid)
     signal popupCloseRequested(int uid)
@@ -109,11 +110,13 @@ Rectangle {
 
     implicitHeight: contentCol.implicitHeight + 22
     radius: Theme.radiusMedium
-    color: cardMouse.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
-    border.width: 1
+    color: (cardMouse.containsMouse || keyboardSelected) ? Theme.surfaceContainerHigh : Theme.surfaceContainer
+    border.width: keyboardSelected ? 2 : 1
     border.color: isCritical
         ? Theme.error
-        : (cardMouse.containsMouse ? Theme.outline : Theme.outlineVariant)
+        : (keyboardSelected
+            ? Theme.primary
+            : (cardMouse.containsMouse ? Theme.outline : Theme.outlineVariant))
     clip: true
 
     opacity: entered ? 1.0 : 0.0

@@ -42,6 +42,12 @@ Al retomar este trabajo, leer también [AGENTS.md](../AGENTS.md) en la raíz del
   3. Feedback numérico (`%` / `Mudo`) en sliders verticales y chip interactivo `Hoy` en la cabecera del calendario de Tab 0.
   4. `NotificationCenter.qml` con altura adaptable (`380 px` vacío hasta `80%` de pantalla), cierre inferior limpio sin hueco de `12 px` y etiqueta `"No molestar"`.
   5. `OverviewWindow.qml` (`Super+A`) con nombres legibles e iconos reales (`DesktopEntries` / `Quickshell.iconPath`), workspaces vacíos silenciosos (`"Clic para ir al workspace N"` solo en hover/selección), buscador garantizado en el monitor enfocado y tratamiento visual alineado (`dimAround` + borde cyan).
+- **Bloque P2 completado**:
+  6. Alertas contextuales discretas en `BarWindow.qml` (`SystemState.qml` + `shell.qml`) solo ante estados anómalos: audio silenciado (`sinkMuted`), sin conexión de red (`netReady && netKind === "disconnected"`) o batería baja (`<= 20%` sin cargar en laptops).
+  7. Señal de scroll delgada, desvanecimiento inferior suave y chip contador de resultados (`filteredItems.length`) dentro del buscador de `LauncherWindow.qml`.
+  8. Fuzzel (`hypr/themes/{dark,light}/fuzzel/fuzzel.ini`) y `OsdWindow.qml` alineados al lenguaje visual (`Inter:size=11.5`, borde `2 px` primario/error, `radius=20`).
+  9. Consistencia completa de microcopy en español en los overlays (`"Modo independiente"`, `"No molestar"`, `"Clic"`, `"Sin red"`, `"Reproductor"`, `"carga"`).
+  10. Navegación por teclado ampliada: `←`/`→` y micro-hint en `DashboardPopup.qml`; `↑`/`↓`, `Delete`/`Backspace` para descartar, `Enter` para acción principal y micro-hint en `NotificationCenter.qml`.
 
 ---
 
@@ -102,27 +108,27 @@ Al retomar este trabajo, leer también [AGENTS.md](../AGENTS.md) en la raíz del
 
 ### Bloque P2 — Ergonomía de uso diario y cohesión entre capas
 
-- [ ] **6. Alertas contextuales discretas en la barra superior**
+- [x] **6. Alertas contextuales discretas en la barra superior**
   - *Archivo:* `hypr/quickshell/BarWindow.qml` (y `shell.qml` / `SystemState.qml` si falta pasar `sinkMuted` o batería baja).
   - *Objetivo:* mantener la barra minimalista en estado normal, pero mostrar un ícono discreto **solo ante estados anómalos**: audio silenciado (`sinkMuted`), sin conexión de red (`netKind === "disconnected"`), o batería baja (`<= 20%` sin cargar en laptops), igual que ya ocurre con grabación activa, IA y reposo inhibido.
 
-- [ ] **7. Señal de scroll y contador de resultados en el Lanzador**
+- [x] **7. Señal de scroll y contador de resultados en el Lanzador**
   - *Archivo:* `hypr/quickshell/LauncherWindow.qml`.
   - *Objetivo:*
     - Agregar un indicador de desplazamiento delgado (`ScrollBar` o barra sutil) y/o desvanecimiento inferior suave en `resultList` para evitar cortes bruscos de la última fila visible.
     - Mostrar un contador sutil con la cantidad de resultados (`filteredItems.length`) dentro del buscador.
 
-- [ ] **8. Alinear Fuzzel y OSD con el lenguaje visual del entorno**
+- [x] **8. Alinear Fuzzel y OSD con el lenguaje visual del entorno**
   - *Archivos:* `hypr/fuzzel/fuzzel.ini`, `hypr/themes/dark/` y `hypr/themes/light/` (si `theme-switch.sh` genera/copia configs de fuzzel — verificar `hypr/scripts/theme-switch.sh`), y `hypr/quickshell/OsdWindow.qml`.
   - *Objetivo:*
     - Subir tipografía de Fuzzel (`Inter:size=11.5`), `border` de `2 px` en color primario (`22d3eeff` en dark / `#006d80` en light) y `radius=20`.
     - Revisar el borde de `OsdWindow.qml` para integrarlo visualmente con el acento primario (`Theme.primary` / `Theme.error` en alerta).
 
-- [ ] **9. Consistencia de microcopy en español**
+- [x] **9. Consistencia de microcopy en español**
   - *Archivos:* `DashboardPopup.qml`, `NotificationCenter.qml`, `OverviewWindow.qml`.
   - *Objetivo:* reemplazar restos en inglés (`"DND"`, `"Click"`, `"Off"`, `"Player"`, `"load"`) por equivalentes claros en español (`"No molestar"`, `"Clic"`, `"Sin red"`, `"Reproductor"`, `"carga"`).
 
-- [ ] **10. Navegación por teclado ampliada**
+- [x] **10. Navegación por teclado ampliada**
   - *Archivos:* `hypr/quickshell/DashboardPopup.qml`, `hypr/quickshell/NotificationCenter.qml`.
   - *Objetivo:*
     - En `DashboardPopup`: añadir `←`/`→` para cambiar entre pestañas y un micro-hint discreto de atajos si suma claridad.

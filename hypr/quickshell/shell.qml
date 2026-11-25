@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import Quickshell.Services.Notifications
+import Quickshell.Services.UPower
 
 ShellRoot {
     id: root
@@ -54,6 +55,18 @@ ShellRoot {
     property bool powerMounted: false
     property var powerScreen: null
     property bool idleInhibited: false
+
+    readonly property bool sinkMuted: Boolean(
+        Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio && Pipewire.defaultAudioSink.audio.muted
+    )
+    readonly property var batteryDev: UPower.displayDevice
+    readonly property bool hasBattery: Boolean(batteryDev && batteryDev.isLaptopBattery && batteryDev.isPresent)
+    readonly property int batteryPct: hasBattery ? Math.round((batteryDev.percentage || 0) * 100) : 0
+    readonly property bool batteryCharging: hasBattery && (
+        batteryDev.state === UPowerDeviceState.Charging ||
+        batteryDev.state === UPowerDeviceState.PendingCharge
+    )
+    readonly property bool batteryLow: hasBattery && !batteryCharging && batteryPct <= 20
 
     readonly property var activePopups: {
         void(notifEntries);
@@ -1164,6 +1177,9 @@ ShellRoot {
             powerScreen: root.powerScreen
             popupsScreen: root.popupsScreen
             idleInhibited: root.idleInhibited
+            sinkMuted: root.sinkMuted
+            batteryLow: root.batteryLow
+            batteryPct: root.batteryPct
 
             onLauncherRequested: scr => root.toggleLauncher("", scr)
             onOverviewRequested: root.toggleOverview()

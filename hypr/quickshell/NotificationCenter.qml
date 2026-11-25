@@ -22,6 +22,82 @@ PanelWindow {
     signal replySent(int uid, string text)
 
     property bool revealed: false
+    property int selectedIndex: -1
+    property bool keyboardNavActive: false
+
+    function ensureSelectedVisible() {
+        if (selectedIndex < 0 || !notifRepeater || selectedIndex >= notifRepeater.count)
+            return;
+        const item = notifRepeater.itemAt(selectedIndex);
+        if (!item)
+            return;
+        const itemTop = item.y;
+        const itemBottom = item.y + item.height;
+        const maxY = Math.max(0, notifFlick.contentHeight - notifFlick.height);
+        if (itemTop < notifFlick.contentY) {
+            notifFlick.contentY = Math.max(0, itemTop);
+        } else if (itemBottom > notifFlick.contentY + notifFlick.height) {
+            notifFlick.contentY = Math.min(maxY, itemBottom - notifFlick.height);
+        }
+    }
+
+    function moveSelection(delta) {
+        if (!notifications || notifications.length === 0) {
+            selectedIndex = -1;
+            keyboardNavActive = false;
+            return;
+        }
+        if (!keyboardNavActive) {
+            keyboardNavActive = true;
+            selectedIndex = delta > 0 ? 0 : (notifications.length - 1);
+        } else {
+            selectedIndex = (selectedIndex + delta + notifications.length) % notifications.length;
+        }
+        ensureSelectedVisible();
+    }
+
+    function dismissSelected() {
+        if (!notifications || selectedIndex < 0 || selectedIndex >= notifications.length)
+            return;
+        const entry = notifications[selectedIndex];
+        if (entry)
+            centerWin.dismissRequested(entry.uid);
+    }
+
+    function activateSelected() {
+        if (!notifications || selectedIndex < 0 || selectedIndex >= notifications.length)
+            return;
+        const entry = notifications[selectedIndex];
+        if (!entry || !entry.notif || !entry.notif.actions)
+            return;
+        let defAct = null;
+        let firstAct = null;
+        for (let i = 0; i < entry.notif.actions.length; i++) {
+            const act = entry.notif.actions[i];
+            if (!act)
+                continue;
+            if (act.identifier === "default") {
+                defAct = act;
+                break;
+            }
+            if (!firstAct && String(act.text || "").trim().length > 0)
+                firstAct = act;
+        }
+        const targetAct = defAct || firstAct;
+        if (targetAct)
+            centerWin.actionInvoked(entry.uid, targetAct);
+    }
+
+    onNotificationsChanged: {
+        if (!notifications || notifications.length === 0) {
+            selectedIndex = -1;
+            keyboardNavActive = false;
+        } else if (selectedIndex >= notifications.length) {
+            selectedIndex = notifications.length - 1;
+        } else if (selectedIndex < 0 && panelOpen) {
+            selectedIndex = 0;
+        }
+    }
 
     Timer {
         id: revealTimer
@@ -34,6 +110,8 @@ PanelWindow {
     }
 
     Component.onCompleted: {
+        keyboardNavActive = false;
+        selectedIndex = (notifications && notifications.length > 0) ? 0 : -1;
         escScope.forceActiveFocus();
         if (panelOpen)
             revealTimer.restart();
@@ -41,6 +119,8 @@ PanelWindow {
 
     onPanelOpenChanged: {
         if (panelOpen) {
+            keyboardNavActive = false;
+            selectedIndex = (notifications && notifications.length > 0) ? 0 : -1;
             escScope.forceActiveFocus();
             revealTimer.restart();
         } else {
@@ -80,6 +160,17 @@ PanelWindow {
         anchors.fill: parent
         focus: true
         Keys.onEscapePressed: centerWin.closeRequested()
+        Keys.onDownPressed: centerWin.moveSelection(1)
+        Keys.onUpPressed: centerWin.moveSelection(-1)
+        Keys.onDeletePressed: centerWin.dismissSelected()
+        Keys.onReturnPressed: centerWin.activateSelected()
+        Keys.onEnterPressed: centerWin.activateSelected()
+        Keys.onPressed: event => {
+            if (event.key === Qt.Key_Backspace) {
+                event.accepted = true;
+                centerWin.dismissSelected();
+            }
+        }
 
         // Oscurecimiento suave del fondo (equivalente a dim_around, sin blur)
         Rectangle {
@@ -127,7 +218,7 @@ PanelWindow {
             readonly property int maxDrawerHeight: Math.round(availHeight * 0.80)
             readonly property int targetDrawerHeight: centerWin.notifications.length === 0
                 ? 380
-                : Math.min(maxDrawerHeight, Math.max(380, notifListCol.implicitHeight + 92))
+                : Math.min(maxDrawerHeight, Math.max(380, notifListCol.implicitHeight + 118))
 
             anchors.top: parent.top
             anchors.topMargin: centerWin.barHeight
@@ -367,14 +458,17 @@ PanelWindow {
                                 spacing: 10
 
                                 Repeater {
+                                    id: notifRepeater
                                     model: centerWin.notifications
 
                                     NotificationCard {
                                         required property var modelData
+                                        required property int index
                                         Layout.fillWidth: true
                                         entry: modelData
                                         nowMs: centerWin.nowMs
                                         compact: false
+                                        keyboardSelected: centerWin.keyboardNavActive && (index === centerWin.selectedIndex)
 
                                         onDismissRequested: uid => centerWin.dismissRequested(uid)
                                         onActionInvoked: (uid, action) => centerWin.actionInvoked(uid, action)
@@ -425,6 +519,17 @@ PanelWindow {
                                 color: Theme.fgSubtle
                             }
                         }
+                    }
+
+                    Text {
+                        visible: centerWin.notifications.length > 0
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter
+                        text: "↑↓: seleccionar · Enter: acción · Supr: descartar · Esc: cerrar"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        color: Theme.fgSubtle
+                        opacity: 0.78
                     }
                 }
             }

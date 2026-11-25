@@ -162,8 +162,8 @@ PanelWindow {
         scale: osdWin.revealed ? 1.0 : 0.90
         radius: height / 2
         color: Theme.surface
-        border.width: 1
-        border.color: osdWin.isAlertState ? Theme.error : Theme.outlineVariant
+        border.width: 2
+        border.color: osdWin.isAlertState ? Theme.error : (osdWin.isLock && !osdWin.lockActive ? Theme.outline : Theme.primary)
         clip: true
 
         Behavior on y {
@@ -225,7 +225,7 @@ PanelWindow {
                     Text {
                         text: osdWin.titleText
                         font.family: Theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         font.weight: Font.DemiBold
                         color: Theme.fg
                         Layout.fillWidth: true
@@ -235,7 +235,7 @@ PanelWindow {
                     Text {
                         text: osdWin.valueText
                         font.family: Theme.monoFontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Bold
                         color: osdWin.isAlertState
                             ? Theme.error
