@@ -26,8 +26,8 @@ estación, no una máquina genérica ni un hardware fijo.
 - **Shell y CLI de ingeniería:** `zsh`, `tmux`, `nvim`, `rg` (ripgrep), `fd`
   (`fdfind`), `bat` (`batcat`), `fzf`, `zoxide`, `atuin`, `jq`, `btop`, `yazi`,
   `mc`, `gh`, `direnv` y `devctl`.
-- **Escritorio:** Hyprland (Wayland) con `foot`, `fuzzel`, `waybar`,
-  `quickshell` y portapapeles `wl-copy` / `wl-paste`. GNOME estándar queda como
+- **Escritorio:** Hyprland (Wayland) con `quickshell` (barra superior,
+  notificaciones, OSD, lanzador y overview), `foot`, `fuzzel` y portapapeles `wl-copy` / `wl-paste`. GNOME estándar queda como
   fallback en GDM.
 - **Virtualización bajo demanda:** Quickemu + QEMU/KVM (`quickget` / `quickemu`
   en `~/VMs`), sin `libvirtd` ni autostart. Cada VM es un proceso de usuario.

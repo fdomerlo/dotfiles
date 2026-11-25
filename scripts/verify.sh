@@ -469,15 +469,14 @@ else
              "$HOME/.config/hypr/conf/webapps.conf" \
              "$HOME/.config/fontconfig/conf.d/10-hyprland-fonts.conf" \
              "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
-             "$HOME/.config/waybar/config.jsonc" \
-             "$HOME/.config/waybar/local.jsonc" \
              "$HOME/.config/fuzzel/fuzzel.ini" \
              "$HOME/.config/foot/foot.ini" \
              "$HOME/.config/swappy/config" \
-             "$HOME/.config/swaync/config.json" \
-             "$HOME/.config/swayosd/style.css" \
-             "$HOME/.config/swayosd/config.toml" \
-             "$HOME/.config/quickshell/shell.qml"; do
+             "$HOME/.config/quickshell/shell.qml" \
+             "$HOME/.config/quickshell/BarWindow.qml" \
+             "$HOME/.config/quickshell/NotificationCenter.qml" \
+             "$HOME/.config/quickshell/OsdWindow.qml" \
+             "$HOME/.config/quickshell/local.json"; do
         [ -e "$f" ] || cfg_missing+=("$f")
     done
     if [ "${#cfg_missing[@]}" -eq 0 ]; then
@@ -493,6 +492,13 @@ else
             check_status 0 "Sin errores de configuración"
         else
             check_status 1 "hyprctl reportó errores: $HYPR_ERRORS"
+        fi
+
+        echo -n "Shell residente Quickshell (IPC)... "
+        if command -v qs &>/dev/null && qs ipc show &>/dev/null; then
+            check_status 0 "Quickshell activo (barra, notificaciones, OSD, lanzador, overview)"
+        else
+            check_status 1 "Quickshell no responde en IPC (ejecuta 'make refresh')"
         fi
 
         echo -n "Agente SSH y Keyring en sesión... "

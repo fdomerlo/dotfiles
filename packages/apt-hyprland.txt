@@ -3,10 +3,7 @@
 # Consumido por scripts/hyprland-packages.sh, scripts/hyprland.sh y update.sh.
 # ==============================================================================
 
-waybar
 fuzzel
-sway-notification-center
-swayosd
 grim
 slurp
 swappy

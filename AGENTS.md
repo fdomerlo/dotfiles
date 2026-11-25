@@ -11,8 +11,8 @@ sistemas, desarrollo asistido con IA y DevOps sobre **Debian Stable (`trixie`)**
 El mismo repositorio se aplica en **varias estaciones**, así que nada debe
 asumir un hardware concreto.
 
-- **Escritorio principal:** Hyprland (Wayland) con Waybar, Quickshell, Fuzzel y
-  Foot. **GNOME estándar** queda como fallback en GDM, sin extensiones.
+- **Escritorio principal:** Hyprland (Wayland) con Quickshell (barra superior,
+  notificaciones, OSD, calendario, lanzador y overview), Fuzzel y Foot. **GNOME estándar** queda como fallback en GDM, sin extensiones.
 - **Contenedores:** Podman rootless con `crun` + `pasta`, socket compatible con
   Docker para herramientas que lo esperan.
 - **Shell:** Zsh + Oh My Zsh, Starship, Atuin, Zoxide, fzf, tmux, `devctl`.
@@ -65,7 +65,7 @@ idempotencia.
 ├── shell/                    # zshrc, gitconfig, tmux, starship, atuin, devctl,
 │                             # nvim, yazi, mc, btop, lazydocker, zathura
 ├── hypr/                     # hyprland.conf, conf/, scripts/, quickshell/,
-│                             # waybar/, foot/, fuzzel/, swaync/, themes/
+│                             # foot/, fuzzel/, themes/
 └── ai/skills/workstation/    # Skill global de la estación (enlazada en OpenCode
                               # y Antigravity mediante scripts/devai.sh)
 ```
@@ -90,7 +90,7 @@ idempotencia.
    `~/.config/opencode/auth.json`, `~/.pi/agent/auth.json`, credenciales de
    `~/.gemini/`, `.env*`.
 8. **Configs locales por máquina** van fuera de Git (`hypr/conf/local.conf`,
-   `waybar/local.jsonc`, `~/.config/git/local.gitconfig`).
+   `~/.config/quickshell/local.json`, `~/.config/git/local.gitconfig`).
 
 ## Flujos típicos
 

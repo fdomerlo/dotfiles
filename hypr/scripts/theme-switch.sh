@@ -3,7 +3,7 @@
 # Intercambiador de temas de Hyprland.
 #
 # Los archivos con variantes visuales viven en hypr/themes/<tema>/ y los paths
-# clásicos (hypr/waybar/style.css, hypr/conf/appearance.conf, etc.) son
+# clásicos (hypr/quickshell/Theme.qml, hypr/conf/appearance.conf, etc.) son
 # symlinks a hypr/themes/active/<archivo>. Cambiar de tema solo mueve el symlink
 # "active", sin tocar archivos versionados ni ensuciar el working tree.
 #
@@ -66,8 +66,7 @@ apply_theme() {
     local missing=()
     local f
     for f in appearance.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini \
-             quickshell/Theme.qml swaync/style.css swayosd/style.css \
-             waybar/config.jsonc waybar/style.css; do
+             quickshell/Theme.qml; do
         [ -e "$theme_dir/$f" ] || missing+=("$f")
     done
     if [ "${#missing[@]}" -gt 0 ]; then

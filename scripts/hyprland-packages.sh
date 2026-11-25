@@ -22,8 +22,7 @@ read_manifest "$_HYPR_PKG_REPO_DIR/packages/apt-hyprland.txt" HYPR_MAIN_PKGS
 # Binarios esenciales esperados en PATH tras instalar el perfil Hyprland.
 HYPR_REQUIRED_BINS=(
     Hyprland hyprctl hypridle hyprlock hyprpicker hyprsunset
-    waybar fuzzel grim slurp swappy wf-recorder wl-copy cliphist swaybg
-    swaync swaync-client swayosd-server swayosd-client
+    fuzzel grim slurp swappy wf-recorder wl-copy cliphist swaybg
     brightnessctl playerctl wpctl foot zathura imv-wayland seahorse nautilus pavucontrol
     nm-applet blueman-applet qt6ct socat fdfind gnome-calculator tesseract qs
 )

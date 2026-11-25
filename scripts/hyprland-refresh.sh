@@ -4,7 +4,7 @@
 #
 # Re-enlaza los mismos destinos que scripts/hyprland.sh en ~/.config, elimina
 # symlinks rotos que apunten al repo y, si hay una sesión Hyprland activa,
-# recarga Hyprland, Waybar, Quickshell, swaync e hypridle.
+# recarga Hyprland, Quickshell e hypridle.
 #
 # Uso:
 #   make refresh
@@ -112,18 +112,6 @@ fi
 for f in "$HYPR_SRC"/scripts/*.sh; do
     link_file "$f" "$CONFIG_HOME/hypr/scripts/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/waybar/*; do
-    [ "$(basename "$f")" = "local.jsonc" ] && continue
-    link_file "$f" "$CONFIG_HOME/waybar/$(basename "$f")"
-done
-
-WAYBAR_LOCAL="$CONFIG_HOME/waybar/local.jsonc"
-if [ ! -e "$WAYBAR_LOCAL" ] && [ ! -L "$WAYBAR_LOCAL" ]; then
-    mkdir -p "$(dirname "$WAYBAR_LOCAL")"
-    printf '{}\n' >"$WAYBAR_LOCAL"
-    ok "$WAYBAR_LOCAL (override local vacío)"
-fi
-
 for f in "$HYPR_SRC"/fuzzel/*; do
     link_file "$f" "$CONFIG_HOME/fuzzel/$(basename "$f")"
 done
@@ -132,12 +120,6 @@ for f in "$HYPR_SRC"/foot/*; do
 done
 for f in "$HYPR_SRC"/swappy/*; do
     link_file "$f" "$CONFIG_HOME/swappy/$(basename "$f")"
-done
-for f in "$HYPR_SRC"/swaync/*; do
-    link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
-done
-for f in "$HYPR_SRC"/swayosd/*; do
-    link_file "$f" "$CONFIG_HOME/swayosd/$(basename "$f")"
 done
 for f in "$HYPR_SRC"/quickshell/*; do
     [ "$(basename "$f")" = "local.json" ] && continue

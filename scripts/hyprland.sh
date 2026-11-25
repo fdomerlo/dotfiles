@@ -178,18 +178,6 @@ done
 for f in "$HYPR_SRC"/scripts/*.sh; do
     link_file "$f" "$CONFIG_HOME/hypr/scripts/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/waybar/*; do
-    [ "$(basename "$f")" = "local.jsonc" ] && continue
-    link_file "$f" "$CONFIG_HOME/waybar/$(basename "$f")"
-done
-
-WAYBAR_LOCAL="$CONFIG_HOME/waybar/local.jsonc"
-if [ ! -e "$WAYBAR_LOCAL" ] && [ ! -L "$WAYBAR_LOCAL" ]; then
-    mkdir -p "$(dirname "$WAYBAR_LOCAL")"
-    printf '{}\n' >"$WAYBAR_LOCAL"
-    ok "$WAYBAR_LOCAL (override local vacío)"
-fi
-
 for f in "$HYPR_SRC"/fuzzel/*; do
     link_file "$f" "$CONFIG_HOME/fuzzel/$(basename "$f")"
 done
@@ -199,15 +187,17 @@ done
 for f in "$HYPR_SRC"/swappy/*; do
     link_file "$f" "$CONFIG_HOME/swappy/$(basename "$f")"
 done
-for f in "$HYPR_SRC"/swaync/*; do
-    link_file "$f" "$CONFIG_HOME/swaync/$(basename "$f")"
-done
-for f in "$HYPR_SRC"/swayosd/*; do
-    link_file "$f" "$CONFIG_HOME/swayosd/$(basename "$f")"
-done
 for f in "$HYPR_SRC"/quickshell/*; do
+    [ "$(basename "$f")" = "local.json" ] && continue
     link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
+
+QS_LOCAL="$CONFIG_HOME/quickshell/local.json"
+if [ ! -e "$QS_LOCAL" ] && [ ! -L "$QS_LOCAL" ]; then
+    mkdir -p "$(dirname "$QS_LOCAL")"
+    printf '{}\n' >"$QS_LOCAL"
+    ok "$QS_LOCAL (override local vacío)"
+fi
 for f in "$HYPR_SRC"/fontconfig/*.conf; do
     link_file "$f" "$CONFIG_HOME/fontconfig/conf.d/$(basename "$f")"
 done
@@ -324,7 +314,7 @@ Atajos y gestos principales:
   Super                abrir/cerrar lanzador     Super+A       overview (Quickshell)
   Super+Return         terminal (foot)           Super+L       bloquear (hyprlock)
   Super+Shift+Return   terminal con tmux         Super+Q       cerrar ventana
-  Alt+Tab              cambiar de ventana        Super+N       notificaciones (swaync)
+  Alt+Tab              cambiar de ventana        Super+N       notificaciones (Quickshell)
   Super+Shift+S        scratchpad (terminal)     Super+F1      cheatsheet de atajos
   Super+Shift+V        historial portapapeles    Print         captura + swappy
   3 dedos horizontal   cambiar workspace         3 dedos arriba/abajo lanzador / overview

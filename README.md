@@ -53,7 +53,7 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 
 | Capa | Herramientas principales |
 | :--- | :--- |
-| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `waybar`, `quickshell` (Lanzador Unificado + Overview/Actividades; se apaga solo tras 10 min sin uso y se relanza al abrirlo), `fuzzel`, `foot`, `swaync`, `swayosd` (OSD de volumen/brillo tematizado por tema), `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `cyber-teal-light` / `mr-robot` / `mr-robot-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
+| **Escritorio (Hyprland + GNOME fallback)** | `hyprland`, `quickshell` (shell residente unificado: Barra superior multi-monitor, Centro de Notificaciones y toasts, OSD de volumen/brillo, Calendario, Lanzador Unificado y Overview/Actividades), `fuzzel` (`--dmenu` para submenús), `foot`, `hyprlock`/`hypridle`, `grim`+`slurp`+`swappy`, `wf-recorder`, `tesseract-ocr`, temas `cyber-teal` / `cyber-teal-light` / `mr-robot` / `mr-robot-light`, fuentes Debian (`Inter`, `Atkinson Hyperlegible`, `JetBrains Mono`) y cursor `Bibata-Modern-Classic` |
 | **Sistema & Contenedores** | Debian Stable + Backports, `zRAM` (`zstd`), Podman Rootless (`crun` + `pasta`, socket Docker-compat), `Timeshift` opcional, Flatpak + Flathub, AppImage (`~/Aplicaciones` en `$PATH`) |
 | **Shell & CLI** | Zsh + Oh My Zsh, `starship`, `atuin`, `zoxide`, `tmux`, `ripgrep`, `fd`, `fzf`, `bat`, `btop`, `yazi`, `mc`, `lazydocker`, `direnv`, `devctl` |
 | **Runtimes (user-space)** | Python ([uv](https://astral.sh/uv)), Node.js ([fnm](https://github.com/Schniz/fnm)), Java ([sdkman](https://sdkman.io)) |
@@ -198,7 +198,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 
 - **Git:** `~/.config/git/local.gitconfig` (`user.name`, `user.email`, firma, etc.).
 - **Hyprland por equipo:** `~/.config/hypr/conf/local.conf` (monitores, sensibilidad, binds locales; inicializado con `make hypr-desktop` / `make hypr-laptop`).
-- **Waybar:** `~/.config/waybar/local.jsonc` (módulos o formato por equipo).
+- **Quickshell:** `~/.config/quickshell/local.json` (altura de barra u opciones locales por equipo).
 - **Paquetes:** edita los manifiestos en [`packages/`](packages/) si haces un fork para tu equipo.
 
 ### Rollback a GNOME
@@ -206,7 +206,7 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 Hyprland no modifica tu sesión GNOME: basta con elegir **GNOME** en GDM. Si además quieres quitar los symlinks del escritorio Hyprland:
 
 ```bash
-find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/quickshell ~/.config/swappy ~/.config/swaync ~/.config/fontconfig/conf.d \
+find ~/.config/hypr ~/.config/fuzzel ~/.config/foot ~/.config/quickshell ~/.config/swappy ~/.config/fontconfig/conf.d \
   -maxdepth 2 -type l -lname '*/.dotfiles/hypr/*' -delete 2>/dev/null || true
 ```
 
@@ -223,5 +223,5 @@ find ~/.config/hypr ~/.config/waybar ~/.config/fuzzel ~/.config/foot ~/.config/q
 ├── scripts/          # Instaladores modulares, actualización (update.sh) y salud (verify.sh)
 ├── shell/            # Dotfiles de zsh, git, tmux, nvim, yazi, mc, btop, zathura y CLI devctl
 ├── ai/               # Configuración base (opencode.json) y skills globales para OpenCode y Antigravity
-└── hypr/             # Escritorio Hyprland (conf, quickshell, waybar, foot, fuzzel, swaync, temas, scripts)
+└── hypr/             # Escritorio Hyprland (conf, quickshell, foot, fuzzel, temas, scripts)
 ```

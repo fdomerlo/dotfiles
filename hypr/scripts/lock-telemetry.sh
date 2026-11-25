@@ -337,7 +337,7 @@ next_soc_line() {
             if [ -n "$last_pkg" ]; then
                 printf '[PKG %s] apt.last: %s\n' "$ts" "$last_pkg"
             else
-                printf '[SVC %s] hypridle/swaync/quickshell · lock_policy=300s\n' "$ts"
+                printf '[SVC %s] hypridle/quickshell · lock_policy=300s\n' "$ts"
             fi
             ;;
     esac
