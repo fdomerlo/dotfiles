@@ -46,7 +46,7 @@ base-install: host podman shell devtools tooling devai desktop clean
 	@echo -e "💡 Tip: Para sumar Hyprland luego: make hyprland | Para respaldos: make timeshift"
 
 # Instalación completa con Hyprland + Timeshift
-full-install: host podman shell devtools tooling devai desktop timeshift hyprland clean
+full-install: host podman shell devtools tooling devai virt desktop timeshift hyprland clean-deep
 	@echo -e "\n✅ Instalación completa finalizada (Hyprland + Timeshift + GNOME fallback). Elige Hyprland en GDM."
 
 # Actualización idempotente (no reconfigura SSH/gh auth, /opt, chsh ni registros)
