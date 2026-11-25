@@ -275,7 +275,7 @@ PanelWindow {
                     anchors.centerIn: parent
                     text: "󰀻"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 14
+                    font.pixelSize: 15
                     color: (barWin.launcherOpen || barWin.overviewOpen) ? Theme.fgOnPrimary : Theme.primary
                 }
 
@@ -354,7 +354,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 text: String(modelData.name)
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                                 font.weight: isActive ? Font.Bold : (hasWins ? Font.DemiBold : Font.Normal)
                                 color: (isActive || isUrgent)
                                     ? Theme.fgOnPrimary
@@ -396,7 +396,7 @@ PanelWindow {
                     Text {
                         text: (barWin.activePlayer && barWin.activePlayer.isPlaying) ? "󰎆" : "󰏤"
                         font.family: Theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         color: Theme.primary
                     }
 
@@ -405,7 +405,7 @@ PanelWindow {
                         text: barWin.mediaText
                         textFormat: Text.PlainText
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Medium
                         color: Theme.fgMuted
                         elide: Text.ElideRight
@@ -439,7 +439,7 @@ PanelWindow {
                 text: barWin.activeWindowTitle
                 textFormat: Text.PlainText
                 font.family: Theme.fontFamily
-                font.pixelSize: 12
+                font.pixelSize: 13
                 font.weight: Font.Medium
                 color: barWin.isPrimaryOrFocused ? Theme.fgMuted : Theme.fgSubtle
                 opacity: barWin.isPrimaryOrFocused ? 0.95 : 0.72
@@ -470,7 +470,7 @@ PanelWindow {
                 Text {
                     text: barWin.formattedDate
                     font.family: Theme.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     font.weight: Font.Medium
                     color: barWin.isCalendarHere ? Theme.fgOnPrimaryContainer : Theme.fgMuted
                     anchors.verticalCenter: parent.verticalCenter
@@ -487,7 +487,7 @@ PanelWindow {
                 Text {
                     text: barWin.formattedTime
                     font.family: Theme.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     font.weight: Font.Bold
                     color: barWin.isCalendarHere ? Theme.fgOnPrimaryContainer : Theme.fg
                     anchors.verticalCenter: parent.verticalCenter
@@ -533,14 +533,14 @@ PanelWindow {
                     Text {
                         text: ""
                         font.family: Theme.fontFamily
-                        font.pixelSize: 9
+                        font.pixelSize: 10
                         color: Theme.fgOnError
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
                         text: "REC"
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Bold
                         color: Theme.fgOnError
                         anchors.verticalCenter: parent.verticalCenter
@@ -572,7 +572,7 @@ PanelWindow {
                     Text {
                         text: " " + (barWin.sysState ? barWin.sysState.cpuUsage : 0) + "%"
                         font.family: Theme.monoFontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Medium
                         color: (barWin.sysState && barWin.sysState.cpuUsage >= 85) ? Theme.error : Theme.fgMuted
                     }
@@ -580,7 +580,7 @@ PanelWindow {
                     Text {
                         text: "󰍛 " + (barWin.sysState ? barWin.sysState.memUsedGiB.toFixed(1) : "0.0") + "G"
                         font.family: Theme.monoFontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Medium
                         color: Theme.fgMuted
                     }
@@ -613,7 +613,7 @@ PanelWindow {
                     anchors.centerIn: parent
                     text: "󰚩 IA"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                     font.weight: Font.DemiBold
                     color: (barWin.isAiHere || aiPill.aiOn)
                         ? ((barWin.isAiHere || aiM.containsMouse) ? Theme.fgOnTertiary : Theme.fgOnTertiaryContainer)
@@ -712,7 +712,7 @@ PanelWindow {
                         visible: Boolean(barWin.sysState && barWin.sysState.nightlightActive)
                         text: ""
                         font.family: Theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         color: barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.primary
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -721,7 +721,7 @@ PanelWindow {
                         visible: barWin.idleInhibited
                         text: "󰅶"
                         font.family: Theme.fontFamily
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         color: barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.secondary
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -730,7 +730,7 @@ PanelWindow {
                         readonly property string kind: barWin.sysState ? barWin.sysState.netKind : "disconnected"
                         text: kind === "wifi" ? "" : (kind === "ethernet" ? "󰈀" : "󰪎")
                         font.family: Theme.fontFamily
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         color: kind === "disconnected"
                             ? Theme.error
                             : (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.fg)
@@ -741,7 +741,7 @@ PanelWindow {
                         visible: Boolean(barWin.sysState && barWin.sysState.vpnName.length > 0)
                         text: "󰒃"
                         font.family: Theme.fontFamily
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         color: barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.primary
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -750,7 +750,7 @@ PanelWindow {
                         visible: barWin.hasBluetooth
                         text: !barWin.btEnabled ? "󰂲" : (barWin.btConnectedDevice ? "󰂱" : "󰂯")
                         font.family: Theme.fontFamily
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         color: barWin.btConnectedDevice
                             ? (barWin.isQuickSettingsHere ? Theme.fgOnPrimaryContainer : Theme.primary)
                             : (barWin.btEnabled
@@ -764,7 +764,7 @@ PanelWindow {
                             ? "󰖁"
                             : ((barWin.volumePct <= 33 ? "󰕿 " : (barWin.volumePct <= 66 ? "󰖀 " : "󰕾 ")) + barWin.volumePct + "%")
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Medium
                         color: barWin.volumeMuted
                             ? Theme.error
@@ -776,7 +776,7 @@ PanelWindow {
                         visible: barWin.hasBattery
                         text: barWin.batteryGlyph + " " + barWin.batteryPct + "%"
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Medium
                         color: (!barWin.batteryCharging && barWin.batteryPct <= 15)
                             ? Theme.error
@@ -831,7 +831,7 @@ PanelWindow {
                             ? "󰂛"
                             : (barWin.notifCount > 0 ? "󰂚" : "󰂜")
                         font.family: Theme.fontFamily
-                        font.pixelSize: 14
+                        font.pixelSize: 15
                         color: barWin.isNotifCenterHere
                             ? Theme.fgOnPrimary
                             : (barWin.dndEnabled
@@ -844,7 +844,7 @@ PanelWindow {
                         visible: barWin.notifCount > 0 && !barWin.dndEnabled
                         text: String(barWin.notifCount)
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         font.weight: Font.Bold
                         color: barWin.isNotifCenterHere ? Theme.fgOnPrimary : Theme.fg
                         anchors.verticalCenter: parent.verticalCenter
@@ -881,7 +881,7 @@ PanelWindow {
                     anchors.centerIn: parent
                     text: "󰐥"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 13
+                    font.pixelSize: 14
                     color: barWin.isPowerHere
                         ? Theme.fgOnError
                         : (pwrM.containsMouse ? Theme.fgOnErrorContainer : Theme.fgMuted)
