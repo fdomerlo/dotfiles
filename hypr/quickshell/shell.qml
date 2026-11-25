@@ -41,6 +41,11 @@ ShellRoot {
     property var notifEntries: []
     property real notifNowMs: Date.now()
 
+    // Estado de la barra superior (calendario e inhibidor de reposo)
+    property bool calendarOpen: false
+    property var calendarScreen: null
+    property bool idleInhibited: false
+
     readonly property var activePopups: {
         void(notifEntries);
         if (dndEnabled || notifCenterOpen)
@@ -53,7 +58,14 @@ ShellRoot {
         return out;
     }
 
-    readonly property string notifStatePath: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/quickshell-notif-state.json"
+    SystemClock {
+        id: sysClock
+        precision: SystemClock.Minutes
+    }
+
+    SystemState {
+        id: systemState
+    }
 
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource]
@@ -161,7 +173,6 @@ ShellRoot {
 
     Component.onCompleted: {
         Hyprland.refreshMonitors();
-        syncNotifStatusFile();
     }
 
     function notifStatusJson() {
@@ -179,15 +190,6 @@ ShellRoot {
             tooltip: tip,
             class: cls
         });
-    }
-
-    function syncNotifStatusFile() {
-        const payload = notifStatusJson();
-        Quickshell.execDetached([
-            "sh", "-c",
-            "printf '%s\\n' \"$1\" > \"$2.tmp\" && mv \"$2.tmp\" \"$2\" && pkill -RTMIN+8 waybar 2>/dev/null || true",
-            "sh", payload, notifStatePath
-        ]);
     }
 
     function computePopupDurationMs(n) {
@@ -227,7 +229,6 @@ ShellRoot {
             root.removeNotifByUid(uid);
         });
 
-        // Reemplazar si existía una notificación previa con el mismo id de D-Bus.
         const next = [item];
         for (let i = 0; i < notifEntries.length; i++) {
             const cur = notifEntries[i];
@@ -237,14 +238,12 @@ ShellRoot {
                 continue;
             next.push(cur);
         }
-        // Limitar historial a 50 entradas recientes para mantener la UI ágil.
         while (next.length > 50) {
             const dropped = next.pop();
-            if (dropped && dropped.notif)
+            if (dropped && dropped.notif && dropped.notif.tracked)
                 dropped.notif.tracked = false;
         }
         notifEntries = next;
-        syncNotifStatusFile();
     }
 
     function removeNotifByUid(uid) {
@@ -257,10 +256,8 @@ ShellRoot {
             }
             next.push(notifEntries[i]);
         }
-        if (changed) {
+        if (changed)
             notifEntries = next;
-            syncNotifStatusFile();
-        }
     }
 
     function dismissNotif(uid) {
@@ -303,10 +300,8 @@ ShellRoot {
                 next.push(e);
             }
         }
-        if (changed) {
+        if (changed)
             notifEntries = next;
-            syncNotifStatusFile();
-        }
     }
 
     function pruneExpiredPopups() {
@@ -337,10 +332,8 @@ ShellRoot {
                 next.push(e);
             }
         }
-        if (changed) {
+        if (changed)
             notifEntries = next;
-            syncNotifStatusFile();
-        }
     }
 
     function invokeNotifAction(uid, action) {
@@ -382,7 +375,6 @@ ShellRoot {
                 e.notif.dismiss();
             }
         }
-        syncNotifStatusFile();
     }
 
     function openNotifCenter() {
@@ -390,8 +382,9 @@ ShellRoot {
             closeLauncher();
         if (overviewOpen)
             closeOverview();
+        if (calendarOpen)
+            closeCalendar();
         notifNowMs = Date.now();
-        // Ocultar popups activos al abrir el centro (pasan al historial).
         const next = [];
         for (let i = 0; i < notifEntries.length; i++) {
             const e = notifEntries[i];
@@ -410,12 +403,10 @@ ShellRoot {
         popupHovered = false;
         notifCenterScreen = resolveFocusedScreen();
         notifCenterOpen = true;
-        syncNotifStatusFile();
     }
 
     function closeNotifCenter() {
         notifCenterOpen = false;
-        syncNotifStatusFile();
     }
 
     function toggleNotifCenter() {
@@ -429,7 +420,28 @@ ShellRoot {
         dndEnabled = !dndEnabled;
         if (dndEnabled)
             popupHovered = false;
-        syncNotifStatusFile();
+    }
+
+    function openCalendar(scr) {
+        if (launcherOpen)
+            closeLauncher();
+        if (overviewOpen)
+            closeOverview();
+        if (notifCenterOpen)
+            closeNotifCenter();
+        calendarScreen = scr || resolveFocusedScreen();
+        calendarOpen = true;
+    }
+
+    function closeCalendar() {
+        calendarOpen = false;
+    }
+
+    function toggleCalendar(scr) {
+        if (calendarOpen)
+            closeCalendar();
+        else
+            openCalendar(scr);
     }
 
     function orderedWorkspaceIds() {
@@ -542,8 +554,6 @@ ShellRoot {
             }
         }
 
-        // Si el monitor 1 todavia no esta en la lista de Quickshell, reintentar
-        // brevemente. Sin nombre de referencia, no esperar de mas.
         const maxRetries = pendingPrimaryName ? 12 : 2;
         if (!target && pendingScreenRetries < maxRetries) {
             pendingScreenRetries += 1;
@@ -564,6 +574,8 @@ ShellRoot {
             closeLauncher();
         if (notifCenterOpen)
             closeNotifCenter();
+        if (calendarOpen)
+            closeCalendar();
         searchQuery = "";
         tabNavigated = false;
         Hyprland.refreshMonitors();
@@ -599,6 +611,8 @@ ShellRoot {
             closeOverview();
         if (notifCenterOpen)
             closeNotifCenter();
+        if (calendarOpen)
+            closeCalendar();
         launcherSearchQuery = "";
         launcherTab = tabId || "apps";
         launcherPending = true;
@@ -606,8 +620,6 @@ ShellRoot {
         pendingScreenRetries = 0;
         primaryScreenRetry.stop();
         Hyprland.refreshMonitors();
-        // La ventana se crea recien cuando primaryScreenProbe resolvio el
-        // monitor 1 y Quickshell ya lo tiene en su lista de screens.
         primaryScreenProbe.running = true;
     }
 
@@ -795,6 +807,44 @@ ShellRoot {
         }
     }
 
+    IpcHandler {
+        target: "system"
+
+        function refresh(): void {
+            systemState.refreshAll();
+        }
+
+        function toggleIdleInhibit(): void {
+            root.idleInhibited = !root.idleInhibited;
+        }
+    }
+
+    // Barra superior residente en todos los monitores (siempre arriba)
+    Variants {
+        model: Quickshell.screens
+
+        BarWindow {
+            required property var modelData
+            screen: modelData
+            sysState: systemState
+            currentDate: sysClock.date
+            notifCount: root.notifEntries.length
+            dndEnabled: root.dndEnabled
+            notifCenterOpen: root.notifCenterOpen
+            launcherOpen: root.launcherOpen
+            overviewOpen: root.overviewOpen
+            calendarOpen: root.calendarOpen
+            idleInhibited: root.idleInhibited
+
+            onLauncherRequested: root.toggleLauncher("")
+            onOverviewRequested: root.toggleOverview()
+            onNotifCenterRequested: root.toggleNotifCenter()
+            onDndToggled: root.toggleDnd()
+            onCalendarRequested: scr => root.toggleCalendar(scr)
+            onIdleInhibitToggled: root.idleInhibited = !root.idleInhibited
+        }
+    }
+
     // Ventanas modales y overlays bajo demanda: se instancian solo mientras están visibles.
     LazyLoader {
         active: root.overviewOpen
@@ -886,6 +936,17 @@ ShellRoot {
             onDismissRequested: uid => root.dismissNotif(uid)
             onActionInvoked: (uid, action) => root.invokeNotifAction(uid, action)
             onReplySent: (uid, msg) => root.sendNotifReply(uid, msg)
+        }
+    }
+
+    LazyLoader {
+        active: root.calendarOpen
+
+        CalendarPopup {
+            screen: root.calendarScreen || root.resolveFocusedScreen()
+            calendarOpen: root.calendarOpen
+            currentDate: sysClock.date
+            onCloseRequested: root.closeCalendar()
         }
     }
 }

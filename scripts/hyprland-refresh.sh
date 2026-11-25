@@ -140,8 +140,15 @@ for f in "$HYPR_SRC"/swayosd/*; do
     link_file "$f" "$CONFIG_HOME/swayosd/$(basename "$f")"
 done
 for f in "$HYPR_SRC"/quickshell/*; do
+    [ "$(basename "$f")" = "local.json" ] && continue
     link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
+QS_LOCAL="$CONFIG_HOME/quickshell/local.json"
+if [ ! -e "$QS_LOCAL" ] && [ ! -L "$QS_LOCAL" ]; then
+    mkdir -p "$(dirname "$QS_LOCAL")"
+    printf '{}\n' >"$QS_LOCAL"
+    ok "$QS_LOCAL (override local vacío)"
+fi
 for f in "$HYPR_SRC"/fontconfig/*.conf; do
     link_file "$f" "$CONFIG_HOME/fontconfig/conf.d/$(basename "$f")"
 done
@@ -241,11 +248,11 @@ if [ -x "$CONFIG_HOME/hypr/scripts/workspaces-init.sh" ]; then
     fi
 fi
 
-# Waybar: reiniciar para releer config.jsonc y style.css.
-pkill -x waybar 2>/dev/null || true
-sleep 0.3
-setsid "$CONFIG_HOME/hypr/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
-ok "Waybar reiniciado."
+# Waybar retirado: la barra superior ahora corre integrada en Quickshell.
+if pgrep -x waybar >/dev/null 2>&1; then
+    pkill -x waybar 2>/dev/null || true
+    ok "Waybar detenido (reemplazado por Quickshell Bar)."
+fi
 
 # SwayNC retirado: detener antes de reiniciar Quickshell para liberar org.freedesktop.Notifications.
 if pgrep -x swaync >/dev/null 2>&1 || pgrep -f 'swaync-state\.sh' >/dev/null 2>&1; then

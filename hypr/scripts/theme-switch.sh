@@ -41,11 +41,6 @@ reload_desktop() {
     # Hyprland recarga apariencia, bordes, sombras y animaciones.
     hyprctl reload >/dev/null 2>&1 || true
 
-    # Waybar necesita reinicio: cambia tanto config.jsonc como style.css.
-    pkill -x waybar 2>/dev/null || true
-    sleep 0.4
-    setsid "$HYPR_DIR/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
-
     # Quickshell es el shell residente: reiniciar para releer Theme.qml.
     if command -v qs >/dev/null 2>&1; then
         setsid "$HYPR_DIR/scripts/start-quickshell.sh" --restart >/dev/null 2>&1 </dev/null &

@@ -126,7 +126,7 @@ service_url() {
 }
 
 signal_waybar_ai() {
-    pkill -RTMIN+9 waybar 2>/dev/null || true
+    command -v qs >/dev/null 2>&1 && qs ipc call system refresh >/dev/null 2>&1 || true
 }
 
 model_for_mode() {
