@@ -67,8 +67,34 @@ ShellRoot {
         id: systemState
     }
 
+    property bool osdPipewireArmed: false
+
+    Timer {
+        id: pipewireArmTimer
+        interval: 1500
+        repeat: false
+        running: true
+        onTriggered: root.osdPipewireArmed = true
+    }
+
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource]
+    }
+
+    Connections {
+        target: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
+        function onVolumesChanged() {
+            if (!root.osdPipewireArmed || !Pipewire.defaultAudioSink || !Pipewire.defaultAudioSink.audio)
+                return;
+            const pct = Math.round(Math.max(0, Math.min(1.5, Pipewire.defaultAudioSink.audio.volume || 0)) * 100);
+            root.triggerOsd("volume", pct, Boolean(Pipewire.defaultAudioSink.audio.muted));
+        }
+        function onMutedChanged() {
+            if (!root.osdPipewireArmed || !Pipewire.defaultAudioSink || !Pipewire.defaultAudioSink.audio)
+                return;
+            const pct = Math.round(Math.max(0, Math.min(1.5, Pipewire.defaultAudioSink.audio.volume || 0)) * 100);
+            root.triggerOsd("volume", pct, Boolean(Pipewire.defaultAudioSink.audio.muted));
+        }
     }
 
     NotificationServer {
@@ -773,6 +799,11 @@ ShellRoot {
             root.triggerOsd("brightness", percent, false);
         }
 
+        function showLock(lockName: string, active: bool): void {
+            const kind = (lockName === "caps") ? "caps" : "num";
+            root.triggerOsd(kind, active ? 100 : 0, !active);
+        }
+
         function hide(): void {
             osdHideTimer.stop();
             root.osdVisible = false;
@@ -898,12 +929,17 @@ ShellRoot {
     LazyLoader {
         active: root.osdVisible
 
-        OsdWindow {
-            screen: root.osdScreen || root.resolveFocusedScreen()
-            osdVisible: root.osdVisible
-            osdKind: root.osdKind
-            osdValue: root.osdValue
-            osdMuted: root.osdMuted
+        Variants {
+            model: Quickshell.screens
+
+            OsdWindow {
+                required property var modelData
+                screen: modelData
+                osdVisible: root.osdVisible
+                osdKind: root.osdKind
+                osdValue: root.osdValue
+                osdMuted: root.osdMuted
+            }
         }
     }
 

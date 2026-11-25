@@ -13,9 +13,16 @@ PanelWindow {
 
     readonly property bool isMic: osdKind === "mic"
     readonly property bool isBrightness: osdKind === "brightness"
-    readonly property bool isVolume: !isMic && !isBrightness
+    readonly property bool isCaps: osdKind === "caps"
+    readonly property bool isNum: osdKind === "num"
+    readonly property bool isLock: isCaps || isNum
+    readonly property bool isVolume: !isMic && !isBrightness && !isLock
     readonly property bool isBoosted: isVolume && !osdMuted && osdValue > 100
+    readonly property bool lockActive: isLock && !osdMuted
+
     readonly property real barFraction: {
+        if (isLock)
+            return lockActive ? 1.0 : 0.0;
         if (isMic)
             return osdMuted ? 0.0 : 1.0;
         if (isVolume && osdMuted)
@@ -25,6 +32,10 @@ PanelWindow {
     }
 
     readonly property string iconGlyph: {
+        if (isCaps)
+            return "󰪛";
+        if (isNum)
+            return "󰎠";
         if (isMic)
             return osdMuted ? "󰍭" : "󰍬";
         if (isBrightness) {
@@ -44,6 +55,10 @@ PanelWindow {
     }
 
     readonly property string titleText: {
+        if (isCaps)
+            return "Bloq Mayús";
+        if (isNum)
+            return "Bloq Num";
         if (isMic)
             return "Micrófono";
         if (isBrightness)
@@ -52,6 +67,8 @@ PanelWindow {
     }
 
     readonly property string valueText: {
+        if (isLock)
+            return lockActive ? "Activado" : "Desactivado";
         if (isMic)
             return osdMuted ? "Silenciado" : "Activo";
         if (isVolume && osdMuted)
@@ -60,6 +77,8 @@ PanelWindow {
     }
 
     readonly property color stateAccent: {
+        if (isLock)
+            return lockActive ? Theme.accent : Theme.muted;
         if (osdMuted || isBoosted)
             return Theme.urgent;
         return Theme.accent;
@@ -90,7 +109,9 @@ PanelWindow {
         radius: Theme.radius > 0 ? Math.min(Theme.radius + 4, height / 2) : 0
         color: Theme.panelBg
         border.width: Theme.borderWidth
-        border.color: osdWin.osdMuted ? Theme.urgent : Theme.activeBorder
+        border.color: (!osdWin.isLock && osdWin.osdMuted)
+            ? Theme.urgent
+            : (osdWin.isLock && !osdWin.lockActive ? Theme.border : Theme.activeBorder)
         clip: true
 
         Behavior on border.color {
@@ -120,7 +141,7 @@ PanelWindow {
                 radius: Theme.cardRadius > 0 ? Math.min(Theme.cardRadius + 2, 17) : 0
                 color: Theme.cardBg
                 border.width: Theme.borderWidth
-                border.color: osdWin.osdMuted ? Theme.urgent : Theme.border
+                border.color: (!osdWin.isLock && osdWin.osdMuted) ? Theme.urgent : Theme.border
 
                 Text {
                     anchors.centerIn: parent
@@ -155,7 +176,9 @@ PanelWindow {
                         font.family: Theme.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Bold
-                        color: osdWin.osdMuted || osdWin.isBoosted ? Theme.urgent : Theme.textBright
+                        color: (!osdWin.isLock && (osdWin.osdMuted || osdWin.isBoosted))
+                            ? Theme.urgent
+                            : (osdWin.isLock && !osdWin.lockActive ? Theme.muted : Theme.textBright)
                     }
                 }
 
