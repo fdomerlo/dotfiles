@@ -51,9 +51,6 @@ reload_desktop() {
         setsid "$HYPR_DIR/scripts/start-quickshell.sh" --restart >/dev/null 2>&1 </dev/null &
     fi
 
-    # swaync relee el CSS del tema activo.
-    swaync-client -rs >/dev/null 2>&1 || true
-
     # Acento de libadwaita/GTK (Nautilus, Configuracion, Flatpaks) segun el tema.
     "$HYPR_DIR/scripts/session-gsettings.sh" apply >/dev/null 2>&1 || true
 

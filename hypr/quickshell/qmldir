@@ -2,3 +2,6 @@ singleton Theme 1.0 Theme.qml
 OverviewWindow 1.0 OverviewWindow.qml
 LauncherWindow 1.0 LauncherWindow.qml
 OsdWindow 1.0 OsdWindow.qml
+NotificationCard 1.0 NotificationCard.qml
+NotificationPopups 1.0 NotificationPopups.qml
+NotificationCenter 1.0 NotificationCenter.qml

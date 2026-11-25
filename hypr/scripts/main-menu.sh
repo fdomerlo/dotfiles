@@ -157,7 +157,7 @@ menu_estilo() {
         "󰌾 "*) "$SCRIPT_DIR/lockscreen-switch.sh" menu ;;
         "󰸨 "*) launch_bg "$SCRIPT_DIR/wallpaper.sh" --next ;;
         "󰖔 "*) launch_bg "$SCRIPT_DIR/nightlight-toggle.sh" ;;
-        "󰂚 "*) launch_bg swaync-client -t -sw ;;
+        "󰂚 "*) launch_bg ~/.config/hypr/scripts/notifications-toggle.sh ;;
         "󰁍 "*) return 0 ;;
     esac
     exit 0

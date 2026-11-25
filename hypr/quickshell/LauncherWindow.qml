@@ -253,13 +253,13 @@ PanelWindow {
                 category: "estilo",
                 badge: "Estilo",
                 glyph: "󰂚",
-                title: "Centro de notificaciones (SwayNC)",
+                title: "Centro de notificaciones",
                 subtitle: "Abrir o cerrar el panel de notificaciones",
-                keywords: "notificaciones swaync panel alertas",
+                keywords: "notificaciones panel alertas dnd no molestar",
                 shortcut: "Super+N",
                 actionType: "exec",
                 delayMs: 40,
-                cmd: ["swaync-client", "-t", "-sw"]
+                cmd: ["qs", "ipc", "call", "notifications", "toggle"]
             },
 
             // Sistema

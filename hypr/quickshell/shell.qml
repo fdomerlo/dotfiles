@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
+import Quickshell.Services.Notifications
 
 ShellRoot {
     id: root
@@ -31,8 +32,65 @@ ShellRoot {
     property bool osdMuted: false
     property var osdScreen: null
 
+    // Estado del centro de notificaciones y toasts
+    property bool notifCenterOpen: false
+    property var notifCenterScreen: null
+    property bool dndEnabled: false
+    property bool popupHovered: false
+    property int nextNotifUid: 1
+    property var notifEntries: []
+    property real notifNowMs: Date.now()
+
+    readonly property var activePopups: {
+        void(notifEntries);
+        if (dndEnabled || notifCenterOpen)
+            return [];
+        const out = [];
+        for (let i = 0; i < notifEntries.length && out.length < 4; i++) {
+            if (notifEntries[i] && notifEntries[i].popupActive)
+                out.push(notifEntries[i]);
+        }
+        return out;
+    }
+
+    readonly property string notifStatePath: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/quickshell-notif-state.json"
+
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource]
+    }
+
+    NotificationServer {
+        id: notifServer
+        keepOnReload: true
+        persistenceSupported: true
+        bodySupported: true
+        bodyMarkupSupported: false
+        bodyHyperlinksSupported: false
+        bodyImagesSupported: false
+        actionsSupported: true
+        actionIconsSupported: false
+        imageSupported: true
+        inlineReplySupported: true
+
+        onNotification: n => root.handleIncomingNotification(n)
+    }
+
+    // Reloj de expiración de toasts (500 ms; se pausa con hover sobre un toast).
+    Timer {
+        id: popupExpiryTimer
+        interval: 500
+        repeat: true
+        running: root.activePopups.length > 0 && !root.popupHovered
+        onTriggered: root.pruneExpiredPopups()
+    }
+
+    // Actualiza timestamps relativos cada 30 s solo mientras haya UI visible.
+    Timer {
+        id: relativeTimeTimer
+        interval: 30000
+        repeat: true
+        running: root.notifCenterOpen || root.activePopups.length > 0
+        onTriggered: root.notifNowMs = Date.now()
     }
 
     Process {
@@ -103,6 +161,275 @@ ShellRoot {
 
     Component.onCompleted: {
         Hyprland.refreshMonitors();
+        syncNotifStatusFile();
+    }
+
+    function notifStatusJson() {
+        const count = notifEntries.length;
+        const alt = (dndEnabled ? "dnd-" : "") + (count > 0 ? "notification" : "none");
+        const cls = [alt];
+        if (notifCenterOpen)
+            cls.push("cc-open");
+        const tip = dndEnabled
+            ? "No molestar activo (" + count + " notificaciones)"
+            : (count > 0 ? (count + (count === 1 ? " notificación" : " notificaciones")) : "Sin notificaciones");
+        return JSON.stringify({
+            text: count > 0 ? String(count) : "",
+            alt: alt,
+            tooltip: tip,
+            class: cls
+        });
+    }
+
+    function syncNotifStatusFile() {
+        const payload = notifStatusJson();
+        Quickshell.execDetached([
+            "sh", "-c",
+            "printf '%s\\n' \"$1\" > \"$2.tmp\" && mv \"$2.tmp\" \"$2\" && pkill -RTMIN+8 waybar 2>/dev/null || true",
+            "sh", payload, notifStatePath
+        ]);
+    }
+
+    function computePopupDurationMs(n) {
+        if (!n)
+            return 6000;
+        if (n.urgency === NotificationUrgency.Critical)
+            return 0;
+        if (n.expireTimeout && n.expireTimeout > 0)
+            return Math.max(2000, Math.min(15000, Math.round(n.expireTimeout * 1000)));
+        if (n.urgency === NotificationUrgency.Low)
+            return 4000;
+        return 6000;
+    }
+
+    function handleIncomingNotification(n) {
+        if (!n)
+            return;
+        const now = Date.now();
+        notifNowMs = now;
+        const uid = nextNotifUid++;
+        const keepTracked = !n.transient;
+        n.tracked = true;
+
+        const dur = computePopupDurationMs(n);
+        const showPopup = !dndEnabled && !notifCenterOpen;
+
+        const item = {
+            uid: uid,
+            notif: n,
+            timestamp: now,
+            popupActive: showPopup,
+            keepInHistory: keepTracked,
+            expireAt: (showPopup && dur > 0) ? (now + dur) : 0
+        };
+
+        n.closed.connect(() => {
+            root.removeNotifByUid(uid);
+        });
+
+        // Reemplazar si existía una notificación previa con el mismo id de D-Bus.
+        const next = [item];
+        for (let i = 0; i < notifEntries.length; i++) {
+            const cur = notifEntries[i];
+            if (!cur || !cur.notif)
+                continue;
+            if (cur.notif.id === n.id && cur.uid !== uid)
+                continue;
+            next.push(cur);
+        }
+        // Limitar historial a 50 entradas recientes para mantener la UI ágil.
+        while (next.length > 50) {
+            const dropped = next.pop();
+            if (dropped && dropped.notif)
+                dropped.notif.tracked = false;
+        }
+        notifEntries = next;
+        syncNotifStatusFile();
+    }
+
+    function removeNotifByUid(uid) {
+        const next = [];
+        let changed = false;
+        for (let i = 0; i < notifEntries.length; i++) {
+            if (notifEntries[i] && notifEntries[i].uid === uid) {
+                changed = true;
+                continue;
+            }
+            next.push(notifEntries[i]);
+        }
+        if (changed) {
+            notifEntries = next;
+            syncNotifStatusFile();
+        }
+    }
+
+    function dismissNotif(uid) {
+        for (let i = 0; i < notifEntries.length; i++) {
+            const e = notifEntries[i];
+            if (e && e.uid === uid) {
+                if (e.notif && e.notif.tracked) {
+                    e.notif.dismiss();
+                }
+                removeNotifByUid(uid);
+                return;
+            }
+        }
+    }
+
+    function hidePopup(uid) {
+        const next = [];
+        let changed = false;
+        for (let i = 0; i < notifEntries.length; i++) {
+            const e = notifEntries[i];
+            if (!e)
+                continue;
+            if (e.uid === uid) {
+                changed = true;
+                if (!e.keepInHistory) {
+                    if (e.notif && e.notif.tracked) {
+                        e.notif.expire();
+                    }
+                    continue;
+                }
+                next.push({
+                    uid: e.uid,
+                    notif: e.notif,
+                    timestamp: e.timestamp,
+                    popupActive: false,
+                    keepInHistory: e.keepInHistory,
+                    expireAt: 0
+                });
+            } else {
+                next.push(e);
+            }
+        }
+        if (changed) {
+            notifEntries = next;
+            syncNotifStatusFile();
+        }
+    }
+
+    function pruneExpiredPopups() {
+        const now = Date.now();
+        const next = [];
+        let changed = false;
+        for (let i = 0; i < notifEntries.length; i++) {
+            const e = notifEntries[i];
+            if (!e)
+                continue;
+            if (e.popupActive && e.expireAt > 0 && now >= e.expireAt) {
+                changed = true;
+                if (!e.keepInHistory) {
+                    if (e.notif && e.notif.tracked) {
+                        e.notif.expire();
+                    }
+                    continue;
+                }
+                next.push({
+                    uid: e.uid,
+                    notif: e.notif,
+                    timestamp: e.timestamp,
+                    popupActive: false,
+                    keepInHistory: e.keepInHistory,
+                    expireAt: 0
+                });
+            } else {
+                next.push(e);
+            }
+        }
+        if (changed) {
+            notifEntries = next;
+            syncNotifStatusFile();
+        }
+    }
+
+    function invokeNotifAction(uid, action) {
+        if (!action)
+            return;
+        action.invoke();
+        for (let i = 0; i < notifEntries.length; i++) {
+            const e = notifEntries[i];
+            if (e && e.uid === uid) {
+                if (!e.notif || !e.notif.resident)
+                    dismissNotif(uid);
+                else
+                    hidePopup(uid);
+                break;
+            }
+        }
+        if (notifCenterOpen)
+            closeNotifCenter();
+    }
+
+    function sendNotifReply(uid, text) {
+        for (let i = 0; i < notifEntries.length; i++) {
+            const e = notifEntries[i];
+            if (e && e.uid === uid && e.notif) {
+                e.notif.sendInlineReply(text);
+                if (!e.notif.resident)
+                    dismissNotif(uid);
+                return;
+            }
+        }
+    }
+
+    function clearAllNotifs() {
+        const snapshot = notifEntries.slice();
+        notifEntries = [];
+        for (let i = 0; i < snapshot.length; i++) {
+            const e = snapshot[i];
+            if (e && e.notif && e.notif.tracked) {
+                e.notif.dismiss();
+            }
+        }
+        syncNotifStatusFile();
+    }
+
+    function openNotifCenter() {
+        if (launcherOpen)
+            closeLauncher();
+        if (overviewOpen)
+            closeOverview();
+        notifNowMs = Date.now();
+        // Ocultar popups activos al abrir el centro (pasan al historial).
+        const next = [];
+        for (let i = 0; i < notifEntries.length; i++) {
+            const e = notifEntries[i];
+            if (!e)
+                continue;
+            next.push({
+                uid: e.uid,
+                notif: e.notif,
+                timestamp: e.timestamp,
+                popupActive: false,
+                keepInHistory: e.keepInHistory,
+                expireAt: 0
+            });
+        }
+        notifEntries = next;
+        popupHovered = false;
+        notifCenterScreen = resolveFocusedScreen();
+        notifCenterOpen = true;
+        syncNotifStatusFile();
+    }
+
+    function closeNotifCenter() {
+        notifCenterOpen = false;
+        syncNotifStatusFile();
+    }
+
+    function toggleNotifCenter() {
+        if (notifCenterOpen)
+            closeNotifCenter();
+        else
+            openNotifCenter();
+    }
+
+    function toggleDnd() {
+        dndEnabled = !dndEnabled;
+        if (dndEnabled)
+            popupHovered = false;
+        syncNotifStatusFile();
     }
 
     function orderedWorkspaceIds() {
@@ -235,6 +562,8 @@ ShellRoot {
     function openOverview() {
         if (launcherOpen)
             closeLauncher();
+        if (notifCenterOpen)
+            closeNotifCenter();
         searchQuery = "";
         tabNavigated = false;
         Hyprland.refreshMonitors();
@@ -268,6 +597,8 @@ ShellRoot {
     function openLauncher(tabId) {
         if (overviewOpen)
             closeOverview();
+        if (notifCenterOpen)
+            closeNotifCenter();
         launcherSearchQuery = "";
         launcherTab = tabId || "apps";
         launcherPending = true;
@@ -436,6 +767,34 @@ ShellRoot {
         }
     }
 
+    IpcHandler {
+        target: "notifications"
+
+        function toggle(): void {
+            root.toggleNotifCenter();
+        }
+
+        function open(): void {
+            root.openNotifCenter();
+        }
+
+        function close(): void {
+            root.closeNotifCenter();
+        }
+
+        function toggleDnd(): void {
+            root.toggleDnd();
+        }
+
+        function clearAll(): void {
+            root.clearAllNotifs();
+        }
+
+        function status(): string {
+            return root.notifStatusJson();
+        }
+    }
+
     // Ventanas modales y overlays bajo demanda: se instancian solo mientras están visibles.
     LazyLoader {
         active: root.overviewOpen
@@ -495,6 +854,38 @@ ShellRoot {
             osdKind: root.osdKind
             osdValue: root.osdValue
             osdMuted: root.osdMuted
+        }
+    }
+
+    LazyLoader {
+        active: root.activePopups.length > 0
+
+        NotificationPopups {
+            screen: root.resolveFocusedScreen()
+            popups: root.activePopups
+            nowMs: root.notifNowMs
+            onDismissRequested: uid => root.dismissNotif(uid)
+            onPopupCloseRequested: uid => root.hidePopup(uid)
+            onActionInvoked: (uid, action) => root.invokeNotifAction(uid, action)
+            onHoverChanged: h => { root.popupHovered = h; }
+        }
+    }
+
+    LazyLoader {
+        active: root.notifCenterOpen
+
+        NotificationCenter {
+            screen: root.notifCenterScreen || root.resolveFocusedScreen()
+            panelOpen: root.notifCenterOpen
+            notifications: root.notifEntries
+            dndEnabled: root.dndEnabled
+            nowMs: root.notifNowMs
+            onCloseRequested: root.closeNotifCenter()
+            onToggleDndRequested: root.toggleDnd()
+            onClearAllRequested: root.clearAllNotifs()
+            onDismissRequested: uid => root.dismissNotif(uid)
+            onActionInvoked: (uid, action) => root.invokeNotifAction(uid, action)
+            onReplySent: (uid, msg) => root.sendNotifReply(uid, msg)
         }
     }
 }

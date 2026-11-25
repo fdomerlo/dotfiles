@@ -247,17 +247,19 @@ sleep 0.3
 setsid "$CONFIG_HOME/hypr/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 ok "Waybar reiniciado."
 
-# Quickshell: shell residente (OSD, lanzador, overview); reiniciar para releer QML/Theme.
+# SwayNC retirado: detener antes de reiniciar Quickshell para liberar org.freedesktop.Notifications.
+if pgrep -x swaync >/dev/null 2>&1 || pgrep -f 'swaync-state\.sh' >/dev/null 2>&1; then
+    pkill -f 'swaync-state\.sh' 2>/dev/null || true
+    pkill -x swaync-client 2>/dev/null || true
+    pkill -x swaync 2>/dev/null || true
+    sleep 0.2
+    ok "swaync detenido (reemplazado por Quickshell)."
+fi
+
+# Quickshell: shell residente (Notificaciones, OSD, lanzador, overview); reiniciar para releer QML/Theme.
 if command -v qs >/dev/null 2>&1 && [ -x "$CONFIG_HOME/hypr/scripts/start-quickshell.sh" ]; then
     setsid "$CONFIG_HOME/hypr/scripts/start-quickshell.sh" --restart >/dev/null 2>&1 </dev/null &
     ok "Quickshell (re)iniciado."
-fi
-
-# Notificaciones: recargar config y CSS de swaync.
-if pgrep -x swaync >/dev/null 2>&1 && command -v swaync-client >/dev/null 2>&1; then
-    swaync-client -R >/dev/null 2>&1 || true
-    swaync-client -rs >/dev/null 2>&1 || true
-    ok "swaync recargado (config + CSS)."
 fi
 
 # SwayOSD retirado: el OSD ahora corre integrado en Quickshell.

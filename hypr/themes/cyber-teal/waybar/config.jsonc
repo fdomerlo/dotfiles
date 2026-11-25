@@ -179,10 +179,11 @@
       "dnd-inhibited-none": "󰂛"
     },
     "return-type": "json",
-    "exec-if": "command -v swaync-client",
-    "exec": "swaync-client -swb",
+    "exec": "~/.config/hypr/scripts/notifications-status.sh",
+    "interval": 5,
+    "signal": 8,
     "on-click": "~/.config/hypr/scripts/notifications-toggle.sh",
-    "on-click-right": "swaync-client -d -sw",
+    "on-click-right": "qs ipc call notifications toggleDnd",
     "escape": true
   },
 
