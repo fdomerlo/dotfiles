@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import Quickshell.Services.Pipewire
 
 ShellRoot {
     id: root
@@ -22,6 +23,17 @@ ShellRoot {
     property bool recordingActive: false
     property bool nightlightActive: false
     property var pendingCmd: null
+
+    // Estado del OSD (volumen / micrófono / brillo)
+    property bool osdVisible: false
+    property string osdKind: "volume"
+    property int osdValue: 0
+    property bool osdMuted: false
+    property var osdScreen: null
+
+    PwObjectTracker {
+        objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource]
+    }
 
     Process {
         id: launcherStateProbe
@@ -82,30 +94,15 @@ ShellRoot {
         }
     }
 
-    readonly property bool anyWindowOpen: launcherOpen || overviewOpen
-
-    // Sin ventanas abiertas Quickshell no tiene UI activa. Apagarlo tras 90 s
-    // devuelve su memoria; launcher-toggle.sh y overview-toggle.sh lo relanzan
-    // bajo demanda (primer atajo tras el apagado: ~500 ms).
     Timer {
-        id: idleShutdown
-        interval: 90 * 1000
+        id: osdHideTimer
+        interval: 1800
         repeat: false
-        onTriggered: Qt.quit()
-    }
-
-    // restart() reinicia la cuenta desde cero al cerrar la última ventana.
-    onAnyWindowOpenChanged: {
-        if (anyWindowOpen)
-            idleShutdown.stop();
-        else
-            idleShutdown.restart();
+        onTriggered: root.osdVisible = false
     }
 
     Component.onCompleted: {
         Hyprland.refreshMonitors();
-        if (!anyWindowOpen)
-            idleShutdown.start();
     }
 
     function orderedWorkspaceIds() {
@@ -174,6 +171,27 @@ ShellRoot {
             }
         }
         return best;
+    }
+
+    function resolveFocusedScreen() {
+        const screens = Quickshell.screens || [];
+        const focused = Hyprland.focusedMonitor;
+        if (focused && focused.name) {
+            for (let i = 0; i < screens.length; i++) {
+                if (screens[i] && screens[i].name === focused.name)
+                    return screens[i];
+            }
+        }
+        return resolvePrimaryScreen() || (screens.length > 0 ? screens[0] : null);
+    }
+
+    function triggerOsd(kind, value, muted) {
+        osdKind = kind;
+        osdValue = Math.max(0, Math.min(150, value));
+        osdMuted = Boolean(muted);
+        osdScreen = resolveFocusedScreen();
+        osdVisible = true;
+        osdHideTimer.restart();
     }
 
     function applyPrimaryScreen(name) {
@@ -397,8 +415,28 @@ ShellRoot {
         }
     }
 
-    // Las ventanas pesadas se crean solo al abrirlas: en reposo Quickshell
-    // mantiene únicamente los handlers IPC hasta que venza idleShutdown.
+    IpcHandler {
+        target: "osd"
+
+        function showVolume(percent: int, muted: bool): void {
+            root.triggerOsd("volume", percent, muted);
+        }
+
+        function showMic(muted: bool): void {
+            root.triggerOsd("mic", muted ? 0 : 100, muted);
+        }
+
+        function showBrightness(percent: int): void {
+            root.triggerOsd("brightness", percent, false);
+        }
+
+        function hide(): void {
+            osdHideTimer.stop();
+            root.osdVisible = false;
+        }
+    }
+
+    // Ventanas modales y overlays bajo demanda: se instancian solo mientras están visibles.
     LazyLoader {
         active: root.overviewOpen
 
@@ -445,6 +483,18 @@ ShellRoot {
             onAppActivated: entry => root.launchAppEntry(entry)
             onActionActivated: act => root.launchAction(act)
             onOverviewRequested: root.openOverview()
+        }
+    }
+
+    LazyLoader {
+        active: root.osdVisible
+
+        OsdWindow {
+            screen: root.osdScreen || root.resolveFocusedScreen()
+            osdVisible: root.osdVisible
+            osdKind: root.osdKind
+            osdValue: root.osdValue
+            osdMuted: root.osdMuted
         }
     }
 }

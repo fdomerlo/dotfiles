@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Abre o cierra el Lanzador / Menú Unificado en Quickshell.
-# Si el daemon de Quickshell no está activo, lo inicia y espera su IPC.
+# Si el shell residente no está activo, lo inicia vía start-quickshell.sh.
 #
 # Uso:
 #   launcher-toggle.sh              # alterna el popup en la última/primera pestaña
@@ -24,19 +24,21 @@ invoke_ipc() {
     fi
 }
 
-# Dos pasadas: si Quickshell se estaba apagando por inactividad, `-n` puede
-# descartar el arranque y la primera espera se agota sin ventana.
-for attempt in 1 2; do
+if invoke_ipc; then
+    exit 0
+fi
+
+if [ -x "$HOME/.config/hypr/scripts/start-quickshell.sh" ]; then
+    setsid "$HOME/.config/hypr/scripts/start-quickshell.sh" >/dev/null 2>&1 </dev/null &
+else
+    qs -n -d >/dev/null 2>&1 || true
+fi
+
+for _ in $(seq 1 40); do
     if invoke_ipc; then
         exit 0
     fi
-    qs -n -d >/dev/null 2>&1 || true
-    for _ in $(seq 1 30); do
-        if invoke_ipc; then
-            exit 0
-        fi
-        sleep 0.1
-    done
+    sleep 0.1
 done
 
 exit 1

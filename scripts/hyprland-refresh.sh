@@ -247,20 +247,10 @@ sleep 0.3
 setsid "$CONFIG_HOME/hypr/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 ok "Waybar reiniciado."
 
-# Quickshell: reiniciar solo si está vivo (`qs ipc show` responde). Si se apagó
-# por inactividad no se fuerza el arranque: la próxima apertura del lanzador ya
-# carga la config nueva.
-if command -v qs >/dev/null 2>&1 && qs ipc show >/dev/null 2>&1; then
-    qs kill >/dev/null 2>&1 || true
-    pkill -x quickshell 2>/dev/null || true
-    for _ in $(seq 1 20); do
-        pgrep -x quickshell >/dev/null 2>&1 || break
-        sleep 0.05
-    done
-    setsid qs -n -d >/dev/null 2>&1 </dev/null &
+# Quickshell: shell residente (OSD, lanzador, overview); reiniciar para releer QML/Theme.
+if command -v qs >/dev/null 2>&1 && [ -x "$CONFIG_HOME/hypr/scripts/start-quickshell.sh" ]; then
+    setsid "$CONFIG_HOME/hypr/scripts/start-quickshell.sh" --restart >/dev/null 2>&1 </dev/null &
     ok "Quickshell (re)iniciado."
-elif command -v qs >/dev/null 2>&1; then
-    ok "Quickshell apagado por inactividad; se relanza al abrir el lanzador."
 fi
 
 # Notificaciones: recargar config y CSS de swaync.
@@ -270,11 +260,10 @@ if pgrep -x swaync >/dev/null 2>&1 && command -v swaync-client >/dev/null 2>&1; 
     ok "swaync recargado (config + CSS)."
 fi
 
-# SwayOSD: solo lee style.css al arrancar; reiniciar solo si estaba activo.
-if command -v swayosd-server >/dev/null 2>&1 && pgrep -x swayosd-server >/dev/null 2>&1; then
+# SwayOSD retirado: el OSD ahora corre integrado en Quickshell.
+if pgrep -x swayosd-server >/dev/null 2>&1; then
     pkill -x swayosd-server 2>/dev/null || true
-    setsid swayosd-server >/dev/null 2>&1 </dev/null &
-    ok "swayosd reiniciado (CSS del tema)."
+    ok "swayosd-server detenido (reemplazado por Quickshell OSD)."
 fi
 
 # hypridle: reiniciar para releer hypridle.conf.

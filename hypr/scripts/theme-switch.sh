@@ -46,24 +46,13 @@ reload_desktop() {
     sleep 0.4
     setsid "$HYPR_DIR/scripts/start-waybar.sh" >/dev/null 2>&1 </dev/null &
 
-    # Quickshell relee Theme.qml al reiniciar el daemon. Si se apagó por
-    # inactividad no se enciende: la próxima apertura ya carga el tema nuevo.
-    if command -v qs >/dev/null 2>&1 && qs ipc show >/dev/null 2>&1; then
-        qs kill >/dev/null 2>&1 || true
-        pkill -x quickshell 2>/dev/null || true
-        sleep 0.2
-        setsid qs -n -d >/dev/null 2>&1 </dev/null &
+    # Quickshell es el shell residente: reiniciar para releer Theme.qml.
+    if command -v qs >/dev/null 2>&1; then
+        setsid "$HYPR_DIR/scripts/start-quickshell.sh" --restart >/dev/null 2>&1 </dev/null &
     fi
 
     # swaync relee el CSS del tema activo.
     swaync-client -rs >/dev/null 2>&1 || true
-
-    # swayosd solo lee su style.css al arrancar: reiniciarlo si estaba activo
-    # (si el usuario no lo usa, no se enciende un daemon nuevo).
-    if command -v swayosd-server >/dev/null 2>&1 && pgrep -x swayosd-server >/dev/null 2>&1; then
-        pkill -x swayosd-server 2>/dev/null || true
-        setsid swayosd-server >/dev/null 2>&1 </dev/null &
-    fi
 
     # Acento de libadwaita/GTK (Nautilus, Configuracion, Flatpaks) segun el tema.
     "$HYPR_DIR/scripts/session-gsettings.sh" apply >/dev/null 2>&1 || true
