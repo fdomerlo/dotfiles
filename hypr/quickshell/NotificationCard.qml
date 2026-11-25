@@ -14,13 +14,23 @@ Rectangle {
     signal popupCloseRequested(int uid)
     signal actionInvoked(int uid, var action)
     signal replySent(int uid, string text)
-    signal hoverStateChanged(bool hovered)
+
+    property bool entered: false
 
     readonly property var notif: entry ? entry.notif : null
     readonly property int uid: entry ? entry.uid : -1
     readonly property int urgency: notif ? notif.urgency : NotificationUrgency.Normal
     readonly property bool isCritical: urgency === NotificationUrgency.Critical
     readonly property bool isLow: urgency === NotificationUrgency.Low
+
+    Component.onCompleted: enterTimer.restart()
+
+    Timer {
+        id: enterTimer
+        interval: 16
+        repeat: false
+        onTriggered: card.entered = true
+    }
 
     readonly property string appNameText: {
         if (!notif)
@@ -100,19 +110,26 @@ Rectangle {
     implicitHeight: contentCol.implicitHeight + 22
     radius: Theme.radiusMedium
     color: cardMouse.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
-    border.width: isCritical ? 1 : 0
-    border.color: isCritical ? Theme.error : "transparent"
+    border.width: 1
+    border.color: isCritical
+        ? Theme.error
+        : (cardMouse.containsMouse ? Theme.outline : Theme.outlineVariant)
     clip: true
 
-    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+    opacity: entered ? 1.0 : 0.0
+    scale: entered ? (cardMouse.containsMouse ? 1.006 : 1.0) : 0.96
 
-    // Indicador lateral de urgencia
-    Rectangle {
-        anchors.left: parent.left
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        width: 3
-        color: card.isCritical ? Theme.error : (card.isLow ? Theme.fgSubtle : Theme.primary)
+    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+    Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
+    Behavior on opacity {
+        NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic }
+    }
+    Behavior on scale {
+        NumberAnimation {
+            duration: Theme.animCard
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Theme.curveExpressive
+        }
     }
 
     MouseArea {
@@ -120,7 +137,6 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onContainsMouseChanged: card.hoverStateChanged(containsMouse)
         onClicked: mouse => {
             if (mouse.button === Qt.RightButton) {
                 if (card.compact)
@@ -142,8 +158,8 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.leftMargin: 14
-        anchors.rightMargin: 12
+        anchors.leftMargin: 13
+        anchors.rightMargin: 13
         anchors.topMargin: 11
         spacing: 8
 
@@ -415,4 +431,5 @@ Rectangle {
             }
         }
     }
+
 }

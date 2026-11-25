@@ -477,7 +477,10 @@ else
              "$HOME/.config/quickshell/Theme.qml" \
              "$HOME/.config/quickshell/ConcaveCorner.qml" \
              "$HOME/.config/quickshell/BarWindow.qml" \
-             "$HOME/.config/quickshell/QuickSettingsPopup.qml" \
+             "$HOME/.config/quickshell/DashboardPopup.qml" \
+             "$HOME/.config/quickshell/PowerPopup.qml" \
+             "$HOME/.config/quickshell/NotificationPopups.qml" \
+             "$HOME/.config/quickshell/NotificationCard.qml" \
              "$HOME/.config/quickshell/NotificationCenter.qml" \
              "$HOME/.config/quickshell/OsdWindow.qml" \
              "$HOME/.config/quickshell/local.json"; do

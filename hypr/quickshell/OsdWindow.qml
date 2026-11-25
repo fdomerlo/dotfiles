@@ -141,8 +141,8 @@ PanelWindow {
         bottom: 48
     }
 
-    implicitWidth: 296
-    implicitHeight: 74
+    implicitWidth: 304
+    implicitHeight: 76
 
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
@@ -157,9 +157,9 @@ PanelWindow {
         anchors.horizontalCenter: parent.horizontalCenter
         width: 288
         height: 62
-        y: osdWin.revealed ? 6 : 22
+        y: osdWin.revealed ? 7 : 24
         opacity: osdWin.revealed ? 1.0 : 0.0
-        scale: osdWin.revealed ? 1.0 : 0.94
+        scale: osdWin.revealed ? 1.0 : 0.90
         radius: height / 2
         color: Theme.surface
         border.width: 1
@@ -168,9 +168,9 @@ PanelWindow {
 
         Behavior on y {
             NumberAnimation {
-                duration: osdWin.revealed ? Theme.animNormal : Theme.animClose
+                duration: osdWin.revealed ? Theme.animTab : Theme.animClose
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: osdWin.revealed ? Theme.curveDecel : Theme.curveAccel
+                easing.bezierCurve: osdWin.revealed ? Theme.curveExpressive : Theme.curveAccel
             }
         }
         Behavior on opacity {
@@ -181,9 +181,10 @@ PanelWindow {
         }
         Behavior on scale {
             NumberAnimation {
-                duration: osdWin.revealed ? Theme.animNormal : Theme.animClose
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: osdWin.revealed ? Theme.curveDecel : Theme.curveAccel
+                duration: osdWin.revealed ? Theme.animCard : Theme.animClose
+                easing.type: osdWin.revealed ? Easing.OutBack : Easing.BezierSpline
+                easing.overshoot: 1.15
+                easing.bezierCurve: osdWin.revealed ? Theme.curveExpressive : Theme.curveAccel
             }
         }
         Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }

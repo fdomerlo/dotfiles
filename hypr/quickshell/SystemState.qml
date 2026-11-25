@@ -9,6 +9,18 @@ Item {
     property int cpuUsage: 0
     property real memUsedGiB: 0.0
     property real memTotalGiB: 0.0
+    property real swapUsedGiB: 0.0
+    property real swapTotalGiB: 0.0
+    property int cpuTempC: -1
+    property string loadAvg: "0.00"
+    property string uptimeText: "0m"
+
+    property string diskUsed: "0G"
+    property string diskTotal: "0G"
+    property int diskPercent: 0
+
+    property var cpuHistory: []
+    property var memHistory: []
 
     property bool hasBacklight: false
     property int brightnessPercent: 0
@@ -24,10 +36,13 @@ Item {
     property bool recordingActive: false
 
     property string hostName: ""
+    property string osLabel: "Debian GNU/Linux"
+    property string kernelVersion: ""
+    property string cpuModel: ""
     readonly property string userName: Quickshell.env("USER") || "usuario"
 
     // Overrides locales opcionales (~/.config/quickshell/local.json)
-    property int barHeight: 38
+    property int barHeight: 40
     property bool showTelemetry: true
     property bool showMedia: true
 
@@ -48,10 +63,30 @@ Item {
 
     Process {
         id: hostProbe
-        command: ["hostname", "-s"]
+        command: [
+            "sh", "-c",
+            "h=$(hostname -s 2>/dev/null || true); " +
+            "os=$(awk -F= '/^PRETTY_NAME=/{gsub(/\"/,\"\",$2); print $2; exit}' /etc/os-release 2>/dev/null || true); " +
+            "kr=$(uname -r 2>/dev/null | cut -d- -f1 || true); " +
+            "cpu=$(awk -F': ' '/^model name/{print $2; exit}' /proc/cpuinfo 2>/dev/null | sed -E 's/\\((R|TM)\\)//g; s/[[:space:]]+/ /g; s/ CPU @.*//' || true); " +
+            "printf 'HOST|%s\\nOS|%s\\nKERNEL|%s\\nCPUMODEL|%s\\n' \"$h\" \"$os\" \"$kr\" \"$cpu\""
+        ]
         running: true
         stdout: StdioCollector {
-            onStreamFinished: sys.hostName = String(text || "").trim()
+            onStreamFinished: {
+                const lines = String(text || "").trim().split("\n");
+                for (let i = 0; i < lines.length; i++) {
+                    const p = lines[i].split("|");
+                    if (p[0] === "HOST" && p.length >= 2)
+                        sys.hostName = p[1] || "";
+                    else if (p[0] === "OS" && p.length >= 2 && p[1])
+                        sys.osLabel = p[1];
+                    else if (p[0] === "KERNEL" && p.length >= 2)
+                        sys.kernelVersion = p[1] || "";
+                    else if (p[0] === "CPUMODEL" && p.length >= 2)
+                        sys.cpuModel = p[1] || "";
+                }
+            }
         }
     }
 
@@ -72,17 +107,51 @@ Item {
         }
     }
 
-    // Sonda rápida (cada 2 s): /proc/stat + /proc/meminfo + nightlight + wf-recorder + backlight
+    function pushHistory(arr, value) {
+        const next = (arr || []).slice(-23);
+        next.push(Math.max(0, Math.min(100, Math.round(value))));
+        return next;
+    }
+
+    function formatUptime(sec) {
+        const s = Math.max(0, Math.floor(sec));
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        if (d > 0)
+            return d + "d " + h + "h";
+        if (h > 0)
+            return h + "h " + m + "m";
+        return Math.max(1, m) + "m";
+    }
+
+    // Sonda rápida (cada 2 s): /proc/stat + /proc/meminfo + uptime + load + temp + flags + backlight
     Process {
         id: fastProbe
         command: [
             "sh", "-c",
             "awk 'NR==1 {idle=$5+$6; total=0; for(i=2;i<=NF;i++) total+=$i; printf \"CPU|%d|%d\\n\", total, idle}' /proc/stat; " +
-            "awk '/^MemTotal:/ {t=$2} /^MemAvailable:/ {a=$2} END {printf \"MEM|%d|%d\\n\", t, (t-a)}' /proc/meminfo; " +
+            "awk '/^MemTotal:/ {t=$2} /^MemAvailable:/ {a=$2} /^SwapTotal:/ {st=$2} /^SwapFree:/ {sf=$2} END {printf \"MEM|%d|%d|%d|%d\\n\", t, (t-a), st, (st-sf)}' /proc/meminfo; " +
+            "awk '{printf \"UP|%d\\n\", $1}' /proc/uptime; " +
+            "awk '{printf \"LOAD|%s\\n\", $1}' /proc/loadavg; " +
+            "temp=-1; for h in /sys/class/hwmon/hwmon*; do " +
+            "  n=$(cat \"$h/name\" 2>/dev/null || true); " +
+            "  case \"$n\" in k10temp|coretemp|zenpower|cpu_thermal) " +
+            "    if [ -r \"$h/temp1_input\" ]; then v=$(cat \"$h/temp1_input\" 2>/dev/null || echo 0); [ \"$v\" -gt 0 ] 2>/dev/null && temp=$((v/1000)) && break; fi ;; " +
+            "  esac; " +
+            "done; " +
+            "if [ \"$temp\" -lt 0 ]; then " +
+            "  for z in /sys/class/thermal/thermal_zone*; do " +
+            "    t=$(cat \"$z/type\" 2>/dev/null || true); " +
+            "    case \"$t\" in x86_pkg_temp|cpu*|acpitz) " +
+            "      v=$(cat \"$z/temp\" 2>/dev/null || echo 0); [ \"$v\" -gt 0 ] 2>/dev/null && temp=$((v/1000)) && break ;; " +
+            "    esac; " +
+            "  done; " +
+            "fi; " +
             "nl=0; [ -f \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr-nightlight.state\" ] && pgrep -x hyprsunset >/dev/null 2>&1 && nl=1; " +
             "rec=0; pgrep -x wf-recorder >/dev/null 2>&1 && rec=1; " +
             "br=''; if command -v brightnessctl >/dev/null 2>&1; then br=$(brightnessctl -c backlight -m 2>/dev/null | head -n1 | awk -F',' '{gsub(/%/,\"\",$4); print $4}'); fi; " +
-            "printf 'FLAGS|%s|%s|%s\\n' \"$nl\" \"$rec\" \"$br\""
+            "printf 'FLAGS|%s|%s|%s|%s\\n' \"$nl\" \"$rec\" \"$br\" \"$temp\""
         ]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -99,12 +168,23 @@ Item {
                         }
                         sys._prevCpuTotal = total;
                         sys._prevCpuIdle = idle;
-                    } else if (p[0] === "MEM" && p.length >= 3) {
+                        sys.cpuHistory = sys.pushHistory(sys.cpuHistory, sys.cpuUsage);
+                    } else if (p[0] === "MEM" && p.length >= 5) {
                         const totalKb = Number(p[1]) || 0;
                         const usedKb = Number(p[2]) || 0;
+                        const swapTotalKb = Number(p[3]) || 0;
+                        const swapUsedKb = Number(p[4]) || 0;
                         sys.memTotalGiB = totalKb / (1024 * 1024);
                         sys.memUsedGiB = usedKb / (1024 * 1024);
-                    } else if (p[0] === "FLAGS" && p.length >= 4) {
+                        sys.swapTotalGiB = swapTotalKb / (1024 * 1024);
+                        sys.swapUsedGiB = Math.max(0, swapUsedKb / (1024 * 1024));
+                        const memPct = totalKb > 0 ? (usedKb * 100 / totalKb) : 0;
+                        sys.memHistory = sys.pushHistory(sys.memHistory, memPct);
+                    } else if (p[0] === "UP" && p.length >= 2) {
+                        sys.uptimeText = sys.formatUptime(Number(p[1]) || 0);
+                    } else if (p[0] === "LOAD" && p.length >= 2) {
+                        sys.loadAvg = p[1] || "0.00";
+                    } else if (p[0] === "FLAGS" && p.length >= 5) {
                         sys.nightlightActive = (p[1] === "1");
                         sys.recordingActive = (p[2] === "1");
                         const br = parseInt(p[3], 10);
@@ -114,13 +194,15 @@ Item {
                         } else {
                             sys.hasBacklight = false;
                         }
+                        const tp = parseInt(p[4], 10);
+                        sys.cpuTempC = isNaN(tp) ? -1 : tp;
                     }
                 }
             }
         }
     }
 
-    // Sonda lenta (cada 4 s o bajo demanda vía IPC): Red (nmcli), VPN y Servicio IA (OpenCode)
+    // Sonda lenta (cada 4 s o bajo demanda vía IPC): Red (nmcli), VPN, Disco y Servicio IA (OpenCode)
     Process {
         id: slowProbe
         command: [
@@ -136,6 +218,7 @@ Item {
             "    esac; " +
             "  done <<EOF\n$(nmcli -t -f NAME,TYPE,DEVICE connection show --active 2>/dev/null || true)\nEOF\n" +
             "fi; " +
+            "dfline=$(df -h -P / 2>/dev/null | awk 'NR==2 {gsub(/%/,\"\",$5); printf \"%s|%s|%s\", $5, $3, $2}'); " +
             "ai=0; aidet=''; " +
             "pid=$(pgrep -u \"$USER\" -f '(^|/)opencode[[:space:]]+serve[[:space:]]+--service([[:space:]]|$)' 2>/dev/null | head -n1 || true); " +
             "if [ -n \"$pid\" ]; then " +
@@ -143,7 +226,7 @@ Item {
             "  rss=$(ps -o rss= -p \"$pid\" 2>/dev/null | tr -d ' ' || true); " +
             "  [ -n \"$rss\" ] && aidet=\"$(((rss + 512) / 1024)) MiB\"; " +
             "fi; " +
-            "printf 'NET|%s|%s|%s\\nAI|%s|%s\\n' \"$kind\" \"$label\" \"$vpn\" \"$ai\" \"$aidet\""
+            "printf 'NET|%s|%s|%s\\nDISK|%s\\nAI|%s|%s\\n' \"$kind\" \"$label\" \"$vpn\" \"$dfline\" \"$ai\" \"$aidet\""
         ]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -154,6 +237,10 @@ Item {
                         sys.netKind = p[1] || "disconnected";
                         sys.netLabel = p[2] || "";
                         sys.vpnName = p[3] || "";
+                    } else if (p[0] === "DISK" && p.length >= 4) {
+                        sys.diskPercent = parseInt(p[1], 10) || 0;
+                        sys.diskUsed = p[2] || "0G";
+                        sys.diskTotal = p[3] || "0G";
                     } else if (p[0] === "AI" && p.length >= 3) {
                         sys.aiActive = (p[1] === "1");
                         sys.aiDetail = p[2] || "";

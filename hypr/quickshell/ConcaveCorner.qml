@@ -10,10 +10,13 @@ import QtQuick.Shapes
 //   - "bottom-left" / "bottom-right": variantes inferiores
 Item {
     id: corner
+    z: 2
 
     property int size: Theme.concaveRadius
     property color color: Theme.surface
     property string position: "top-left"
+    property int borderWidth: 0
+    property color borderColor: "transparent"
 
     implicitWidth: size
     implicitHeight: size
@@ -56,6 +59,23 @@ Item {
             PathLine {
                 x: 0
                 y: 0
+            }
+        }
+
+        ShapePath {
+            strokeWidth: corner.borderWidth
+            strokeColor: corner.borderWidth > 0 ? corner.borderColor : "transparent"
+            fillColor: "transparent"
+            capStyle: ShapePath.FlatCap
+            startX: corner.size
+            startY: -corner.borderWidth / 2.0
+
+            PathArc {
+                x: -corner.borderWidth / 2.0
+                y: corner.size
+                radiusX: corner.size + corner.borderWidth / 2.0
+                radiusY: corner.size + corner.borderWidth / 2.0
+                direction: PathArc.Counterclockwise
             }
         }
     }

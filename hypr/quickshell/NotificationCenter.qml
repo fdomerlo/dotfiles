@@ -1,7 +1,9 @@
 import QtQuick
+import QtQuick.Shapes
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 
 PanelWindow {
     id: centerWin
@@ -10,7 +12,7 @@ PanelWindow {
     required property var notifications
     required property bool dndEnabled
     required property real nowMs
-    property int barHeight: 38
+    property int barHeight: 40
 
     signal closeRequested()
     signal toggleDndRequested()
@@ -57,9 +59,21 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell-notif-center"
-    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    mask: panelOpen ? null : emptyMask
 
     color: "transparent"
+
+    Region {
+        id: emptyMask
+    }
+
+    HyprlandFocusGrab {
+        id: focusGrab
+        windows: [centerWin]
+        active: centerWin.panelOpen
+        onCleared: centerWin.closeRequested()
+    }
 
     FocusScope {
         id: escScope
@@ -67,10 +81,43 @@ PanelWindow {
         focus: true
         Keys.onEscapePressed: centerWin.closeRequested()
 
+        // Oscurecimiento suave del fondo (equivalente a dim_around, sin blur)
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: centerWin.barHeight
+            color: Theme.dimAround
+            opacity: centerWin.revealed ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: centerWin.revealed ? Theme.animNormal : Theme.animClose
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
         MouseArea {
             anchors.fill: parent
             enabled: centerWin.panelOpen
             onClicked: centerWin.closeRequested()
+        }
+
+        // Borde cyan inferior de la barra superior a la izquierda del cajón
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: drawerDock.left
+            anchors.rightMargin: drawerDock.width >= Theme.concaveRadius ? Theme.concaveRadius : 0
+            y: centerWin.barHeight - 2
+            height: 2
+            color: Theme.activeBorder
+            opacity: centerWin.revealed ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: centerWin.revealed ? Theme.animFast : Theme.animClose
+                    easing.type: Easing.OutCubic
+                }
+            }
         }
 
         // Panel derecho acoplado a la barra superior con esquina cóncava izquierda
@@ -81,14 +128,14 @@ PanelWindow {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 12
             anchors.right: parent.right
-            width: centerWin.revealed ? 404 : 0
+            width: centerWin.revealed ? 412 : 0
             opacity: centerWin.revealed ? 1.0 : 0.0
 
             Behavior on width {
                 NumberAnimation {
-                    duration: centerWin.revealed ? Theme.animNormal : Theme.animClose
+                    duration: centerWin.revealed ? Theme.animPop : Theme.animClose
                     easing.type: Easing.BezierSpline
-                    easing.bezierCurve: centerWin.revealed ? Theme.curveDecel : Theme.curveAccel
+                    easing.bezierCurve: centerWin.revealed ? Theme.curveExpressive : Theme.curveAccel
                 }
             }
             Behavior on opacity {
@@ -103,15 +150,19 @@ PanelWindow {
                 position: "top-right"
                 size: Theme.concaveRadius
                 color: Theme.surface
+                borderWidth: 2
+                borderColor: Theme.activeBorder
                 anchors.top: parent.top
                 anchors.right: drawerSurface.left
-                visible: drawerDock.width > 12
+                visible: drawerDock.width >= Theme.concaveRadius
             }
 
             Item {
                 id: drawerSurface
                 anchors.fill: parent
                 clip: true
+
+                readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - Theme.concaveRadius))
 
                 // Fondo redondeado solo en la esquina inferior izquierda (arriba y derecha fundidos)
                 Rectangle {
@@ -124,6 +175,38 @@ PanelWindow {
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
 
+                Shape {
+                    anchors.fill: parent
+                    preferredRendererType: Shape.CurveRenderer
+                    antialiasing: true
+                    visible: drawerDock.width >= Theme.concaveRadius && drawerSurface.height >= Theme.concaveRadius + 4
+
+                    ShapePath {
+                        strokeWidth: 2
+                        strokeColor: Theme.activeBorder
+                        fillColor: "transparent"
+                        capStyle: ShapePath.FlatCap
+                        startX: 1
+                        startY: Theme.concaveRadius
+
+                        PathLine {
+                            x: 1
+                            y: drawerSurface.height - drawerSurface.cornerR
+                        }
+                        PathArc {
+                            x: drawerSurface.cornerR
+                            y: drawerSurface.height - 1
+                            radiusX: drawerSurface.cornerR - 1
+                            radiusY: drawerSurface.cornerR - 1
+                            direction: PathArc.Counterclockwise
+                        }
+                        PathLine {
+                            x: drawerSurface.width
+                            y: drawerSurface.height - 1
+                        }
+                    }
+                }
+
                 // Absorber clics dentro del drawer
                 MouseArea {
                     anchors.fill: parent
@@ -132,17 +215,17 @@ PanelWindow {
                 ColumnLayout {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    x: centerWin.revealed ? 16 : 36
-                    width: 404 - 32
+                    x: centerWin.revealed ? 16 : 42
+                    width: 412 - 32
                     anchors.topMargin: 12
                     anchors.bottomMargin: 16
                     spacing: 12
 
                     Behavior on x {
                         NumberAnimation {
-                            duration: centerWin.revealed ? Theme.animNormal : Theme.animClose
+                            duration: centerWin.revealed ? Theme.animPop : Theme.animClose
                             easing.type: Easing.BezierSpline
-                            easing.bezierCurve: centerWin.revealed ? Theme.curveDecel : Theme.curveAccel
+                            easing.bezierCurve: centerWin.revealed ? Theme.curveExpressive : Theme.curveAccel
                         }
                     }
 
@@ -269,7 +352,7 @@ PanelWindow {
                             ColumnLayout {
                                 id: notifListCol
                                 width: notifFlick.width
-                                spacing: 8
+                                spacing: 10
 
                                 Repeater {
                                     model: centerWin.notifications

@@ -14,9 +14,7 @@ ShellRoot {
     property bool tabNavigated: false
 
     property bool launcherOpen: false
-    property bool launcherPending: false
-    property string pendingPrimaryName: ""
-    property int pendingScreenRetries: 0
+    property bool launcherMounted: false
     property string launcherTab: "apps"
     property string launcherSearchQuery: ""
     property var launcherScreen: null
@@ -41,23 +39,19 @@ ShellRoot {
     property var popupsScreen: null
     property bool dndEnabled: false
     property bool popupHovered: false
+    property real popupHoverStartedMs: 0
     property int nextNotifUid: 1
     property var notifEntries: []
     property real notifNowMs: Date.now()
 
-    // Estado de popouts acoplados a la barra superior (calendario, quick settings, energía, IA e inhibidor)
-    property bool calendarOpen: false
-    property bool calendarMounted: false
-    property var calendarScreen: null
-    property bool quickSettingsOpen: false
-    property bool quickSettingsMounted: false
-    property var quickSettingsScreen: null
+    // Estado de popouts acoplados a la barra superior (dashboard unificado, energía e inhibidor)
+    property bool dashboardOpen: false
+    property bool dashboardMounted: false
+    property int dashboardTab: 0
+    property var dashboardScreen: null
     property bool powerOpen: false
     property bool powerMounted: false
     property var powerScreen: null
-    property bool aiOpen: false
-    property bool aiMounted: false
-    property var aiScreen: null
     property bool idleInhibited: false
 
     readonly property var activePopups: {
@@ -72,7 +66,51 @@ ShellRoot {
         return out;
     }
 
-    // Ciclo de montaje diferido (280 ms) para permitir animaciones suaves de cierre antes de destruir LazyLoader
+    // Pausa real del timeout de toasts durante hover (desplaza expireAt al salir el cursor)
+    onPopupHoveredChanged: {
+        if (popupHovered) {
+            popupHoverStartedMs = Date.now();
+        } else if (popupHoverStartedMs > 0) {
+            const delta = Math.max(0, Date.now() - popupHoverStartedMs);
+            popupHoverStartedMs = 0;
+            if (delta > 0) {
+                const next = [];
+                let changed = false;
+                for (let i = 0; i < notifEntries.length; i++) {
+                    const e = notifEntries[i];
+                    if (!e)
+                        continue;
+                    if (e.popupActive && e.expireAt > 0) {
+                        changed = true;
+                        next.push({
+                            uid: e.uid,
+                            notif: e.notif,
+                            timestamp: e.timestamp,
+                            durationMs: e.durationMs || 0,
+                            popupActive: e.popupActive,
+                            keepInHistory: e.keepInHistory,
+                            expireAt: e.expireAt + delta
+                        });
+                    } else {
+                        next.push(e);
+                    }
+                }
+                if (changed)
+                    notifEntries = next;
+            }
+        }
+    }
+
+    // Ciclo de montaje diferido para permitir animaciones suaves de cierre antes de destruir LazyLoader
+    onLauncherOpenChanged: {
+        if (launcherOpen) {
+            launcherUnmountTimer.stop();
+            launcherMounted = true;
+        } else {
+            launcherUnmountTimer.restart();
+        }
+    }
+
     onOsdVisibleChanged: {
         if (osdVisible) {
             osdUnmountTimer.stop();
@@ -100,21 +138,12 @@ ShellRoot {
         }
     }
 
-    onCalendarOpenChanged: {
-        if (calendarOpen) {
-            calendarUnmountTimer.stop();
-            calendarMounted = true;
+    onDashboardOpenChanged: {
+        if (dashboardOpen) {
+            dashboardUnmountTimer.stop();
+            dashboardMounted = true;
         } else {
-            calendarUnmountTimer.restart();
-        }
-    }
-
-    onQuickSettingsOpenChanged: {
-        if (quickSettingsOpen) {
-            quickSettingsUnmountTimer.stop();
-            quickSettingsMounted = true;
-        } else {
-            quickSettingsUnmountTimer.restart();
+            dashboardUnmountTimer.restart();
         }
     }
 
@@ -127,18 +156,22 @@ ShellRoot {
         }
     }
 
-    onAiOpenChanged: {
-        if (aiOpen) {
-            aiUnmountTimer.stop();
-            aiMounted = true;
-        } else {
-            aiUnmountTimer.restart();
+    Timer {
+        id: launcherUnmountTimer
+        interval: 300
+        repeat: false
+        onTriggered: {
+            if (!root.launcherOpen) {
+                root.launcherMounted = false;
+                root.launcherSearchQuery = "";
+                root.launcherScreen = null;
+            }
         }
     }
 
     Timer {
         id: osdUnmountTimer
-        interval: 280
+        interval: 300
         repeat: false
         onTriggered: {
             if (!root.osdVisible)
@@ -148,7 +181,7 @@ ShellRoot {
 
     Timer {
         id: popupsUnmountTimer
-        interval: 280
+        interval: 300
         repeat: false
         onTriggered: {
             if (root.activePopups.length === 0)
@@ -158,7 +191,7 @@ ShellRoot {
 
     Timer {
         id: notifCenterUnmountTimer
-        interval: 280
+        interval: 300
         repeat: false
         onTriggered: {
             if (!root.notifCenterOpen)
@@ -167,42 +200,22 @@ ShellRoot {
     }
 
     Timer {
-        id: calendarUnmountTimer
-        interval: 280
+        id: dashboardUnmountTimer
+        interval: 300
         repeat: false
         onTriggered: {
-            if (!root.calendarOpen)
-                root.calendarMounted = false;
-        }
-    }
-
-    Timer {
-        id: quickSettingsUnmountTimer
-        interval: 280
-        repeat: false
-        onTriggered: {
-            if (!root.quickSettingsOpen)
-                root.quickSettingsMounted = false;
+            if (!root.dashboardOpen)
+                root.dashboardMounted = false;
         }
     }
 
     Timer {
         id: powerUnmountTimer
-        interval: 280
+        interval: 300
         repeat: false
         onTriggered: {
             if (!root.powerOpen)
                 root.powerMounted = false;
-        }
-    }
-
-    Timer {
-        id: aiUnmountTimer
-        interval: 280
-        repeat: false
-        onTriggered: {
-            if (!root.aiOpen)
-                root.aiMounted = false;
         }
     }
 
@@ -321,27 +334,6 @@ ShellRoot {
         }
     }
 
-    // Nombre del monitor 1 segun Hyprland (izquierda -> derecha).
-    Process {
-        id: primaryScreenProbe
-        command: [
-            "sh", "-c",
-            "hyprctl monitors -j 2>/dev/null | " +
-            "jq -r 'map(select(.disabled | not)) | sort_by(.x, .y, .id) | .[0].name // empty' " +
-            "2>/dev/null || true"
-        ]
-        stdout: StdioCollector {
-            onStreamFinished: root.applyPrimaryScreen(String(text || "").trim())
-        }
-    }
-
-    Timer {
-        id: primaryScreenRetry
-        interval: 80
-        repeat: false
-        onTriggered: root.tryApplyPrimaryScreen()
-    }
-
     Timer {
         id: delayedExecTimer
         interval: 100
@@ -385,14 +377,14 @@ ShellRoot {
 
     function computePopupDurationMs(n) {
         if (!n)
-            return 6000;
+            return 5000;
         if (n.urgency === NotificationUrgency.Critical)
             return 0;
         if (n.expireTimeout && n.expireTimeout > 0)
-            return Math.max(2000, Math.min(15000, Math.round(n.expireTimeout * 1000)));
+            return Math.max(2000, Math.min(5000, Math.round(n.expireTimeout * 1000)));
         if (n.urgency === NotificationUrgency.Low)
             return 4000;
-        return 6000;
+        return 5000;
     }
 
     function handleIncomingNotification(n) {
@@ -413,6 +405,7 @@ ShellRoot {
             uid: uid,
             notif: n,
             timestamp: now,
+            durationMs: dur,
             popupActive: showPopup,
             keepInHistory: keepTracked,
             expireAt: (showPopup && dur > 0) ? (now + dur) : 0
@@ -485,6 +478,7 @@ ShellRoot {
                     uid: e.uid,
                     notif: e.notif,
                     timestamp: e.timestamp,
+                    durationMs: e.durationMs || 0,
                     popupActive: false,
                     keepInHistory: e.keepInHistory,
                     expireAt: 0
@@ -493,6 +487,39 @@ ShellRoot {
                 next.push(e);
             }
         }
+        if (changed)
+            notifEntries = next;
+    }
+
+    function closeAllPopups() {
+        const next = [];
+        let changed = false;
+        for (let i = 0; i < notifEntries.length; i++) {
+            const e = notifEntries[i];
+            if (!e)
+                continue;
+            if (e.popupActive) {
+                changed = true;
+                if (!e.keepInHistory) {
+                    if (e.notif && e.notif.tracked)
+                        e.notif.expire();
+                    continue;
+                }
+                next.push({
+                    uid: e.uid,
+                    notif: e.notif,
+                    timestamp: e.timestamp,
+                    durationMs: e.durationMs || 0,
+                    popupActive: false,
+                    keepInHistory: e.keepInHistory,
+                    expireAt: 0
+                });
+            } else {
+                next.push(e);
+            }
+        }
+        popupHovered = false;
+        popupHoverStartedMs = 0;
         if (changed)
             notifEntries = next;
     }
@@ -517,6 +544,7 @@ ShellRoot {
                     uid: e.uid,
                     notif: e.notif,
                     timestamp: e.timestamp,
+                    durationMs: e.durationMs || 0,
                     popupActive: false,
                     keepInHistory: e.keepInHistory,
                     expireAt: 0
@@ -575,14 +603,10 @@ ShellRoot {
             closeLauncher();
         if (overviewOpen)
             closeOverview();
-        if (calendarOpen)
-            closeCalendar();
-        if (quickSettingsOpen)
-            closeQuickSettings();
+        if (dashboardOpen)
+            closeDashboard();
         if (powerOpen)
             closePower();
-        if (aiOpen)
-            closeAi();
         notifNowMs = Date.now();
         const next = [];
         for (let i = 0; i < notifEntries.length; i++) {
@@ -593,6 +617,7 @@ ShellRoot {
                 uid: e.uid,
                 notif: e.notif,
                 timestamp: e.timestamp,
+                durationMs: e.durationMs || 0,
                 popupActive: false,
                 keepInHistory: e.keepInHistory,
                 expireAt: 0
@@ -600,6 +625,7 @@ ShellRoot {
         }
         notifEntries = next;
         popupHovered = false;
+        popupHoverStartedMs = 0;
         notifCenterScreen = resolveFocusedScreen();
         notifCenterOpen = true;
     }
@@ -617,65 +643,42 @@ ShellRoot {
 
     function toggleDnd() {
         dndEnabled = !dndEnabled;
-        if (dndEnabled)
+        if (dndEnabled) {
             popupHovered = false;
+            popupHoverStartedMs = 0;
+        }
     }
 
-    function openCalendar(scr) {
+    function openDashboard(scr, tab) {
         if (launcherOpen)
             closeLauncher();
         if (overviewOpen)
             closeOverview();
         if (notifCenterOpen)
             closeNotifCenter();
-        if (quickSettingsOpen)
-            closeQuickSettings();
         if (powerOpen)
             closePower();
-        if (aiOpen)
-            closeAi();
-        calendarScreen = scr || resolveFocusedScreen();
-        calendarOpen = true;
-    }
-
-    function closeCalendar() {
-        calendarOpen = false;
-    }
-
-    function toggleCalendar(scr) {
-        if (calendarOpen)
-            closeCalendar();
-        else
-            openCalendar(scr);
-    }
-
-    function openQuickSettings(scr) {
-        if (launcherOpen)
-            closeLauncher();
-        if (overviewOpen)
-            closeOverview();
-        if (notifCenterOpen)
-            closeNotifCenter();
-        if (calendarOpen)
-            closeCalendar();
-        if (powerOpen)
-            closePower();
-        if (aiOpen)
-            closeAi();
+        if (tab !== undefined && tab >= 0 && tab <= 3)
+            dashboardTab = tab;
         systemState.refreshAll();
-        quickSettingsScreen = scr || resolveFocusedScreen();
-        quickSettingsOpen = true;
+        dashboardScreen = scr || resolveFocusedScreen();
+        dashboardOpen = true;
     }
 
-    function closeQuickSettings() {
-        quickSettingsOpen = false;
+    function closeDashboard() {
+        dashboardOpen = false;
     }
 
-    function toggleQuickSettings(scr) {
-        if (quickSettingsOpen)
-            closeQuickSettings();
-        else
-            openQuickSettings(scr);
+    function toggleDashboard(scr, tab) {
+        if (dashboardOpen) {
+            if (tab !== undefined && tab >= 0 && tab <= 3 && tab !== dashboardTab) {
+                dashboardTab = tab;
+                return;
+            }
+            closeDashboard();
+        } else {
+            openDashboard(scr, tab);
+        }
     }
 
     function openPower(scr) {
@@ -685,12 +688,8 @@ ShellRoot {
             closeOverview();
         if (notifCenterOpen)
             closeNotifCenter();
-        if (calendarOpen)
-            closeCalendar();
-        if (quickSettingsOpen)
-            closeQuickSettings();
-        if (aiOpen)
-            closeAi();
+        if (dashboardOpen)
+            closeDashboard();
         powerScreen = scr || resolveFocusedScreen();
         powerOpen = true;
     }
@@ -704,35 +703,6 @@ ShellRoot {
             closePower();
         else
             openPower(scr);
-    }
-
-    function openAi(scr) {
-        if (launcherOpen)
-            closeLauncher();
-        if (overviewOpen)
-            closeOverview();
-        if (notifCenterOpen)
-            closeNotifCenter();
-        if (calendarOpen)
-            closeCalendar();
-        if (quickSettingsOpen)
-            closeQuickSettings();
-        if (powerOpen)
-            closePower();
-        systemState.refreshSlow();
-        aiScreen = scr || resolveFocusedScreen();
-        aiOpen = true;
-    }
-
-    function closeAi() {
-        aiOpen = false;
-    }
-
-    function toggleAi(scr) {
-        if (aiOpen)
-            closeAi();
-        else
-            openAi(scr);
     }
 
     function orderedWorkspaceIds() {
@@ -822,55 +792,15 @@ ShellRoot {
         osdHideTimer.restart();
     }
 
-    function applyPrimaryScreen(name) {
-        pendingPrimaryName = name || "";
-        pendingScreenRetries = 0;
-        tryApplyPrimaryScreen();
-    }
-
-    function tryApplyPrimaryScreen() {
-        if (!launcherPending)
-            return;
-
-        const screens = Quickshell.screens || [];
-        let target = null;
-        if (pendingPrimaryName) {
-            for (let i = 0; i < screens.length; i++) {
-                if (screens[i] && screens[i].name === pendingPrimaryName) {
-                    target = screens[i];
-                    break;
-                }
-            }
-        }
-
-        const maxRetries = pendingPrimaryName ? 12 : 2;
-        if (!target && pendingScreenRetries < maxRetries) {
-            pendingScreenRetries += 1;
-            primaryScreenRetry.restart();
-            return;
-        }
-
-        launcherScreen = target || resolvePrimaryScreen() || (screens.length > 0 ? screens[0] : null);
-        if (!launcherStateProbe.running) {
-            launcherStateProbe.running = true;
-        }
-        launcherOpen = true;
-        launcherPending = false;
-    }
-
     function openOverview() {
         if (launcherOpen)
             closeLauncher();
         if (notifCenterOpen)
             closeNotifCenter();
-        if (calendarOpen)
-            closeCalendar();
-        if (quickSettingsOpen)
-            closeQuickSettings();
+        if (dashboardOpen)
+            closeDashboard();
         if (powerOpen)
             closePower();
-        if (aiOpen)
-            closeAi();
         searchQuery = "";
         tabNavigated = false;
         Hyprland.refreshMonitors();
@@ -901,38 +831,29 @@ ShellRoot {
         }
     }
 
-    function openLauncher(tabId) {
+    function openLauncher(tabId, scr) {
         if (overviewOpen)
             closeOverview();
         if (notifCenterOpen)
             closeNotifCenter();
-        if (calendarOpen)
-            closeCalendar();
-        if (quickSettingsOpen)
-            closeQuickSettings();
+        if (dashboardOpen)
+            closeDashboard();
         if (powerOpen)
             closePower();
-        if (aiOpen)
-            closeAi();
         launcherSearchQuery = "";
         launcherTab = tabId || "apps";
-        launcherPending = true;
-        pendingPrimaryName = "";
-        pendingScreenRetries = 0;
-        primaryScreenRetry.stop();
-        Hyprland.refreshMonitors();
-        primaryScreenProbe.running = true;
+        launcherScreen = scr || resolveFocusedScreen();
+        if (!launcherStateProbe.running) {
+            launcherStateProbe.running = true;
+        }
+        launcherOpen = true;
     }
 
     function closeLauncher() {
-        primaryScreenRetry.stop();
-        launcherPending = false;
         launcherOpen = false;
-        launcherSearchQuery = "";
-        launcherScreen = null;
     }
 
-    function toggleLauncher(tabId) {
+    function toggleLauncher(tabId, scr) {
         if (launcherOpen) {
             if (tabId && tabId !== launcherTab) {
                 launcherTab = tabId;
@@ -941,15 +862,7 @@ ShellRoot {
             closeLauncher();
             return;
         }
-        if (launcherPending) {
-            if (tabId) {
-                launcherTab = tabId;
-            } else {
-                closeLauncher();
-            }
-            return;
-        }
-        openLauncher(tabId);
+        openLauncher(tabId, scr);
     }
 
     function launchAppEntry(entry) {
@@ -1132,18 +1045,38 @@ ShellRoot {
     }
 
     IpcHandler {
-        target: "quicksettings"
+        target: "dashboard"
 
         function toggle(): void {
-            root.toggleQuickSettings(null);
+            root.toggleDashboard(null, -1);
         }
 
         function open(): void {
-            root.openQuickSettings(null);
+            root.openDashboard(null, 0);
+        }
+
+        function openTab(tabIndex: int): void {
+            root.toggleDashboard(null, tabIndex);
         }
 
         function close(): void {
-            root.closeQuickSettings();
+            root.closeDashboard();
+        }
+    }
+
+    IpcHandler {
+        target: "quicksettings"
+
+        function toggle(): void {
+            root.toggleDashboard(null, 0);
+        }
+
+        function open(): void {
+            root.openDashboard(null, 0);
+        }
+
+        function close(): void {
+            root.closeDashboard();
         }
     }
 
@@ -1151,15 +1084,15 @@ ShellRoot {
         target: "calendar"
 
         function toggle(): void {
-            root.toggleCalendar(null);
+            root.toggleDashboard(null, 0);
         }
 
         function open(): void {
-            root.openCalendar(null);
+            root.openDashboard(null, 0);
         }
 
         function close(): void {
-            root.closeCalendar();
+            root.closeDashboard();
         }
     }
 
@@ -1183,15 +1116,15 @@ ShellRoot {
         target: "ai"
 
         function toggle(): void {
-            root.toggleAi(null);
+            root.toggleDashboard(null, 3);
         }
 
         function open(): void {
-            root.openAi(null);
+            root.openDashboard(null, 3);
         }
 
         function close(): void {
-            root.closeAi();
+            root.closeDashboard();
         }
     }
 
@@ -1221,27 +1154,21 @@ ShellRoot {
             notifCenterOpen: root.notifCenterOpen
             launcherOpen: root.launcherOpen
             overviewOpen: root.overviewOpen
-            calendarOpen: root.calendarOpen
-            quickSettingsOpen: root.quickSettingsOpen
+            dashboardOpen: root.dashboardOpen
             powerOpen: root.powerOpen
-            aiOpen: root.aiOpen
             popupsVisible: root.popupsMounted
-            calendarScreen: root.calendarScreen
-            quickSettingsScreen: root.quickSettingsScreen
+            dashboardScreen: root.dashboardScreen
             notifCenterScreen: root.notifCenterScreen
             powerScreen: root.powerScreen
-            aiScreen: root.aiScreen
             popupsScreen: root.popupsScreen
             idleInhibited: root.idleInhibited
 
-            onLauncherRequested: root.toggleLauncher("")
+            onLauncherRequested: scr => root.toggleLauncher("", scr)
             onOverviewRequested: root.toggleOverview()
             onNotifCenterRequested: root.toggleNotifCenter()
             onDndToggled: root.toggleDnd()
-            onCalendarRequested: scr => root.toggleCalendar(scr)
-            onQuickSettingsRequested: scr => root.toggleQuickSettings(scr)
+            onDashboardRequested: (scr, tab) => root.toggleDashboard(scr, tab)
             onPowerRequested: scr => root.togglePower(scr)
-            onAiRequested: scr => root.toggleAi(scr)
             onIdleInhibitToggled: root.idleInhibited = !root.idleInhibited
         }
     }
@@ -1273,10 +1200,10 @@ ShellRoot {
     }
 
     LazyLoader {
-        active: root.launcherOpen
+        active: root.launcherMounted
 
         LauncherWindow {
-            screen: root.launcherScreen || root.resolvePrimaryScreen()
+            screen: root.launcherScreen || root.resolveFocusedScreen()
             launcherOpen: root.launcherOpen
             activeTab: root.launcherTab
             searchQuery: root.launcherSearchQuery
@@ -1323,6 +1250,7 @@ ShellRoot {
             barHeight: systemState.barHeight
             onDismissRequested: uid => root.dismissNotif(uid)
             onPopupCloseRequested: uid => root.hidePopup(uid)
+            onCloseAllPopupsRequested: root.closeAllPopups()
             onActionInvoked: (uid, action) => root.invokeNotifAction(uid, action)
             onHoverChanged: h => { root.popupHovered = h; }
         }
@@ -1348,31 +1276,21 @@ ShellRoot {
     }
 
     LazyLoader {
-        active: root.calendarMounted
+        active: root.dashboardMounted
 
-        CalendarPopup {
-            screen: root.calendarScreen || root.resolveFocusedScreen()
-            calendarOpen: root.calendarOpen
-            currentDate: sysClock.date
-            barHeight: systemState.barHeight
-            onCloseRequested: root.closeCalendar()
-        }
-    }
-
-    LazyLoader {
-        active: root.quickSettingsMounted
-
-        QuickSettingsPopup {
-            screen: root.quickSettingsScreen || root.resolveFocusedScreen()
-            panelOpen: root.quickSettingsOpen
+        DashboardPopup {
+            screen: root.dashboardScreen || root.resolveFocusedScreen()
+            panelOpen: root.dashboardOpen
+            activeTab: root.dashboardTab
             sysState: systemState
+            currentDate: sysClock.date
             dndEnabled: root.dndEnabled
             idleInhibited: root.idleInhibited
-            onCloseRequested: root.closeQuickSettings()
+            onCloseRequested: root.closeDashboard()
+            onTabSelected: tabIdx => { root.dashboardTab = tabIdx; }
             onToggleDndRequested: root.toggleDnd()
             onToggleIdleInhibitRequested: root.idleInhibited = !root.idleInhibited
-            onPowerRequested: root.openPower(root.quickSettingsScreen)
-            onAiRequested: root.openAi(root.quickSettingsScreen)
+            onPowerRequested: root.openPower(root.dashboardScreen)
         }
     }
 
@@ -1387,14 +1305,4 @@ ShellRoot {
         }
     }
 
-    LazyLoader {
-        active: root.aiMounted
-
-        AiPopup {
-            screen: root.aiScreen || root.resolveFocusedScreen()
-            panelOpen: root.aiOpen
-            sysState: systemState
-            onCloseRequested: root.closeAi()
-        }
-    }
 }

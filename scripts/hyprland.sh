@@ -196,6 +196,9 @@ for f in "$HYPR_SRC"/quickshell/*; do
     [ "$(basename "$f")" = "local.json" ] && continue
     link_file "$f" "$CONFIG_HOME/quickshell/$(basename "$f")"
 done
+for link in "$CONFIG_HOME"/quickshell/*.qml; do
+    [ -L "$link" ] && [ ! -e "$link" ] && rm -f "$link"
+done
 
 QS_LOCAL="$CONFIG_HOME/quickshell/local.json"
 if [ ! -e "$QS_LOCAL" ] && [ ! -L "$QS_LOCAL" ]; then

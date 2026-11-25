@@ -63,6 +63,8 @@ Singleton {
     readonly property color outline: isDark ? "#3f535c" : "#8ba2aa"
     readonly property color outlineVariant: isDark ? "#27363d" : "#c5d5da"
     readonly property color scrim: isDark ? "#9905090c" : "#66101c22"
+    // Oscurecimiento de fondo equivalente a decoration:dim_around (0.40) sin blur
+    readonly property color dimAround: Qt.rgba(0, 0, 0, 0.40)
 
     // =========================================================================
     // Alias de compatibilidad semántica (todos los componentes Quickshell)
@@ -81,7 +83,7 @@ Singleton {
     readonly property color muted: fgSubtle
 
     // =========================================================================
-    // Tipografía, geometría y movimiento Material 3 (suave y expresivo)
+    // Tipografía, geometría y movimiento Material 3 Expressive
     // =========================================================================
     readonly property string fontFamily: "Inter"
     readonly property string monoFontFamily: "JetBrains Mono"
@@ -97,7 +99,10 @@ Singleton {
     readonly property int borderWidth: 1
 
     readonly property int animFast: 180
+    readonly property int animTab: 260
+    readonly property int animCard: 300
     readonly property int animNormal: 340
+    readonly property int animPop: 380
     readonly property int animClose: 240
     readonly property int animSlow: 420
 
@@ -105,4 +110,5 @@ Singleton {
     readonly property var curveDecel: [0.05, 0.7, 0.1, 1.0, 1.0, 1.0]
     readonly property var curveAccel: [0.3, 0.0, 0.8, 0.15, 1.0, 1.0]
     readonly property var curveStandard: [0.2, 0.0, 0.0, 1.0, 1.0, 1.0]
+    readonly property var curveExpressive: [0.16, 1.0, 0.24, 1.0, 1.0, 1.0]
 }

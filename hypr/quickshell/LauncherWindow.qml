@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -31,6 +32,10 @@ PanelWindow {
 
     property int selectedIndex: 0
     property int desktopVersion: 0
+    property bool revealed: false
+    readonly property int panelWidth: Math.min(760, Math.round((screen ? screen.width : 1920) * 0.56))
+    readonly property int panelHeight: Math.min(540, Math.round((screen ? screen.height : 1080) * 0.64))
+    readonly property int cornerSize: Theme.concaveRadius
 
     Connections {
         target: DesktopEntries
@@ -261,6 +266,19 @@ PanelWindow {
                 delayMs: 40,
                 cmd: ["qs", "ipc", "call", "notifications", "toggle"]
             },
+            {
+                kind: "action",
+                category: "sistema",
+                badge: "Sistema",
+                glyph: "󰕮",
+                title: "Panel de indicadores (Dashboard)",
+                subtitle: "Calendario, audio, red, rendimiento y acciones IA",
+                keywords: "dashboard indicadores panel calendario audio media rendimiento",
+                shortcut: "Super+I",
+                actionType: "exec",
+                delayMs: 40,
+                cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/dashboard-toggle.sh\""]
+            },
 
             // Sistema
             {
@@ -384,6 +402,7 @@ PanelWindow {
                 title: "Energía y sesión",
                 subtitle: "Bloquear, suspender, hibernar, reiniciar, apagar o cerrar sesión",
                 keywords: "energia sesion apagar reiniciar suspender hibernar bloquear power logout hibernate",
+                shortcut: "Super+X",
                 actionType: "submenu",
                 delayMs: 40,
                 cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/powermenu.sh\""]
@@ -770,11 +789,25 @@ PanelWindow {
     onFilteredItemsChanged: resetSelection()
     onActiveTabChanged: resetSelection()
 
+    Timer {
+        id: revealTimer
+        interval: 16
+        repeat: false
+        onTriggered: {
+            if (win.launcherOpen)
+                win.revealed = true;
+        }
+    }
+
     onLauncherOpenChanged: {
         if (launcherOpen) {
             searchInput.text = "";
             resetSelection();
             focusTimer.restart();
+            revealTimer.restart();
+        } else {
+            revealTimer.stop();
+            revealed = false;
         }
     }
 
@@ -785,6 +818,7 @@ PanelWindow {
             searchInput.text = "";
             resetSelection();
             focusTimer.restart();
+            revealTimer.restart();
         }
     }
 
@@ -799,16 +833,24 @@ PanelWindow {
         }
     }
 
-    implicitWidth: Math.min(720, Math.round((screen ? screen.width : 1920) * 0.56))
-    implicitHeight: Math.min(560, Math.round((screen ? screen.height : 1080) * 0.68))
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
 
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell-launcher"
-    WlrLayershell.keyboardFocus: launcherOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    mask: launcherOpen ? null : emptyMask
 
     color: "transparent"
-    visible: launcherOpen
+
+    Region {
+        id: emptyMask
+    }
 
     HyprlandFocusGrab {
         id: focusGrab
@@ -817,28 +859,222 @@ PanelWindow {
         onCleared: win.closeRequested()
     }
 
-    Rectangle {
-        id: surface
+    Item {
         anchors.fill: parent
-        color: Theme.panelBg
-        radius: Theme.radius
-        border.width: 2
-        border.color: Theme.activeBorder
-        clip: true
 
-        ColumnLayout {
+        // Oscurecimiento suave del fondo (equivalente a dim_around, sin blur)
+        Rectangle {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 12
+            color: Theme.dimAround
+            opacity: win.revealed ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: win.revealed ? Theme.animNormal : Theme.animClose
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            enabled: win.launcherOpen
+            onClicked: win.closeRequested()
+        }
+
+        // Borde cyan inferior a ambos lados del menú acoplado al borde de pantalla
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: launcherDock.left
+            anchors.rightMargin: launcherDock.height >= win.cornerSize + 2 ? win.cornerSize : 0
+            anchors.bottom: parent.bottom
+            height: 2
+            color: Theme.activeBorder
+            opacity: win.revealed ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: win.revealed ? Theme.animFast : Theme.animClose
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
+        Rectangle {
+            anchors.left: launcherDock.right
+            anchors.leftMargin: launcherDock.height >= win.cornerSize + 2 ? win.cornerSize : 0
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 2
+            color: Theme.activeBorder
+            opacity: win.revealed ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: win.revealed ? Theme.animFast : Theme.animClose
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
+        // Panel central desplegado desde el borde inferior con curvas fundidas
+        Item {
+            id: launcherDock
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: win.panelWidth
+            height: win.revealed ? win.panelHeight : 0
+            opacity: win.revealed ? 1.0 : 0.0
+
+            Behavior on height {
+                NumberAnimation {
+                    duration: win.revealed ? Theme.animPop : Theme.animClose
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: win.revealed ? Theme.curveExpressive : Theme.curveAccel
+                }
+            }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: win.revealed ? Theme.animFast : Theme.animClose
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            // Base sólida de 2px bajo las curvas inferiores para fundir con el borde inferior
+            Rectangle {
+                z: 1
+                anchors.bottom: parent.bottom
+                anchors.right: surface.left
+                width: Math.max(0, win.cornerSize - 1)
+                height: 2
+                color: Theme.surface
+                visible: launcherDock.height >= win.cornerSize + 2
+            }
+
+            Rectangle {
+                z: 1
+                anchors.bottom: parent.bottom
+                anchors.left: surface.right
+                width: Math.max(0, win.cornerSize - 1)
+                height: 2
+                color: Theme.surface
+                visible: launcherDock.height >= win.cornerSize + 2
+            }
+
+            ConcaveCorner {
+                position: "bottom-right"
+                size: win.cornerSize
+                color: Theme.surface
+                borderWidth: 2
+                borderColor: Theme.activeBorder
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 2
+                anchors.right: surface.left
+                visible: launcherDock.height >= win.cornerSize + 2
+            }
+
+            ConcaveCorner {
+                position: "bottom-left"
+                size: win.cornerSize
+                color: Theme.surface
+                borderWidth: 2
+                borderColor: Theme.activeBorder
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 2
+                anchors.left: surface.right
+                visible: launcherDock.height >= win.cornerSize + 2
+            }
+
+            Item {
+                id: surface
+                anchors.fill: parent
+                clip: true
+
+                readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - win.cornerSize - 2))
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    height: parent.height + Theme.radiusLarge
+                    radius: Theme.radiusLarge
+                    color: Theme.surface
+                    Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+                }
+
+                Shape {
+                    anchors.fill: parent
+                    preferredRendererType: Shape.CurveRenderer
+                    antialiasing: true
+                    visible: launcherDock.height >= win.cornerSize + 2
+
+                    ShapePath {
+                        strokeWidth: 2
+                        strokeColor: Theme.activeBorder
+                        fillColor: "transparent"
+                        capStyle: ShapePath.FlatCap
+                        startX: 1
+                        startY: surface.height - win.cornerSize - 2
+
+                        PathLine {
+                            x: 1
+                            y: surface.cornerR
+                        }
+                        PathArc {
+                            x: surface.cornerR
+                            y: 1
+                            radiusX: surface.cornerR - 1
+                            radiusY: surface.cornerR - 1
+                            direction: PathArc.Clockwise
+                        }
+                        PathLine {
+                            x: surface.width - surface.cornerR
+                            y: 1
+                        }
+                        PathArc {
+                            x: surface.width - 1
+                            y: surface.cornerR
+                            radiusX: surface.cornerR - 1
+                            radiusY: surface.cornerR - 1
+                            direction: PathArc.Clockwise
+                        }
+                        PathLine {
+                            x: surface.width - 1
+                            y: surface.height - win.cornerSize - 2
+                        }
+                    }
+                }
+
+                // Absorbe clics internos
+                MouseArea {
+                    anchors.fill: parent
+                }
+
+                ColumnLayout {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: 18
+                    anchors.rightMargin: 18
+                    y: win.revealed ? 16 : 32
+                    height: Math.max(120, win.panelHeight - 32)
+                    spacing: 12
+
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: win.revealed ? Theme.animPop : Theme.animClose
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: win.revealed ? Theme.curveExpressive : Theme.curveAccel
+                        }
+                    }
 
             // Buscador principal (foco inmediato al abrir)
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
-                color: Theme.cardBg
-                radius: Theme.cardRadius
-                border.width: Theme.borderWidth
-                border.color: searchInput.activeFocus ? Theme.activeBorder : Theme.border
+                color: Theme.surfaceContainer
+                radius: Theme.radiusMedium
+                border.width: 1
+                border.color: searchInput.activeFocus ? Theme.outline : Theme.outlineVariant
 
                 RowLayout {
                     anchors.fill: parent
@@ -941,56 +1177,116 @@ PanelWindow {
                 }
             }
 
-            // Pills superiores de categorías (clic o Tab / Shift+Tab)
-            RowLayout {
+            // Tabs M3 tonales con indicador deslizante (mismo lenguaje que DashboardPopup)
+            Item {
+                id: launcherTabStrip
                 Layout.fillWidth: true
-                spacing: 6
+                Layout.preferredHeight: 38
 
-                Repeater {
-                    model: win.tabs
+                readonly property int tabCount: win.tabs.length
+                readonly property real tabW: width / Math.max(1, tabCount)
+                readonly property int activeIndex: {
+                    for (let i = 0; i < win.tabs.length; i++) {
+                        if (win.tabs[i].id === win.activeTab)
+                            return i;
+                    }
+                    return 0;
+                }
 
-                    delegate: Rectangle {
-                        id: pill
-                        required property var modelData
-                        readonly property bool isActive: win.activeTab === modelData.id
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 1
+                    color: Theme.outlineVariant
+                    opacity: 0.55
+                }
 
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 32
-                        radius: Theme.cardRadius
-                        color: isActive
-                            ? Theme.accent
-                            : (pillMouse.containsMouse ? Theme.cardHoverBg : Theme.cardBg)
-                        border.width: Theme.borderWidth
-                        border.color: isActive ? Theme.accent : (pillMouse.containsMouse ? Theme.activeBorder : Theme.border)
+                Rectangle {
+                    width: Math.min(72, Math.max(36, launcherTabStrip.tabW * 0.46))
+                    height: 3
+                    radius: 2
+                    color: Theme.primary
+                    anchors.bottom: parent.bottom
+                    x: launcherTabStrip.activeIndex * launcherTabStrip.tabW + (launcherTabStrip.tabW - width) / 2
 
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            Text {
-                                text: pill.modelData.icon
-                                color: pill.isActive ? Theme.accentText : Theme.accent
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 13
-                            }
-
-                            Text {
-                                text: pill.modelData.label
-                                color: pill.isActive ? Theme.accentText : Theme.text
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 12
-                                font.bold: pill.isActive
-                            }
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: Theme.animTab
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Theme.curveExpressive
                         }
+                    }
+                }
 
-                        MouseArea {
-                            id: pillMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                win.tabSelected(pill.modelData.id);
-                                searchInput.forceActiveFocus();
+                Row {
+                    anchors.fill: parent
+
+                    Repeater {
+                        model: win.tabs
+
+                        delegate: Item {
+                            id: pill
+                            required property var modelData
+                            readonly property bool isActive: win.activeTab === modelData.id
+
+                            width: launcherTabStrip.tabW
+                            height: launcherTabStrip.height
+
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.topMargin: 1
+                                anchors.bottomMargin: 5
+                                anchors.leftMargin: 3
+                                anchors.rightMargin: 3
+                                radius: Theme.radiusSmall
+                                color: pill.isActive
+                                    ? Theme.surfaceContainer
+                                    : (pillMouse.containsMouse ? Theme.surfaceContainerLow : "transparent")
+
+                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                            }
+
+                            Row {
+                                anchors.centerIn: parent
+                                anchors.verticalCenterOffset: -2
+                                spacing: 6
+
+                                Text {
+                                    text: pill.modelData.icon
+                                    color: pill.isActive
+                                        ? Theme.primary
+                                        : (pillMouse.containsMouse ? Theme.fg : Theme.fgSubtle)
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 14
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                                }
+
+                                Text {
+                                    text: pill.modelData.label
+                                    color: pill.isActive
+                                        ? Theme.fg
+                                        : (pillMouse.containsMouse ? Theme.fgMuted : Theme.fgSubtle)
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 12
+                                    font.weight: pill.isActive ? Font.Bold : Font.Medium
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                                }
+                            }
+
+                            MouseArea {
+                                id: pillMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    win.tabSelected(pill.modelData.id);
+                                    searchInput.forceActiveFocus();
+                                }
                             }
                         }
                     }
@@ -1022,17 +1318,17 @@ PanelWindow {
 
                         width: resultList.width
                         height: 46
-                        radius: Theme.cardRadius
+                        radius: Theme.radiusMedium
                         color: isSelected
-                            ? Theme.cardHoverBg
-                            : (rowMouse.containsMouse ? Theme.cardBg : "transparent")
-                        border.width: isSelected ? Theme.borderWidth : 0
-                        border.color: isSelected ? Theme.activeBorder : "transparent"
+                            ? Theme.primaryContainer
+                            : (rowMouse.containsMouse ? Theme.surfaceContainer : "transparent")
+
+                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 12
                             spacing: 12
 
                             // Icono de aplicación o glifo de acción
@@ -1055,7 +1351,7 @@ PanelWindow {
                                     anchors.centerIn: parent
                                     visible: !appIcon.visible
                                     text: rowItem.modelData.glyph
-                                    color: rowItem.isSelected ? Theme.activeBorder : Theme.accent
+                                    color: rowItem.isSelected ? Theme.fgOnPrimaryContainer : Theme.primary
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 17
                                 }
@@ -1068,10 +1364,10 @@ PanelWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     text: rowItem.modelData.title
-                                    color: rowItem.isSelected ? Theme.textBright : Theme.text
+                                    color: rowItem.isSelected ? Theme.fgOnPrimaryContainer : Theme.fg
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 13
-                                    font.bold: rowItem.isSelected
+                                    font.weight: rowItem.isSelected ? Font.Bold : Font.Medium
                                     elide: Text.ElideRight
                                 }
 
@@ -1079,7 +1375,8 @@ PanelWindow {
                                     Layout.fillWidth: true
                                     visible: rowItem.modelData.subtitle !== ""
                                     text: rowItem.modelData.subtitle
-                                    color: Theme.muted
+                                    color: rowItem.isSelected ? Theme.fgOnPrimaryContainer : Theme.fgSubtle
+                                    opacity: rowItem.isSelected ? 0.80 : 1.0
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 11
                                     elide: Text.ElideRight
@@ -1090,19 +1387,18 @@ PanelWindow {
                             Rectangle {
                                 visible: (rowItem.modelData.shortcut || "") !== ""
                                 Layout.preferredWidth: shortcutText.implicitWidth + 12
-                                Layout.preferredHeight: 20
-                                radius: Theme.cardRadius
-                                color: "transparent"
-                                border.width: Theme.borderWidth
-                                border.color: rowItem.isSelected ? Theme.activeBorder : Theme.border
+                                Layout.preferredHeight: 22
+                                radius: Theme.radiusFull
+                                color: rowItem.isSelected ? Theme.surface : Theme.surfaceContainer
 
                                 Text {
                                     id: shortcutText
                                     anchors.centerIn: parent
                                     text: rowItem.modelData.shortcut || ""
-                                    color: rowItem.isSelected ? Theme.textBright : Theme.muted
-                                    font.family: Theme.fontFamily
+                                    color: rowItem.isSelected ? Theme.primary : Theme.fgSubtle
+                                    font.family: Theme.monoFontFamily
                                     font.pixelSize: 10
+                                    font.weight: Font.Medium
                                 }
                             }
 
@@ -1110,19 +1406,17 @@ PanelWindow {
                                 visible: rowItem.modelData.badge !== ""
                                 Layout.preferredWidth: badgeText.implicitWidth + 14
                                 Layout.preferredHeight: 22
-                                radius: Theme.cardRadius
-                                color: rowItem.isSelected ? Theme.accent : Theme.cardBg
-                                border.width: Theme.borderWidth
-                                border.color: rowItem.isSelected ? Theme.accent : Theme.border
+                                radius: Theme.radiusFull
+                                color: rowItem.isSelected ? Theme.surfaceContainerHigh : Theme.surfaceContainer
 
                                 Text {
                                     id: badgeText
                                     anchors.centerIn: parent
                                     text: rowItem.modelData.badge
-                                    color: rowItem.isSelected ? Theme.accentText : Theme.muted
+                                    color: rowItem.isSelected ? Theme.fg : Theme.fgSubtle
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 10
-                                    font.bold: rowItem.isSelected
+                                    font.weight: rowItem.isSelected ? Font.DemiBold : Font.Medium
                                 }
                             }
                         }
@@ -1168,20 +1462,21 @@ PanelWindow {
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: ovHint.implicitWidth + 16
-                        Layout.preferredHeight: 24
-                        radius: Theme.cardRadius
-                        color: ovMouse.containsMouse ? Theme.cardHoverBg : Theme.cardBg
-                        border.width: Theme.borderWidth
-                        border.color: ovMouse.containsMouse ? Theme.activeBorder : Theme.border
+                        Layout.preferredWidth: ovHint.implicitWidth + 18
+                        Layout.preferredHeight: 26
+                        radius: Theme.radiusFull
+                        color: ovMouse.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
+
+                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                         Text {
                             id: ovHint
                             anchors.centerIn: parent
                             text: "󰕰  Actividades (Super+A)"
-                            color: ovMouse.containsMouse ? Theme.textBright : Theme.muted
+                            color: ovMouse.containsMouse ? Theme.fg : Theme.fgSubtle
                             font.family: Theme.fontFamily
                             font.pixelSize: 11
+                            font.weight: Font.Medium
                         }
 
                         MouseArea {
@@ -1193,6 +1488,8 @@ PanelWindow {
                         }
                     }
                 }
+            }
+        }
             }
         }
     }

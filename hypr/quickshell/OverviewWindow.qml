@@ -109,8 +109,8 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell-overview"
-    WlrLayershell.keyboardFocus: overviewOpen
-        ? (isFocusedMonitor ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand)
+    WlrLayershell.keyboardFocus: (overviewOpen && isFocusedMonitor)
+        ? WlrKeyboardFocus.Exclusive
         : WlrKeyboardFocus.None
 
     color: "transparent"

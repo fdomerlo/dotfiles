@@ -7,8 +7,6 @@ NotificationCard 1.0 NotificationCard.qml
 NotificationPopups 1.0 NotificationPopups.qml
 NotificationCenter 1.0 NotificationCenter.qml
 SystemState 1.0 SystemState.qml
-CalendarPopup 1.0 CalendarPopup.qml
-QuickSettingsPopup 1.0 QuickSettingsPopup.qml
+DashboardPopup 1.0 DashboardPopup.qml
 PowerPopup 1.0 PowerPopup.qml
-AiPopup 1.0 AiPopup.qml
 BarWindow 1.0 BarWindow.qml
