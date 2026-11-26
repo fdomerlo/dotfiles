@@ -45,6 +45,15 @@ PanelWindow {
     property int selectedPlayerIndex: 0
     property bool draggingBrightness: false
 
+    // Navegación por teclado del contenido (pestañas 1–4)
+    property int focusIndex: -1
+    property bool helpOpen: false
+    property Item focusRingItem: null
+    property real focusRingX: 0
+    property real focusRingY: 0
+    property real focusRingW: 0
+    property real focusRingH: 0
+
     // Navegación del calendario en Dashboard (Tab 1)
     property int displayYear: currentDate.getFullYear()
     property int displayMonth: currentDate.getMonth()
@@ -292,6 +301,305 @@ PanelWindow {
         return "App";
     }
 
+    // ---------------------------------------------------------------------
+    // Navegación por teclado del contenido (pestañas 1–4)
+    // Cada descriptor apunta a un control visible y sabe cómo activarse.
+    // ---------------------------------------------------------------------
+    function descriptorItem(fd) {
+        if (!fd)
+            return null;
+        if (fd.item)
+            return fd.item;
+        if (fd.repeater)
+            return fd.repeater.itemAt(fd.index) || null;
+        return null;
+    }
+
+    function focusableDescriptors() {
+        const out = [];
+        if (activeTab === 1) {
+            out.push({ item: qNetTile, id: "net" });
+            out.push({ item: qBtTile, id: "bt" });
+            out.push({ item: qDndTile, id: "dnd" });
+            out.push({ item: qNlTile, id: "nightlight" });
+            out.push({ item: qIdleTile, id: "idle" });
+            out.push({ item: qPpTile, id: "powerprofile" });
+            out.push({ item: volSliderM, id: "vol", kind: "vslider" });
+            out.push({ item: micSliderM, id: "mic", kind: "vslider" });
+            if (sysState && sysState.hasBacklight)
+                out.push({ item: brSliderM, id: "bright", kind: "vslider" });
+            out.push({ item: dPrevM, id: "mediaPrev" });
+            out.push({ item: dPlayM, id: "mediaPlay" });
+            out.push({ item: dNextM, id: "mediaNext" });
+            out.push({ item: cPrevM, id: "calPrev" });
+            if (!isViewingCurrentMonth)
+                out.push({ item: todayChipM, id: "calToday" });
+            out.push({ item: cNextM, id: "calNext" });
+            out.push({ item: dashPerfSummaryCard, id: "perf" });
+        } else if (activeTab === 2) {
+            for (let i = 0; i < playerPillRepeater.count; i++)
+                out.push({ repeater: playerPillRepeater, index: i, id: "player", data: i });
+            out.push({ item: mPrevM, id: "mediaPrev" });
+            out.push({ item: mPlayM, id: "mediaPlay" });
+            out.push({ item: mNextM, id: "mediaNext" });
+            out.push({ item: outMuteM, id: "outMute" });
+            out.push({ item: outSliderM, id: "outVol", kind: "hslider" });
+            out.push({ item: micMuteM, id: "micMute" });
+            out.push({ item: micSliderHM, id: "micVol", kind: "hslider" });
+            for (let i = 0; i < capRepeater.count; i++)
+                out.push({ repeater: capRepeater, index: i, id: "capture", data: captureActions[i] });
+            out.push({ item: pavuM, id: "pavu" });
+        } else if (activeTab === 3) {
+            out.push({ item: aiSvcM, id: "aiService" });
+            for (let i = 0; i < aiQuickRepeater.count; i++)
+                out.push({ repeater: aiQuickRepeater, index: i, id: "aiQuick", data: aiQuickActions[i] });
+            for (let i = 0; i < aiContextRepeater.count; i++)
+                out.push({ repeater: aiContextRepeater, index: i, id: "aiContext", data: aiContextActions[i] });
+            for (let i = 0; i < devToolsRepeater.count; i++)
+                out.push({ repeater: devToolsRepeater, index: i, id: "dev", data: devToolsActions[i] });
+        } else if (activeTab === 4) {
+            out.push({ item: openBtopM, id: "btop" });
+            for (let i = 0; i < trayRepeater.count; i++)
+                out.push({ repeater: trayRepeater, index: i, id: "tray", data: SystemTray.items.values[i] });
+            for (let i = 0; i < sysUtilRepeater.count; i++)
+                out.push({ repeater: sysUtilRepeater, index: i, id: "sysUtil", data: systemUtilActions[i] });
+        }
+        return out;
+    }
+
+    function visibleFocusDescriptors() {
+        return focusableDescriptors().filter(fd => {
+            const it = descriptorItem(fd);
+            return Boolean(it && it.visible && it.width > 0 && it.height > 0);
+        });
+    }
+
+    function focusItemCenter(it) {
+        return it.mapToItem(dashSurface, it.width / 2, it.height / 2);
+    }
+
+    function updateFocusRing() {
+        const list = visibleFocusDescriptors();
+        if (focusIndex < 0 || focusIndex >= list.length) {
+            focusRingItem = null;
+            return;
+        }
+        const it = descriptorItem(list[focusIndex]);
+        if (!it) {
+            focusRingItem = null;
+            return;
+        }
+        const p = it.mapToItem(dashSurface, 0, 0);
+        focusRingItem = it;
+        focusRingX = p.x;
+        focusRingY = p.y;
+        focusRingW = it.width;
+        focusRingH = it.height;
+    }
+
+    function moveFocus(dx, dy) {
+        if (activeTab === 0)
+            return false;
+        const list = visibleFocusDescriptors();
+        if (list.length === 0)
+            return false;
+        if (focusIndex < 0 || focusIndex >= list.length) {
+            focusIndex = 0;
+            updateFocusRing();
+            return true;
+        }
+        const cur = list[focusIndex];
+        const curItem = descriptorItem(cur);
+        if (!curItem)
+            return false;
+
+        // Los sliders ajustan con las flechas de su eje; el otro eje mueve el foco.
+        if (cur.kind === "vslider" && dy !== 0) {
+            adjustFocus(dy * 0.05);
+            return true;
+        }
+        if (cur.kind === "hslider" && dx !== 0) {
+            adjustFocus(dx * 0.05);
+            return true;
+        }
+
+        const c = focusItemCenter(curItem);
+        let best = -1;
+        let bestScore = Infinity;
+        for (let i = 0; i < list.length; i++) {
+            if (i === focusIndex)
+                continue;
+            const it = descriptorItem(list[i]);
+            if (!it)
+                continue;
+            const p = focusItemCenter(it);
+            const vx = p.x - c.x;
+            const vy = p.y - c.y;
+            if (dx !== 0 && Math.sign(vx) !== dx)
+                continue;
+            if (dy !== 0 && Math.sign(vy) !== dy)
+                continue;
+            const primary = Math.abs(dx !== 0 ? vx : vy);
+            const secondary = Math.abs(dx !== 0 ? vy : vx);
+            if (primary < 2)
+                continue;
+            const score = primary + secondary * 2.5;
+            if (score < bestScore) {
+                bestScore = score;
+                best = i;
+            }
+        }
+        if (best >= 0) {
+            focusIndex = best;
+            updateFocusRing();
+        }
+        return true;
+    }
+
+    function focusEdge(toFirst) {
+        if (activeTab === 0)
+            return false;
+        const list = visibleFocusDescriptors();
+        if (list.length === 0)
+            return false;
+        focusIndex = toFirst ? 0 : list.length - 1;
+        updateFocusRing();
+        return true;
+    }
+
+    function adjustFocus(delta) {
+        const list = visibleFocusDescriptors();
+        if (focusIndex < 0 || focusIndex >= list.length)
+            return;
+        const fd = list[focusIndex];
+        if (fd.id === "vol" || fd.id === "outVol") {
+            if (!sinkReady)
+                return;
+            const next = Math.max(0.0, Math.min(1.0, (defaultSink.audio.volume || 0) + delta));
+            defaultSink.audio.muted = false;
+            defaultSink.audio.volume = next;
+        } else if (fd.id === "mic" || fd.id === "micVol") {
+            if (!sourceReady)
+                return;
+            const next = Math.max(0.0, Math.min(1.0, (defaultSource.audio.volume || 0) + delta));
+            defaultSource.audio.muted = false;
+            defaultSource.audio.volume = next;
+        } else if (fd.id === "bright") {
+            const base = sysState ? sysState.brightnessPercent : 50;
+            const pct = Math.max(5, Math.min(100, Math.round(base + delta * 100)));
+            if (sysState)
+                sysState.brightnessPercent = pct;
+            Quickshell.execDetached(["brightnessctl", "-c", "backlight", "set", pct + "%"]);
+        }
+    }
+
+    function activateFocus() {
+        const list = visibleFocusDescriptors();
+        if (focusIndex < 0 || focusIndex >= list.length)
+            return false;
+        const fd = list[focusIndex];
+        switch (fd.id) {
+        case "net":
+            closeRequested();
+            runScript("toggle-menu.sh", ["Red:", Quickshell.env("HOME") + "/.config/hypr/scripts/network-menu.sh"]);
+            break;
+        case "bt":
+            closeRequested();
+            Quickshell.execDetached(["blueman-manager"]);
+            break;
+        case "dnd":
+            toggleDndRequested();
+            break;
+        case "nightlight":
+            runScript("nightlight-toggle.sh", []);
+            if (sysState)
+                sysState.refreshAll();
+            break;
+        case "idle":
+            toggleIdleInhibitRequested();
+            break;
+        case "powerprofile":
+            cyclePowerProfile();
+            break;
+        case "perf":
+            tabSelected(4);
+            break;
+        case "vol":
+        case "outVol":
+            if (sinkReady)
+                defaultSink.audio.muted = !defaultSink.audio.muted;
+            break;
+        case "mic":
+        case "micVol":
+            if (sourceReady)
+                defaultSource.audio.muted = !defaultSource.audio.muted;
+            break;
+        case "bright":
+            break;
+        case "mediaPrev":
+            if (activePlayer && activePlayer.canGoPrevious)
+                activePlayer.previous();
+            break;
+        case "mediaPlay":
+            if (activePlayer && activePlayer.canTogglePlaying)
+                activePlayer.togglePlaying();
+            break;
+        case "mediaNext":
+            if (activePlayer && activePlayer.canGoNext)
+                activePlayer.next();
+            break;
+        case "calPrev": {
+            const wasCurrent = isViewingCurrentMonth;
+            shiftMonth(-1);
+            if (wasCurrent !== isViewingCurrentMonth)
+                focusIndex = -1;
+            break;
+        }
+        case "calToday":
+            resetToToday();
+            focusIndex = -1;
+            break;
+        case "calNext": {
+            const wasCurrent = isViewingCurrentMonth;
+            shiftMonth(1);
+            if (wasCurrent !== isViewingCurrentMonth)
+                focusIndex = -1;
+            break;
+        }
+        case "player":
+            selectedPlayerIndex = fd.data;
+            break;
+        case "capture":
+            actionActivated(fd.data);
+            break;
+        case "aiService":
+            runScript("ai.sh", ["service", "toggle"]);
+            break;
+        case "aiQuick":
+        case "aiContext":
+            runAiAction(fd.data.cmd, fd.data.delay);
+            break;
+        case "dev":
+        case "sysUtil":
+            actionActivated(fd.data);
+            break;
+        case "btop":
+            closeRequested();
+            Quickshell.execDetached(["foot", "-e", "btop"]);
+            break;
+        case "tray": {
+            if (fd.data)
+                fd.data.activate();
+            break;
+        }
+        case "pavu":
+            closeRequested();
+            Quickshell.execDetached(["pavucontrol"]);
+            break;
+        }
+        return true;
+    }
+
     Timer {
         id: revealTimer
         interval: 16
@@ -315,6 +623,15 @@ PanelWindow {
         interval: 20
         repeat: false
         onTriggered: dashWin.applyCurrentFocus()
+    }
+
+    // Reubica el anillo de foco mientras se animan las transiciones de pestaña.
+    Timer {
+        id: focusRingTimer
+        interval: 80
+        repeat: true
+        running: dashWin.panelOpen && dashWin.activeTab !== 0 && dashWin.focusIndex >= 0
+        onTriggered: dashWin.updateFocusRing()
     }
 
     function applyCurrentFocus() {
@@ -346,20 +663,31 @@ PanelWindow {
             globalSearchInput.text = "";
             searchQuery = "";
             tabApps.resetSelection();
+            focusIndex = -1;
+            helpOpen = false;
+            updateFocusRing();
             applyCurrentFocus();
             focusTimer.restart();
             revealTimer.restart();
         } else {
             revealTimer.stop();
             focusTimer.stop();
+            focusIndex = -1;
+            helpOpen = false;
+            focusRingItem = null;
             revealed = false;
         }
     }
 
     onActiveTabChanged: {
+        focusIndex = -1;
+        helpOpen = false;
+        updateFocusRing();
         if (panelOpen)
             focusTimer.restart();
     }
+
+    onFocusIndexChanged: updateFocusRing()
 
     anchors {
         top: true
@@ -384,9 +712,26 @@ PanelWindow {
         id: dashScope
         anchors.fill: parent
         focus: true
-        Keys.onEscapePressed: dashWin.closeRequested()
+        Keys.onEscapePressed: {
+            if (dashWin.helpOpen) {
+                dashWin.helpOpen = false;
+                return;
+            }
+            dashWin.closeRequested();
+        }
         Keys.onPressed: event => {
             const tabCount = dashWin.tabMeta.length;
+
+            if (event.key === Qt.Key_F1) {
+                dashWin.helpOpen = !dashWin.helpOpen;
+                event.accepted = true;
+                return;
+            }
+            if (dashWin.helpOpen) {
+                event.accepted = true;
+                return;
+            }
+
             if (event.key === Qt.Key_1) {
                 dashWin.tabSelected(0);
                 event.accepted = true;
@@ -402,12 +747,30 @@ PanelWindow {
             } else if (event.key === Qt.Key_5) {
                 dashWin.tabSelected(4);
                 event.accepted = true;
-            } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Right) {
+            } else if (event.key === Qt.Key_Tab) {
                 dashWin.tabSelected((dashWin.activeTab + 1) % tabCount);
                 event.accepted = true;
-            } else if (event.key === Qt.Key_Backtab || event.key === Qt.Key_Left) {
+            } else if (event.key === Qt.Key_Backtab) {
                 dashWin.tabSelected((dashWin.activeTab + tabCount - 1) % tabCount);
                 event.accepted = true;
+            } else if (
+                dashWin.activeTab !== 0 &&
+                (event.key === Qt.Key_Left || event.key === Qt.Key_Right ||
+                 event.key === Qt.Key_Up || event.key === Qt.Key_Down) &&
+                !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))
+            ) {
+                event.accepted = dashWin.moveFocus(
+                    event.key === Qt.Key_Left ? -1 : (event.key === Qt.Key_Right ? 1 : 0),
+                    event.key === Qt.Key_Up ? -1 : (event.key === Qt.Key_Down ? 1 : 0)
+                );
+            } else if (dashWin.activeTab !== 0 && (event.key === Qt.Key_Home || event.key === Qt.Key_End)) {
+                event.accepted = dashWin.focusEdge(event.key === Qt.Key_Home);
+            } else if (
+                dashWin.activeTab !== 0 &&
+                dashWin.focusIndex >= 0 &&
+                (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space)
+            ) {
+                event.accepted = dashWin.activateFocus();
             } else if (event.key === Qt.Key_Slash || ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_K)) {
                 dashWin.tabSelected(0);
                 focusTimer.restart();
@@ -1987,6 +2350,7 @@ PanelWindow {
                                                     color: dashWin.activePlayer ? Theme.fgOnPrimary : Theme.fgSubtle
                                                 }
                                                 MouseArea {
+                                                    id: dPlayM
                                                     anchors.fill: parent
                                                     cursorShape: Qt.PointingHandCursor
                                                     onClicked: {
@@ -2064,6 +2428,7 @@ PanelWindow {
                                         spacing: 6
 
                                         Repeater {
+                                            id: playerPillRepeater
                                             model: dashWin.playersList
 
                                             Rectangle {
@@ -2281,6 +2646,7 @@ PanelWindow {
                                                 color: Theme.fgOnPrimary
                                             }
                                             MouseArea {
+                                                id: mPlayM
                                                 anchors.fill: parent
                                                 cursorShape: Qt.PointingHandCursor
                                                 onClicked: if (dashWin.activePlayer && dashWin.activePlayer.canTogglePlaying) dashWin.activePlayer.togglePlaying()
@@ -2370,6 +2736,7 @@ PanelWindow {
                                                     color: dashWin.sinkMuted ? Theme.fgOnErrorContainer : Theme.primary
                                                 }
                                                 MouseArea {
+                                                    id: outMuteM
                                                     anchors.fill: parent
                                                     cursorShape: Qt.PointingHandCursor
                                                     onClicked: if (dashWin.sinkReady) dashWin.defaultSink.audio.muted = !dashWin.defaultSink.audio.muted
@@ -2397,6 +2764,7 @@ PanelWindow {
                                                     }
                                                 }
                                                 MouseArea {
+                                                    id: outSliderM
                                                     anchors.fill: parent
                                                     cursorShape: Qt.PointingHandCursor
                                                     function applyX(mx) {
@@ -2475,6 +2843,7 @@ PanelWindow {
                                                     color: dashWin.sourceMuted ? Theme.fgOnErrorContainer : Theme.secondary
                                                 }
                                                 MouseArea {
+                                                    id: micMuteM
                                                     anchors.fill: parent
                                                     cursorShape: Qt.PointingHandCursor
                                                     onClicked: if (dashWin.sourceReady) dashWin.defaultSource.audio.muted = !dashWin.defaultSource.audio.muted
@@ -2502,6 +2871,7 @@ PanelWindow {
                                                     }
                                                 }
                                                 MouseArea {
+                                                    id: micSliderHM
                                                     anchors.fill: parent
                                                     cursorShape: Qt.PointingHandCursor
                                                     function applyX(mx) {
@@ -2578,6 +2948,7 @@ PanelWindow {
                                 rowSpacing: 8
 
                                 Repeater {
+                                    id: capRepeater
                                     model: dashWin.captureActions
 
                                     Rectangle {
@@ -2989,6 +3360,7 @@ PanelWindow {
                                         spacing: 8
 
                                         Repeater {
+                                            id: trayRepeater
                                             model: SystemTray.items
 
                                             Rectangle {
@@ -3070,6 +3442,7 @@ PanelWindow {
                                 rowSpacing: 8
 
                                 Repeater {
+                                    id: sysUtilRepeater
                                     model: dashWin.systemUtilActions
 
                                     Rectangle {
@@ -3246,6 +3619,7 @@ PanelWindow {
                                 rowSpacing: 8
 
                                 Repeater {
+                                    id: aiQuickRepeater
                                     model: dashWin.aiQuickActions
 
                                     Rectangle {
@@ -3320,6 +3694,7 @@ PanelWindow {
                                 rowSpacing: 8
 
                                 Repeater {
+                                    id: aiContextRepeater
                                     model: dashWin.aiContextActions
 
                                     Rectangle {
@@ -3395,6 +3770,7 @@ PanelWindow {
                                 rowSpacing: 8
 
                                 Repeater {
+                                    id: devToolsRepeater
                                     model: dashWin.devToolsActions
 
                                     Rectangle {
@@ -3624,8 +4000,8 @@ PanelWindow {
                         Text {
                             Layout.fillWidth: true
                             text: dashWin.activeTab === 0
-                                ? "↑↓: mover · Enter: ejecutar · Tab: pestaña · Esc: cerrar"
-                                : "← → / Tab / 1–5: pestañas · Escribí para buscar · Esc: cerrar"
+                                ? "↑↓: mover · Enter: ejecutar · Tab: pestaña · F1: ayuda · Esc: cerrar"
+                                : "←↑→↓: mover · Enter: activar · Tab: pestaña · F1: ayuda · Esc: cerrar"
                             font.family: Theme.fontFamily
                             font.pixelSize: 11
                             color: Theme.fgSubtle
@@ -3656,6 +4032,98 @@ PanelWindow {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: dashWin.overviewRequested()
+                            }
+                        }
+                    }
+                }
+
+                // Anillo de foco para navegación por teclado (pestañas 1–4)
+                Rectangle {
+                    id: focusRing
+                    visible: dashWin.focusRingItem !== null && dashWin.activeTab !== 0 && !dashWin.helpOpen
+                    x: dashWin.focusRingX
+                    y: dashWin.focusRingY
+                    width: dashWin.focusRingW
+                    height: dashWin.focusRingH
+                    z: 200
+                    color: Qt.alpha(Theme.primary, 0.08)
+                    border.width: 2
+                    border.color: Theme.primary
+                    radius: Theme.radiusMedium
+                    Behavior on x { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+                    Behavior on y { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+                    Behavior on width { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+                    Behavior on height { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: -3
+                        radius: parent.radius + 3
+                        color: "transparent"
+                        border.width: 1
+                        border.color: Qt.alpha(Theme.primary, 0.35)
+                    }
+                }
+
+                // Ayuda contextual de teclado (F1)
+                Rectangle {
+                    id: helpOverlay
+                    visible: dashWin.helpOpen
+                    anchors.fill: parent
+                    z: 300
+                    color: Qt.alpha(Theme.surfaceSolid, 0.94)
+                    radius: Theme.radiusLarge
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: dashWin.helpOpen = false
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: Math.min(parent.width - 48, 520)
+                        height: helpCol.implicitHeight + 40
+                        radius: Theme.radiusLarge
+                        color: Theme.surfaceContainer
+                        border.width: 1
+                        border.color: Theme.outlineVariant
+
+                        Column {
+                            id: helpCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.leftMargin: 20
+                            anchors.rightMargin: 20
+                            spacing: 10
+
+                            Text {
+                                text: "Atajos de teclado · " + (dashWin.activeTab === 0 ? "Apps" : dashWin.tabMeta[dashWin.activeTab].label)
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 16
+                                font.weight: Font.Bold
+                                color: Theme.fg
+                            }
+
+                            Text {
+                                text: dashWin.activeTab === 0
+                                    ? "↑ ↓  mover ·  Enter  abrir ·  Tab  pestaña ·  Ctrl+K  buscar ·  Esc  cerrar"
+                                    : "← ↑ → ↓  mover ·  Home/End  primero/último ·  Enter/Espacio  activar\n" +
+                                      "↑ ↓ o ← →  ajustar sliders ·  Enter  mute ·  Tab  pestaña ·  Esc  cerrar"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 13
+                                color: Theme.fgMuted
+                                wrapMode: Text.WordWrap
+                                width: parent.width
+                            }
+
+                            Text {
+                                text: "1–5  pestañas ·  Escribí en cualquier pestaña para buscar ·  F1  cerrar ayuda"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 12
+                                color: Theme.fgSubtle
+                                wrapMode: Text.WordWrap
+                                width: parent.width
                             }
                         }
                     }

@@ -1336,6 +1336,12 @@ ShellRoot {
             root.toggleDashboard(null, tabIndex);
         }
 
+        // Abre o cambia de pestaña sin cerrar si ya está abierta en esa pestaña.
+        function showTab(tabIndex: string): void {
+            const idx = parseInt(tabIndex, 10);
+            root.openDashboard(null, isNaN(idx) ? 1 : idx);
+        }
+
         function close(): void {
             root.closeDashboard();
         }

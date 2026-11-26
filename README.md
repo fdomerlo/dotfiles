@@ -163,7 +163,9 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 
 | Atajo | Acción |
 | :--- | :--- |
-| `Super` / `Super+D` / `Super+Space` | **Centro Unificado** (`Apps`, `Capturar`, `Estilo`, `Sistema`, `Dev & IA` — cambia de pestaña con `Tab`) |
+| `Super` / `Super+D` / `Super+Space` | **Centro Unificado** (`Apps`, `Dashboard`, `Media`, `Dev & IA`, `Sistema` — `Tab` cambia de pestaña y las flechas navegan el contenido) |
+| `Super+Alt+1..5` | Abrir el **Dashboard** directo en `Apps`, `Dashboard`, `Media`, `Dev & IA` o `Sistema` |
+| `Super+Alt+T` | **Apariencia**: popout de tema, barra y wallpapers |
 | `Super+A` | **Actividades / Overview** (workspaces + previews en vivo + búsqueda de ventanas abiertas) |
 | `Super+F1` | **Cheatsheet interactivo** con todos los atajos activos (teclado + mouse) |
 | `Super+Return` / `Super+Shift+Return` | Terminal (`foot`) / terminal con sesión `tmux` persistente |
