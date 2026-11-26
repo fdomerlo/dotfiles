@@ -22,6 +22,7 @@ set -euo pipefail
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 HYPR_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_DIR="$(cd "$HYPR_DIR/.." && pwd)"
 THEMES_DIR="$HYPR_DIR/themes"
 ACTIVE_LINK="$THEMES_DIR/active"
 
@@ -32,10 +33,23 @@ die() {
 
 normalize_mode() {
     case "$1" in
-        dark|cyber-teal|mr-robot)           printf 'dark' ;;
-        light|cyber-teal-light|mr-robot-light) printf 'light' ;;
-        *)                                  printf '%s' "$1" ;;
+        dark|cyber-teal|mr-robot)                        printf 'dark' ;;
+        light|light-stone|cyber-teal-light|mr-robot-light) printf 'light' ;;
+        *)                                               printf '%s' "$1" ;;
     esac
+}
+
+sync_btop_theme() {
+    local mode="$1"
+    local btop_themes="${XDG_CONFIG_HOME:-$HOME/.config}/btop/themes"
+    local src="$REPO_DIR/shell/btop/themes/neutral.theme"
+    if [ "$mode" = "light" ] && [ -f "$REPO_DIR/shell/btop/themes/neutral-light.theme" ]; then
+        src="$REPO_DIR/shell/btop/themes/neutral-light.theme"
+    fi
+    [ -f "$src" ] || return 0
+    mkdir -p "$btop_themes"
+    ln -sfn "$src" "$btop_themes/neutral.theme"
+    pkill -USR2 -x btop 2>/dev/null || true
 }
 
 list_themes() {
@@ -88,6 +102,7 @@ apply_theme() {
     fi
 
     ln -sfn "$theme" "$ACTIVE_LINK"
+    sync_btop_theme "$theme"
 
     if [ "$reload" = "1" ]; then
         reload_desktop "$theme"

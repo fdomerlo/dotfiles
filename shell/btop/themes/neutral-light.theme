@@ -1,0 +1,77 @@
+# ==============================================================================
+# btop - Tema claro neutro / piedra (Cyber-Teal Material 3)
+#
+# Acompaña el fondo claro de Foot (#f6f8fa) con alto contraste en texto, cajas
+# y gráficas legibles bajo luz diurna.
+# ==============================================================================
+
+# Fondo transparente: usa el fondo activo de la terminal.
+theme[main_bg]=""
+
+# Texto principal
+theme[main_fg]="#171f26"
+
+# Títulos de cajas
+theme[title]="#0f171e"
+
+# Atajos de teclado resaltados
+theme[hi_fg]="#006c7f"
+
+# Elemento seleccionado en la lista de procesos
+theme[selected_bg]="#c9ecf3"
+theme[selected_fg]="#00333d"
+
+# Texto inactivo/deshabilitado
+theme[inactive_fg]="#7a8895"
+
+# Gráficos y detalles de procesos
+theme[proc_misc]="#5b4db2"
+
+# Bordes de cajas
+theme[cpu_box]="#8c9aa7"
+theme[mem_box]="#8c9aa7"
+theme[net_box]="#8c9aa7"
+theme[proc_box]="#8c9aa7"
+
+# Divisores
+theme[div_line]="#c2cbd4"
+
+# Temperatura
+theme[temp_start]="#0f7b5b"
+theme[temp_mid]="#9c6500"
+theme[temp_end]="#c4324f"
+
+# CPU
+theme[cpu_start]="#3c8d9e"
+theme[cpu_mid]="#006c7f"
+theme[cpu_end]="#5b4db2"
+
+# Memoria libre
+theme[free_start]="#6a9e8b"
+theme[free_mid]=""
+theme[free_end]="#0f7b5b"
+
+# Memoria en caché
+theme[cached_start]="#7c8ea0"
+theme[cached_mid]=""
+theme[cached_end]="#3c4a56"
+
+# Memoria disponible
+theme[available_start]="#4b8fa0"
+theme[available_mid]=""
+theme[available_end]="#006c7f"
+
+# Memoria usada
+theme[used_start]="#7c70c4"
+theme[used_mid]="#5b4db2"
+theme[used_end]="#c4324f"
+
+# Red: descarga
+theme[download_start]="#3c8d9e"
+theme[download_mid]=""
+theme[download_end]="#006c7f"
+
+# Red: subida
+theme[upload_start]="#6e63b8"
+theme[upload_mid]=""
+theme[upload_end]="#5b4db2"

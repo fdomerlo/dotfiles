@@ -1,7 +1,9 @@
 singleton Theme 1.0 Theme.qml
 ConcaveCorner 1.0 ConcaveCorner.qml
 OverviewWindow 1.0 OverviewWindow.qml
-LauncherWindow 1.0 LauncherWindow.qml
+NotchAppsTab 1.0 NotchAppsTab.qml
+AppearancePopup 1.0 AppearancePopup.qml
+ClipboardPopup 1.0 ClipboardPopup.qml
 OsdWindow 1.0 OsdWindow.qml
 NotificationCard 1.0 NotificationCard.qml
 NotificationPopups 1.0 NotificationPopups.qml

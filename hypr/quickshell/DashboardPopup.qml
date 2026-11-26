@@ -20,12 +20,17 @@ PanelWindow {
     required property date currentDate
     required property bool dndEnabled
     required property bool idleInhibited
+    property string activeTheme: "dark"
+    property string searchQuery: ""
 
     signal closeRequested()
     signal tabSelected(int tabIndex)
     signal toggleDndRequested()
     signal toggleIdleInhibitRequested()
     signal powerRequested()
+    signal appActivated(var entry)
+    signal actionActivated(var actionObj)
+    signal overviewRequested()
 
     readonly property int barH: sysState ? sysState.barHeight : 40
     readonly property int panelWidth: Math.min(860, Math.max(680, (dashWin.screen ? dashWin.screen.width : 1280) - 64))
@@ -35,17 +40,18 @@ PanelWindow {
     property int selectedPlayerIndex: 0
     property bool draggingBrightness: false
 
-    // Navegación del calendario en Dashboard (Tab 0)
+    // Navegación del calendario en Dashboard (Tab 1)
     property int displayYear: currentDate.getFullYear()
     property int displayMonth: currentDate.getMonth()
     readonly property bool isViewingCurrentMonth:
         displayYear === currentDate.getFullYear() && displayMonth === currentDate.getMonth()
 
     readonly property var tabMeta: [
+        { id: "apps", label: "Apps", glyph: "󰀻" },
         { id: "dashboard", label: "Dashboard", glyph: "󰕮" },
         { id: "media", label: "Media", glyph: "󰎆" },
-        { id: "performance", label: "Rendimiento", glyph: "󰓅" },
-        { id: "ai", label: "IA", glyph: "󰚩" }
+        { id: "dev", label: "Dev & IA", glyph: "󰅬" },
+        { id: "system", label: "Sistema", glyph: "󰓅" }
     ]
 
     readonly property var monthNames: [
@@ -164,6 +170,36 @@ PanelWindow {
         { cmd: "commit", glyph: "󰜘", title: "Mensaje commit", subtitle: "Conventional + copiar", delay: false }
     ]
 
+    readonly property var captureActions: [
+        { glyph: "󰆞", title: "Región (Swappy)", shortcut: "Print", isRec: false, delayMs: 220, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-region.sh\""] },
+        { glyph: "󰆟", title: "Región al clip", shortcut: "Ctrl+Print", isRec: false, delayMs: 220, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-region.sh\" --raw"] },
+        { glyph: "󰍹", title: "Pantalla completa", shortcut: "Shift+Print", isRec: false, delayMs: 260, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screenshot-full.sh\""] },
+        { glyph: (sysState && sysState.recordingActive) ? "󰓛" : "󰑋", title: (sysState && sysState.recordingActive) ? "Detener REC" : "Grabar monitor", shortcut: "Super+Shift+R", isRec: Boolean(sysState && sysState.recordingActive), delayMs: 180, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screen-record.sh\""] },
+        { glyph: "󰩭", title: "Grabar región", shortcut: "", isRec: false, delayMs: 220, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/screen-record.sh\" --region"] },
+        { glyph: "󰈊", title: "Color (Hex)", shortcut: "Super+Shift+P", isRec: false, delayMs: 220, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/color-picker.sh\""] },
+        { glyph: "󰊄", title: "OCR texto", shortcut: "Super+Ctrl+O", isRec: false, delayMs: 220, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/ocr-region.sh\""] }
+    ]
+
+    readonly property var devToolsActions: [
+        { glyph: "󰅩", title: "Editor (Zed)", subtitle: "Super+C", actionType: "exec", delayMs: 0, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/editor.sh\""] },
+        { glyph: "󰆍", title: "Scratchpad", subtitle: "Super+Shift+S", actionType: "exec", delayMs: 0, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/scratchpad.sh\""] },
+        { glyph: "󰍹", title: "VMs (Quickemu)", subtitle: "~/VMs", actionType: "submenu", delayMs: 90, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'VMs:' \"$HOME/.config/hypr/scripts/vm-menu.sh\""] },
+        { glyph: "󰡨", title: "lazydocker", subtitle: "Contenedores", actionType: "exec", delayMs: 0, cmd: ["foot", "--app-id=tui-float", "-e", "lazydocker"] },
+        { glyph: "󰉋", title: "yazi", subtitle: "Super+Y", actionType: "exec", delayMs: 0, cmd: ["foot", "--app-id=tui-float", "-e", "yazi"] },
+        { glyph: "󰒍", title: "devctl doctor", subtitle: "Diagnóstico", actionType: "term-hold", delayMs: 0, termTitle: "devctl doctor", termCmd: "devctl doctor" },
+        { glyph: "󰚰", title: "devctl update", subtitle: "Actualizar", actionType: "term-hold", delayMs: 0, termTitle: "devctl update", termCmd: "devctl update" },
+        { glyph: "󰃢", title: "devctl clean", subtitle: "Limpieza", actionType: "term-hold", delayMs: 0, termTitle: "devctl clean", termCmd: "devctl clean" }
+    ]
+
+    readonly property var systemUtilActions: [
+        { glyph: "󰅌", title: "Portapapeles", subtitle: "Super+V", actionType: "clipboard" },
+        { glyph: "󰈞", title: "Buscar archivos", subtitle: "Super+Ctrl+F", actionType: "submenu", delayMs: 90, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Archivo:' \"$HOME/.config/hypr/scripts/file-search.sh\""] },
+        { glyph: "󰖟", title: "Web Apps / PWAs", subtitle: "Instalar o quitar", actionType: "submenu", delayMs: 90, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Web Apps' \"$HOME/.config/hypr/scripts/webapp-install.sh\" menu"] },
+        { glyph: "󰍺", title: "Escala monitores", subtitle: "PPI y resolución", actionType: "term-hold", delayMs: 0, termTitle: "Escala de monitores", termCmd: "\"$HOME/.config/hypr/scripts/monitor-scale.sh\" --hyprconf" },
+        { glyph: "󰌌", title: "Atajos activos", subtitle: "Super+F1", actionType: "submenu", delayMs: 90, cmd: ["bash", "-c", "\"$HOME/.config/hypr/scripts/toggle-menu.sh\" 'Atajos' \"$HOME/.config/hypr/scripts/keybinds.sh\""] },
+        { glyph: "󰑐", title: "Recargar Hyprland", subtitle: "Super+Esc", actionType: "exec", delayMs: 0, cmd: ["bash", "-c", "if hyprctl reload >/dev/null 2>&1; then notify-send -a Hyprland 'Hyprland' 'Configuración recargada'; else notify-send -u critical -a Hyprland 'Hyprland' 'Error al recargar configuración'; fi"] }
+    ]
+
     function shiftMonth(delta) {
         let m = displayMonth + delta;
         let y = displayYear;
@@ -265,26 +301,59 @@ PanelWindow {
         id: mediaProgressTimer
         interval: 1000
         repeat: true
-        running: dashWin.panelOpen && dashWin.activeTab === 1 && Boolean(dashWin.activePlayer && dashWin.activePlayer.isPlaying)
+        running: dashWin.panelOpen && dashWin.activeTab === 2 && Boolean(dashWin.activePlayer && dashWin.activePlayer.isPlaying)
         onTriggered: dashWin.mediaTick += 1
+    }
+
+    Timer {
+        id: focusTimer
+        interval: 20
+        repeat: false
+        onTriggered: dashWin.applyCurrentFocus()
+    }
+
+    function applyCurrentFocus() {
+        if (!panelOpen)
+            return;
+        if (activeTab === 0) {
+            globalSearchInput.forceActiveFocus();
+            globalSearchInput.cursorPosition = globalSearchInput.text.length;
+        } else {
+            dashScope.forceActiveFocus();
+        }
     }
 
     Component.onCompleted: {
         resetToToday();
-        dashScope.forceActiveFocus();
-        if (panelOpen)
+        if (panelOpen) {
+            globalSearchInput.text = "";
+            searchQuery = "";
+            tabApps.resetSelection();
+            applyCurrentFocus();
+            focusTimer.restart();
             revealTimer.restart();
+        }
     }
 
     onPanelOpenChanged: {
         if (panelOpen) {
             resetToToday();
-            dashScope.forceActiveFocus();
+            globalSearchInput.text = "";
+            searchQuery = "";
+            tabApps.resetSelection();
+            applyCurrentFocus();
+            focusTimer.restart();
             revealTimer.restart();
         } else {
             revealTimer.stop();
+            focusTimer.stop();
             revealed = false;
         }
+    }
+
+    onActiveTabChanged: {
+        if (panelOpen)
+            focusTimer.restart();
     }
 
     anchors {
@@ -319,6 +388,7 @@ PanelWindow {
         focus: true
         Keys.onEscapePressed: dashWin.closeRequested()
         Keys.onPressed: event => {
+            const tabCount = dashWin.tabMeta.length;
             if (event.key === Qt.Key_1) {
                 dashWin.tabSelected(0);
                 event.accepted = true;
@@ -331,11 +401,28 @@ PanelWindow {
             } else if (event.key === Qt.Key_4) {
                 dashWin.tabSelected(3);
                 event.accepted = true;
+            } else if (event.key === Qt.Key_5) {
+                dashWin.tabSelected(4);
+                event.accepted = true;
             } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Right) {
-                dashWin.tabSelected((dashWin.activeTab + 1) % 4);
+                dashWin.tabSelected((dashWin.activeTab + 1) % tabCount);
                 event.accepted = true;
             } else if (event.key === Qt.Key_Backtab || event.key === Qt.Key_Left) {
-                dashWin.tabSelected((dashWin.activeTab + 3) % 4);
+                dashWin.tabSelected((dashWin.activeTab + tabCount - 1) % tabCount);
+                event.accepted = true;
+            } else if (event.key === Qt.Key_Slash || ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_K)) {
+                dashWin.tabSelected(0);
+                focusTimer.restart();
+                event.accepted = true;
+            } else if (
+                dashWin.activeTab !== 0 &&
+                !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) &&
+                event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32
+            ) {
+                globalSearchInput.text = event.text;
+                dashWin.searchQuery = event.text;
+                dashWin.tabSelected(0);
+                focusTimer.restart();
                 event.accepted = true;
             }
         }
@@ -641,10 +728,11 @@ PanelWindow {
                         id: tabContentHost
                         Layout.fillWidth: true
                         Layout.preferredHeight: {
-                            if (dashWin.activeTab === 0) return tabDashboard.implicitHeight;
-                            if (dashWin.activeTab === 1) return tabMedia.implicitHeight;
-                            if (dashWin.activeTab === 2) return tabPerf.implicitHeight;
-                            return tabAi.implicitHeight;
+                            if (dashWin.activeTab === 0) return 376;
+                            if (dashWin.activeTab === 1) return tabDashboard.implicitHeight;
+                            if (dashWin.activeTab === 2) return tabMedia.implicitHeight;
+                            if (dashWin.activeTab === 3) return tabDevAi.implicitHeight;
+                            return tabSystem.implicitHeight;
                         }
                         clip: true
 
@@ -657,16 +745,41 @@ PanelWindow {
                         }
 
                         // -----------------------------------------------------
-                        // TAB 0: DASHBOARD (estilo Caelestia + Quick Controls)
+                        // TAB 0: APPS Y BUSCADOR GLOBAL
+                        // -----------------------------------------------------
+                        NotchAppsTab {
+                            id: tabApps
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 376
+                            y: dashWin.activeTab === 0 ? 0 : 10
+                            opacity: dashWin.activeTab === 0 ? 1.0 : 0.0
+                            visible: opacity > 0.01
+                            enabled: dashWin.activeTab === 0
+
+                            searchQuery: dashWin.searchQuery
+                            activeTheme: dashWin.activeTheme
+                            recordingActive: Boolean(dashWin.sysState && dashWin.sysState.recordingActive)
+                            nightlightActive: Boolean(dashWin.sysState && dashWin.sysState.nightlightActive)
+
+                            onAppActivated: entry => dashWin.appActivated(entry)
+                            onActionActivated: act => dashWin.actionActivated(act)
+
+                            Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
+                            Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
+                        }
+
+                        // -----------------------------------------------------
+                        // TAB 1: DASHBOARD (estilo Caelestia + Quick Controls)
                         // -----------------------------------------------------
                         RowLayout {
                             id: tabDashboard
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            y: dashWin.activeTab === 0 ? 0 : 10
-                            opacity: dashWin.activeTab === 0 ? 1.0 : 0.0
+                            y: dashWin.activeTab === 1 ? 0 : 10
+                            opacity: dashWin.activeTab === 1 ? 1.0 : 0.0
                             visible: opacity > 0.01
-                            enabled: dashWin.activeTab === 0
+                            enabled: dashWin.activeTab === 1
                             spacing: 12
 
                             Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
@@ -832,7 +945,7 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: dashWin.tabSelected(2)
+                                            onClicked: dashWin.tabSelected(4)
                                         }
                                     }
 
@@ -1779,7 +1892,7 @@ PanelWindow {
                                             MouseArea {
                                                 anchors.fill: parent
                                                 cursorShape: Qt.PointingHandCursor
-                                                onClicked: dashWin.tabSelected(1)
+                                                onClicked: dashWin.tabSelected(2)
                                             }
                                         }
 
@@ -1860,7 +1973,7 @@ PanelWindow {
                                                         if (dashWin.activePlayer && dashWin.activePlayer.canTogglePlaying)
                                                             dashWin.activePlayer.togglePlaying();
                                                         else
-                                                            dashWin.tabSelected(1);
+                                                            dashWin.tabSelected(2);
                                                     }
                                                 }
                                             }
@@ -1893,32 +2006,36 @@ PanelWindow {
                         }
 
                         // -----------------------------------------------------
-                        // TAB 1: MEDIA & AUDIO EXPANDIDO
+                        // TAB 2: MEDIA, AUDIO Y CAPTURA DE PANTALLA
                         // -----------------------------------------------------
-                        RowLayout {
+                        ColumnLayout {
                             id: tabMedia
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            y: dashWin.activeTab === 1 ? 0 : 10
-                            opacity: dashWin.activeTab === 1 ? 1.0 : 0.0
+                            y: dashWin.activeTab === 2 ? 0 : 10
+                            opacity: dashWin.activeTab === 2 ? 1.0 : 0.0
                             visible: opacity > 0.01
-                            enabled: dashWin.activeTab === 1
-                            spacing: 12
+                            enabled: dashWin.activeTab === 2
+                            spacing: 10
 
                             Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
                             Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
 
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 12
+
                             // Tarjeta izquierda: Reproductor MPRIS completo
                             Rectangle {
                                 Layout.preferredWidth: 360
-                                Layout.preferredHeight: 356
+                                Layout.preferredHeight: 316
                                 radius: Theme.radiusMedium
                                 color: Theme.surfaceContainer
 
                                 ColumnLayout {
                                     anchors.fill: parent
                                     anchors.margins: 14
-                                    spacing: 12
+                                    spacing: 10
 
                                     // Selector de reproductor si hay >1
                                     RowLayout {
@@ -2178,13 +2295,13 @@ PanelWindow {
                             // Columna derecha: Mezclador PipeWire (Volumen · Micrófono · pavucontrol)
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 356
-                                spacing: 12
+                                Layout.preferredHeight: 316
+                                spacing: 10
 
                                 // Tarjeta Volumen de salida
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 114
+                                    Layout.preferredHeight: 102
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2289,7 +2406,7 @@ PanelWindow {
                                 // Tarjeta Micrófono
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 114
+                                    Layout.preferredHeight: 102
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2396,7 +2513,7 @@ PanelWindow {
                                 // Acción inferior: Mezclador pavucontrol
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 46
+                                    Layout.preferredHeight: 42
                                     radius: Theme.radiusFull
                                     color: pavuM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
                                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -2422,20 +2539,108 @@ PanelWindow {
                                     }
                                 }
                             }
+                            }
+
+                            // Franja inferior: Captura, grabación, color y OCR
+                            Text {
+                                text: "CAPTURA Y PANTALLA"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.Bold
+                                font.letterSpacing: 0.6
+                                color: Theme.fgSubtle
+                            }
+
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: 4
+                                columnSpacing: 8
+                                rowSpacing: 8
+
+                                Repeater {
+                                    model: dashWin.captureActions
+
+                                    Rectangle {
+                                        id: capTile
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 48
+                                        radius: Theme.radiusMedium
+                                        color: modelData.isRec
+                                            ? Theme.error
+                                            : (capM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer)
+                                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 10
+                                            anchors.rightMargin: 10
+                                            spacing: 8
+
+                                            Text {
+                                                text: capTile.modelData.glyph
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: 15
+                                                color: capTile.modelData.isRec
+                                                    ? Theme.fgOnError
+                                                    : (capM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.primary)
+                                            }
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 0
+
+                                                Text {
+                                                    text: capTile.modelData.title
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: 12
+                                                    font.weight: Font.DemiBold
+                                                    color: capTile.modelData.isRec
+                                                        ? Theme.fgOnError
+                                                        : (capM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg)
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                Text {
+                                                    visible: capTile.modelData.shortcut !== ""
+                                                    text: capTile.modelData.shortcut
+                                                    font.family: Theme.monoFontFamily
+                                                    font.pixelSize: 11
+                                                    color: capTile.modelData.isRec
+                                                        ? Theme.fgOnError
+                                                        : (capM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fgSubtle)
+                                                    opacity: capTile.modelData.isRec || capM.containsMouse ? 0.85 : 1.0
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: capM
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: dashWin.actionActivated(capTile.modelData)
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         // -----------------------------------------------------
-                        // TAB 2: RENDIMIENTO, TELEMETRÍA Y BANDEJA DEL SISTEMA
+                        // TAB 4: SISTEMA, TELEMETRÍA Y UTILIDADES
                         // -----------------------------------------------------
                         ColumnLayout {
-                            id: tabPerf
+                            id: tabSystem
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            y: dashWin.activeTab === 2 ? 0 : 10
-                            opacity: dashWin.activeTab === 2 ? 1.0 : 0.0
+                            y: dashWin.activeTab === 4 ? 0 : 10
+                            opacity: dashWin.activeTab === 4 ? 1.0 : 0.0
                             visible: opacity > 0.01
-                            enabled: dashWin.activeTab === 2
-                            spacing: 12
+                            enabled: dashWin.activeTab === 4
+                            spacing: 10
 
                             Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
                             Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
@@ -2448,7 +2653,7 @@ PanelWindow {
                                 // CPU
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 212
+                                    Layout.preferredHeight: 204
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2539,7 +2744,7 @@ PanelWindow {
                                 Rectangle {
                                     id: memPerfCard
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 212
+                                    Layout.preferredHeight: 204
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2623,10 +2828,10 @@ PanelWindow {
                                     }
                                 }
 
-                                // Disco + Grabación + Kernel
+                                // Disco + btop + Kernel
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 212
+                                    Layout.preferredHeight: 204
                                     radius: Theme.radiusMedium
                                     color: Theme.surfaceContainer
 
@@ -2696,33 +2901,31 @@ PanelWindow {
 
                                         Item { Layout.fillHeight: true }
 
-                                        // Botón Grabación de pantalla
+                                        // Botón Abrir btop
                                         Rectangle {
-                                            id: perfRecBtn
-                                            readonly property bool recOn: Boolean(dashWin.sysState && dashWin.sysState.recordingActive)
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: 38
                                             radius: Theme.radiusFull
-                                            color: recOn ? Theme.error : (recBtnM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainerLow)
+                                            color: openBtopM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainerLow
                                             Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                                             Text {
                                                 anchors.centerIn: parent
-                                                text: perfRecBtn.recOn ? "󰑊  Detener grabación (REC)" : "󰑋  Grabar pantalla"
+                                                text: "󰄨  Abrir btop"
                                                 font.family: Theme.fontFamily
                                                 font.pixelSize: 12
                                                 font.weight: Font.DemiBold
-                                                color: perfRecBtn.recOn ? Theme.fgOnError : Theme.fg
+                                                color: openBtopM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
                                             }
 
                                             MouseArea {
-                                                id: recBtnM
+                                                id: openBtopM
                                                 anchors.fill: parent
                                                 hoverEnabled: true
                                                 cursorShape: Qt.PointingHandCursor
                                                 onClicked: {
                                                     dashWin.closeRequested();
-                                                    dashWin.runScript("screen-record.sh", []);
+                                                    Quickshell.execDetached(["foot", "-e", "btop"]);
                                                 }
                                             }
                                         }
@@ -2730,102 +2933,97 @@ PanelWindow {
                                 }
                             }
 
-                            // Bandeja del sistema + acceso rápido a btop
-                            RowLayout {
+                            // Bandeja del sistema (ancho completo)
+                            Rectangle {
                                 Layout.fillWidth: true
-                                spacing: 10
+                                Layout.preferredHeight: 54
+                                radius: Theme.radiusMedium
+                                color: Theme.surfaceContainer
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 62
-                                    radius: Theme.radiusMedium
-                                    color: Theme.surfaceContainer
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 14
+                                    anchors.rightMargin: 14
+                                    spacing: 10
 
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 14
-                                        anchors.rightMargin: 14
-                                        spacing: 10
+                                    Text {
+                                        text: "BANDEJA"
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 11
+                                        font.weight: Font.Bold
+                                        font.letterSpacing: 0.6
+                                        color: Theme.fgSubtle
+                                    }
 
-                                        Text {
-                                            text: "BANDEJA"
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: 11
-                                            font.weight: Font.Bold
-                                            font.letterSpacing: 0.6
-                                            color: Theme.fgSubtle
-                                        }
+                                    Text {
+                                        visible: SystemTray.items.values.length === 0
+                                        text: "Sin aplicaciones en segundo plano"
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 12
+                                        color: Theme.fgSubtle
+                                    }
 
-                                        Text {
-                                            visible: SystemTray.items.values.length === 0
-                                            text: "Sin aplicaciones en segundo plano"
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: 12
-                                            color: Theme.fgSubtle
-                                        }
+                                    Flow {
+                                        visible: SystemTray.items.values.length > 0
+                                        Layout.fillWidth: true
+                                        spacing: 8
 
-                                        Flow {
-                                            visible: SystemTray.items.values.length > 0
-                                            Layout.fillWidth: true
-                                            spacing: 8
+                                        Repeater {
+                                            model: SystemTray.items
 
-                                            Repeater {
-                                                model: SystemTray.items
+                                            Rectangle {
+                                                required property var modelData
+                                                height: 32
+                                                width: trayItemRow.implicitWidth + 16
+                                                radius: Theme.radiusFull
+                                                color: trayItemM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainerLow
+                                                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
-                                                Rectangle {
-                                                    required property var modelData
-                                                    height: 32
-                                                    width: trayItemRow.implicitWidth + 16
-                                                    radius: Theme.radiusFull
-                                                    color: trayItemM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainerLow
-                                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                                                Row {
+                                                    id: trayItemRow
+                                                    anchors.centerIn: parent
+                                                    spacing: 6
 
-                                                    Row {
-                                                        id: trayItemRow
-                                                        anchors.centerIn: parent
-                                                        spacing: 6
-
-                                                        Image {
-                                                            width: 16
-                                                            height: 16
-                                                            source: dashWin.resolveTrayIcon(modelData.icon)
-                                                            sourceSize.width: 16
-                                                            sourceSize.height: 16
-                                                            fillMode: Image.PreserveAspectFit
-                                                            smooth: true
-                                                            anchors.verticalCenter: parent.verticalCenter
-                                                        }
-
-                                                        Text {
-                                                            text: dashWin.trayItemLabel(modelData)
-                                                            width: Math.min(implicitWidth, 160)
-                                                            elide: Text.ElideRight
-                                                            font.family: Theme.fontFamily
-                                                            font.pixelSize: 12
-                                                            color: Theme.fg
-                                                            anchors.verticalCenter: parent.verticalCenter
-                                                        }
+                                                    Image {
+                                                        width: 16
+                                                        height: 16
+                                                        source: dashWin.resolveTrayIcon(modelData.icon)
+                                                        sourceSize.width: 16
+                                                        sourceSize.height: 16
+                                                        fillMode: Image.PreserveAspectFit
+                                                        smooth: true
+                                                        anchors.verticalCenter: parent.verticalCenter
                                                     }
 
-                                                    MouseArea {
-                                                        id: trayItemM
-                                                        anchors.fill: parent
-                                                        hoverEnabled: true
-                                                        cursorShape: Qt.PointingHandCursor
-                                                        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-                                                        onClicked: mouse => {
-                                                            if (mouse.button === Qt.RightButton || (mouse.button === Qt.LeftButton && modelData.onlyMenu)) {
-                                                                if (modelData.hasMenu) {
-                                                                    const pt = mapToItem(null, width / 2, height);
-                                                                    modelData.display(dashWin, Math.round(pt.x), Math.round(pt.y));
-                                                                } else {
-                                                                    modelData.secondaryActivate();
-                                                                }
-                                                            } else if (mouse.button === Qt.MiddleButton) {
-                                                                modelData.secondaryActivate();
+                                                    Text {
+                                                        text: dashWin.trayItemLabel(modelData)
+                                                        width: Math.min(implicitWidth, 160)
+                                                        elide: Text.ElideRight
+                                                        font.family: Theme.fontFamily
+                                                        font.pixelSize: 12
+                                                        color: Theme.fg
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                    }
+                                                }
+
+                                                MouseArea {
+                                                    id: trayItemM
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                                                    onClicked: mouse => {
+                                                        if (mouse.button === Qt.RightButton || (mouse.button === Qt.LeftButton && modelData.onlyMenu)) {
+                                                            if (modelData.hasMenu) {
+                                                                const pt = mapToItem(null, width / 2, height);
+                                                                modelData.display(dashWin, Math.round(pt.x), Math.round(pt.y));
                                                             } else {
-                                                                modelData.activate();
+                                                                modelData.secondaryActivate();
                                                             }
+                                                        } else if (mouse.button === Qt.MiddleButton) {
+                                                            modelData.secondaryActivate();
+                                                        } else {
+                                                            modelData.activate();
                                                         }
                                                     }
                                                 }
@@ -2833,42 +3031,81 @@ PanelWindow {
                                         }
                                     }
                                 }
+                            }
 
-                                Rectangle {
-                                    Layout.preferredWidth: 180
-                                    Layout.preferredHeight: 62
-                                    radius: Theme.radiusMedium
-                                    color: openBtopM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
-                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                            // Utilidades del sistema (3 columnas x 2 filas, sin repetir Dashboard)
+                            Text {
+                                text: "UTILIDADES DEL SISTEMA"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.Bold
+                                font.letterSpacing: 0.6
+                                color: Theme.fgSubtle
+                            }
 
-                                    Row {
-                                        anchors.centerIn: parent
-                                        spacing: 8
-                                        Text {
-                                            text: "󰄨"
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: 16
-                                            color: openBtopM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.primary
-                                            anchors.verticalCenter: parent.verticalCenter
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: 3
+                                columnSpacing: 8
+                                rowSpacing: 8
+
+                                Repeater {
+                                    model: dashWin.systemUtilActions
+
+                                    Rectangle {
+                                        id: sysUtilTile
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 50
+                                        radius: Theme.radiusMedium
+                                        color: sysUtilM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
+                                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 12
+                                            anchors.rightMargin: 12
+                                            spacing: 10
+
+                                            Text {
+                                                text: sysUtilTile.modelData.glyph
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: 15
+                                                color: sysUtilM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.primary
+                                            }
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 0
+
+                                                Text {
+                                                    text: sysUtilTile.modelData.title
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: 12
+                                                    font.weight: Font.DemiBold
+                                                    color: sysUtilM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                Text {
+                                                    text: sysUtilTile.modelData.subtitle
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: 11
+                                                    color: sysUtilM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fgSubtle
+                                                    opacity: sysUtilM.containsMouse ? 0.85 : 1.0
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                }
+                                            }
                                         }
-                                        Text {
-                                            text: "Abrir btop"
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: 13
-                                            font.weight: Font.DemiBold
-                                            color: openBtopM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
-                                            anchors.verticalCenter: parent.verticalCenter
-                                        }
-                                    }
 
-                                    MouseArea {
-                                        id: openBtopM
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            dashWin.closeRequested();
-                                            Quickshell.execDetached(["foot", "-e", "btop"]);
+                                        MouseArea {
+                                            id: sysUtilM
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: dashWin.actionActivated(sysUtilTile.modelData)
                                         }
                                     }
                                 }
@@ -2876,17 +3113,17 @@ PanelWindow {
                         }
 
                         // -----------------------------------------------------
-                        // TAB 3: ASISTENTE IA (OpenCode integrado)
+                        // TAB 3: DEV & IA (OpenCode + herramientas dev)
                         // -----------------------------------------------------
                         ColumnLayout {
-                            id: tabAi
+                            id: tabDevAi
                             anchors.left: parent.left
                             anchors.right: parent.right
                             y: dashWin.activeTab === 3 ? 0 : 10
                             opacity: dashWin.activeTab === 3 ? 1.0 : 0.0
                             visible: opacity > 0.01
                             enabled: dashWin.activeTab === 3
-                            spacing: 14
+                            spacing: 10
 
                             Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
                             Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
@@ -2901,9 +3138,9 @@ PanelWindow {
 
                                 Rectangle {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 44
+                                    Layout.preferredHeight: 40
                                     radius: Theme.radiusFull
-                                    color: tabAi.aiOn ? Theme.tertiaryContainer : Theme.surfaceContainer
+                                    color: tabDevAi.aiOn ? Theme.tertiaryContainer : Theme.surfaceContainer
                                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                                     RowLayout {
@@ -2916,32 +3153,32 @@ PanelWindow {
                                             text: "󰚩"
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 16
-                                            color: tabAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.tertiary
+                                            color: tabDevAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.tertiary
                                         }
                                         Text {
                                             text: "OpenCode · Asistente IA"
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 13
                                             font.weight: Font.Bold
-                                            color: tabAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fg
+                                            color: tabDevAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fg
                                         }
                                         Item { Layout.fillWidth: true }
                                         Text {
-                                            text: tabAi.aiOn
-                                                ? (tabAi.aiDet ? ("Servicio activo · " + tabAi.aiDet) : "Servicio activo")
+                                            text: tabDevAi.aiOn
+                                                ? (tabDevAi.aiDet ? ("Servicio activo · " + tabDevAi.aiDet) : "Servicio activo")
                                                 : "Modo independiente"
                                             font.family: Theme.monoFontFamily
                                             font.pixelSize: 12
-                                            color: tabAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fgSubtle
+                                            color: tabDevAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fgSubtle
                                         }
                                     }
                                 }
 
                                 Rectangle {
-                                    Layout.preferredHeight: 44
+                                    Layout.preferredHeight: 40
                                     Layout.preferredWidth: aiSvcRow.implicitWidth + 24
                                     radius: Theme.radiusFull
-                                    color: tabAi.aiOn
+                                    color: tabDevAi.aiOn
                                         ? (aiSvcM.containsMouse ? Theme.errorContainer : Theme.surfaceContainer)
                                         : (aiSvcM.containsMouse ? Theme.tertiaryContainer : Theme.surfaceContainer)
                                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -2951,20 +3188,20 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         spacing: 6
                                         Text {
-                                            text: tabAi.aiOn ? "󰐥" : "󰐊"
+                                            text: tabDevAi.aiOn ? "󰐥" : "󰐊"
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 14
-                                            color: tabAi.aiOn
+                                            color: tabDevAi.aiOn
                                                 ? (aiSvcM.containsMouse ? Theme.fgOnErrorContainer : Theme.error)
                                                 : (aiSvcM.containsMouse ? Theme.fgOnTertiaryContainer : Theme.tertiary)
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
                                         Text {
-                                            text: tabAi.aiOn ? "Detener servicio" : "Iniciar servicio"
+                                            text: tabDevAi.aiOn ? "Detener servicio" : "Iniciar servicio"
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 12
                                             font.weight: Font.DemiBold
-                                            color: tabAi.aiOn
+                                            color: tabDevAi.aiOn
                                                 ? (aiSvcM.containsMouse ? Theme.fgOnErrorContainer : Theme.fg)
                                                 : (aiSvcM.containsMouse ? Theme.fgOnTertiaryContainer : Theme.fg)
                                             anchors.verticalCenter: parent.verticalCenter
@@ -2981,7 +3218,7 @@ PanelWindow {
                                 }
                             }
 
-                            // 4 acciones principales en fila
+                            // 4 acciones principales IA en fila
                             GridLayout {
                                 Layout.fillWidth: true
                                 columns: 4
@@ -2995,7 +3232,7 @@ PanelWindow {
                                         id: aiQTile
                                         required property var modelData
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 72
+                                        Layout.preferredHeight: 62
                                         radius: Theme.radiusMedium
                                         color: aiQM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
                                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -3007,9 +3244,9 @@ PanelWindow {
                                             spacing: 8
 
                                             Rectangle {
-                                                Layout.preferredWidth: 30
-                                                Layout.preferredHeight: 30
-                                                radius: 15
+                                                Layout.preferredWidth: 28
+                                                Layout.preferredHeight: 28
+                                                radius: 14
                                                 color: aiQM.containsMouse ? Theme.primary : Theme.tertiaryContainer
                                                 Text {
                                                     anchors.centerIn: parent
@@ -3060,7 +3297,7 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 columns: 3
                                 columnSpacing: 8
-                                rowSpacing: 10
+                                rowSpacing: 8
 
                                 Repeater {
                                     model: dashWin.aiContextActions
@@ -3069,7 +3306,7 @@ PanelWindow {
                                         id: aiCTile
                                         required property var modelData
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 66
+                                        Layout.preferredHeight: 56
                                         radius: Theme.radiusMedium
                                         color: aiCM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
                                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -3089,7 +3326,7 @@ PanelWindow {
 
                                             ColumnLayout {
                                                 Layout.fillWidth: true
-                                                spacing: 1
+                                                spacing: 0
                                                 Text {
                                                     text: aiCTile.modelData.title
                                                     font.family: Theme.fontFamily
@@ -3103,7 +3340,7 @@ PanelWindow {
                                                     text: aiCTile.modelData.subtitle
                                                     font.family: Theme.fontFamily
                                                     font.pixelSize: 11
-                                                    color: aiCTile.modelData.cmd ? Theme.fgSubtle : Theme.fgSubtle
+                                                    color: Theme.fgSubtle
                                                     elide: Text.ElideRight
                                                     Layout.fillWidth: true
                                                 }
@@ -3120,18 +3357,287 @@ PanelWindow {
                                     }
                                 }
                             }
+
+                            // Herramientas Dev y estación (4 columnas x 2 filas)
+                            Text {
+                                text: "HERRAMIENTAS DEV"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.Bold
+                                font.letterSpacing: 0.6
+                                color: Theme.fgSubtle
+                            }
+
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: 4
+                                columnSpacing: 8
+                                rowSpacing: 8
+
+                                Repeater {
+                                    model: dashWin.devToolsActions
+
+                                    Rectangle {
+                                        id: devTile
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 50
+                                        radius: Theme.radiusMedium
+                                        color: devM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
+                                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 10
+                                            anchors.rightMargin: 10
+                                            spacing: 8
+
+                                            Text {
+                                                text: devTile.modelData.glyph
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: 15
+                                                color: devM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.primary
+                                            }
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 0
+
+                                                Text {
+                                                    text: devTile.modelData.title
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: 12
+                                                    font.weight: Font.DemiBold
+                                                    color: devM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fg
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                Text {
+                                                    text: devTile.modelData.subtitle
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: 11
+                                                    color: devM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.fgSubtle
+                                                    opacity: devM.containsMouse ? 0.85 : 1.0
+                                                    elide: Text.ElideRight
+                                                    Layout.fillWidth: true
+                                                }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: devM
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: dashWin.actionActivated(devTile.modelData)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    Text {
+                    // =========================================================
+                    // BARRA DE BÚSQUEDA GLOBAL INFERIOR (a la altura de los ojos)
+                    // =========================================================
+                    Rectangle {
                         Layout.fillWidth: true
-                        Layout.topMargin: -6
-                        horizontalAlignment: Text.AlignHCenter
-                        text: "← → / Tab / 1–4: pestañas · Esc: cerrar"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 11
-                        color: Theme.fgSubtle
-                        opacity: 0.78
+                        Layout.preferredHeight: 44
+                        radius: Theme.radiusMedium
+                        color: Theme.surfaceContainer
+                        border.width: 1
+                        border.color: globalSearchInput.activeFocus ? Theme.primary : Theme.outlineVariant
+                        Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.IBeamCursor
+                            onClicked: {
+                                if (dashWin.activeTab !== 0)
+                                    dashWin.tabSelected(0);
+                                globalSearchInput.forceActiveFocus();
+                            }
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 10
+                            spacing: 10
+
+                            Text {
+                                text: "󰍉"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 17
+                                color: Theme.primary
+                            }
+
+                            TextInput {
+                                id: globalSearchInput
+                                Layout.fillWidth: true
+                                color: Theme.fg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 15
+                                clip: true
+                                selectByMouse: true
+                                activeFocusOnTab: false
+                                verticalAlignment: TextInput.AlignVCenter
+
+                                onTextChanged: {
+                                    if (dashWin.panelOpen && text !== dashWin.searchQuery) {
+                                        dashWin.searchQuery = text;
+                                        if (text.length > 0 && dashWin.activeTab !== 0)
+                                            dashWin.tabSelected(0);
+                                    }
+                                }
+
+                                Keys.onEscapePressed: dashWin.closeRequested()
+                                Keys.onReturnPressed: tabApps.activateSelected()
+                                Keys.onEnterPressed: tabApps.activateSelected()
+                                Keys.onUpPressed: tabApps.moveSelection(-1)
+                                Keys.onDownPressed: tabApps.moveSelection(1)
+                                Keys.onTabPressed: event => {
+                                    event.accepted = true;
+                                    dashWin.tabSelected((dashWin.activeTab + 1) % dashWin.tabMeta.length);
+                                }
+                                Keys.onBacktabPressed: event => {
+                                    event.accepted = true;
+                                    dashWin.tabSelected((dashWin.activeTab + dashWin.tabMeta.length - 1) % dashWin.tabMeta.length);
+                                }
+                                Keys.onPressed: event => {
+                                    if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_1) {
+                                        event.accepted = true; dashWin.tabSelected(0);
+                                    } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_2) {
+                                        event.accepted = true; dashWin.tabSelected(1);
+                                    } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_3) {
+                                        event.accepted = true; dashWin.tabSelected(2);
+                                    } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_4) {
+                                        event.accepted = true; dashWin.tabSelected(3);
+                                    } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_5) {
+                                        event.accepted = true; dashWin.tabSelected(4);
+                                    } else if ((event.modifiers & Qt.ControlModifier) && (event.key === Qt.Key_J || event.key === Qt.Key_N)) {
+                                        event.accepted = true;
+                                        tabApps.moveSelection(1);
+                                    } else if ((event.modifiers & Qt.ControlModifier) && (event.key === Qt.Key_K || event.key === Qt.Key_P)) {
+                                        event.accepted = true;
+                                        tabApps.moveSelection(-1);
+                                    } else if (event.key === Qt.Key_PageDown) {
+                                        event.accepted = true;
+                                        tabApps.moveSelection(5);
+                                    } else if (event.key === Qt.Key_PageUp) {
+                                        event.accepted = true;
+                                        tabApps.moveSelection(-5);
+                                    }
+                                }
+
+                                Text {
+                                    anchors.fill: parent
+                                    verticalAlignment: Text.AlignVCenter
+                                    text: dashWin.activeTab === 0
+                                        ? "Buscar apps, PWAs o acciones del sistema..."
+                                        : "Escribí desde cualquier pestaña para buscar apps o acciones..."
+                                    color: Theme.fgSubtle
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 14
+                                    elide: Text.ElideRight
+                                    visible: !globalSearchInput.text
+                                }
+                            }
+
+                            Rectangle {
+                                visible: dashWin.activeTab === 0 || globalSearchInput.text.length > 0
+                                height: 22
+                                width: searchCountTxt.implicitWidth + 14
+                                radius: Theme.radiusFull
+                                color: Theme.surfaceContainerHigh
+
+                                Text {
+                                    id: searchCountTxt
+                                    anchors.centerIn: parent
+                                    text: tabApps.resultCount === 1
+                                        ? "1 resultado"
+                                        : (tabApps.resultCount + " resultados")
+                                    color: Theme.fgSubtle
+                                    font.family: Theme.monoFontFamily
+                                    font.pixelSize: 11
+                                    font.weight: Font.Medium
+                                }
+                            }
+
+                            Rectangle {
+                                visible: globalSearchInput.text.length > 0
+                                width: 24
+                                height: 24
+                                radius: 12
+                                color: clearSearchM.containsMouse ? Theme.surfaceContainerHigh : "transparent"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "󰅖"
+                                    color: Theme.fgSubtle
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 13
+                                }
+
+                                MouseArea {
+                                    id: clearSearchM
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        globalSearchInput.text = "";
+                                        dashWin.searchQuery = "";
+                                        globalSearchInput.forceActiveFocus();
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Pie compacto con ayuda contextual y acceso rápido a Actividades (Super+A)
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: -4
+                        spacing: 12
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: dashWin.activeTab === 0
+                                ? "↑↓: mover · Enter: ejecutar · Tab: pestaña · Esc: cerrar"
+                                : "← → / Tab / 1–5: pestañas · Escribí para buscar · Esc: cerrar"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                            color: Theme.fgSubtle
+                            opacity: 0.78
+                            elide: Text.ElideRight
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: ovHintTxt.implicitWidth + 18
+                            Layout.preferredHeight: 26
+                            radius: Theme.radiusFull
+                            color: ovHintM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
+                            Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                            Text {
+                                id: ovHintTxt
+                                anchors.centerIn: parent
+                                text: "󰕰  Actividades (Super+A)"
+                                color: ovHintM.containsMouse ? Theme.fg : Theme.fgSubtle
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                            }
+
+                            MouseArea {
+                                id: ovHintM
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: dashWin.overviewRequested()
+                            }
+                        }
                     }
                 }
             }

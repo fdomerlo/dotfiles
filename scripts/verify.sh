@@ -478,6 +478,9 @@ else
              "$HOME/.config/quickshell/ConcaveCorner.qml" \
              "$HOME/.config/quickshell/BarWindow.qml" \
              "$HOME/.config/quickshell/DashboardPopup.qml" \
+             "$HOME/.config/quickshell/NotchAppsTab.qml" \
+             "$HOME/.config/quickshell/AppearancePopup.qml" \
+             "$HOME/.config/quickshell/ClipboardPopup.qml" \
              "$HOME/.config/quickshell/PowerPopup.qml" \
              "$HOME/.config/quickshell/NotificationPopups.qml" \
              "$HOME/.config/quickshell/NotificationCard.qml" \

@@ -16,7 +16,7 @@ Rectangle {
     signal actionInvoked(int uid, var action)
     signal replySent(int uid, string text)
 
-    property bool entered: false
+    property bool entered: compact
 
     readonly property var notif: entry ? entry.notif : null
     readonly property int uid: entry ? entry.uid : -1
@@ -24,7 +24,10 @@ Rectangle {
     readonly property bool isCritical: urgency === NotificationUrgency.Critical
     readonly property bool isLow: urgency === NotificationUrgency.Low
 
-    Component.onCompleted: enterTimer.restart()
+    Component.onCompleted: {
+        if (!compact)
+            enterTimer.restart();
+    }
 
     Timer {
         id: enterTimer
@@ -119,8 +122,8 @@ Rectangle {
             : (cardMouse.containsMouse ? Theme.outline : Theme.outlineVariant))
     clip: true
 
-    opacity: entered ? 1.0 : 0.0
-    scale: entered ? (cardMouse.containsMouse ? 1.006 : 1.0) : 0.96
+    opacity: compact ? 1.0 : (entered ? 1.0 : 0.0)
+    scale: compact ? 1.0 : (entered ? (cardMouse.containsMouse ? 1.006 : 1.0) : 0.96)
 
     Behavior on color { ColorAnimation { duration: Theme.animFast } }
     Behavior on border.color { ColorAnimation { duration: Theme.animFast } }

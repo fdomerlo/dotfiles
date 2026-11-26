@@ -98,7 +98,11 @@ shell:
 	mkdir -p $(HOME)/.config/atuin
 	ln -sf $(ROOT_DIR)/shell/atuin.toml $(HOME)/.config/atuin/config.toml
 	mkdir -p $(HOME)/.config/btop/themes
-	ln -sf $(ROOT_DIR)/shell/btop/themes/neutral.theme $(HOME)/.config/btop/themes/neutral.theme
+	@if [ "$$(readlink $(ROOT_DIR)/hypr/themes/active 2>/dev/null)" = "light" ]; then \
+		ln -sf $(ROOT_DIR)/shell/btop/themes/neutral-light.theme $(HOME)/.config/btop/themes/neutral.theme; \
+	else \
+		ln -sf $(ROOT_DIR)/shell/btop/themes/neutral.theme $(HOME)/.config/btop/themes/neutral.theme; \
+	fi
 	@# btop reescribe btop.conf al salir: se inicializa si no existe o se asegura el tema neutral si ya existe.
 	@if [ ! -f $(HOME)/.config/btop/btop.conf ]; then \
 		cp $(ROOT_DIR)/shell/btop/btop.conf $(HOME)/.config/btop/btop.conf; \

@@ -27,19 +27,19 @@ accent_for_theme() {
     printf 'teal'
 }
 
-# Esquema claro/oscuro según el modo activo (dark / light).
+# Esquema claro/oscuro según el modo activo (dark / light*).
 scheme_for_theme() {
     case "$1" in
-        light|*-light) printf 'prefer-light' ;;
-        *)             printf 'prefer-dark' ;;
+        light|light-*|*-light) printf 'prefer-light' ;;
+        *)                     printf 'prefer-dark' ;;
     esac
 }
 
 # Paleta de Qt6CT equivalente (solo si el archivo existe en el sistema).
 qt_colors_for_theme() {
     case "$1" in
-        light|*-light) printf '/usr/share/qt6ct/colors/airy.conf' ;;
-        *)             printf '/usr/share/qt6ct/colors/darker.conf' ;;
+        light|light-*|*-light) printf '/usr/share/qt6ct/colors/airy.conf' ;;
+        *)                     printf '/usr/share/qt6ct/colors/darker.conf' ;;
     esac
 }
 

@@ -38,7 +38,7 @@ active_theme() {
 
 fallback_color() {
     case "$(active_theme || true)" in
-        light|*-light) printf '#f2f7f8' ;;
+        light|*-light) printf '#e9edf1' ;;
         *)             printf '#0d1317' ;;
     esac
 }

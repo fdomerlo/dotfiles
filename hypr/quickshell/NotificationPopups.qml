@@ -73,28 +73,38 @@ PanelWindow {
     }
 
     implicitWidth: cardWidth + cornerSize * 2
-    implicitHeight: Math.max(1, dockContainer.height)
+    implicitHeight: Math.min(620, Math.max(320, (popupWin.screen ? popupWin.screen.height : 900) - barHeight - 32))
 
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell-notifications"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    mask: (popupWin.hasItems && dockContainer.height > 1) ? popupMask : emptyMask
 
     color: "transparent"
+
+    Region {
+        id: emptyMask
+    }
+
+    Region {
+        id: popupMask
+        item: dockContainer
+    }
 
     Item {
         id: dockContainer
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
         width: popupWin.cardWidth
-        height: popupWin.revealed ? popupWin.targetHeight : 0
+        height: popupWin.revealed ? Math.min(popupWin.implicitHeight - 4, popupWin.targetHeight) : 0
         opacity: popupWin.revealed ? 1.0 : 0.0
 
         Behavior on height {
             NumberAnimation {
-                duration: popupWin.revealed ? Theme.animPop : Theme.animClose
+                duration: popupWin.revealed ? Theme.animTab : Theme.animClose
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: popupWin.revealed ? Theme.curveExpressive : Theme.curveAccel
+                easing.bezierCurve: popupWin.revealed ? Theme.curveDecel : Theme.curveAccel
             }
         }
         Behavior on opacity {
@@ -111,7 +121,7 @@ PanelWindow {
             color: Theme.surface
             anchors.top: parent.top
             anchors.right: dockBody.left
-            visible: dockContainer.height > 10
+            visible: dockContainer.height >= popupWin.cornerSize
         }
 
         // Esquina cóncava derecha fundida con la barra superior
@@ -121,7 +131,7 @@ PanelWindow {
             color: Theme.surface
             anchors.top: parent.top
             anchors.left: dockBody.right
-            visible: dockContainer.height > 10
+            visible: dockContainer.height >= popupWin.cornerSize
         }
 
         Item {
@@ -154,9 +164,9 @@ PanelWindow {
 
                 Behavior on y {
                     NumberAnimation {
-                        duration: popupWin.revealed ? Theme.animPop : Theme.animClose
+                        duration: popupWin.revealed ? Theme.animTab : Theme.animClose
                         easing.type: Easing.BezierSpline
-                        easing.bezierCurve: popupWin.revealed ? Theme.curveExpressive : Theme.curveAccel
+                        easing.bezierCurve: popupWin.revealed ? Theme.curveDecel : Theme.curveAccel
                     }
                 }
 

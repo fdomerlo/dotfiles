@@ -15,15 +15,20 @@ ShellRoot {
     property bool tabNavigated: false
     property var overviewFocusedScreen: null
 
-    property bool launcherOpen: false
-    property bool launcherMounted: false
-    property string launcherTab: "apps"
-    property string launcherSearchQuery: ""
-    property var launcherScreen: null
     property string activeThemeName: Theme.modeName
     property bool recordingActive: false
     property bool nightlightActive: false
     property var pendingCmd: null
+
+    // Estado del popout compacto de Apariencia
+    property bool appearanceOpen: false
+    property bool appearanceMounted: false
+    property var appearanceScreen: null
+
+    // Estado del popout nativo de Portapapeles
+    property bool clipboardOpen: false
+    property bool clipboardMounted: false
+    property var clipboardScreen: null
 
     // Estado del OSD (volumen / micrófono / brillo / bloqueos)
     property bool osdVisible: false
@@ -46,10 +51,10 @@ ShellRoot {
     property var notifEntries: []
     property real notifNowMs: Date.now()
 
-    // Estado de popouts acoplados a la barra superior (dashboard unificado, energía e inhibidor)
+    // Estado de popouts acoplados a la barra superior (notch unificado, energía e inhibidor)
     property bool dashboardOpen: false
     property bool dashboardMounted: false
-    property int dashboardTab: 0
+    property int dashboardTab: 1
     property var dashboardScreen: null
     property bool powerOpen: false
     property bool powerMounted: false
@@ -116,12 +121,21 @@ ShellRoot {
     }
 
     // Ciclo de montaje diferido para permitir animaciones suaves de cierre antes de destruir LazyLoader
-    onLauncherOpenChanged: {
-        if (launcherOpen) {
-            launcherUnmountTimer.stop();
-            launcherMounted = true;
+    onAppearanceOpenChanged: {
+        if (appearanceOpen) {
+            appearanceUnmountTimer.stop();
+            appearanceMounted = true;
         } else {
-            launcherUnmountTimer.restart();
+            appearanceUnmountTimer.restart();
+        }
+    }
+
+    onClipboardOpenChanged: {
+        if (clipboardOpen) {
+            clipboardUnmountTimer.stop();
+            clipboardMounted = true;
+        } else {
+            clipboardUnmountTimer.restart();
         }
     }
 
@@ -171,14 +185,25 @@ ShellRoot {
     }
 
     Timer {
-        id: launcherUnmountTimer
+        id: appearanceUnmountTimer
         interval: 300
         repeat: false
         onTriggered: {
-            if (!root.launcherOpen) {
-                root.launcherMounted = false;
-                root.launcherSearchQuery = "";
-                root.launcherScreen = null;
+            if (!root.appearanceOpen) {
+                root.appearanceMounted = false;
+                root.appearanceScreen = null;
+            }
+        }
+    }
+
+    Timer {
+        id: clipboardUnmountTimer
+        interval: 300
+        repeat: false
+        onTriggered: {
+            if (!root.clipboardOpen) {
+                root.clipboardMounted = false;
+                root.clipboardScreen = null;
             }
         }
     }
@@ -613,8 +638,10 @@ ShellRoot {
     }
 
     function openNotifCenter() {
-        if (launcherOpen)
-            closeLauncher();
+        if (appearanceOpen)
+            closeAppearance();
+        if (clipboardOpen)
+            closeClipboard();
         if (overviewOpen)
             closeOverview();
         if (dashboardOpen)
@@ -664,16 +691,20 @@ ShellRoot {
     }
 
     function openDashboard(scr, tab) {
-        if (launcherOpen)
-            closeLauncher();
+        if (appearanceOpen)
+            closeAppearance();
+        if (clipboardOpen)
+            closeClipboard();
         if (overviewOpen)
             closeOverview();
         if (notifCenterOpen)
             closeNotifCenter();
         if (powerOpen)
             closePower();
-        if (tab !== undefined && tab >= 0 && tab <= 3)
+        if (tab !== undefined && tab >= 0 && tab <= 4)
             dashboardTab = tab;
+        if (!launcherStateProbe.running)
+            launcherStateProbe.running = true;
         systemState.refreshAll();
         dashboardScreen = scr || resolveFocusedScreen();
         dashboardOpen = true;
@@ -685,7 +716,7 @@ ShellRoot {
 
     function toggleDashboard(scr, tab) {
         if (dashboardOpen) {
-            if (tab !== undefined && tab >= 0 && tab <= 3 && tab !== dashboardTab) {
+            if (tab !== undefined && tab >= 0 && tab <= 4 && tab !== dashboardTab) {
                 dashboardTab = tab;
                 return;
             }
@@ -696,8 +727,10 @@ ShellRoot {
     }
 
     function openPower(scr) {
-        if (launcherOpen)
-            closeLauncher();
+        if (appearanceOpen)
+            closeAppearance();
+        if (clipboardOpen)
+            closeClipboard();
         if (overviewOpen)
             closeOverview();
         if (notifCenterOpen)
@@ -807,8 +840,10 @@ ShellRoot {
     }
 
     function openOverview() {
-        if (launcherOpen)
-            closeLauncher();
+        if (appearanceOpen)
+            closeAppearance();
+        if (clipboardOpen)
+            closeClipboard();
         if (notifCenterOpen)
             closeNotifCenter();
         if (dashboardOpen)
@@ -846,7 +881,9 @@ ShellRoot {
         }
     }
 
-    function openLauncher(tabId, scr) {
+    function openAppearance(scr) {
+        if (clipboardOpen)
+            closeClipboard();
         if (overviewOpen)
             closeOverview();
         if (notifCenterOpen)
@@ -855,35 +892,66 @@ ShellRoot {
             closeDashboard();
         if (powerOpen)
             closePower();
-        launcherSearchQuery = "";
-        launcherTab = tabId || "apps";
-        launcherScreen = scr || resolveFocusedScreen();
-        if (!launcherStateProbe.running) {
-            launcherStateProbe.running = true;
-        }
-        launcherOpen = true;
+        appearanceScreen = scr || resolveFocusedScreen();
+        appearanceOpen = true;
     }
 
-    function closeLauncher() {
-        launcherOpen = false;
+    function closeAppearance() {
+        appearanceOpen = false;
     }
 
-    function toggleLauncher(tabId, scr) {
-        if (launcherOpen) {
-            if (tabId && tabId !== launcherTab) {
-                launcherTab = tabId;
-                return;
-            }
-            closeLauncher();
-            return;
-        }
-        openLauncher(tabId, scr);
+    function toggleAppearance(scr) {
+        if (appearanceOpen)
+            closeAppearance();
+        else
+            openAppearance(scr);
+    }
+
+    function openClipboard(scr) {
+        if (appearanceOpen)
+            closeAppearance();
+        if (overviewOpen)
+            closeOverview();
+        if (notifCenterOpen)
+            closeNotifCenter();
+        if (dashboardOpen)
+            closeDashboard();
+        if (powerOpen)
+            closePower();
+        clipboardScreen = scr || resolveFocusedScreen();
+        clipboardOpen = true;
+    }
+
+    function closeClipboard() {
+        clipboardOpen = false;
+    }
+
+    function toggleClipboard(scr) {
+        if (clipboardOpen)
+            closeClipboard();
+        else
+            openClipboard(scr);
+    }
+
+    function notchTabFromId(tabId) {
+        if (!tabId)
+            return 0;
+        const key = String(tabId).toLowerCase();
+        if (key === "dashboard")
+            return 1;
+        if (key === "media" || key === "capturar")
+            return 2;
+        if (key === "dev" || key === "ia")
+            return 3;
+        if (key === "sistema" || key === "rendimiento")
+            return 4;
+        return 0;
     }
 
     function launchAppEntry(entry) {
         if (!entry)
             return;
-        closeLauncher();
+        closeDashboard();
         if (entry.runInTerminal && entry.command && entry.command.length > 0) {
             Quickshell.execDetached(["foot", "-e"].concat(entry.command));
         } else {
@@ -894,7 +962,15 @@ ShellRoot {
     function launchAction(act) {
         if (!act)
             return;
-        closeLauncher();
+        closeDashboard();
+        if (act.actionType === "clipboard") {
+            openClipboard(null);
+            return;
+        }
+        if (act.actionType === "appearance") {
+            openAppearance(null);
+            return;
+        }
         if (act.actionType === "term-hold") {
             const wrapped =
                 "export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/local/bin:$PATH\"; " +
@@ -989,19 +1065,23 @@ ShellRoot {
         target: "launcher"
 
         function toggle(): void {
-            root.toggleLauncher("");
+            root.toggleDashboard(null, 0);
         }
 
         function open(): void {
-            root.openLauncher("apps");
+            root.openDashboard(null, 0);
         }
 
         function openTab(tabId: string): void {
-            root.toggleLauncher(tabId);
+            if (tabId === "estilo") {
+                root.toggleAppearance(null);
+                return;
+            }
+            root.toggleDashboard(null, root.notchTabFromId(tabId));
         }
 
         function close(): void {
-            root.closeLauncher();
+            root.closeDashboard();
         }
     }
 
@@ -1063,11 +1143,11 @@ ShellRoot {
         target: "dashboard"
 
         function toggle(): void {
-            root.toggleDashboard(null, -1);
+            root.toggleDashboard(null, 1);
         }
 
         function open(): void {
-            root.openDashboard(null, 0);
+            root.openDashboard(null, 1);
         }
 
         function openTab(tabIndex: int): void {
@@ -1083,11 +1163,11 @@ ShellRoot {
         target: "quicksettings"
 
         function toggle(): void {
-            root.toggleDashboard(null, 0);
+            root.toggleDashboard(null, 1);
         }
 
         function open(): void {
-            root.openDashboard(null, 0);
+            root.openDashboard(null, 1);
         }
 
         function close(): void {
@@ -1099,15 +1179,47 @@ ShellRoot {
         target: "calendar"
 
         function toggle(): void {
-            root.toggleDashboard(null, 0);
+            root.toggleDashboard(null, 1);
         }
 
         function open(): void {
-            root.openDashboard(null, 0);
+            root.openDashboard(null, 1);
         }
 
         function close(): void {
             root.closeDashboard();
+        }
+    }
+
+    IpcHandler {
+        target: "appearance"
+
+        function toggle(): void {
+            root.toggleAppearance(null);
+        }
+
+        function open(): void {
+            root.openAppearance(null);
+        }
+
+        function close(): void {
+            root.closeAppearance();
+        }
+    }
+
+    IpcHandler {
+        target: "clipboard"
+
+        function toggle(): void {
+            root.toggleClipboard(null);
+        }
+
+        function open(): void {
+            root.openClipboard(null);
+        }
+
+        function close(): void {
+            root.closeClipboard();
         }
     }
 
@@ -1167,13 +1279,18 @@ ShellRoot {
             notifCount: root.notifEntries.length
             dndEnabled: root.dndEnabled
             notifCenterOpen: root.notifCenterOpen
-            launcherOpen: root.launcherOpen
+            launcherOpen: root.dashboardOpen && root.dashboardTab === 0
             overviewOpen: root.overviewOpen
             dashboardOpen: root.dashboardOpen
+            dashboardTab: root.dashboardTab
+            appearanceOpen: root.appearanceOpen
+            clipboardOpen: root.clipboardOpen
             powerOpen: root.powerOpen
             popupsVisible: root.popupsMounted
             dashboardScreen: root.dashboardScreen
             notifCenterScreen: root.notifCenterScreen
+            appearanceScreen: root.appearanceScreen
+            clipboardScreen: root.clipboardScreen
             powerScreen: root.powerScreen
             popupsScreen: root.popupsScreen
             idleInhibited: root.idleInhibited
@@ -1181,11 +1298,12 @@ ShellRoot {
             batteryLow: root.batteryLow
             batteryPct: root.batteryPct
 
-            onLauncherRequested: scr => root.toggleLauncher("", scr)
+            onLauncherRequested: scr => root.toggleDashboard(scr, 0)
             onOverviewRequested: root.toggleOverview()
             onNotifCenterRequested: root.toggleNotifCenter()
             onDndToggled: root.toggleDnd()
             onDashboardRequested: (scr, tab) => root.toggleDashboard(scr, tab)
+            onAppearanceRequested: scr => root.toggleAppearance(scr)
             onPowerRequested: scr => root.togglePower(scr)
             onIdleInhibitToggled: root.idleInhibited = !root.idleInhibited
         }
@@ -1220,26 +1338,24 @@ ShellRoot {
     }
 
     LazyLoader {
-        active: root.launcherMounted
+        active: root.appearanceMounted
 
-        LauncherWindow {
-            screen: root.launcherScreen || root.resolveFocusedScreen()
-            launcherOpen: root.launcherOpen
-            activeTab: root.launcherTab
-            searchQuery: root.launcherSearchQuery
-            activeTheme: root.activeThemeName
-            recordingActive: root.recordingActive
-            nightlightActive: root.nightlightActive
-            onTabSelected: tabId => {
-                root.launcherTab = tabId;
-            }
-            onSearchUpdated: text => {
-                root.launcherSearchQuery = text;
-            }
-            onCloseRequested: root.closeLauncher()
-            onAppActivated: entry => root.launchAppEntry(entry)
-            onActionActivated: act => root.launchAction(act)
-            onOverviewRequested: root.openOverview()
+        AppearancePopup {
+            screen: root.appearanceScreen || root.resolveFocusedScreen()
+            panelOpen: root.appearanceOpen
+            barHeight: systemState.barHeight
+            onCloseRequested: root.closeAppearance()
+        }
+    }
+
+    LazyLoader {
+        active: root.clipboardMounted
+
+        ClipboardPopup {
+            screen: root.clipboardScreen || root.resolveFocusedScreen()
+            panelOpen: root.clipboardOpen
+            barHeight: systemState.barHeight
+            onCloseRequested: root.closeClipboard()
         }
     }
 
@@ -1306,11 +1422,15 @@ ShellRoot {
             currentDate: sysClock.date
             dndEnabled: root.dndEnabled
             idleInhibited: root.idleInhibited
+            activeTheme: root.activeThemeName
             onCloseRequested: root.closeDashboard()
             onTabSelected: tabIdx => { root.dashboardTab = tabIdx; }
             onToggleDndRequested: root.toggleDnd()
             onToggleIdleInhibitRequested: root.idleInhibited = !root.idleInhibited
             onPowerRequested: root.openPower(root.dashboardScreen)
+            onAppActivated: entry => root.launchAppEntry(entry)
+            onActionActivated: act => root.launchAction(act)
+            onOverviewRequested: root.openOverview()
         }
     }
 

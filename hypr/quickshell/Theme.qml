@@ -10,7 +10,8 @@ Singleton {
     readonly property string modeName: isDark ? "dark" : "light"
 
     function setMode(mode) {
-        isDark = (String(mode || "").trim().toLowerCase() !== "light");
+        const key = String(mode || "").trim().toLowerCase();
+        isDark = !(key === "light" || key === "light-stone" || key === "stone" || key === "cyber-teal-light" || key === "mr-robot-light");
     }
 
     function toggleMode() {
@@ -24,45 +25,45 @@ Singleton {
     // =========================================================================
 
     // Superficie base de barra y paneles acoplados (alta solidez para uniones cóncavas limpias)
-    readonly property color surface: isDark ? "#f20d1317" : "#f2f2f7f8"
-    readonly property color surfaceSolid: isDark ? "#0d1317" : "#f2f7f8"
+    readonly property color surface: isDark ? "#f20d1317" : "#f4e9edf1"
+    readonly property color surfaceSolid: isDark ? "#0d1317" : "#e9edf1"
     readonly property color surfaceContainerLowest: isDark ? "#090e11" : "#ffffff"
-    readonly property color surfaceContainerLow: isDark ? "#121a1f" : "#eaf1f3"
-    readonly property color surfaceContainer: isDark ? "#182228" : "#e1ebee"
-    readonly property color surfaceContainerHigh: isDark ? "#212f37" : "#d5e3e7"
-    readonly property color surfaceContainerHighest: isDark ? "#2b3c46" : "#c7d9df"
+    readonly property color surfaceContainerLow: isDark ? "#121a1f" : "#f6f8fa"
+    readonly property color surfaceContainer: isDark ? "#182228" : "#ffffff"
+    readonly property color surfaceContainerHigh: isDark ? "#212f37" : "#dfe5eb"
+    readonly property color surfaceContainerHighest: isDark ? "#2b3c46" : "#cfd8e0"
 
     // Acento primario (Cyan-Teal en Dark · Petrol-Teal en Light)
-    readonly property color primary: isDark ? "#22d3ee" : "#006d80"
+    readonly property color primary: isDark ? "#22d3ee" : "#006c7f"
     readonly property color fgOnPrimary: isDark ? "#041b21" : "#ffffff"
-    readonly property color primaryContainer: isDark ? "#0f424e" : "#c3edf6"
-    readonly property color fgOnPrimaryContainer: isDark ? "#dcf8fe" : "#002b34"
+    readonly property color primaryContainer: isDark ? "#0f424e" : "#c9ecf3"
+    readonly property color fgOnPrimaryContainer: isDark ? "#dcf8fe" : "#00333d"
 
-    // Acento secundario (Mint-Teal sobrio para estados activos/positivos)
-    readonly property color secondary: isDark ? "#7dd3c8" : "#0f766e"
+    // Acento secundario (Mint-Teal en Dark · Esmeralda en Light)
+    readonly property color secondary: isDark ? "#7dd3c8" : "#0f7b5b"
     readonly property color fgOnSecondary: isDark ? "#05201d" : "#ffffff"
-    readonly property color secondaryContainer: isDark ? "#18423e" : "#cceee8"
-    readonly property color fgOnSecondaryContainer: isDark ? "#dbf9f4" : "#052e2b"
+    readonly property color secondaryContainer: isDark ? "#18423e" : "#cdeee1"
+    readonly property color fgOnSecondaryContainer: isDark ? "#dbf9f4" : "#063426"
 
-    // Acento terciario (Azul hielo para IA / destacados secundarios)
-    readonly property color tertiary: isDark ? "#89b4fa" : "#2563a8"
+    // Acento terciario (Azul hielo en Dark · Violeta pizarra en Light)
+    readonly property color tertiary: isDark ? "#89b4fa" : "#5b4db2"
     readonly property color fgOnTertiary: isDark ? "#081930" : "#ffffff"
-    readonly property color tertiaryContainer: isDark ? "#1e375c" : "#d6e6fb"
-    readonly property color fgOnTertiaryContainer: isDark ? "#e3eeff" : "#0d2847"
+    readonly property color tertiaryContainer: isDark ? "#1e375c" : "#e4e0fb"
+    readonly property color fgOnTertiaryContainer: isDark ? "#e3eeff" : "#241b59"
 
     // Estado de error / alerta / grabación
-    readonly property color error: isDark ? "#f38ba8" : "#c83755"
+    readonly property color error: isDark ? "#f38ba8" : "#c4324f"
     readonly property color fgOnError: isDark ? "#300916" : "#ffffff"
-    readonly property color errorContainer: isDark ? "#5f1d31" : "#ffd9e0"
-    readonly property color fgOnErrorContainer: isDark ? "#ffe4ec" : "#4a0c1b"
+    readonly property color errorContainer: isDark ? "#5f1d31" : "#fde0e6"
+    readonly property color fgOnErrorContainer: isDark ? "#ffe4ec" : "#591021"
 
     // Texto y contornos (alto contraste en ambos modos)
-    readonly property color fg: isDark ? "#f0f6f8" : "#0f1c22"
-    readonly property color fgMuted: isDark ? "#c6d6dc" : "#2a3f47"
-    readonly property color fgSubtle: isDark ? "#91a8b0" : "#556b73"
-    readonly property color outline: isDark ? "#3f535c" : "#8ba2aa"
-    readonly property color outlineVariant: isDark ? "#27363d" : "#c5d5da"
-    readonly property color scrim: isDark ? "#9905090c" : "#66101c22"
+    readonly property color fg: isDark ? "#f0f6f8" : "#171f26"
+    readonly property color fgMuted: isDark ? "#c6d6dc" : "#3c4a56"
+    readonly property color fgSubtle: isDark ? "#91a8b0" : "#60707e"
+    readonly property color outline: isDark ? "#3f535c" : "#8c9aa7"
+    readonly property color outlineVariant: isDark ? "#27363d" : "#cdd5dd"
+    readonly property color scrim: isDark ? "#9905090c" : "#66121a22"
     // Oscurecimiento de fondo equivalente a decoration:dim_around (0.40) sin blur
     readonly property color dimAround: Qt.rgba(0, 0, 0, 0.40)
 

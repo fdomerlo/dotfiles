@@ -15,10 +15,15 @@ PanelWindow {
     required property bool launcherOpen
     required property bool overviewOpen
     required property bool dashboardOpen
+    required property int dashboardTab
+    required property bool appearanceOpen
+    required property bool clipboardOpen
     required property bool powerOpen
     required property bool popupsVisible
     required property var dashboardScreen
     required property var notifCenterScreen
+    required property var appearanceScreen
+    required property var clipboardScreen
     required property var powerScreen
     required property var popupsScreen
     required property bool idleInhibited
@@ -31,16 +36,21 @@ PanelWindow {
     signal notifCenterRequested()
     signal dndToggled()
     signal dashboardRequested(var scr, int tab)
+    signal appearanceRequested(var scr)
     signal powerRequested(var scr)
     signal idleInhibitToggled()
 
     readonly property int barH: sysState ? sysState.barHeight : 40
     readonly property int pillH: Math.max(26, barH - 10)
     readonly property bool isDashboardHere: dashboardOpen && (!dashboardScreen || dashboardScreen === screen)
+    readonly property bool isNotchAppsHere: isDashboardHere && dashboardTab === 0
+    readonly property bool isNotchDashHere: isDashboardHere && dashboardTab !== 0
     readonly property bool isNotifCenterHere: notifCenterOpen && (!notifCenterScreen || notifCenterScreen === screen)
+    readonly property bool isAppearanceHere: appearanceOpen && (!appearanceScreen || appearanceScreen === screen)
+    readonly property bool isClipboardHere: clipboardOpen && (!clipboardScreen || clipboardScreen === screen)
     readonly property bool isPowerHere: powerOpen && (!powerScreen || powerScreen === screen)
     readonly property bool hasPopupsHere: popupsVisible && (!popupsScreen || popupsScreen === screen)
-    readonly property bool anyDockedOpen: isDashboardHere || isNotifCenterHere || isPowerHere
+    readonly property bool anyDockedOpen: isDashboardHere || isNotifCenterHere || isAppearanceHere || isClipboardHere || isPowerHere
     readonly property var hyprMonitor: Hyprland.monitorFor(screen)
 
     // Workspaces asignados a este monitor, ordenados por ID
@@ -136,7 +146,7 @@ PanelWindow {
         }
 
         // =====================================================================
-        // ZONA IZQUIERDA: Lanzador · Workspaces
+        // ZONA IZQUIERDA: Workspaces
         // =====================================================================
         RowLayout {
             id: leftCluster
@@ -144,40 +154,6 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 10
             spacing: 6
-
-            // Botón Lanzador / Overview
-            Rectangle {
-                Layout.preferredHeight: barWin.pillH
-                Layout.preferredWidth: 34
-                radius: Theme.radiusFull
-                color: (barWin.launcherOpen || barWin.overviewOpen)
-                    ? Theme.primary
-                    : (launcherM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer)
-
-                Behavior on color { ColorAnimation { duration: Theme.animFast } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "󰀻"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 17
-                    color: (barWin.launcherOpen || barWin.overviewOpen) ? Theme.fgOnPrimary : Theme.primary
-                }
-
-                MouseArea {
-                    id: launcherM
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onClicked: mouse => {
-                        if (mouse.button === Qt.RightButton)
-                            barWin.overviewRequested();
-                        else
-                            barWin.launcherRequested(barWin.screen);
-                    }
-                }
-            }
 
             // Píldora de Workspaces con morphing elástico estilo Caelestia
             Rectangle {
@@ -261,264 +237,385 @@ PanelWindow {
         }
 
         // =====================================================================
-        // ZONA CENTRAL: Reloj · Fecha · Píldora del Dashboard unificado
+        // ZONA CENTRAL UNIFICADA (Notch): Apps / Overview | Reloj · Fecha (Dashboard)
         // =====================================================================
         Rectangle {
-            id: centerClock
+            id: centerIsland
             anchors.centerIn: parent
             height: barWin.pillH
-            width: clockRow.implicitWidth + 28
+            width: centerCluster.implicitWidth + 6
             radius: Theme.radiusFull
-            color: barWin.isDashboardHere
-                ? Theme.primaryContainer
-                : (clkM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer)
+            color: barWin.isDashboardHere ? Theme.surfaceContainerHigh : Theme.surfaceContainer
+            border.width: barWin.isDashboardHere ? 1 : 0
+            border.color: Qt.alpha(Theme.primary, 0.32)
 
             Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
-            Row {
-                id: clockRow
+            RowLayout {
+                id: centerCluster
                 anchors.centerIn: parent
-                spacing: 8
+                spacing: 2
 
-                // Indicador sutil de grabación activa
+                // Botón Apps / Overview
                 Rectangle {
-                    visible: Boolean(barWin.sysState && barWin.sysState.recordingActive)
-                    width: 8
-                    height: 8
-                    radius: 4
-                    color: Theme.error
-                    anchors.verticalCenter: parent.verticalCenter
-                }
+                    Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
+                    Layout.preferredWidth: 32
+                    radius: Theme.radiusFull
+                    color: (barWin.isNotchAppsHere || barWin.overviewOpen)
+                        ? Theme.primary
+                        : (launcherM.containsMouse ? Theme.surfaceContainerHighest : "transparent")
 
-                Text {
-                    text: barWin.formattedDate
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 14
-                    font.weight: Font.Medium
-                    color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.fgMuted
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Rectangle {
-                    width: 4
-                    height: 4
-                    radius: 2
-                    color: barWin.isDashboardHere ? Theme.primary : Theme.outline
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Text {
-                    text: barWin.formattedTime
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 15
-                    font.weight: Font.Bold
-                    color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.fg
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                // Indicador discreto de servicio OpenCode IA activo
-                Text {
-                    visible: Boolean(barWin.sysState && barWin.sysState.aiActive)
-                    text: "󰚩"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 14
-                    color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.tertiary
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                // Indicador discreto de reposo inhibido
-                Text {
-                    visible: barWin.idleInhibited
-                    text: "󰅶"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 14
-                    color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.secondary
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                // Alerta discreta: audio silenciado
-                Text {
-                    visible: barWin.sinkMuted
-                    text: "󰖁"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 14
-                    color: Theme.error
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                // Alerta discreta: sin conexión de red
-                Text {
-                    visible: Boolean(barWin.sysState && barWin.sysState.netReady && barWin.sysState.netKind === "disconnected")
-                    text: "󰪎"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 14
-                    color: Theme.error
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                // Alerta discreta: batería baja (solo laptops <= 20% sin cargar)
-                Row {
-                    visible: barWin.batteryLow
-                    spacing: 3
-                    anchors.verticalCenter: parent.verticalCenter
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                     Text {
-                        text: "󰂃"
+                        anchors.centerIn: parent
+                        text: "󰀻"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 16
+                        color: (barWin.isNotchAppsHere || barWin.overviewOpen) ? Theme.fgOnPrimary : Theme.primary
+                    }
+
+                    MouseArea {
+                        id: launcherM
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton)
+                                barWin.overviewRequested();
+                            else
+                                barWin.dashboardRequested(barWin.screen, 0);
+                        }
+                    }
+                }
+
+                // Separador sutil de 1 px dentro de la isla unificada
+                Rectangle {
+                    Layout.preferredWidth: 1
+                    Layout.preferredHeight: Math.max(12, barWin.pillH - 14)
+                    color: Qt.alpha(Theme.outlineVariant, 0.45)
+                }
+
+                // Reloj / Dashboard / Media / Sistema
+                Rectangle {
+                    id: centerClock
+                    Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
+                    Layout.preferredWidth: clockRow.implicitWidth + 22
+                    radius: Theme.radiusFull
+                    color: barWin.isNotchDashHere
+                        ? Theme.primaryContainer
+                        : (clkM.containsMouse ? Theme.surfaceContainerHighest : "transparent")
+
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                Row {
+                    id: clockRow
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    // Indicador sutil de grabación activa
+                    Rectangle {
+                        visible: Boolean(barWin.sysState && barWin.sysState.recordingActive)
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: Theme.error
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: barWin.formattedDate
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
+                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.fgMuted
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Rectangle {
+                        width: 4
+                        height: 4
+                        radius: 2
+                        color: barWin.isDashboardHere ? Theme.primary : Theme.outline
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: barWin.formattedTime
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 15
+                        font.weight: Font.Bold
+                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.fg
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    // Indicador discreto de servicio OpenCode IA activo
+                    Text {
+                        visible: Boolean(barWin.sysState && barWin.sysState.aiActive)
+                        text: "󰚩"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
+                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.tertiary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    // Indicador discreto de reposo inhibido
+                    Text {
+                        visible: barWin.idleInhibited
+                        text: "󰅶"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
+                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.secondary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    // Alerta discreta: audio silenciado
+                    Text {
+                        visible: barWin.sinkMuted
+                        text: "󰖁"
                         font.family: Theme.fontFamily
                         font.pixelSize: 14
                         color: Theme.error
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
+                    // Alerta discreta: sin conexión de red
                     Text {
-                        text: barWin.batteryPct + "%"
-                        font.family: Theme.monoFontFamily
-                        font.pixelSize: 12
-                        font.weight: Font.Bold
+                        visible: Boolean(barWin.sysState && barWin.sysState.netReady && barWin.sysState.netKind === "disconnected")
+                        text: "󰪎"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 14
                         color: Theme.error
                         anchors.verticalCenter: parent.verticalCenter
                     }
-                }
-            }
 
-            MouseArea {
-                id: clkM
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-                onClicked: mouse => {
-                    if (mouse.button === Qt.RightButton)
-                        barWin.dashboardRequested(barWin.screen, 1);
-                    else if (mouse.button === Qt.MiddleButton)
-                        barWin.dashboardRequested(barWin.screen, 2);
-                    else
-                        barWin.dashboardRequested(barWin.screen, -1);
+                    // Alerta discreta: batería baja (solo laptops <= 20% sin cargar)
+                    Row {
+                        visible: barWin.batteryLow
+                        spacing: 3
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            text: "󰂃"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 14
+                            color: Theme.error
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            text: barWin.batteryPct + "%"
+                            font.family: Theme.monoFontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.Bold
+                            color: Theme.error
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                    MouseArea {
+                        id: clkM
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton)
+                                barWin.dashboardRequested(barWin.screen, 2);
+                            else if (mouse.button === Qt.MiddleButton)
+                                barWin.dashboardRequested(barWin.screen, 4);
+                            else
+                                barWin.dashboardRequested(barWin.screen, 1);
+                        }
+                    }
                 }
             }
         }
 
         // =====================================================================
-        // ZONA DERECHA: Claro/Oscuro + Notificaciones + Cierre de sesión / Power
+        // ZONA DERECHA: Apariencia (Claro/Oscuro) + Notificaciones + Energía
         // =====================================================================
-        RowLayout {
-            id: rightCluster
+        // =====================================================================
+        // ZONA DERECHA UNIFICADA (Tray): Apariencia | Notificaciones | Off
+        // =====================================================================
+        Rectangle {
+            id: rightIsland
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             anchors.rightMargin: 10
-            spacing: 6
+            height: barWin.pillH
+            width: rightCluster.implicitWidth + 6
+            radius: Theme.radiusFull
+            color: (barWin.isAppearanceHere || barWin.isNotifCenterHere || barWin.isPowerHere)
+                ? Theme.surfaceContainerHigh
+                : Theme.surfaceContainer
+            border.width: (barWin.isAppearanceHere || barWin.isNotifCenterHere || barWin.isPowerHere) ? 1 : 0
+            border.color: barWin.isPowerHere
+                ? Qt.alpha(Theme.error, 0.45)
+                : Qt.alpha(Theme.primary, 0.32)
 
-            // Indicador / Toggle Modo Claro / Oscuro
-            Rectangle {
-                Layout.preferredHeight: barWin.pillH
-                Layout.preferredWidth: barWin.pillH
-                radius: Theme.radiusFull
-                color: themeM.containsMouse ? Theme.primaryContainer : Theme.surfaceContainer
+            Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
-                Behavior on color { ColorAnimation { duration: Theme.animFast } }
+            RowLayout {
+                id: rightCluster
+                anchors.centerIn: parent
+                spacing: 2
 
-                Text {
-                    anchors.centerIn: parent
-                    text: Theme.isDark ? "󰖔" : "󰖨"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 17
-                    color: themeM.containsMouse ? Theme.fgOnPrimaryContainer : Theme.primary
-                }
+                // Popout de Apariencia (clic izq) / Toggle inmediato Claro-Oscuro (clic der)
+                Rectangle {
+                    Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
+                    Layout.preferredWidth: 30
+                    radius: Theme.radiusFull
+                    color: barWin.isAppearanceHere
+                        ? Theme.primary
+                        : (themeM.containsMouse ? Theme.surfaceContainerHighest : "transparent")
 
-                MouseArea {
-                    id: themeM
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: barWin.runScript("theme-switch.sh", ["toggle"])
-                }
-            }
-
-            // Notificaciones (clic izq.: Centro · clic der.: No Molestar)
-            Rectangle {
-                Layout.preferredHeight: barWin.pillH
-                Layout.preferredWidth: notifRow.implicitWidth + 20
-                radius: Theme.radiusFull
-                color: barWin.isNotifCenterHere
-                    ? Theme.primary
-                    : (barWin.dndEnabled
-                        ? Theme.errorContainer
-                        : (notifM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer))
-
-                Behavior on color { ColorAnimation { duration: Theme.animFast } }
-
-                Row {
-                    id: notifRow
-                    anchors.centerIn: parent
-                    spacing: 5
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                     Text {
-                        text: barWin.dndEnabled
-                            ? "󰂛"
-                            : (barWin.notifCount > 0 ? "󰂚" : "󰂜")
+                        anchors.centerIn: parent
+                        text: Theme.isDark ? "󰖔" : "󰖨"
                         font.family: Theme.fontFamily
-                        font.pixelSize: 17
-                        color: barWin.isNotifCenterHere
+                        font.pixelSize: 16
+                        color: barWin.isAppearanceHere
                             ? Theme.fgOnPrimary
-                            : (barWin.dndEnabled
-                                ? Theme.fgOnErrorContainer
-                                : (barWin.notifCount > 0 ? Theme.primary : Theme.fgMuted))
-                        anchors.verticalCenter: parent.verticalCenter
+                            : Theme.primary
                     }
 
-                    Text {
-                        visible: barWin.notifCount > 0 && !barWin.dndEnabled
-                        text: String(barWin.notifCount)
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        font.weight: Font.Bold
-                        color: barWin.isNotifCenterHere ? Theme.fgOnPrimary : Theme.fg
-                        anchors.verticalCenter: parent.verticalCenter
+                    MouseArea {
+                        id: themeM
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton)
+                                barWin.runScript("theme-switch.sh", ["toggle"]);
+                            else
+                                barWin.appearanceRequested(barWin.screen);
+                        }
+                    }
+                }
+
+                // Separador sutil de 1 px
+                Rectangle {
+                    Layout.preferredWidth: 1
+                    Layout.preferredHeight: Math.max(12, barWin.pillH - 14)
+                    color: Qt.alpha(Theme.outlineVariant, 0.45)
+                }
+
+                // Notificaciones (clic izq.: Centro · clic der.: No Molestar)
+                Rectangle {
+                    Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
+                    Layout.preferredWidth: notifRow.implicitWidth + 16
+                    radius: Theme.radiusFull
+                    color: barWin.isNotifCenterHere
+                        ? Theme.primary
+                        : (barWin.dndEnabled
+                            ? Theme.errorContainer
+                            : (notifM.containsMouse ? Theme.surfaceContainerHighest : "transparent"))
+
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                    Row {
+                        id: notifRow
+                        anchors.centerIn: parent
+                        spacing: 5
+
+                        Text {
+                            text: barWin.dndEnabled
+                                ? "󰂛"
+                                : (barWin.notifCount > 0 ? "󰂚" : "󰂜")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 16
+                            color: barWin.isNotifCenterHere
+                                ? Theme.fgOnPrimary
+                                : (barWin.dndEnabled
+                                    ? Theme.fgOnErrorContainer
+                                    : (barWin.notifCount > 0 ? Theme.primary : Theme.fgMuted))
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            visible: barWin.notifCount > 0 && !barWin.dndEnabled
+                            text: String(barWin.notifCount)
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 13
+                            font.weight: Font.Bold
+                            color: barWin.isNotifCenterHere ? Theme.fgOnPrimary : Theme.fg
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: notifM
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton)
+                                barWin.dndToggled();
+                            else
+                                barWin.notifCenterRequested();
+                        }
                     }
                 }
 
-                MouseArea {
-                    id: notifM
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onClicked: mouse => {
-                        if (mouse.button === Qt.RightButton)
-                            barWin.dndToggled();
-                        else
-                            barWin.notifCenterRequested();
-                    }
+                // Separador sutil de 1 px
+                Rectangle {
+                    Layout.preferredWidth: 1
+                    Layout.preferredHeight: Math.max(12, barWin.pillH - 14)
+                    color: Qt.alpha(Theme.outlineVariant, 0.45)
                 }
-            }
 
-            // Botón Power / Cierre de sesión
-            Rectangle {
-                Layout.preferredHeight: barWin.pillH
-                Layout.preferredWidth: barWin.pillH
-                radius: Theme.radiusFull
-                color: barWin.isPowerHere
-                    ? Theme.error
-                    : (pwrM.containsMouse ? Theme.errorContainer : Theme.surfaceContainer)
-
-                Behavior on color { ColorAnimation { duration: Theme.animFast } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "󰐥"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 16
+                // Botón Power / Cierre de sesión (tinte rojo + texto Off)
+                Rectangle {
+                    Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
+                    Layout.preferredWidth: pwrRow.implicitWidth + 16
+                    radius: Theme.radiusFull
                     color: barWin.isPowerHere
-                        ? Theme.fgOnError
-                        : (pwrM.containsMouse ? Theme.fgOnErrorContainer : Theme.fgMuted)
-                }
+                        ? Theme.error
+                        : (pwrM.containsMouse
+                            ? Qt.alpha(Theme.error, Theme.isDark ? 0.34 : 0.24)
+                            : Qt.alpha(Theme.error, Theme.isDark ? 0.16 : 0.12))
+                    border.width: barWin.isPowerHere ? 0 : 1
+                    border.color: Qt.alpha(Theme.error, pwrM.containsMouse ? 0.55 : 0.28)
 
-                MouseArea {
-                    id: pwrM
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: barWin.powerRequested(barWin.screen)
+                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                    Row {
+                        id: pwrRow
+                        anchors.centerIn: parent
+                        spacing: 5
+
+                        Text {
+                            text: "󰐥"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 14
+                            color: barWin.isPowerHere ? Theme.fgOnError : Theme.error
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            text: "Off"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                            color: barWin.isPowerHere ? Theme.fgOnError : Theme.error
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: pwrM
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: barWin.powerRequested(barWin.screen)
+                    }
                 }
             }
         }
