@@ -48,6 +48,10 @@ Al retomar este trabajo, leer también [AGENTS.md](../AGENTS.md) en la raíz del
   8. Fuzzel (`hypr/themes/{dark,light}/fuzzel/fuzzel.ini`) y `OsdWindow.qml` alineados al lenguaje visual (`Inter:size=11.5`, borde `2 px` primario/error, `radius=20`).
   9. Consistencia completa de microcopy en español en los overlays (`"Modo independiente"`, `"No molestar"`, `"Clic"`, `"Sin red"`, `"Reproductor"`, `"carga"`).
   10. Navegación por teclado ampliada: `←`/`→` y micro-hint en `DashboardPopup.qml`; `↑`/`↓`, `Delete`/`Backspace` para descartar, `Enter` para acción principal y micro-hint en `NotificationCenter.qml`.
+- **Bloque P3 completado**:
+  11. Recorte circular/redondeado real en portadas de Media (Tab 0 y Tab 1 de `DashboardPopup.qml`) usando `ClippingRectangle` (`Quickshell.Widgets`).
+  12. Auditoría visual en Modo Claro (`light`) verificada con `grim` en todos los overlays + corrección en `shell.qml` (`themeInitProbe` y `launcherStateProbe`) para detectar la polaridad activa vía `theme-switch.sh current` al iniciar o recargar Quickshell.
+  13. Integración de `feat/dashboard-bar` en `main` y limpieza de la rama local.
 
 ---
 
@@ -138,9 +142,9 @@ Al retomar este trabajo, leer también [AGENTS.md](../AGENTS.md) en la raíz del
 
 ### Bloque P3 — Pulido final y cierre de rama
 
-- [ ] **11. Recorte circular real en la portada de Media (Dashboard Tab 0)**
+- [x] **11. Recorte circular real en la portada de Media (Dashboard Tab 0)**
   - *Nota detectada en captura en vivo:* en `DashboardPopup.qml` Tab 0 (`line ~1656`), la portada muestra esquinas cuadradas dentro del círculo porque `Rectangle { clip: true; radius: 39 }` no recorta un `Image` hijo a círculo en Qt6 sin `MultiEffect` / `OpacityMask` o contenedor cuadrado redondeado coherente (`radius: Theme.radiusMedium`).
-- [ ] **12. Auditoría visual en Modo Claro (`light`)**
+- [x] **12. Auditoría visual en Modo Claro (`light`)**
   - Ejecutar `~/.config/hypr/scripts/theme-switch.sh light` y verificar contraste de `Theme.activeBorder` (`#006d80`), `Theme.dimAround`, textos `fgOnPrimaryContainer`, `DashboardPopup`, `LauncherWindow`, `PowerPopup`, `NotificationCenter` y `Fuzzel` con `grim`; luego volver a `dark` si era el modo activo.
-- [ ] **13. Revisión final e integración a `main`**
+- [x] **13. Revisión final e integración a `main`**
   - Confirmar con el usuario antes de hacer merge de `feat/dashboard-bar` en `main` y limpiar la rama.

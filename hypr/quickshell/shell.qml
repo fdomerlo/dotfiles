@@ -311,7 +311,7 @@ ShellRoot {
         id: themeInitProbe
         command: [
             "sh", "-c",
-            "t=$(readlink \"$HOME/.config/hypr/themes/active\" 2>/dev/null || true); " +
+            "t=$(\"$HOME/.config/hypr/scripts/theme-switch.sh\" current 2>/dev/null || readlink \"$HOME/.config/hypr/themes/active\" 2>/dev/null || true); " +
             "t=${t##*/}; " +
             "case \"$t\" in *light*) echo light ;; *) echo dark ;; esac"
         ]
@@ -329,7 +329,7 @@ ShellRoot {
         id: launcherStateProbe
         command: [
             "sh", "-c",
-            "t=$(readlink \"$HOME/.config/hypr/themes/active\" 2>/dev/null || true); " +
+            "t=$(\"$HOME/.config/hypr/scripts/theme-switch.sh\" current 2>/dev/null || readlink \"$HOME/.config/hypr/themes/active\" 2>/dev/null || true); " +
             "t=${t##*/}; " +
             "r=0; pgrep -x wf-recorder >/dev/null 2>&1 && r=1; " +
             "n=0; [ -f \"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr-nightlight.state\" ] && n=1; " +

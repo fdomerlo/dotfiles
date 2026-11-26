@@ -9,6 +9,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.SystemTray
 import Quickshell.Services.UPower
 import Quickshell.Bluetooth
+import Quickshell.Widgets
 
 PanelWindow {
     id: dashWin
@@ -1745,28 +1746,30 @@ PanelWindow {
                                         anchors.margins: 14
                                         spacing: 10
 
-                                        Rectangle {
+                                        ClippingRectangle {
                                             Layout.alignment: Qt.AlignHCenter
                                             width: 78
                                             height: 78
                                             radius: 39
+                                            antialiasing: true
                                             color: Theme.primaryContainer
                                             border.width: 2
                                             border.color: (dashWin.activePlayer && dashWin.activePlayer.isPlaying)
                                                 ? Theme.primary
                                                 : Theme.outlineVariant
-                                            clip: true
 
                                             Image {
+                                                id: tab0ArtImg
                                                 anchors.fill: parent
                                                 source: dashWin.activePlayer ? (dashWin.activePlayer.trackArtUrl || "") : ""
                                                 fillMode: Image.PreserveAspectCrop
+                                                smooth: true
                                                 visible: status === Image.Ready
                                             }
 
                                             Text {
                                                 anchors.centerIn: parent
-                                                visible: !dashWin.activePlayer || !dashWin.activePlayer.trackArtUrl
+                                                visible: tab0ArtImg.status !== Image.Ready
                                                 text: "󰎆"
                                                 font.family: Theme.fontFamily
                                                 font.pixelSize: 26
@@ -1964,23 +1967,25 @@ PanelWindow {
                                         Layout.fillHeight: true
                                         spacing: 14
 
-                                        Rectangle {
+                                        ClippingRectangle {
                                             Layout.preferredWidth: 124
                                             Layout.preferredHeight: 124
                                             radius: Theme.radiusMedium
+                                            antialiasing: true
                                             color: Theme.primaryContainer
-                                            clip: true
 
                                             Image {
+                                                id: tab1ArtImg
                                                 anchors.fill: parent
                                                 source: dashWin.activePlayer ? (dashWin.activePlayer.trackArtUrl || "") : ""
                                                 fillMode: Image.PreserveAspectCrop
+                                                smooth: true
                                                 visible: status === Image.Ready
                                             }
 
                                             Text {
                                                 anchors.centerIn: parent
-                                                visible: !dashWin.activePlayer || !dashWin.activePlayer.trackArtUrl
+                                                visible: tab1ArtImg.status !== Image.Ready
                                                 text: "󰎆"
                                                 font.family: Theme.fontFamily
                                                 font.pixelSize: 42
