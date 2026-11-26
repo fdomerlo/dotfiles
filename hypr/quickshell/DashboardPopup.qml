@@ -22,6 +22,8 @@ PanelWindow {
     required property bool idleInhibited
     property string activeTheme: "dark"
     property string searchQuery: ""
+    property bool floatingMode: false
+    property var barHitTester: null
 
     signal closeRequested()
     signal tabSelected(int tabIndex)
@@ -31,6 +33,9 @@ PanelWindow {
     signal appActivated(var entry)
     signal actionActivated(var actionObj)
     signal overviewRequested()
+    signal barMenuHovered(var scr, string target)
+    signal barMenuClicked(var scr, string target, int button)
+    signal barWorkspaceClicked(int wsId)
 
     readonly property int barH: sysState ? sysState.barHeight : 40
     readonly property int panelWidth: Math.min(860, Math.max(680, (dashWin.screen ? dashWin.screen.width : 1280) - 64))
@@ -375,13 +380,6 @@ PanelWindow {
         id: emptyMask
     }
 
-    HyprlandFocusGrab {
-        id: focusGrab
-        windows: [dashWin]
-        active: dashWin.panelOpen
-        onCleared: dashWin.closeRequested()
-    }
-
     FocusScope {
         id: dashScope
         anchors.fill: parent
@@ -448,14 +446,32 @@ PanelWindow {
             onClicked: dashWin.closeRequested()
         }
 
-        // Borde cyan inferior de la barra superior a ambos lados del desplegable
+        TopBarOverlayBridge {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: dashWin.barH
+            z: 50
+            barH: dashWin.barH
+            screen: dashWin.screen
+            active: dashWin.panelOpen
+            currentTarget: dashWin.activeTab === 0 ? "apps" : "dashboard"
+            barHitTester: dashWin.barHitTester
+            onMenuHovered: (scr, target) => dashWin.barMenuHovered(scr, target)
+            onMenuClicked: (scr, target, btn) => dashWin.barMenuClicked(scr, target, btn)
+            onWorkspaceClicked: wsId => dashWin.barWorkspaceClicked(wsId)
+            onOutsideClicked: dashWin.closeRequested()
+        }
+
+        // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
+            visible: !dashWin.floatingMode
             anchors.left: parent.left
             anchors.right: dashDock.left
             anchors.rightMargin: dashDock.height >= dashWin.cornerSize ? dashWin.cornerSize : 0
-            y: dashWin.barH - 2
-            height: 2
-            color: Theme.activeBorder
+            y: dashWin.barH - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: dashWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -467,12 +483,13 @@ PanelWindow {
         }
 
         Rectangle {
+            visible: !dashWin.floatingMode
             anchors.left: dashDock.right
             anchors.leftMargin: dashDock.height >= dashWin.cornerSize ? dashWin.cornerSize : 0
             anchors.right: parent.right
-            y: dashWin.barH - 2
-            height: 2
-            color: Theme.activeBorder
+            y: dashWin.barH - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: dashWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -483,11 +500,11 @@ PanelWindow {
             }
         }
 
-        // Popout central grande acoplado a la barra superior con esquinas cóncavas
+        // Popout central grande acoplado a la barra superior (o flotante a 8px en modo islas)
         Item {
             id: dashDock
             anchors.top: parent.top
-            anchors.topMargin: dashWin.barH
+            anchors.topMargin: dashWin.floatingMode ? (dashWin.barH + 8) : dashWin.barH
             anchors.horizontalCenter: parent.horizontalCenter
             width: dashWin.panelWidth
             height: dashWin.revealed ? (dashBody.implicitHeight + 32) : 0
@@ -511,22 +528,22 @@ PanelWindow {
                 position: "top-right"
                 size: dashWin.cornerSize
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: dashSurface.left
-                visible: dashDock.height >= dashWin.cornerSize
+                visible: !dashWin.floatingMode && dashDock.height >= dashWin.cornerSize
             }
 
             ConcaveCorner {
                 position: "top-left"
                 size: dashWin.cornerSize
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: dashSurface.right
-                visible: dashDock.height >= dashWin.cornerSize
+                visible: !dashWin.floatingMode && dashDock.height >= dashWin.cornerSize
             }
 
             Item {
@@ -535,14 +552,17 @@ PanelWindow {
                 clip: true
 
                 readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - Theme.concaveRadius))
+                readonly property real halfB: Theme.popoutBorderWidth / 2.0
 
                 Rectangle {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: parent.height + Theme.radiusLarge
+                    height: dashWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
+                    border.width: dashWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
 
@@ -550,40 +570,40 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: dashDock.height >= Theme.concaveRadius
+                    visible: !dashWin.floatingMode && dashDock.height >= Theme.concaveRadius
 
                     ShapePath {
-                        strokeWidth: 2
-                        strokeColor: Theme.activeBorder
+                        strokeWidth: Theme.popoutBorderWidth
+                        strokeColor: Theme.popoutBorder
                         fillColor: "transparent"
                         capStyle: ShapePath.FlatCap
-                        startX: 1
+                        startX: dashSurface.halfB
                         startY: Theme.concaveRadius
 
                         PathLine {
-                            x: 1
+                            x: dashSurface.halfB
                             y: dashSurface.height - dashSurface.cornerR
                         }
                         PathArc {
                             x: dashSurface.cornerR
-                            y: dashSurface.height - 1
-                            radiusX: dashSurface.cornerR - 1
-                            radiusY: dashSurface.cornerR - 1
+                            y: dashSurface.height - dashSurface.halfB
+                            radiusX: dashSurface.cornerR - dashSurface.halfB
+                            radiusY: dashSurface.cornerR - dashSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
                             x: dashSurface.width - dashSurface.cornerR
-                            y: dashSurface.height - 1
+                            y: dashSurface.height - dashSurface.halfB
                         }
                         PathArc {
-                            x: dashSurface.width - 1
+                            x: dashSurface.width - dashSurface.halfB
                             y: dashSurface.height - dashSurface.cornerR
-                            radiusX: dashSurface.cornerR - 1
-                            radiusY: dashSurface.cornerR - 1
+                            radiusX: dashSurface.cornerR - dashSurface.halfB
+                            radiusY: dashSurface.cornerR - dashSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
-                            x: dashSurface.width - 1
+                            x: dashSurface.width - dashSurface.halfB
                             y: Theme.concaveRadius
                         }
                     }

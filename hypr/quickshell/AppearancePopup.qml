@@ -11,8 +11,15 @@ PanelWindow {
 
     required property bool panelOpen
     property int barHeight: 40
+    property bool floatingMode: false
+    property string barStyle: "bar"
+    property var barHitTester: null
 
     signal closeRequested()
+    signal barStyleSelected(string style)
+    signal barMenuHovered(var scr, string target)
+    signal barMenuClicked(var scr, string target, int button)
+    signal barWorkspaceClicked(int wsId)
 
     property bool revealed: false
     property string activeLockscreen: "theme"
@@ -151,13 +158,6 @@ PanelWindow {
         id: emptyMask
     }
 
-    HyprlandFocusGrab {
-        id: focusGrab
-        windows: [appWin]
-        active: appWin.panelOpen
-        onCleared: appWin.closeRequested()
-    }
-
     FocusScope {
         id: appScope
         anchors.fill: parent
@@ -204,14 +204,32 @@ PanelWindow {
             onClicked: appWin.closeRequested()
         }
 
-        // Borde cyan inferior de la barra superior a ambos lados del desplegable
+        TopBarOverlayBridge {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: appWin.barHeight
+            z: 50
+            barH: appWin.barHeight
+            screen: appWin.screen
+            active: appWin.panelOpen
+            currentTarget: "appearance"
+            barHitTester: appWin.barHitTester
+            onMenuHovered: (scr, target) => appWin.barMenuHovered(scr, target)
+            onMenuClicked: (scr, target, btn) => appWin.barMenuClicked(scr, target, btn)
+            onWorkspaceClicked: wsId => appWin.barWorkspaceClicked(wsId)
+            onOutsideClicked: appWin.closeRequested()
+        }
+
+        // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
+            visible: !appWin.floatingMode
             anchors.left: parent.left
             anchors.right: appDock.left
             anchors.rightMargin: appDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
-            y: appWin.barHeight - 2
-            height: 2
-            color: Theme.activeBorder
+            y: appWin.barHeight - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: appWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -223,12 +241,13 @@ PanelWindow {
         }
 
         Rectangle {
+            visible: !appWin.floatingMode
             anchors.left: appDock.right
             anchors.leftMargin: appDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
             anchors.right: parent.right
-            y: appWin.barHeight - 2
-            height: 2
-            color: Theme.activeBorder
+            y: appWin.barHeight - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: appWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -239,13 +258,13 @@ PanelWindow {
             }
         }
 
-        // Popout compacto de Apariencia acoplado arriba-derecha con esquinas cóncavas
+        // Popout compacto de Apariencia acoplado arriba-derecha (o flotante a 8px en modo islas)
         Item {
             id: appDock
             anchors.top: parent.top
-            anchors.topMargin: appWin.barHeight
+            anchors.topMargin: appWin.floatingMode ? (appWin.barHeight + 8) : appWin.barHeight
             anchors.right: parent.right
-            anchors.rightMargin: 18
+            anchors.rightMargin: appWin.floatingMode ? 12 : 18
             width: 376
             height: appWin.revealed ? (appBody.implicitHeight + 28) : 0
             opacity: appWin.revealed ? 1.0 : 0.0
@@ -268,22 +287,22 @@ PanelWindow {
                 position: "top-right"
                 size: Theme.concaveRadius
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: appSurface.left
-                visible: appDock.height >= Theme.concaveRadius
+                visible: !appWin.floatingMode && appDock.height >= Theme.concaveRadius
             }
 
             ConcaveCorner {
                 position: "top-left"
                 size: Theme.concaveRadius
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: appSurface.right
-                visible: appDock.height >= Theme.concaveRadius
+                visible: !appWin.floatingMode && appDock.height >= Theme.concaveRadius
             }
 
             Item {
@@ -292,14 +311,17 @@ PanelWindow {
                 clip: true
 
                 readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - Theme.concaveRadius))
+                readonly property real halfB: Theme.popoutBorderWidth / 2.0
 
                 Rectangle {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: parent.height + Theme.radiusLarge
+                    height: appWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
+                    border.width: appWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
 
@@ -307,40 +329,40 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: appDock.height >= Theme.concaveRadius
+                    visible: !appWin.floatingMode && appDock.height >= Theme.concaveRadius
 
                     ShapePath {
-                        strokeWidth: 2
-                        strokeColor: Theme.activeBorder
+                        strokeWidth: Theme.popoutBorderWidth
+                        strokeColor: Theme.popoutBorder
                         fillColor: "transparent"
                         capStyle: ShapePath.FlatCap
-                        startX: 1
+                        startX: appSurface.halfB
                         startY: Theme.concaveRadius
 
                         PathLine {
-                            x: 1
+                            x: appSurface.halfB
                             y: appSurface.height - appSurface.cornerR
                         }
                         PathArc {
                             x: appSurface.cornerR
-                            y: appSurface.height - 1
-                            radiusX: appSurface.cornerR - 1
-                            radiusY: appSurface.cornerR - 1
+                            y: appSurface.height - appSurface.halfB
+                            radiusX: appSurface.cornerR - appSurface.halfB
+                            radiusY: appSurface.cornerR - appSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
                             x: appSurface.width - appSurface.cornerR
-                            y: appSurface.height - 1
+                            y: appSurface.height - appSurface.halfB
                         }
                         PathArc {
-                            x: appSurface.width - 1
+                            x: appSurface.width - appSurface.halfB
                             y: appSurface.height - appSurface.cornerR
-                            radiusX: appSurface.cornerR - 1
-                            radiusY: appSurface.cornerR - 1
+                            radiusX: appSurface.cornerR - appSurface.halfB
+                            radiusY: appSurface.cornerR - appSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
-                            x: appSurface.width - 1
+                            x: appSurface.width - appSurface.halfB
                             y: Theme.concaveRadius
                         }
                     }
@@ -546,6 +568,97 @@ PanelWindow {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: appWin.nextWallpaper()
+                        }
+                    }
+
+                    // Estilo de barra superior (Barra | Islas | Auto)
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Text {
+                                text: "󰕮"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 13
+                                color: Theme.primary
+                            }
+
+                            Text {
+                                text: "BARRA SUPERIOR"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.Bold
+                                font.letterSpacing: 0.6
+                                color: Theme.fgSubtle
+                                Layout.fillWidth: true
+                            }
+
+                            Rectangle {
+                                Layout.preferredHeight: 22
+                                Layout.preferredWidth: barStylePillTxt.implicitWidth + 14
+                                radius: Theme.radiusFull
+                                color: Theme.surfaceContainer
+
+                                Text {
+                                    id: barStylePillTxt
+                                    anchors.centerIn: parent
+                                    text: appWin.barStyle === "islands"
+                                        ? "Islas"
+                                        : (appWin.barStyle === "auto" ? "Auto" : "Barra")
+                                    font.family: Theme.monoFontFamily
+                                    font.pixelSize: 11
+                                    color: Theme.fgSubtle
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Repeater {
+                                model: [
+                                    { id: "bar", label: "Barra" },
+                                    { id: "islands", label: "Islas" },
+                                    { id: "auto", label: "Auto" }
+                                ]
+
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    readonly property bool selected: appWin.barStyle === modelData.id
+
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 38
+                                    radius: Theme.radiusSmall
+                                    color: selected
+                                        ? Theme.primaryContainer
+                                        : (bsM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer)
+                                    border.width: selected ? 1 : 0
+                                    border.color: Qt.alpha(Theme.primary, 0.55)
+                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: modelData.label
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 12
+                                        font.weight: selected ? Font.Bold : Font.Medium
+                                        color: selected ? Theme.fgOnPrimaryContainer : Theme.fg
+                                    }
+
+                                    MouseArea {
+                                        id: bsM
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: appWin.barStyleSelected(modelData.id)
+                                    }
+                                }
+                            }
                         }
                     }
 

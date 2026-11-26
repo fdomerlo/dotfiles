@@ -11,6 +11,7 @@ PanelWindow {
     required property var popups
     required property real nowMs
     property int barHeight: 40
+    property bool floatingMode: false
 
     signal dismissRequested(int uid)
     signal popupCloseRequested(int uid)
@@ -68,8 +69,8 @@ PanelWindow {
         right: true
     }
     margins {
-        top: barHeight
-        right: 18 - cornerSize
+        top: floatingMode ? (barHeight + 8) : barHeight
+        right: (floatingMode ? 12 : 18) - cornerSize
     }
 
     implicitWidth: cardWidth + cornerSize * 2
@@ -121,7 +122,7 @@ PanelWindow {
             color: Theme.surface
             anchors.top: parent.top
             anchors.right: dockBody.left
-            visible: dockContainer.height >= popupWin.cornerSize
+            visible: !popupWin.floatingMode && dockContainer.height >= popupWin.cornerSize
         }
 
         // Esquina cóncava derecha fundida con la barra superior
@@ -131,7 +132,7 @@ PanelWindow {
             color: Theme.surface
             anchors.top: parent.top
             anchors.left: dockBody.right
-            visible: dockContainer.height >= popupWin.cornerSize
+            visible: !popupWin.floatingMode && dockContainer.height >= popupWin.cornerSize
         }
 
         Item {
@@ -147,9 +148,11 @@ PanelWindow {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                height: parent.height + Theme.radiusLarge
+                height: popupWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
                 radius: Theme.radiusLarge
                 color: Theme.surface
+                border.width: popupWin.floatingMode ? Theme.popoutBorderWidth : 0
+                border.color: Theme.popoutBorder
                 Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
             }
 

@@ -10,8 +10,13 @@ PanelWindow {
 
     required property bool panelOpen
     required property var sysState
+    property bool floatingMode: false
+    property var barHitTester: null
 
     signal closeRequested()
+    signal barMenuHovered(var scr, string target)
+    signal barMenuClicked(var scr, string target, int button)
+    signal barWorkspaceClicked(int wsId)
 
     readonly property int barH: sysState ? sysState.barHeight : 40
     property bool revealed: false
@@ -170,13 +175,6 @@ PanelWindow {
         id: emptyMask
     }
 
-    HyprlandFocusGrab {
-        id: focusGrab
-        windows: [pwrWin]
-        active: pwrWin.panelOpen
-        onCleared: pwrWin.closeRequested()
-    }
-
     FocusScope {
         id: pwrScope
         anchors.fill: parent
@@ -245,14 +243,32 @@ PanelWindow {
             onClicked: pwrWin.closeRequested()
         }
 
-        // Borde cyan inferior de la barra superior a ambos lados del desplegable
+        TopBarOverlayBridge {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: pwrWin.barH
+            z: 50
+            barH: pwrWin.barH
+            screen: pwrWin.screen
+            active: pwrWin.panelOpen
+            currentTarget: "power"
+            barHitTester: pwrWin.barHitTester
+            onMenuHovered: (scr, target) => pwrWin.barMenuHovered(scr, target)
+            onMenuClicked: (scr, target, btn) => pwrWin.barMenuClicked(scr, target, btn)
+            onWorkspaceClicked: wsId => pwrWin.barWorkspaceClicked(wsId)
+            onOutsideClicked: pwrWin.closeRequested()
+        }
+
+        // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
+            visible: !pwrWin.floatingMode
             anchors.left: parent.left
             anchors.right: pwrDock.left
             anchors.rightMargin: pwrDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
-            y: pwrWin.barH - 2
-            height: 2
-            color: Theme.activeBorder
+            y: pwrWin.barH - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: pwrWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -264,12 +280,13 @@ PanelWindow {
         }
 
         Rectangle {
+            visible: !pwrWin.floatingMode
             anchors.left: pwrDock.right
             anchors.leftMargin: pwrDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
             anchors.right: parent.right
-            y: pwrWin.barH - 2
-            height: 2
-            color: Theme.activeBorder
+            y: pwrWin.barH - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: pwrWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -280,13 +297,13 @@ PanelWindow {
             }
         }
 
-        // Contenedor acoplado a la barra superior (extremo derecho) con esquinas cóncavas
+        // Contenedor acoplado a la barra superior (o flotante a 8px en modo islas)
         Item {
             id: pwrDock
             anchors.top: parent.top
-            anchors.topMargin: pwrWin.barH
+            anchors.topMargin: pwrWin.floatingMode ? (pwrWin.barH + 8) : pwrWin.barH
             anchors.right: parent.right
-            anchors.rightMargin: 18
+            anchors.rightMargin: pwrWin.floatingMode ? 12 : 18
             width: 436
             height: pwrWin.revealed ? (pwrBody.implicitHeight + 28) : 0
             opacity: pwrWin.revealed ? 1.0 : 0.0
@@ -309,22 +326,22 @@ PanelWindow {
                 position: "top-right"
                 size: Theme.concaveRadius
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: pwrSurface.left
-                visible: pwrDock.height >= Theme.concaveRadius
+                visible: !pwrWin.floatingMode && pwrDock.height >= Theme.concaveRadius
             }
 
             ConcaveCorner {
                 position: "top-left"
                 size: Theme.concaveRadius
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: pwrSurface.right
-                visible: pwrDock.height >= Theme.concaveRadius
+                visible: !pwrWin.floatingMode && pwrDock.height >= Theme.concaveRadius
             }
 
             Item {
@@ -333,14 +350,17 @@ PanelWindow {
                 clip: true
 
                 readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - Theme.concaveRadius))
+                readonly property real halfB: Theme.popoutBorderWidth / 2.0
 
                 Rectangle {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: parent.height + Theme.radiusLarge
+                    height: pwrWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
+                    border.width: pwrWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
 
@@ -348,40 +368,40 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: pwrDock.height >= Theme.concaveRadius
+                    visible: !pwrWin.floatingMode && pwrDock.height >= Theme.concaveRadius
 
                     ShapePath {
-                        strokeWidth: 2
-                        strokeColor: Theme.activeBorder
+                        strokeWidth: Theme.popoutBorderWidth
+                        strokeColor: Theme.popoutBorder
                         fillColor: "transparent"
                         capStyle: ShapePath.FlatCap
-                        startX: 1
+                        startX: pwrSurface.halfB
                         startY: Theme.concaveRadius
 
                         PathLine {
-                            x: 1
+                            x: pwrSurface.halfB
                             y: pwrSurface.height - pwrSurface.cornerR
                         }
                         PathArc {
                             x: pwrSurface.cornerR
-                            y: pwrSurface.height - 1
-                            radiusX: pwrSurface.cornerR - 1
-                            radiusY: pwrSurface.cornerR - 1
+                            y: pwrSurface.height - pwrSurface.halfB
+                            radiusX: pwrSurface.cornerR - pwrSurface.halfB
+                            radiusY: pwrSurface.cornerR - pwrSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
                             x: pwrSurface.width - pwrSurface.cornerR
-                            y: pwrSurface.height - 1
+                            y: pwrSurface.height - pwrSurface.halfB
                         }
                         PathArc {
-                            x: pwrSurface.width - 1
+                            x: pwrSurface.width - pwrSurface.halfB
                             y: pwrSurface.height - pwrSurface.cornerR
-                            radiusX: pwrSurface.cornerR - 1
-                            radiusY: pwrSurface.cornerR - 1
+                            radiusX: pwrSurface.cornerR - pwrSurface.halfB
+                            radiusY: pwrSurface.cornerR - pwrSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
-                            x: pwrSurface.width - 1
+                            x: pwrSurface.width - pwrSurface.halfB
                             y: Theme.concaveRadius
                         }
                     }

@@ -13,6 +13,8 @@ PanelWindow {
     required property bool dndEnabled
     required property real nowMs
     property int barHeight: 40
+    property bool floatingMode: false
+    property var barHitTester: null
 
     signal closeRequested()
     signal toggleDndRequested()
@@ -20,6 +22,9 @@ PanelWindow {
     signal dismissRequested(int uid)
     signal actionInvoked(int uid, var action)
     signal replySent(int uid, string text)
+    signal barMenuHovered(var scr, string target)
+    signal barMenuClicked(var scr, string target, int button)
+    signal barWorkspaceClicked(int wsId)
 
     property bool revealed: false
     property int selectedIndex: -1
@@ -148,13 +153,6 @@ PanelWindow {
         id: emptyMask
     }
 
-    HyprlandFocusGrab {
-        id: focusGrab
-        windows: [centerWin]
-        active: centerWin.panelOpen
-        onCleared: centerWin.closeRequested()
-    }
-
     FocusScope {
         id: escScope
         anchors.fill: parent
@@ -193,14 +191,32 @@ PanelWindow {
             onClicked: centerWin.closeRequested()
         }
 
-        // Borde cyan inferior de la barra superior a la izquierda del cajón
+        TopBarOverlayBridge {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: centerWin.barHeight
+            z: 50
+            barH: centerWin.barHeight
+            screen: centerWin.screen
+            active: centerWin.panelOpen
+            currentTarget: "notifications"
+            barHitTester: centerWin.barHitTester
+            onMenuHovered: (scr, target) => centerWin.barMenuHovered(scr, target)
+            onMenuClicked: (scr, target, btn) => centerWin.barMenuClicked(scr, target, btn)
+            onWorkspaceClicked: wsId => centerWin.barWorkspaceClicked(wsId)
+            onOutsideClicked: centerWin.closeRequested()
+        }
+
+        // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
+            visible: !centerWin.floatingMode
             anchors.left: parent.left
             anchors.right: drawerDock.left
-            anchors.rightMargin: drawerDock.width >= Theme.concaveRadius ? Theme.concaveRadius : 0
-            y: centerWin.barHeight - 2
-            height: 2
-            color: Theme.activeBorder
+            anchors.rightMargin: drawerDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
+            y: centerWin.barHeight - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: centerWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -211,34 +227,46 @@ PanelWindow {
             }
         }
 
-        // Panel derecho acoplado a la barra superior con esquina cóncava izquierda
+        Rectangle {
+            visible: !centerWin.floatingMode
+            anchors.left: drawerDock.right
+            anchors.leftMargin: drawerDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
+            anchors.right: parent.right
+            y: centerWin.barHeight - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
+            opacity: centerWin.revealed ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: centerWin.revealed ? Theme.animFast : Theme.animClose
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
+        // Desplegable derecho acoplado a la barra superior (o tarjeta flotante a 8px en modo islas)
         Item {
             id: drawerDock
-            readonly property int availHeight: Math.max(440, (centerWin.height > 0 ? centerWin.height : (centerWin.screen ? centerWin.screen.height : 1080)) - centerWin.barHeight)
+            readonly property int availHeight: Math.max(440, (centerWin.height > 0 ? centerWin.height : (centerWin.screen ? centerWin.screen.height : 1080)) - centerWin.barHeight - (centerWin.floatingMode ? 16 : 0))
             readonly property int maxDrawerHeight: Math.round(availHeight * 0.80)
             readonly property int targetDrawerHeight: centerWin.notifications.length === 0
                 ? 380
                 : Math.min(maxDrawerHeight, Math.max(380, notifListCol.implicitHeight + 118))
 
             anchors.top: parent.top
-            anchors.topMargin: centerWin.barHeight
+            anchors.topMargin: centerWin.floatingMode ? (centerWin.barHeight + 8) : centerWin.barHeight
             anchors.right: parent.right
-            width: centerWin.revealed ? 424 : 0
-            height: targetDrawerHeight
+            anchors.rightMargin: centerWin.floatingMode ? 12 : 18
+            width: 424
+            height: centerWin.revealed ? targetDrawerHeight : 0
             opacity: centerWin.revealed ? 1.0 : 0.0
 
             Behavior on height {
                 NumberAnimation {
-                    duration: Theme.animNormal
+                    duration: centerWin.revealed ? Theme.animNormal : Theme.animClose
                     easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Theme.curveExpressive
-                }
-            }
-            Behavior on width {
-                NumberAnimation {
-                    duration: centerWin.revealed ? Theme.animPop : Theme.animClose
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: centerWin.revealed ? Theme.curveExpressive : Theme.curveAccel
+                    easing.bezierCurve: centerWin.revealed ? Theme.curveDecel : Theme.curveAccel
                 }
             }
             Behavior on opacity {
@@ -248,16 +276,27 @@ PanelWindow {
                 }
             }
 
-            // Unión cóncava superior izquierda con la barra superior
+            // Uniones cóncavas superiores con la barra
             ConcaveCorner {
                 position: "top-right"
                 size: Theme.concaveRadius
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: drawerSurface.left
-                visible: drawerDock.width >= Theme.concaveRadius
+                visible: !centerWin.floatingMode && drawerDock.height >= Theme.concaveRadius
+            }
+
+            ConcaveCorner {
+                position: "top-left"
+                size: Theme.concaveRadius
+                color: Theme.surface
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
+                anchors.top: parent.top
+                anchors.left: drawerSurface.right
+                visible: !centerWin.floatingMode && drawerDock.height >= Theme.concaveRadius
             }
 
             Item {
@@ -266,15 +305,18 @@ PanelWindow {
                 clip: true
 
                 readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - Theme.concaveRadius))
+                readonly property real halfB: Theme.popoutBorderWidth / 2.0
 
-                // Fondo redondeado solo en la esquina inferior izquierda (arriba y derecha fundidos)
+                // Fondo redondeado (4 esquinas en modo flotante, o esquinas inferiores en modo acoplado)
                 Rectangle {
                     anchors.left: parent.left
+                    anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    width: parent.width + Theme.radiusLarge
-                    height: parent.height + Theme.radiusLarge
+                    height: centerWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
+                    border.width: centerWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
 
@@ -282,30 +324,41 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: drawerDock.width >= Theme.concaveRadius && drawerSurface.height >= Theme.concaveRadius + 4
+                    visible: !centerWin.floatingMode && drawerDock.height >= Theme.concaveRadius && drawerSurface.height >= Theme.concaveRadius + 4
 
                     ShapePath {
-                        strokeWidth: 2
-                        strokeColor: Theme.activeBorder
+                        strokeWidth: Theme.popoutBorderWidth
+                        strokeColor: Theme.popoutBorder
                         fillColor: "transparent"
                         capStyle: ShapePath.FlatCap
-                        startX: 1
+                        startX: drawerSurface.halfB
                         startY: Theme.concaveRadius
 
                         PathLine {
-                            x: 1
+                            x: drawerSurface.halfB
                             y: drawerSurface.height - drawerSurface.cornerR
                         }
                         PathArc {
                             x: drawerSurface.cornerR
-                            y: drawerSurface.height - 1
-                            radiusX: drawerSurface.cornerR - 1
-                            radiusY: drawerSurface.cornerR - 1
+                            y: drawerSurface.height - drawerSurface.halfB
+                            radiusX: drawerSurface.cornerR - drawerSurface.halfB
+                            radiusY: drawerSurface.cornerR - drawerSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
-                            x: drawerSurface.width
-                            y: drawerSurface.height - 1
+                            x: drawerSurface.width - drawerSurface.cornerR
+                            y: drawerSurface.height - drawerSurface.halfB
+                        }
+                        PathArc {
+                            x: drawerSurface.width - drawerSurface.halfB
+                            y: drawerSurface.height - drawerSurface.cornerR
+                            radiusX: drawerSurface.cornerR - drawerSurface.halfB
+                            radiusY: drawerSurface.cornerR - drawerSurface.halfB
+                            direction: PathArc.Counterclockwise
+                        }
+                        PathLine {
+                            x: drawerSurface.width - drawerSurface.halfB
+                            y: Theme.concaveRadius
                         }
                     }
                 }
@@ -317,20 +370,13 @@ PanelWindow {
 
                 ColumnLayout {
                     anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    x: centerWin.revealed ? 16 : 42
-                    width: 424 - 32
+                    anchors.left: parent.left
+                    anchors.right: parent.right
                     anchors.topMargin: 12
-                    anchors.bottomMargin: 16
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    height: Math.max(120, drawerDock.targetDrawerHeight - 28)
                     spacing: 12
-
-                    Behavior on x {
-                        NumberAnimation {
-                            duration: centerWin.revealed ? Theme.animPop : Theme.animClose
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: centerWin.revealed ? Theme.curveExpressive : Theme.curveAccel
-                        }
-                    }
 
                     // Encabezado
                     RowLayout {

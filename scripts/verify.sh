@@ -482,6 +482,7 @@ else
              "$HOME/.config/quickshell/AppearancePopup.qml" \
              "$HOME/.config/quickshell/ClipboardPopup.qml" \
              "$HOME/.config/quickshell/PowerPopup.qml" \
+             "$HOME/.config/quickshell/TopBarOverlayBridge.qml" \
              "$HOME/.config/quickshell/NotificationPopups.qml" \
              "$HOME/.config/quickshell/NotificationCard.qml" \
              "$HOME/.config/quickshell/NotificationCenter.qml" \

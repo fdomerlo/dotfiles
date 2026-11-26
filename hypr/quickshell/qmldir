@@ -11,4 +11,5 @@ NotificationCenter 1.0 NotificationCenter.qml
 SystemState 1.0 SystemState.qml
 DashboardPopup 1.0 DashboardPopup.qml
 PowerPopup 1.0 PowerPopup.qml
+TopBarOverlayBridge 1.0 TopBarOverlayBridge.qml
 BarWindow 1.0 BarWindow.qml

@@ -46,6 +46,7 @@ Item {
     property int barHeight: 40
     property bool showTelemetry: true
     property bool showMedia: true
+    property string barStyle: "bar" // "bar" | "islands" | "auto"
 
     property real _prevCpuTotal: 0
     property real _prevCpuIdle: 0
@@ -103,9 +104,23 @@ Item {
                 sys.showTelemetry = cfg.showTelemetry;
             if (typeof cfg.showMedia === "boolean")
                 sys.showMedia = cfg.showMedia;
+            if (cfg.barStyle === "bar" || cfg.barStyle === "islands" || cfg.barStyle === "auto")
+                sys.barStyle = cfg.barStyle;
         } catch (e) {
             // Ignorar JSON inválido en override local
         }
+    }
+
+    function setBarStyle(mode) {
+        const key = String(mode || "").trim().toLowerCase();
+        const norm = (key === "islands" || key === "auto") ? key : "bar";
+        sys.barStyle = norm;
+        Quickshell.execDetached([
+            "python3", "-c",
+            "import json, os, sys; p, m = sys.argv[1], sys.argv[2]; os.makedirs(os.path.dirname(p), exist_ok=True)\ntry:\n with open(p, encoding='utf-8') as f: d = json.load(f)\n if not isinstance(d, dict): d = {}\nexcept Exception: d = {}\nd['barStyle'] = m\ntmp = p + '.tmp'\nwith open(tmp, 'w', encoding='utf-8') as f: json.dump(d, f, indent=2); f.write('\\n')\nos.replace(tmp, p)\n",
+            sys.localConfigPath,
+            norm
+        ]);
     }
 
     function pushHistory(arr, value) {

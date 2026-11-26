@@ -14,6 +14,7 @@ ShellRoot {
     property int selectedWorkspaceId: -1
     property bool tabNavigated: false
     property var overviewFocusedScreen: null
+    property int hyprLayoutTick: 0
 
     property string activeThemeName: Theme.modeName
     property bool recordingActive: false
@@ -279,6 +280,32 @@ ShellRoot {
 
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink, Pipewire.defaultAudioSource]
+    }
+
+    Timer {
+        id: hyprLayoutTimer
+        interval: 45
+        repeat: false
+        running: true
+        onTriggered: {
+            Hyprland.refreshMonitors();
+            Hyprland.refreshWorkspaces();
+            Hyprland.refreshToplevels();
+            root.hyprLayoutTick++;
+        }
+    }
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            const n = event ? String(event.name || "") : "";
+            if (n === "openwindow" || n === "closewindow" || n === "movewindow" || n === "movewindowv2"
+                || n === "workspace" || n === "workspacev2" || n === "changefloatingmode"
+                || n === "fullscreen" || n === "focusedmon" || n === "activespecial"
+                || n === "createworkspace" || n === "destroyworkspace") {
+                hyprLayoutTimer.restart();
+            }
+        }
     }
 
     Connections {
@@ -637,7 +664,108 @@ ShellRoot {
         }
     }
 
-    function openNotifCenter() {
+    property var barWindowInstances: []
+
+    function registerBarWindow(win) {
+        if (!win)
+            return;
+        const next = [];
+        for (let i = 0; i < barWindowInstances.length; i++) {
+            const w = barWindowInstances[i];
+            if (w && w !== win)
+                next.push(w);
+        }
+        next.push(win);
+        barWindowInstances = next;
+    }
+
+    function unregisterBarWindow(win) {
+        const next = [];
+        for (let i = 0; i < barWindowInstances.length; i++) {
+            const w = barWindowInstances[i];
+            if (w && w !== win)
+                next.push(w);
+        }
+        barWindowInstances = next;
+    }
+
+    function hitTestBar(scr, px, py) {
+        const targetScr = scr || resolveFocusedScreen();
+        for (let i = 0; i < barWindowInstances.length; i++) {
+            const w = barWindowInstances[i];
+            if (w && w.screen === targetScr && typeof w.hitTestTopBar === "function")
+                return w.hitTestTopBar(px, py);
+        }
+        return { kind: "empty", target: "", wsId: -1 };
+    }
+
+    function closeAllMenus() {
+        if (dashboardOpen)
+            closeDashboard();
+        if (appearanceOpen)
+            closeAppearance();
+        if (notifCenterOpen)
+            closeNotifCenter();
+        if (powerOpen)
+            closePower();
+        if (clipboardOpen)
+            closeClipboard();
+    }
+
+    function handleMenuHover(scr, target) {
+        const targetScr = scr || resolveFocusedScreen();
+        if (target === "apps")
+            openDashboard(targetScr, 0);
+        else if (target === "dashboard")
+            openDashboard(targetScr, 1);
+        else if (target === "appearance")
+            openAppearance(targetScr);
+        else if (target === "notifications")
+            openNotifCenter(targetScr);
+        else if (target === "power")
+            openPower(targetScr);
+    }
+
+    function handleBarBridgeClick(scr, target, button) {
+        const targetScr = scr || resolveFocusedScreen();
+        if (target === "apps") {
+            if (button === Qt.RightButton) {
+                closeAllMenus();
+                openOverview();
+            } else {
+                toggleDashboard(targetScr, 0);
+            }
+        } else if (target === "dashboard") {
+            if (button === Qt.RightButton)
+                toggleDashboard(targetScr, 2);
+            else if (button === Qt.MiddleButton)
+                toggleDashboard(targetScr, 4);
+            else
+                toggleDashboard(targetScr, 1);
+        } else if (target === "appearance") {
+            if (button === Qt.RightButton) {
+                closeAllMenus();
+                Quickshell.execDetached([Quickshell.env("HOME") + "/.config/hypr/scripts/theme-switch.sh", "toggle"]);
+            } else {
+                toggleAppearance(targetScr);
+            }
+        } else if (target === "notifications") {
+            if (button === Qt.RightButton)
+                toggleDnd();
+            else
+                toggleNotifCenter();
+        } else if (target === "power") {
+            togglePower(targetScr);
+        }
+    }
+
+    function handleBarBridgeWorkspace(wsId) {
+        closeAllMenus();
+        if (wsId > 0)
+            Hyprland.dispatch("workspace " + wsId);
+    }
+
+    function openNotifCenter(scr) {
         if (appearanceOpen)
             closeAppearance();
         if (clipboardOpen)
@@ -667,7 +795,7 @@ ShellRoot {
         notifEntries = next;
         popupHovered = false;
         popupHoverStartedMs = 0;
-        notifCenterScreen = resolveFocusedScreen();
+        notifCenterScreen = scr || resolveFocusedScreen();
         notifCenterOpen = true;
     }
 
@@ -799,6 +927,52 @@ ShellRoot {
         if (a.id !== b.id)
             return a.id - b.id;
         return a.name.localeCompare(b.name);
+    }
+
+    function isScreenSmartGaps(scr) {
+        void(root.hyprLayoutTick);
+        void(Hyprland.toplevels.values);
+        void(Hyprland.workspaces.values);
+        void(Hyprland.monitors.values);
+        const hm = scr ? Hyprland.monitorFor(scr) : Hyprland.focusedMonitor;
+        if (!hm || !hm.activeWorkspace)
+            return false;
+        const wsId = hm.activeWorkspace.id;
+        const vals = Hyprland.toplevels.values;
+        if (!vals)
+            return false;
+        let tiledCount = 0;
+        let hasMaximized = false;
+        for (let i = 0; i < vals.length; i++) {
+            const t = vals[i];
+            if (!t)
+                continue;
+            const ipc = t.lastIpcObject;
+            const tWsId = (ipc && ipc.workspace && ipc.workspace.id !== undefined)
+                ? Number(ipc.workspace.id)
+                : (t.workspace ? Number(t.workspace.id) : -1);
+            if (tWsId !== wsId)
+                continue;
+            if (ipc) {
+                if (ipc.mapped === false || ipc.hidden === true)
+                    continue;
+                if (ipc.floating === true)
+                    continue;
+                if (Number(ipc.fullscreen || 0) === 1)
+                    hasMaximized = true;
+            }
+            tiledCount++;
+        }
+        return tiledCount === 1 || hasMaximized;
+    }
+
+    function isScreenFloatingBar(scr) {
+        const style = systemState ? systemState.barStyle : "bar";
+        if (style === "islands")
+            return true;
+        if (style === "auto")
+            return !isScreenSmartGaps(scr);
+        return false;
     }
 
     function resolvePrimaryScreen() {
@@ -1043,6 +1217,14 @@ ShellRoot {
         function current(): string {
             return Theme.modeName;
         }
+
+        function setBarStyle(mode: string): void {
+            systemState.setBarStyle(mode);
+        }
+
+        function barStyle(): string {
+            return systemState.barStyle;
+        }
     }
 
     IpcHandler {
@@ -1286,6 +1468,7 @@ ShellRoot {
             appearanceOpen: root.appearanceOpen
             clipboardOpen: root.clipboardOpen
             powerOpen: root.powerOpen
+            floatingMode: root.isScreenFloatingBar(modelData)
             popupsVisible: root.popupsMounted
             dashboardScreen: root.dashboardScreen
             notifCenterScreen: root.notifCenterScreen
@@ -1306,6 +1489,8 @@ ShellRoot {
             onAppearanceRequested: scr => root.toggleAppearance(scr)
             onPowerRequested: scr => root.togglePower(scr)
             onIdleInhibitToggled: root.idleInhibited = !root.idleInhibited
+            Component.onCompleted: root.registerBarWindow(this)
+            Component.onDestruction: root.unregisterBarWindow(this)
         }
     }
 
@@ -1344,7 +1529,14 @@ ShellRoot {
             screen: root.appearanceScreen || root.resolveFocusedScreen()
             panelOpen: root.appearanceOpen
             barHeight: systemState.barHeight
+            floatingMode: root.isScreenFloatingBar(root.appearanceScreen || root.resolveFocusedScreen())
+            barStyle: systemState.barStyle
+            barHitTester: root.hitTestBar
+            onBarStyleSelected: mode => systemState.setBarStyle(mode)
             onCloseRequested: root.closeAppearance()
+            onBarMenuHovered: (scr, target) => root.handleMenuHover(scr, target)
+            onBarMenuClicked: (scr, target, btn) => root.handleBarBridgeClick(scr, target, btn)
+            onBarWorkspaceClicked: wsId => root.handleBarBridgeWorkspace(wsId)
         }
     }
 
@@ -1355,7 +1547,12 @@ ShellRoot {
             screen: root.clipboardScreen || root.resolveFocusedScreen()
             panelOpen: root.clipboardOpen
             barHeight: systemState.barHeight
+            floatingMode: root.isScreenFloatingBar(root.clipboardScreen || root.resolveFocusedScreen())
+            barHitTester: root.hitTestBar
             onCloseRequested: root.closeClipboard()
+            onBarMenuHovered: (scr, target) => root.handleMenuHover(scr, target)
+            onBarMenuClicked: (scr, target, btn) => root.handleBarBridgeClick(scr, target, btn)
+            onBarWorkspaceClicked: wsId => root.handleBarBridgeWorkspace(wsId)
         }
     }
 
@@ -1384,6 +1581,7 @@ ShellRoot {
             popups: root.activePopups
             nowMs: root.notifNowMs
             barHeight: systemState.barHeight
+            floatingMode: root.isScreenFloatingBar(root.popupsScreen || root.resolveFocusedScreen())
             onDismissRequested: uid => root.dismissNotif(uid)
             onPopupCloseRequested: uid => root.hidePopup(uid)
             onCloseAllPopupsRequested: root.closeAllPopups()
@@ -1402,12 +1600,17 @@ ShellRoot {
             dndEnabled: root.dndEnabled
             nowMs: root.notifNowMs
             barHeight: systemState.barHeight
+            floatingMode: root.isScreenFloatingBar(root.notifCenterScreen || root.resolveFocusedScreen())
+            barHitTester: root.hitTestBar
             onCloseRequested: root.closeNotifCenter()
             onToggleDndRequested: root.toggleDnd()
             onClearAllRequested: root.clearAllNotifs()
             onDismissRequested: uid => root.dismissNotif(uid)
             onActionInvoked: (uid, action) => root.invokeNotifAction(uid, action)
             onReplySent: (uid, msg) => root.sendNotifReply(uid, msg)
+            onBarMenuHovered: (scr, target) => root.handleMenuHover(scr, target)
+            onBarMenuClicked: (scr, target, btn) => root.handleBarBridgeClick(scr, target, btn)
+            onBarWorkspaceClicked: wsId => root.handleBarBridgeWorkspace(wsId)
         }
     }
 
@@ -1423,6 +1626,8 @@ ShellRoot {
             dndEnabled: root.dndEnabled
             idleInhibited: root.idleInhibited
             activeTheme: root.activeThemeName
+            floatingMode: root.isScreenFloatingBar(root.dashboardScreen || root.resolveFocusedScreen())
+            barHitTester: root.hitTestBar
             onCloseRequested: root.closeDashboard()
             onTabSelected: tabIdx => { root.dashboardTab = tabIdx; }
             onToggleDndRequested: root.toggleDnd()
@@ -1431,6 +1636,9 @@ ShellRoot {
             onAppActivated: entry => root.launchAppEntry(entry)
             onActionActivated: act => root.launchAction(act)
             onOverviewRequested: root.openOverview()
+            onBarMenuHovered: (scr, target) => root.handleMenuHover(scr, target)
+            onBarMenuClicked: (scr, target, btn) => root.handleBarBridgeClick(scr, target, btn)
+            onBarWorkspaceClicked: wsId => root.handleBarBridgeWorkspace(wsId)
         }
     }
 
@@ -1441,7 +1649,12 @@ ShellRoot {
             screen: root.powerScreen || root.resolveFocusedScreen()
             panelOpen: root.powerOpen
             sysState: systemState
+            floatingMode: root.isScreenFloatingBar(root.powerScreen || root.resolveFocusedScreen())
+            barHitTester: root.hitTestBar
             onCloseRequested: root.closePower()
+            onBarMenuHovered: (scr, target) => root.handleMenuHover(scr, target)
+            onBarMenuClicked: (scr, target, btn) => root.handleBarBridgeClick(scr, target, btn)
+            onBarWorkspaceClicked: wsId => root.handleBarBridgeWorkspace(wsId)
         }
     }
 

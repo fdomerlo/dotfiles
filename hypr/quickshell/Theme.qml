@@ -76,6 +76,8 @@ Singleton {
     readonly property color cardHoverBg: surfaceContainerHigh
     readonly property color border: outlineVariant
     readonly property color activeBorder: primary
+    readonly property color popoutBorder: isDark ? Qt.alpha(primary, 0.36) : Qt.alpha(primary, 0.30)
+    readonly property int popoutBorderWidth: 1
     readonly property color accent: primary
     readonly property color accentText: fgOnPrimary
     readonly property color urgent: error

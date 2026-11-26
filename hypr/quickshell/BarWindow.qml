@@ -19,6 +19,7 @@ PanelWindow {
     required property bool appearanceOpen
     required property bool clipboardOpen
     required property bool powerOpen
+    required property bool floatingMode
     required property bool popupsVisible
     required property var dashboardScreen
     required property var notifCenterScreen
@@ -52,6 +53,37 @@ PanelWindow {
     readonly property bool hasPopupsHere: popupsVisible && (!popupsScreen || popupsScreen === screen)
     readonly property bool anyDockedOpen: isDashboardHere || isNotifCenterHere || isAppearanceHere || isClipboardHere || isPowerHere
     readonly property var hyprMonitor: Hyprland.monitorFor(screen)
+
+    function itemContainsBarPoint(item, px, py) {
+        if (!item || !item.visible || !barFrame)
+            return false;
+        const pt = item.mapToItem(barFrame, 0, 0);
+        return px >= pt.x && px <= pt.x + item.width
+            && py >= pt.y - 4 && py <= pt.y + item.height + 4;
+    }
+
+    function hitTestTopBar(px, py) {
+        if (py < 0 || py > barH)
+            return { kind: "none", target: "", wsId: -1 };
+        if (itemContainsBarPoint(appsBtn, px, py))
+            return { kind: "menu", target: "apps", wsId: -1 };
+        if (itemContainsBarPoint(centerClock, px, py))
+            return { kind: "menu", target: "dashboard", wsId: -1 };
+        if (itemContainsBarPoint(themeBtn, px, py))
+            return { kind: "menu", target: "appearance", wsId: -1 };
+        if (itemContainsBarPoint(notifBtn, px, py))
+            return { kind: "menu", target: "notifications", wsId: -1 };
+        if (itemContainsBarPoint(pwrBtn, px, py))
+            return { kind: "menu", target: "power", wsId: -1 };
+        for (let i = 0; i < wsRepeater.count; i++) {
+            const wsItem = wsRepeater.itemAt(i);
+            if (!wsItem || !wsItem.modelData)
+                continue;
+            if (itemContainsBarPoint(wsItem, px, py))
+                return { kind: "workspace", target: "", wsId: Number(wsItem.modelData.id) };
+        }
+        return { kind: "empty", target: "", wsId: -1 };
+    }
 
     // Workspaces asignados a este monitor, ordenados por ID
     readonly property var monitorWorkspaces: {
@@ -126,21 +158,21 @@ PanelWindow {
 
     color: "transparent"
 
-    // Superficie superior continua estilo Material 3 / Caelestia
+    // Superficie superior continua estilo Material 3 / Caelestia (o transparente en modo islas)
     Rectangle {
         id: barFrame
         anchors.fill: parent
-        color: Theme.surface
+        color: barWin.floatingMode ? "transparent" : Theme.surface
         Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
 
-        // Línea inferior sutil que se desvanece cuando un popout se acopla a esta barra
+        // Línea inferior sutil que se desvanece cuando un popout se acopla o en modo islas
         Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             height: 1
             color: Theme.outlineVariant
-            opacity: barWin.anyDockedOpen ? 0.0 : 0.45
+            opacity: (barWin.anyDockedOpen || barWin.floatingMode) ? 0.0 : 0.45
 
             Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
         }
@@ -152,16 +184,21 @@ PanelWindow {
             id: leftCluster
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: 10
+            anchors.leftMargin: 12
             spacing: 6
 
             // Píldora de Workspaces con morphing elástico estilo Caelestia
             Rectangle {
+                id: leftIsland
                 visible: barWin.monitorWorkspaces.length > 0
                 Layout.preferredHeight: barWin.pillH
-                Layout.preferredWidth: wsRow.implicitWidth + 10
+                Layout.preferredWidth: wsRow.implicitWidth + 14
                 radius: Theme.radiusFull
-                color: Theme.surfaceContainer
+                color: barWin.floatingMode ? Theme.surface : Theme.surfaceContainer
+                border.width: barWin.floatingMode ? 1 : 0
+                border.color: Qt.alpha(Theme.outline, 0.30)
+
+                Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                 MouseArea {
                     anchors.fill: parent
@@ -177,9 +214,10 @@ PanelWindow {
                 Row {
                     id: wsRow
                     anchors.centerIn: parent
-                    spacing: 4
+                    spacing: 5
 
                     Repeater {
+                        id: wsRepeater
                         model: barWin.monitorWorkspaces
 
                         Rectangle {
@@ -243,23 +281,28 @@ PanelWindow {
             id: centerIsland
             anchors.centerIn: parent
             height: barWin.pillH
-            width: centerCluster.implicitWidth + 6
+            width: centerCluster.implicitWidth + 12
             radius: Theme.radiusFull
-            color: barWin.isDashboardHere ? Theme.surfaceContainerHigh : Theme.surfaceContainer
-            border.width: barWin.isDashboardHere ? 1 : 0
-            border.color: Qt.alpha(Theme.primary, 0.32)
+            color: barWin.isDashboardHere
+                ? Theme.surfaceContainerHigh
+                : (barWin.floatingMode ? Theme.surface : Theme.surfaceContainer)
+            border.width: (barWin.isDashboardHere || barWin.floatingMode) ? 1 : 0
+            border.color: barWin.isDashboardHere
+                ? Qt.alpha(Theme.primary, 0.35)
+                : Qt.alpha(Theme.outline, 0.30)
 
             Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
             RowLayout {
                 id: centerCluster
                 anchors.centerIn: parent
-                spacing: 2
+                spacing: 5
 
                 // Botón Apps / Overview
                 Rectangle {
+                    id: appsBtn
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
-                    Layout.preferredWidth: 32
+                    Layout.preferredWidth: 34
                     radius: Theme.radiusFull
                     color: (barWin.isNotchAppsHere || barWin.overviewOpen)
                         ? Theme.primary
@@ -301,7 +344,7 @@ PanelWindow {
                 Rectangle {
                     id: centerClock
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
-                    Layout.preferredWidth: clockRow.implicitWidth + 22
+                    Layout.preferredWidth: clockRow.implicitWidth + 26
                     radius: Theme.radiusFull
                     color: barWin.isNotchDashHere
                         ? Theme.primaryContainer
@@ -444,29 +487,32 @@ PanelWindow {
             id: rightIsland
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            anchors.rightMargin: 10
+            anchors.rightMargin: 12
             height: barWin.pillH
-            width: rightCluster.implicitWidth + 6
+            width: rightCluster.implicitWidth + 12
             radius: Theme.radiusFull
             color: (barWin.isAppearanceHere || barWin.isNotifCenterHere || barWin.isPowerHere)
                 ? Theme.surfaceContainerHigh
-                : Theme.surfaceContainer
-            border.width: (barWin.isAppearanceHere || barWin.isNotifCenterHere || barWin.isPowerHere) ? 1 : 0
+                : (barWin.floatingMode ? Theme.surface : Theme.surfaceContainer)
+            border.width: (barWin.isAppearanceHere || barWin.isNotifCenterHere || barWin.isPowerHere || barWin.floatingMode) ? 1 : 0
             border.color: barWin.isPowerHere
                 ? Qt.alpha(Theme.error, 0.45)
-                : Qt.alpha(Theme.primary, 0.32)
+                : ((barWin.isAppearanceHere || barWin.isNotifCenterHere)
+                    ? Qt.alpha(Theme.primary, 0.35)
+                    : Qt.alpha(Theme.outline, 0.30))
 
             Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
             RowLayout {
                 id: rightCluster
                 anchors.centerIn: parent
-                spacing: 2
+                spacing: 5
 
                 // Popout de Apariencia (clic izq) / Toggle inmediato Claro-Oscuro (clic der)
                 Rectangle {
+                    id: themeBtn
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
-                    Layout.preferredWidth: 30
+                    Layout.preferredWidth: 34
                     radius: Theme.radiusFull
                     color: barWin.isAppearanceHere
                         ? Theme.primary
@@ -508,8 +554,9 @@ PanelWindow {
 
                 // Notificaciones (clic izq.: Centro · clic der.: No Molestar)
                 Rectangle {
+                    id: notifBtn
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
-                    Layout.preferredWidth: notifRow.implicitWidth + 16
+                    Layout.preferredWidth: notifRow.implicitWidth + 20
                     radius: Theme.radiusFull
                     color: barWin.isNotifCenterHere
                         ? Theme.primary
@@ -573,8 +620,9 @@ PanelWindow {
 
                 // Botón Power / Cierre de sesión (tinte rojo + texto Off)
                 Rectangle {
+                    id: pwrBtn
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
-                    Layout.preferredWidth: pwrRow.implicitWidth + 16
+                    Layout.preferredWidth: pwrRow.implicitWidth + 20
                     radius: Theme.radiusFull
                     color: barWin.isPowerHere
                         ? Theme.error

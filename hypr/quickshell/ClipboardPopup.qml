@@ -12,8 +12,13 @@ PanelWindow {
 
     required property bool panelOpen
     property int barHeight: 40
+    property bool floatingMode: false
+    property var barHitTester: null
 
     signal closeRequested()
+    signal barMenuHovered(var scr, string target)
+    signal barMenuClicked(var scr, string target, int button)
+    signal barWorkspaceClicked(int wsId)
 
     readonly property int panelWidth: Math.min(680, Math.max(520, (clipWin.screen ? clipWin.screen.width : 1280) - 64))
     readonly property int panelHeight: Math.min(560, (clipWin.screen ? clipWin.screen.height : 900) - clipWin.barHeight - 80)
@@ -247,13 +252,6 @@ PanelWindow {
         id: emptyMask
     }
 
-    HyprlandFocusGrab {
-        id: focusGrab
-        windows: [clipWin]
-        active: clipWin.panelOpen
-        onCleared: clipWin.closeRequested()
-    }
-
     FocusScope {
         id: clipScope
         anchors.fill: parent
@@ -310,14 +308,32 @@ PanelWindow {
             onClicked: clipWin.closeRequested()
         }
 
-        // Borde cyan inferior de la barra superior a ambos lados del panel
+        TopBarOverlayBridge {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: clipWin.barHeight
+            z: 50
+            barH: clipWin.barHeight
+            screen: clipWin.screen
+            active: clipWin.panelOpen
+            currentTarget: ""
+            barHitTester: clipWin.barHitTester
+            onMenuHovered: (scr, target) => clipWin.barMenuHovered(scr, target)
+            onMenuClicked: (scr, target, btn) => clipWin.barMenuClicked(scr, target, btn)
+            onWorkspaceClicked: wsId => clipWin.barWorkspaceClicked(wsId)
+            onOutsideClicked: clipWin.closeRequested()
+        }
+
+        // Borde sutil inferior de la barra superior a ambos lados del panel
         Rectangle {
+            visible: !clipWin.floatingMode
             anchors.left: parent.left
             anchors.right: clipDock.left
             anchors.rightMargin: clipDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
-            y: clipWin.barHeight - 2
-            height: 2
-            color: Theme.activeBorder
+            y: clipWin.barHeight - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: clipWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -329,12 +345,13 @@ PanelWindow {
         }
 
         Rectangle {
+            visible: !clipWin.floatingMode
             anchors.left: clipDock.right
             anchors.leftMargin: clipDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
             anchors.right: parent.right
-            y: clipWin.barHeight - 2
-            height: 2
-            color: Theme.activeBorder
+            y: clipWin.barHeight - Theme.popoutBorderWidth
+            height: Theme.popoutBorderWidth
+            color: Theme.popoutBorder
             opacity: clipWin.revealed ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -345,11 +362,11 @@ PanelWindow {
             }
         }
 
-        // Panel superior-central de Portapapeles acoplado con esquinas cóncavas
+        // Panel superior-central de Portapapeles acoplado (o flotante a 8px en modo islas)
         Item {
             id: clipDock
             anchors.top: parent.top
-            anchors.topMargin: clipWin.barHeight
+            anchors.topMargin: clipWin.floatingMode ? (clipWin.barHeight + 8) : clipWin.barHeight
             anchors.horizontalCenter: parent.horizontalCenter
             width: clipWin.panelWidth
             height: clipWin.revealed ? clipWin.panelHeight : 0
@@ -373,11 +390,11 @@ PanelWindow {
                 position: "top-right"
                 size: Theme.concaveRadius
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: clipSurface.left
-                visible: clipDock.height >= Theme.concaveRadius
+                visible: !clipWin.floatingMode && clipDock.height >= Theme.concaveRadius
                 z: 2
             }
 
@@ -385,11 +402,11 @@ PanelWindow {
                 position: "top-left"
                 size: Theme.concaveRadius
                 color: Theme.surface
-                borderWidth: 2
-                borderColor: Theme.activeBorder
+                borderWidth: Theme.popoutBorderWidth
+                borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: clipSurface.right
-                visible: clipDock.height >= Theme.concaveRadius
+                visible: !clipWin.floatingMode && clipDock.height >= Theme.concaveRadius
                 z: 2
             }
 
@@ -399,14 +416,17 @@ PanelWindow {
                 clip: true
 
                 readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - Theme.concaveRadius))
+                readonly property real halfB: Theme.popoutBorderWidth / 2.0
 
                 Rectangle {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: parent.height + Theme.radiusLarge
+                    height: clipWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
+                    border.width: clipWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
 
@@ -414,41 +434,41 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: clipDock.height >= Theme.concaveRadius
+                    visible: !clipWin.floatingMode && clipDock.height >= Theme.concaveRadius
                     z: 2
 
                     ShapePath {
-                        strokeWidth: 2
-                        strokeColor: Theme.activeBorder
+                        strokeWidth: Theme.popoutBorderWidth
+                        strokeColor: Theme.popoutBorder
                         fillColor: "transparent"
                         capStyle: ShapePath.FlatCap
-                        startX: 1
+                        startX: clipSurface.halfB
                         startY: Theme.concaveRadius
 
                         PathLine {
-                            x: 1
+                            x: clipSurface.halfB
                             y: clipSurface.height - clipSurface.cornerR
                         }
                         PathArc {
                             x: clipSurface.cornerR
-                            y: clipSurface.height - 1
-                            radiusX: clipSurface.cornerR - 1
-                            radiusY: clipSurface.cornerR - 1
+                            y: clipSurface.height - clipSurface.halfB
+                            radiusX: clipSurface.cornerR - clipSurface.halfB
+                            radiusY: clipSurface.cornerR - clipSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
                             x: clipSurface.width - clipSurface.cornerR
-                            y: clipSurface.height - 1
+                            y: clipSurface.height - clipSurface.halfB
                         }
                         PathArc {
-                            x: clipSurface.width - 1
+                            x: clipSurface.width - clipSurface.halfB
                             y: clipSurface.height - clipSurface.cornerR
-                            radiusX: clipSurface.cornerR - 1
-                            radiusY: clipSurface.cornerR - 1
+                            radiusX: clipSurface.cornerR - clipSurface.halfB
+                            radiusY: clipSurface.cornerR - clipSurface.halfB
                             direction: PathArc.Counterclockwise
                         }
                         PathLine {
-                            x: clipSurface.width - 1
+                            x: clipSurface.width - clipSurface.halfB
                             y: Theme.concaveRadius
                         }
                     }

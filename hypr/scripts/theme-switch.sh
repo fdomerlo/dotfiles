@@ -94,7 +94,7 @@ apply_theme() {
 
     local missing=()
     local f
-    for f in colors.conf hyprlock.conf foot/foot.ini fuzzel/fuzzel.ini; do
+    for f in colors.conf hyprlock.conf soc-console.conf foot/foot.ini fuzzel/fuzzel.ini; do
         [ -e "$theme_dir/$f" ] || missing+=("$f")
     done
     if [ "${#missing[@]}" -gt 0 ]; then
