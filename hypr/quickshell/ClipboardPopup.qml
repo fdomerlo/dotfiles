@@ -287,21 +287,6 @@ PanelWindow {
             }
         }
 
-        // Oscurecimiento suave del fondo
-        Rectangle {
-            anchors.fill: parent
-            anchors.topMargin: clipWin.barHeight
-            color: Theme.dimAround
-            opacity: clipWin.revealed ? 1.0 : 0.0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: clipWin.revealed ? Theme.animNormal : Theme.animClose
-                    easing.type: Easing.OutCubic
-                }
-            }
-        }
-
         MouseArea {
             anchors.fill: parent
             enabled: clipWin.panelOpen

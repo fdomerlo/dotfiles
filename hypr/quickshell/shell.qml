@@ -62,6 +62,21 @@ ShellRoot {
     property var powerScreen: null
     property bool idleInhibited: false
 
+    readonly property bool anyModalOpen: dashboardOpen || appearanceOpen || notifCenterOpen || powerOpen || clipboardOpen
+    readonly property var activeModalScreen: {
+        if (dashboardOpen)
+            return dashboardScreen || resolveFocusedScreen();
+        if (appearanceOpen)
+            return appearanceScreen || resolveFocusedScreen();
+        if (notifCenterOpen)
+            return notifCenterScreen || resolveFocusedScreen();
+        if (powerOpen)
+            return powerScreen || resolveFocusedScreen();
+        if (clipboardOpen)
+            return clipboardScreen || resolveFocusedScreen();
+        return null;
+    }
+
     readonly property bool sinkMuted: Boolean(
         Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio && Pipewire.defaultAudioSink.audio.muted
     )
@@ -718,6 +733,8 @@ ShellRoot {
             openDashboard(targetScr, 0);
         else if (target === "dashboard")
             openDashboard(targetScr, 1);
+        else if (target === "system")
+            openDashboard(targetScr, 4);
         else if (target === "appearance")
             openAppearance(targetScr);
         else if (target === "notifications")
@@ -742,6 +759,8 @@ ShellRoot {
                 toggleDashboard(targetScr, 4);
             else
                 toggleDashboard(targetScr, 1);
+        } else if (target === "system") {
+            toggleDashboard(targetScr, 4);
         } else if (target === "appearance") {
             if (button === Qt.RightButton) {
                 closeAllMenus();
@@ -766,16 +785,6 @@ ShellRoot {
     }
 
     function openNotifCenter(scr) {
-        if (appearanceOpen)
-            closeAppearance();
-        if (clipboardOpen)
-            closeClipboard();
-        if (overviewOpen)
-            closeOverview();
-        if (dashboardOpen)
-            closeDashboard();
-        if (powerOpen)
-            closePower();
         notifNowMs = Date.now();
         const next = [];
         for (let i = 0; i < notifEntries.length; i++) {
@@ -797,6 +806,16 @@ ShellRoot {
         popupHoverStartedMs = 0;
         notifCenterScreen = scr || resolveFocusedScreen();
         notifCenterOpen = true;
+        if (appearanceOpen)
+            closeAppearance();
+        if (clipboardOpen)
+            closeClipboard();
+        if (overviewOpen)
+            closeOverview();
+        if (dashboardOpen)
+            closeDashboard();
+        if (powerOpen)
+            closePower();
     }
 
     function closeNotifCenter() {
@@ -819,6 +838,13 @@ ShellRoot {
     }
 
     function openDashboard(scr, tab) {
+        if (tab !== undefined && tab >= 0 && tab <= 4)
+            dashboardTab = tab;
+        if (!launcherStateProbe.running)
+            launcherStateProbe.running = true;
+        systemState.refreshAll();
+        dashboardScreen = scr || resolveFocusedScreen();
+        dashboardOpen = true;
         if (appearanceOpen)
             closeAppearance();
         if (clipboardOpen)
@@ -829,13 +855,6 @@ ShellRoot {
             closeNotifCenter();
         if (powerOpen)
             closePower();
-        if (tab !== undefined && tab >= 0 && tab <= 4)
-            dashboardTab = tab;
-        if (!launcherStateProbe.running)
-            launcherStateProbe.running = true;
-        systemState.refreshAll();
-        dashboardScreen = scr || resolveFocusedScreen();
-        dashboardOpen = true;
     }
 
     function closeDashboard() {
@@ -855,6 +874,8 @@ ShellRoot {
     }
 
     function openPower(scr) {
+        powerScreen = scr || resolveFocusedScreen();
+        powerOpen = true;
         if (appearanceOpen)
             closeAppearance();
         if (clipboardOpen)
@@ -865,8 +886,6 @@ ShellRoot {
             closeNotifCenter();
         if (dashboardOpen)
             closeDashboard();
-        powerScreen = scr || resolveFocusedScreen();
-        powerOpen = true;
     }
 
     function closePower() {
@@ -1056,6 +1075,8 @@ ShellRoot {
     }
 
     function openAppearance(scr) {
+        appearanceScreen = scr || resolveFocusedScreen();
+        appearanceOpen = true;
         if (clipboardOpen)
             closeClipboard();
         if (overviewOpen)
@@ -1066,8 +1087,6 @@ ShellRoot {
             closeDashboard();
         if (powerOpen)
             closePower();
-        appearanceScreen = scr || resolveFocusedScreen();
-        appearanceOpen = true;
     }
 
     function closeAppearance() {
@@ -1082,6 +1101,8 @@ ShellRoot {
     }
 
     function openClipboard(scr) {
+        clipboardScreen = scr || resolveFocusedScreen();
+        clipboardOpen = true;
         if (appearanceOpen)
             closeAppearance();
         if (overviewOpen)
@@ -1092,8 +1113,6 @@ ShellRoot {
             closeDashboard();
         if (powerOpen)
             closePower();
-        clipboardScreen = scr || resolveFocusedScreen();
-        clipboardOpen = true;
     }
 
     function closeClipboard() {
@@ -1452,6 +1471,19 @@ ShellRoot {
 
         function toggleIdleInhibit(): void {
             root.idleInhibited = !root.idleInhibited;
+        }
+    }
+
+    // Fondo compartido de oscurecimiento bajo los popouts modales (sin parpadeo al cambiar entre ellos)
+    Variants {
+        model: Quickshell.screens
+
+        ModalBackdrop {
+            required property var modelData
+            screen: modelData
+            active: root.anyModalOpen && (!root.activeModalScreen || root.activeModalScreen === modelData)
+            barHeight: systemState.barHeight
+            floatingMode: root.isScreenFloatingBar(modelData)
         }
     }
 

@@ -788,21 +788,6 @@ PanelWindow {
             }
         }
 
-        // Oscurecimiento suave del fondo (equivalente a dim_around, sin blur)
-        Rectangle {
-            anchors.fill: parent
-            anchors.topMargin: dashWin.barH
-            color: Theme.dimAround
-            opacity: dashWin.revealed ? 1.0 : 0.0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: dashWin.revealed ? Theme.animNormal : Theme.animClose
-                    easing.type: Easing.OutCubic
-                }
-            }
-        }
-
         MouseArea {
             anchors.fill: parent
             enabled: dashWin.panelOpen
@@ -818,7 +803,7 @@ PanelWindow {
             barH: dashWin.barH
             screen: dashWin.screen
             active: dashWin.panelOpen
-            currentTarget: dashWin.activeTab === 0 ? "apps" : "dashboard"
+            currentTarget: dashWin.activeTab === 0 ? "apps" : (dashWin.activeTab === 4 ? "system" : "dashboard")
             barHitTester: dashWin.barHitTester
             onMenuHovered: (scr, target) => dashWin.barMenuHovered(scr, target)
             onMenuClicked: (scr, target, btn) => dashWin.barMenuClicked(scr, target, btn)
@@ -875,9 +860,9 @@ PanelWindow {
 
             Behavior on height {
                 NumberAnimation {
-                    duration: dashWin.revealed ? Theme.animPop : Theme.animClose
+                    duration: dashWin.revealed ? Theme.animTab : Theme.animClose
                     easing.type: Easing.BezierSpline
-                    easing.bezierCurve: dashWin.revealed ? Theme.curveExpressive : Theme.curveAccel
+                    easing.bezierCurve: dashWin.revealed ? Theme.curveDecel : Theme.curveAccel
                 }
             }
             Behavior on opacity {
@@ -1005,6 +990,37 @@ PanelWindow {
 
                         readonly property int tabCount: dashWin.tabMeta.length
                         readonly property real tabW: width / Math.max(1, tabCount)
+                        property int pendingHoverTab: -1
+                        property int entryTab: -1
+                        property real entryX: -1
+                        property real entryY: -1
+
+                        Timer {
+                            id: tabHoverTimer
+                            interval: 80
+                            repeat: false
+                            onTriggered: {
+                                if (dashWin.panelOpen && !dashWin.helpOpen
+                                        && tabStrip.pendingHoverTab >= 0
+                                        && tabStrip.pendingHoverTab !== dashWin.activeTab) {
+                                    dashWin.tabSelected(tabStrip.pendingHoverTab);
+                                }
+                                tabStrip.pendingHoverTab = -1;
+                            }
+                        }
+
+                        Connections {
+                            target: dashWin
+                            function onPanelOpenChanged() {
+                                if (!dashWin.panelOpen) {
+                                    tabHoverTimer.stop();
+                                    tabStrip.pendingHoverTab = -1;
+                                    tabStrip.entryTab = -1;
+                                    tabStrip.entryX = -1;
+                                    tabStrip.entryY = -1;
+                                }
+                            }
+                        }
 
                         Rectangle {
                             anchors.left: parent.left
@@ -1013,6 +1029,23 @@ PanelWindow {
                             height: 1
                             color: Theme.outlineVariant
                             opacity: 0.55
+                        }
+
+                        Rectangle {
+                            x: dashWin.activeTab * tabStrip.tabW + 4
+                            y: 2
+                            width: Math.max(0, tabStrip.tabW - 8)
+                            height: tabStrip.height - 8
+                            radius: Theme.radiusSmall
+                            color: Theme.surfaceContainer
+
+                            Behavior on x {
+                                NumberAnimation {
+                                    duration: Theme.animFast
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveDecel
+                                }
+                            }
                         }
 
                         Rectangle {
@@ -1025,9 +1058,9 @@ PanelWindow {
 
                             Behavior on x {
                                 NumberAnimation {
-                                    duration: Theme.animTab
+                                    duration: Theme.animFast
                                     easing.type: Easing.BezierSpline
-                                    easing.bezierCurve: Theme.curveExpressive
+                                    easing.bezierCurve: Theme.curveDecel
                                 }
                             }
                         }
@@ -1047,20 +1080,6 @@ PanelWindow {
                                     width: tabStrip.tabW
                                     height: tabStrip.height
 
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        anchors.topMargin: 2
-                                        anchors.bottomMargin: 6
-                                        anchors.leftMargin: 4
-                                        anchors.rightMargin: 4
-                                        radius: Theme.radiusSmall
-                                        color: tabBtn.isCurrent
-                                            ? Theme.surfaceContainer
-                                            : (tabMouse.containsMouse ? Theme.surfaceContainerLow : "transparent")
-
-                                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
-                                    }
-
                                     Row {
                                         anchors.centerIn: parent
                                         anchors.verticalCenterOffset: -2
@@ -1070,9 +1089,7 @@ PanelWindow {
                                             text: tabBtn.modelData.glyph
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 16
-                                            color: tabBtn.isCurrent
-                                                ? Theme.primary
-                                                : (tabMouse.containsMouse ? Theme.fg : Theme.fgSubtle)
+                                            color: tabBtn.isCurrent ? Theme.primary : Theme.fgSubtle
                                             anchors.verticalCenter: parent.verticalCenter
 
                                             Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -1083,9 +1100,7 @@ PanelWindow {
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 13
                                             font.weight: tabBtn.isCurrent ? Font.Bold : Font.Medium
-                                            color: tabBtn.isCurrent
-                                                ? Theme.fg
-                                                : (tabMouse.containsMouse ? Theme.fgMuted : Theme.fgSubtle)
+                                            color: tabBtn.isCurrent ? Theme.fg : Theme.fgSubtle
                                             anchors.verticalCenter: parent.verticalCenter
 
                                             Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -1097,7 +1112,47 @@ PanelWindow {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: dashWin.tabSelected(tabBtn.index)
+                                        onEntered: {
+                                            tabStrip.entryTab = tabBtn.index;
+                                            tabStrip.entryX = tabMouse.mouseX;
+                                            tabStrip.entryY = tabMouse.mouseY;
+                                        }
+                                        onPositionChanged: mouse => {
+                                            if (!dashWin.panelOpen || dashWin.helpOpen)
+                                                return;
+                                            if (tabStrip.entryTab === tabBtn.index && tabStrip.entryX >= 0) {
+                                                if (Math.abs(mouse.x - tabStrip.entryX) + Math.abs(mouse.y - tabStrip.entryY) < 0.5)
+                                                    return;
+                                                tabStrip.entryTab = -1;
+                                                tabStrip.entryX = -1;
+                                                tabStrip.entryY = -1;
+                                            }
+                                            if (tabBtn.index !== dashWin.activeTab) {
+                                                if (tabStrip.pendingHoverTab !== tabBtn.index || !tabHoverTimer.running) {
+                                                    tabStrip.pendingHoverTab = tabBtn.index;
+                                                    tabHoverTimer.restart();
+                                                }
+                                            } else {
+                                                tabHoverTimer.stop();
+                                                tabStrip.pendingHoverTab = -1;
+                                            }
+                                        }
+                                        onExited: {
+                                            if (tabStrip.pendingHoverTab === tabBtn.index) {
+                                                tabHoverTimer.stop();
+                                                tabStrip.pendingHoverTab = -1;
+                                            }
+                                            if (tabStrip.entryTab === tabBtn.index) {
+                                                tabStrip.entryTab = -1;
+                                                tabStrip.entryX = -1;
+                                                tabStrip.entryY = -1;
+                                            }
+                                        }
+                                        onClicked: {
+                                            tabHoverTimer.stop();
+                                            tabStrip.pendingHoverTab = -1;
+                                            dashWin.tabSelected(tabBtn.index);
+                                        }
                                     }
                                 }
                             }
@@ -1119,14 +1174,6 @@ PanelWindow {
                         }
                         clip: true
 
-                        Behavior on Layout.preferredHeight {
-                            NumberAnimation {
-                                duration: Theme.animTab
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveExpressive
-                            }
-                        }
-
                         // -----------------------------------------------------
                         // TAB 0: APPS Y BUSCADOR GLOBAL
                         // -----------------------------------------------------
@@ -1135,7 +1182,7 @@ PanelWindow {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             height: 376
-                            y: dashWin.activeTab === 0 ? 0 : 10
+                            y: 0
                             opacity: dashWin.activeTab === 0 ? 1.0 : 0.0
                             visible: opacity > 0.01
                             enabled: dashWin.activeTab === 0
@@ -1148,8 +1195,10 @@ PanelWindow {
                             onAppActivated: entry => dashWin.appActivated(entry)
                             onActionActivated: act => dashWin.actionActivated(act)
 
-                            Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
-                            Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
+                            Behavior on opacity {
+                                enabled: dashWin.activeTab === 0
+                                NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
+                            }
                         }
 
                         // -----------------------------------------------------
@@ -1159,14 +1208,16 @@ PanelWindow {
                             id: tabDashboard
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            y: dashWin.activeTab === 1 ? 0 : 10
+                            y: 0
                             opacity: dashWin.activeTab === 1 ? 1.0 : 0.0
                             visible: opacity > 0.01
                             enabled: dashWin.activeTab === 1
                             spacing: 12
 
-                            Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
-                            Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
+                            Behavior on opacity {
+                                enabled: dashWin.activeTab === 1
+                                NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
+                            }
 
                             // COLUMNA PRINCIPAL IZQUIERDA (Estado + Identidad arriba · Calendario + Sliders abajo)
                             ColumnLayout {
@@ -2396,14 +2447,16 @@ PanelWindow {
                             id: tabMedia
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            y: dashWin.activeTab === 2 ? 0 : 10
+                            y: 0
                             opacity: dashWin.activeTab === 2 ? 1.0 : 0.0
                             visible: opacity > 0.01
                             enabled: dashWin.activeTab === 2
                             spacing: 10
 
-                            Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
-                            Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
+                            Behavior on opacity {
+                                enabled: dashWin.activeTab === 2
+                                NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
+                            }
 
                             RowLayout {
                                 Layout.fillWidth: true
@@ -3027,14 +3080,16 @@ PanelWindow {
                             id: tabSystem
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            y: dashWin.activeTab === 4 ? 0 : 10
+                            y: 0
                             opacity: dashWin.activeTab === 4 ? 1.0 : 0.0
                             visible: opacity > 0.01
                             enabled: dashWin.activeTab === 4
                             spacing: 10
 
-                            Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
-                            Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
+                            Behavior on opacity {
+                                enabled: dashWin.activeTab === 4
+                                NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
+                            }
 
                             // 3 tarjetas métricas con sparklines en vivo
                             RowLayout {
@@ -3512,14 +3567,16 @@ PanelWindow {
                             id: tabDevAi
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            y: dashWin.activeTab === 3 ? 0 : 10
+                            y: 0
                             opacity: dashWin.activeTab === 3 ? 1.0 : 0.0
                             visible: opacity > 0.01
                             enabled: dashWin.activeTab === 3
                             spacing: 10
 
-                            Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
-                            Behavior on y { NumberAnimation { duration: Theme.animTab; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveExpressive } }
+                            Behavior on opacity {
+                                enabled: dashWin.activeTab === 3
+                                NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
+                            }
 
                             readonly property bool aiOn: Boolean(dashWin.sysState && dashWin.sysState.aiActive)
                             readonly property string aiDet: dashWin.sysState ? String(dashWin.sysState.aiDetail || "") : ""

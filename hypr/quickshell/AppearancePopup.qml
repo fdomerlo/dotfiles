@@ -183,21 +183,6 @@ PanelWindow {
             }
         }
 
-        // Oscurecimiento suave del fondo (equivalente a dim_around, sin blur)
-        Rectangle {
-            anchors.fill: parent
-            anchors.topMargin: appWin.barHeight
-            color: Theme.dimAround
-            opacity: appWin.revealed ? 1.0 : 0.0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: appWin.revealed ? Theme.animNormal : Theme.animClose
-                    easing.type: Easing.OutCubic
-                }
-            }
-        }
-
         MouseArea {
             anchors.fill: parent
             enabled: appWin.panelOpen

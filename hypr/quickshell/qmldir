@@ -12,4 +12,5 @@ SystemState 1.0 SystemState.qml
 DashboardPopup 1.0 DashboardPopup.qml
 PowerPopup 1.0 PowerPopup.qml
 TopBarOverlayBridge 1.0 TopBarOverlayBridge.qml
+ModalBackdrop 1.0 ModalBackdrop.qml
 BarWindow 1.0 BarWindow.qml

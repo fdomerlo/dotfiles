@@ -114,12 +114,8 @@ Rectangle {
     implicitHeight: contentCol.implicitHeight + 22
     radius: Theme.radiusMedium
     color: (cardMouse.containsMouse || keyboardSelected) ? Theme.surfaceContainerHigh : Theme.surfaceContainer
-    border.width: keyboardSelected ? 2 : 1
-    border.color: isCritical
-        ? Theme.error
-        : (keyboardSelected
-            ? Theme.primary
-            : (cardMouse.containsMouse ? Theme.outline : Theme.outlineVariant))
+    border.width: keyboardSelected ? 1 : 0
+    border.color: isCritical ? Theme.error : Theme.primary
     clip: true
 
     opacity: compact ? 1.0 : (entered ? 1.0 : 0.0)
@@ -235,7 +231,7 @@ Rectangle {
                         Layout.preferredWidth: 24
                         Layout.preferredHeight: 24
                         radius: 12
-                        color: closeMouse.containsMouse ? Theme.errorContainer : "transparent"
+                        color: closeMouse.containsMouse ? Theme.errorContainer : Qt.alpha(Theme.errorContainer, 0.0)
 
                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
 

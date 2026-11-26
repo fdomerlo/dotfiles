@@ -660,11 +660,15 @@ Item {
             width: resultList.width
             height: 52
             radius: Theme.radiusMedium
-            color: isSelected
-                ? Theme.primaryContainer
-                : (rowMouse.containsMouse ? Theme.surfaceContainer : "transparent")
+            color: "transparent"
 
-            Behavior on color { ColorAnimation { duration: Theme.animFast } }
+            Rectangle {
+                anchors.fill: parent
+                radius: Theme.radiusMedium
+                color: Theme.primaryContainer
+                opacity: rowItem.isSelected ? 1.0 : 0.0
+                Behavior on opacity { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
+            }
 
             RowLayout {
                 anchors.fill: parent

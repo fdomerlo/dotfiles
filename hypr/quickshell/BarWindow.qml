@@ -45,7 +45,10 @@ PanelWindow {
     readonly property int pillH: Math.max(26, barH - 10)
     readonly property bool isDashboardHere: dashboardOpen && (!dashboardScreen || dashboardScreen === screen)
     readonly property bool isNotchAppsHere: isDashboardHere && dashboardTab === 0
-    readonly property bool isNotchDashHere: isDashboardHere && dashboardTab !== 0
+    readonly property bool isNotchSysHere: isDashboardHere && dashboardTab === 4
+    readonly property bool isNotchDashHere: isDashboardHere && dashboardTab !== 0 && dashboardTab !== 4
+    readonly property int cpuTempC: sysState ? sysState.cpuTempC : -1
+    readonly property int memPercent: (sysState && sysState.memTotalGiB > 0) ? Math.round((sysState.memUsedGiB / sysState.memTotalGiB) * 100) : 0
     readonly property bool isNotifCenterHere: notifCenterOpen && (!notifCenterScreen || notifCenterScreen === screen)
     readonly property bool isAppearanceHere: appearanceOpen && (!appearanceScreen || appearanceScreen === screen)
     readonly property bool isClipboardHere: clipboardOpen && (!clipboardScreen || clipboardScreen === screen)
@@ -69,6 +72,8 @@ PanelWindow {
             return { kind: "menu", target: "apps", wsId: -1 };
         if (itemContainsBarPoint(centerClock, px, py))
             return { kind: "menu", target: "dashboard", wsId: -1 };
+        if (itemContainsBarPoint(sysBtn, px, py))
+            return { kind: "menu", target: "system", wsId: -1 };
         if (itemContainsBarPoint(themeBtn, px, py))
             return { kind: "menu", target: "appearance", wsId: -1 };
         if (itemContainsBarPoint(notifBtn, px, py))
@@ -162,7 +167,7 @@ PanelWindow {
     Rectangle {
         id: barFrame
         anchors.fill: parent
-        color: barWin.floatingMode ? "transparent" : Theme.surface
+        color: barWin.floatingMode ? Qt.alpha(Theme.surface, 0.0) : Theme.surface
         Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
 
         // Línea inferior sutil que se desvanece cuando un popout se acopla o en modo islas
@@ -172,7 +177,7 @@ PanelWindow {
             anchors.bottom: parent.bottom
             height: 1
             color: Theme.outlineVariant
-            opacity: (barWin.anyDockedOpen || barWin.floatingMode) ? 0.0 : 0.45
+            opacity: (barWin.anyDockedOpen || barWin.hasPopupsHere || barWin.floatingMode) ? 0.0 : 0.45
 
             Behavior on opacity { NumberAnimation { duration: Theme.animFast; easing.type: Easing.OutCubic } }
         }
@@ -237,7 +242,7 @@ PanelWindow {
                                     ? Theme.primary
                                     : (wsM.containsMouse
                                         ? Theme.surfaceContainerHighest
-                                        : (hasWins ? Theme.surfaceContainerHigh : "transparent")))
+                                        : (hasWins ? Theme.surfaceContainerHigh : Qt.alpha(Theme.surfaceContainerHighest, 0.0))))
 
                             Behavior on width {
                                 NumberAnimation {
@@ -304,11 +309,23 @@ PanelWindow {
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
                     Layout.preferredWidth: 34
                     radius: Theme.radiusFull
-                    color: (barWin.isNotchAppsHere || barWin.overviewOpen)
-                        ? Theme.primary
-                        : (launcherM.containsMouse ? Theme.surfaceContainerHighest : "transparent")
+                    color: "transparent"
 
-                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.surfaceContainerHighest
+                        opacity: (!barWin.anyDockedOpen && !barWin.isNotchAppsHere && !barWin.overviewOpen && launcherM.containsMouse) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.primary
+                        opacity: (barWin.isNotchAppsHere || barWin.overviewOpen) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
 
                     Text {
                         anchors.centerIn: parent
@@ -346,11 +363,23 @@ PanelWindow {
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
                     Layout.preferredWidth: clockRow.implicitWidth + 26
                     radius: Theme.radiusFull
-                    color: barWin.isNotchDashHere
-                        ? Theme.primaryContainer
-                        : (clkM.containsMouse ? Theme.surfaceContainerHighest : "transparent")
+                    color: "transparent"
 
-                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.surfaceContainerHighest
+                        opacity: (!barWin.anyDockedOpen && !barWin.isNotchDashHere && clkM.containsMouse) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.primaryContainer
+                        opacity: barWin.isNotchDashHere ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
 
                 Row {
                     id: clockRow
@@ -372,7 +401,7 @@ PanelWindow {
                         font.family: Theme.fontFamily
                         font.pixelSize: 14
                         font.weight: Font.Medium
-                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.fgMuted
+                        color: barWin.isNotchDashHere ? Theme.fgOnPrimaryContainer : Theme.fgMuted
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -380,7 +409,7 @@ PanelWindow {
                         width: 4
                         height: 4
                         radius: 2
-                        color: barWin.isDashboardHere ? Theme.primary : Theme.outline
+                        color: barWin.isNotchDashHere ? Theme.primary : Theme.outline
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -389,7 +418,7 @@ PanelWindow {
                         font.family: Theme.fontFamily
                         font.pixelSize: 15
                         font.weight: Font.Bold
-                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.fg
+                        color: barWin.isNotchDashHere ? Theme.fgOnPrimaryContainer : Theme.fg
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -399,7 +428,7 @@ PanelWindow {
                         text: "󰚩"
                         font.family: Theme.fontFamily
                         font.pixelSize: 14
-                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.tertiary
+                        color: barWin.isNotchDashHere ? Theme.fgOnPrimaryContainer : Theme.tertiary
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -409,7 +438,7 @@ PanelWindow {
                         text: "󰅶"
                         font.family: Theme.fontFamily
                         font.pixelSize: 14
-                        color: barWin.isDashboardHere ? Theme.fgOnPrimaryContainer : Theme.secondary
+                        color: barWin.isNotchDashHere ? Theme.fgOnPrimaryContainer : Theme.secondary
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -474,6 +503,107 @@ PanelWindow {
                         }
                     }
                 }
+
+                // Separador sutil de 1 px dentro de la isla unificada
+                Rectangle {
+                    visible: sysBtn.visible
+                    Layout.preferredWidth: 1
+                    Layout.preferredHeight: Math.max(12, barWin.pillH - 14)
+                    color: Qt.alpha(Theme.outlineVariant, 0.45)
+                }
+
+                // Botón Sistema / Telemetría (temperatura CPU + % RAM)
+                Rectangle {
+                    id: sysBtn
+                    visible: !barWin.sysState || barWin.sysState.showTelemetry
+                    Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
+                    Layout.preferredWidth: sysRow.implicitWidth + 18
+                    radius: Theme.radiusFull
+                    color: "transparent"
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.surfaceContainerHighest
+                        opacity: (!barWin.anyDockedOpen && !barWin.isNotchSysHere && sysM.containsMouse) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.primary
+                        opacity: barWin.isNotchSysHere ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Row {
+                        id: sysRow
+                        anchors.centerIn: parent
+                        spacing: 7
+
+                        Row {
+                            visible: barWin.cpuTempC >= 0
+                            spacing: 3
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                text: "󰔏"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 13
+                                color: barWin.isNotchSysHere
+                                    ? Theme.fgOnPrimary
+                                    : (barWin.cpuTempC >= 80 ? Theme.error : Theme.primary)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                text: barWin.cpuTempC + "°"
+                                font.family: Theme.monoFontFamily
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                                color: barWin.isNotchSysHere
+                                    ? Theme.fgOnPrimary
+                                    : (barWin.cpuTempC >= 80 ? Theme.error : Theme.fg)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        Row {
+                            spacing: 3
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                text: "󰍛"
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 13
+                                color: barWin.isNotchSysHere
+                                    ? Theme.fgOnPrimary
+                                    : (barWin.memPercent >= 88 ? Theme.error : Theme.secondary)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                text: barWin.memPercent + "%"
+                                font.family: Theme.monoFontFamily
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                                color: barWin.isNotchSysHere
+                                    ? Theme.fgOnPrimary
+                                    : (barWin.memPercent >= 88 ? Theme.error : Theme.fg)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: sysM
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: barWin.dashboardRequested(barWin.screen, 4)
+                    }
+                }
             }
         }
 
@@ -514,11 +644,23 @@ PanelWindow {
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
                     Layout.preferredWidth: 34
                     radius: Theme.radiusFull
-                    color: barWin.isAppearanceHere
-                        ? Theme.primary
-                        : (themeM.containsMouse ? Theme.surfaceContainerHighest : "transparent")
+                    color: "transparent"
 
-                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.surfaceContainerHighest
+                        opacity: (!barWin.anyDockedOpen && !barWin.isAppearanceHere && themeM.containsMouse) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.primary
+                        opacity: barWin.isAppearanceHere ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
 
                     Text {
                         anchors.centerIn: parent
@@ -558,13 +700,31 @@ PanelWindow {
                     Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
                     Layout.preferredWidth: notifRow.implicitWidth + 20
                     radius: Theme.radiusFull
-                    color: barWin.isNotifCenterHere
-                        ? Theme.primary
-                        : (barWin.dndEnabled
-                            ? Theme.errorContainer
-                            : (notifM.containsMouse ? Theme.surfaceContainerHighest : "transparent"))
+                    color: "transparent"
 
-                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.surfaceContainerHighest
+                        opacity: (!barWin.anyDockedOpen && !barWin.isNotifCenterHere && !barWin.dndEnabled && notifM.containsMouse) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.errorContainer
+                        opacity: (!barWin.isNotifCenterHere && barWin.dndEnabled) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.primary
+                        opacity: barWin.isNotifCenterHere ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
 
                     Row {
                         id: notifRow

@@ -24,8 +24,8 @@ Singleton {
     // evitar colisiones con el espacio de nombres de signal handlers de Qt6.
     // =========================================================================
 
-    // Superficie base de barra y paneles acoplados (alta solidez para uniones cóncavas limpias)
-    readonly property color surface: isDark ? "#f20d1317" : "#f4e9edf1"
+    // Superficie base opaca para barra, esquinas cóncavas y paneles acoplados (continuidad cromática exacta)
+    readonly property color surface: isDark ? "#0d1317" : "#e9edf1"
     readonly property color surfaceSolid: isDark ? "#0d1317" : "#e9edf1"
     readonly property color surfaceContainerLowest: isDark ? "#090e11" : "#ffffff"
     readonly property color surfaceContainerLow: isDark ? "#121a1f" : "#f6f8fa"
@@ -64,8 +64,8 @@ Singleton {
     readonly property color outline: isDark ? "#3f535c" : "#8c9aa7"
     readonly property color outlineVariant: isDark ? "#27363d" : "#cdd5dd"
     readonly property color scrim: isDark ? "#9905090c" : "#66121a22"
-    // Oscurecimiento de fondo equivalente a decoration:dim_around (0.40) sin blur
-    readonly property color dimAround: Qt.rgba(0, 0, 0, 0.40)
+    // Oscurecimiento suave del escritorio tras desplegables modales (opacos al 100%)
+    readonly property color dimAround: isDark ? Qt.rgba(0, 0, 0, 0.40) : Qt.rgba(0, 0, 0, 0.30)
 
     // =========================================================================
     // Alias de compatibilidad semántica (todos los componentes Quickshell)
