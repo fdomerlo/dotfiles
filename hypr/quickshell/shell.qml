@@ -55,7 +55,7 @@ ShellRoot {
     // Estado de popouts acoplados a la barra superior (notch unificado, energía e inhibidor)
     property bool dashboardOpen: false
     property bool dashboardMounted: false
-    property int dashboardTab: 1
+    property int dashboardTab: 2
     property var dashboardScreen: null
     property bool powerOpen: false
     property bool powerMounted: false
@@ -731,8 +731,10 @@ ShellRoot {
         const targetScr = scr || resolveFocusedScreen();
         if (target === "apps")
             openDashboard(targetScr, 0);
-        else if (target === "dashboard")
+        else if (target === "ai")
             openDashboard(targetScr, 1);
+        else if (target === "dashboard")
+            openDashboard(targetScr, 2);
         else if (target === "system")
             openDashboard(targetScr, 4);
         else if (target === "appearance")
@@ -752,13 +754,23 @@ ShellRoot {
             } else {
                 toggleDashboard(targetScr, 0);
             }
+        } else if (target === "ai") {
+            if (button === Qt.RightButton) {
+                closeAllMenus();
+                Quickshell.execDetached([Quickshell.env("HOME") + "/.config/hypr/scripts/ai.sh", "ask"]);
+            } else if (button === Qt.MiddleButton) {
+                closeAllMenus();
+                Quickshell.execDetached([Quickshell.env("HOME") + "/.config/hypr/scripts/ai.sh", "open"]);
+            } else {
+                toggleDashboard(targetScr, 1);
+            }
         } else if (target === "dashboard") {
             if (button === Qt.RightButton)
-                toggleDashboard(targetScr, 2);
+                toggleDashboard(targetScr, 3);
             else if (button === Qt.MiddleButton)
                 toggleDashboard(targetScr, 4);
             else
-                toggleDashboard(targetScr, 1);
+                toggleDashboard(targetScr, 2);
         } else if (target === "system") {
             toggleDashboard(targetScr, 4);
         } else if (target === "appearance") {
@@ -1130,11 +1142,11 @@ ShellRoot {
         if (!tabId)
             return 0;
         const key = String(tabId).toLowerCase();
-        if (key === "dashboard")
-            return 1;
-        if (key === "media" || key === "capturar")
-            return 2;
         if (key === "dev" || key === "ia")
+            return 1;
+        if (key === "dashboard")
+            return 2;
+        if (key === "media" || key === "capturar")
             return 3;
         if (key === "sistema" || key === "rendimiento")
             return 4;
@@ -1344,11 +1356,11 @@ ShellRoot {
         target: "dashboard"
 
         function toggle(): void {
-            root.toggleDashboard(null, 1);
+            root.toggleDashboard(null, 2);
         }
 
         function open(): void {
-            root.openDashboard(null, 1);
+            root.openDashboard(null, 2);
         }
 
         function openTab(tabIndex: int): void {
@@ -1358,7 +1370,7 @@ ShellRoot {
         // Abre o cambia de pestaña sin cerrar si ya está abierta en esa pestaña.
         function showTab(tabIndex: string): void {
             const idx = parseInt(tabIndex, 10);
-            root.openDashboard(null, isNaN(idx) ? 1 : idx);
+            root.openDashboard(null, isNaN(idx) ? 2 : idx);
         }
 
         function close(): void {
@@ -1370,11 +1382,11 @@ ShellRoot {
         target: "quicksettings"
 
         function toggle(): void {
-            root.toggleDashboard(null, 1);
+            root.toggleDashboard(null, 2);
         }
 
         function open(): void {
-            root.openDashboard(null, 1);
+            root.openDashboard(null, 2);
         }
 
         function close(): void {
@@ -1386,11 +1398,11 @@ ShellRoot {
         target: "calendar"
 
         function toggle(): void {
-            root.toggleDashboard(null, 1);
+            root.toggleDashboard(null, 2);
         }
 
         function open(): void {
-            root.openDashboard(null, 1);
+            root.openDashboard(null, 2);
         }
 
         function close(): void {
@@ -1450,11 +1462,11 @@ ShellRoot {
         target: "ai"
 
         function toggle(): void {
-            root.toggleDashboard(null, 3);
+            root.toggleDashboard(null, 1);
         }
 
         function open(): void {
-            root.openDashboard(null, 3);
+            root.openDashboard(null, 1);
         }
 
         function close(): void {

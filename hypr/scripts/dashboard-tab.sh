@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Abre el Dashboard de Quickshell en una pestaña concreta (0–4).
-#   0 Apps · 1 Dashboard · 2 Media · 3 Dev & IA · 4 Sistema
+#   0 Apps · 1 Dev & IA · 2 Dashboard · 3 Media · 4 Sistema
 # A diferencia de dashboard-toggle.sh, siempre abre o cambia de pestaña:
 # no cierra el panel si ya estaba abierto en esa misma pestaña.
 # ==============================================================================
 set -euo pipefail
 
-tab="${1:-1}"
+tab="${1:-2}"
 case "$tab" in
     0|1|2|3|4) ;;
     *) tab=1 ;;

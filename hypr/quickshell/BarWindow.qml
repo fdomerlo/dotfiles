@@ -45,8 +45,10 @@ PanelWindow {
     readonly property int pillH: Math.max(26, barH - 10)
     readonly property bool isDashboardHere: dashboardOpen && (!dashboardScreen || dashboardScreen === screen)
     readonly property bool isNotchAppsHere: isDashboardHere && dashboardTab === 0
+    readonly property bool isNotchAiHere: isDashboardHere && dashboardTab === 1
     readonly property bool isNotchSysHere: isDashboardHere && dashboardTab === 4
-    readonly property bool isNotchDashHere: isDashboardHere && dashboardTab !== 0 && dashboardTab !== 4
+    readonly property bool isNotchDashHere: isDashboardHere && (dashboardTab === 2 || dashboardTab === 3)
+    readonly property bool aiActive: Boolean(sysState && sysState.aiActive)
     readonly property int cpuTempC: sysState ? sysState.cpuTempC : -1
     readonly property int memPercent: (sysState && sysState.memTotalGiB > 0) ? Math.round((sysState.memUsedGiB / sysState.memTotalGiB) * 100) : 0
     readonly property bool isNotifCenterHere: notifCenterOpen && (!notifCenterScreen || notifCenterScreen === screen)
@@ -70,6 +72,8 @@ PanelWindow {
             return { kind: "none", target: "", wsId: -1 };
         if (itemContainsBarPoint(appsBtn, px, py))
             return { kind: "menu", target: "apps", wsId: -1 };
+        if (itemContainsBarPoint(aiBtn, px, py))
+            return { kind: "menu", target: "ai", wsId: -1 };
         if (itemContainsBarPoint(centerClock, px, py))
             return { kind: "menu", target: "dashboard", wsId: -1 };
         if (itemContainsBarPoint(sysBtn, px, py))
@@ -350,6 +354,67 @@ PanelWindow {
                     }
                 }
 
+                // Botón Dev & IA (clic izq: pestaña IA · clic der: pregunta rápida · clic medio: OpenCode)
+                Rectangle {
+                    id: aiBtn
+                    Layout.preferredHeight: Math.max(22, barWin.pillH - 4)
+                    Layout.preferredWidth: 34
+                    radius: Theme.radiusFull
+                    color: "transparent"
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.surfaceContainerHighest
+                        opacity: (!barWin.anyDockedOpen && !barWin.isNotchAiHere && !barWin.aiActive && aiM.containsMouse) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.tertiaryContainer
+                        border.width: 1
+                        border.color: Qt.alpha(Theme.tertiary, 0.45)
+                        opacity: (!barWin.isNotchAiHere && barWin.aiActive) ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radiusFull
+                        color: Theme.primary
+                        opacity: barWin.isNotchAiHere ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰚩"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 16
+                        color: barWin.isNotchAiHere
+                            ? Theme.fgOnPrimary
+                            : (barWin.aiActive ? Theme.tertiary : Theme.fgMuted)
+                    }
+
+                    MouseArea {
+                        id: aiM
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton)
+                                barWin.runScript("ai.sh", ["ask"]);
+                            else if (mouse.button === Qt.MiddleButton)
+                                barWin.runScript("ai.sh", ["open"]);
+                            else
+                                barWin.dashboardRequested(barWin.screen, 1);
+                        }
+                    }
+                }
+
                 // Separador sutil de 1 px dentro de la isla unificada
                 Rectangle {
                     Layout.preferredWidth: 1
@@ -422,16 +487,6 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
-                    // Indicador discreto de servicio OpenCode IA activo
-                    Text {
-                        visible: Boolean(barWin.sysState && barWin.sysState.aiActive)
-                        text: "󰚩"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 14
-                        color: barWin.isNotchDashHere ? Theme.fgOnPrimaryContainer : Theme.tertiary
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
                     // Indicador discreto de reposo inhibido
                     Text {
                         visible: barWin.idleInhibited
@@ -495,11 +550,11 @@ PanelWindow {
                         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                         onClicked: mouse => {
                             if (mouse.button === Qt.RightButton)
-                                barWin.dashboardRequested(barWin.screen, 2);
+                                barWin.dashboardRequested(barWin.screen, 3);
                             else if (mouse.button === Qt.MiddleButton)
                                 barWin.dashboardRequested(barWin.screen, 4);
                             else
-                                barWin.dashboardRequested(barWin.screen, 1);
+                                barWin.dashboardRequested(barWin.screen, 2);
                         }
                     }
                 }

@@ -62,9 +62,9 @@ PanelWindow {
 
     readonly property var tabMeta: [
         { id: "apps", label: "Apps", glyph: "󰀻" },
+        { id: "dev", label: "Dev & IA", glyph: "󰚩" },
         { id: "dashboard", label: "Dashboard", glyph: "󰕮" },
         { id: "media", label: "Media", glyph: "󰎆" },
-        { id: "dev", label: "Dev & IA", glyph: "󰅬" },
         { id: "system", label: "Sistema", glyph: "󰓅" }
     ]
 
@@ -318,6 +318,14 @@ PanelWindow {
     function focusableDescriptors() {
         const out = [];
         if (activeTab === 1) {
+            out.push({ item: aiSvcM, id: "aiService" });
+            for (let i = 0; i < aiQuickRepeater.count; i++)
+                out.push({ repeater: aiQuickRepeater, index: i, id: "aiQuick", data: aiQuickActions[i] });
+            for (let i = 0; i < aiContextRepeater.count; i++)
+                out.push({ repeater: aiContextRepeater, index: i, id: "aiContext", data: aiContextActions[i] });
+            for (let i = 0; i < devToolsRepeater.count; i++)
+                out.push({ repeater: devToolsRepeater, index: i, id: "dev", data: devToolsActions[i] });
+        } else if (activeTab === 2) {
             out.push({ item: qNetTile, id: "net" });
             out.push({ item: qBtTile, id: "bt" });
             out.push({ item: qDndTile, id: "dnd" });
@@ -336,7 +344,7 @@ PanelWindow {
                 out.push({ item: todayChipM, id: "calToday" });
             out.push({ item: cNextM, id: "calNext" });
             out.push({ item: dashPerfSummaryCard, id: "perf" });
-        } else if (activeTab === 2) {
+        } else if (activeTab === 3) {
             for (let i = 0; i < playerPillRepeater.count; i++)
                 out.push({ repeater: playerPillRepeater, index: i, id: "player", data: i });
             out.push({ item: mPrevM, id: "mediaPrev" });
@@ -349,14 +357,6 @@ PanelWindow {
             for (let i = 0; i < capRepeater.count; i++)
                 out.push({ repeater: capRepeater, index: i, id: "capture", data: captureActions[i] });
             out.push({ item: pavuM, id: "pavu" });
-        } else if (activeTab === 3) {
-            out.push({ item: aiSvcM, id: "aiService" });
-            for (let i = 0; i < aiQuickRepeater.count; i++)
-                out.push({ repeater: aiQuickRepeater, index: i, id: "aiQuick", data: aiQuickActions[i] });
-            for (let i = 0; i < aiContextRepeater.count; i++)
-                out.push({ repeater: aiContextRepeater, index: i, id: "aiContext", data: aiContextActions[i] });
-            for (let i = 0; i < devToolsRepeater.count; i++)
-                out.push({ repeater: devToolsRepeater, index: i, id: "dev", data: devToolsActions[i] });
         } else if (activeTab === 4) {
             out.push({ item: openBtopM, id: "btop" });
             for (let i = 0; i < trayRepeater.count; i++)
@@ -614,7 +614,7 @@ PanelWindow {
         id: mediaProgressTimer
         interval: 1000
         repeat: true
-        running: dashWin.panelOpen && dashWin.activeTab === 2 && Boolean(dashWin.activePlayer && dashWin.activePlayer.isPlaying)
+        running: dashWin.panelOpen && dashWin.activeTab === 3 && Boolean(dashWin.activePlayer && dashWin.activePlayer.isPlaying)
         onTriggered: dashWin.mediaTick += 1
     }
 
@@ -803,7 +803,7 @@ PanelWindow {
             barH: dashWin.barH
             screen: dashWin.screen
             active: dashWin.panelOpen
-            currentTarget: dashWin.activeTab === 0 ? "apps" : (dashWin.activeTab === 4 ? "system" : "dashboard")
+            currentTarget: dashWin.activeTab === 0 ? "apps" : (dashWin.activeTab === 1 ? "ai" : (dashWin.activeTab === 4 ? "system" : "dashboard"))
             barHitTester: dashWin.barHitTester
             onMenuHovered: (scr, target) => dashWin.barMenuHovered(scr, target)
             onMenuClicked: (scr, target, btn) => dashWin.barMenuClicked(scr, target, btn)
@@ -1167,9 +1167,9 @@ PanelWindow {
                         Layout.fillWidth: true
                         Layout.preferredHeight: {
                             if (dashWin.activeTab === 0) return 376;
-                            if (dashWin.activeTab === 1) return tabDashboard.implicitHeight;
-                            if (dashWin.activeTab === 2) return tabMedia.implicitHeight;
-                            if (dashWin.activeTab === 3) return tabDevAi.implicitHeight;
+                            if (dashWin.activeTab === 1) return tabDevAi.implicitHeight;
+                            if (dashWin.activeTab === 2) return tabDashboard.implicitHeight;
+                            if (dashWin.activeTab === 3) return tabMedia.implicitHeight;
                             return tabSystem.implicitHeight;
                         }
                         clip: true
@@ -1202,20 +1202,20 @@ PanelWindow {
                         }
 
                         // -----------------------------------------------------
-                        // TAB 1: DASHBOARD (estilo Caelestia + Quick Controls)
+                        // TAB 2: DASHBOARD (estilo Caelestia + Quick Controls)
                         // -----------------------------------------------------
                         RowLayout {
                             id: tabDashboard
                             anchors.left: parent.left
                             anchors.right: parent.right
                             y: 0
-                            opacity: dashWin.activeTab === 1 ? 1.0 : 0.0
+                            opacity: dashWin.activeTab === 2 ? 1.0 : 0.0
                             visible: opacity > 0.01
-                            enabled: dashWin.activeTab === 1
+                            enabled: dashWin.activeTab === 2
                             spacing: 12
 
                             Behavior on opacity {
-                                enabled: dashWin.activeTab === 1
+                                enabled: dashWin.activeTab === 2
                                 NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
                             }
 
@@ -2448,13 +2448,13 @@ PanelWindow {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             y: 0
-                            opacity: dashWin.activeTab === 2 ? 1.0 : 0.0
+                            opacity: dashWin.activeTab === 3 ? 1.0 : 0.0
                             visible: opacity > 0.01
-                            enabled: dashWin.activeTab === 2
+                            enabled: dashWin.activeTab === 3
                             spacing: 10
 
                             Behavior on opacity {
-                                enabled: dashWin.activeTab === 2
+                                enabled: dashWin.activeTab === 3
                                 NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
                             }
 
@@ -3568,13 +3568,13 @@ PanelWindow {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             y: 0
-                            opacity: dashWin.activeTab === 3 ? 1.0 : 0.0
+                            opacity: dashWin.activeTab === 1 ? 1.0 : 0.0
                             visible: opacity > 0.01
-                            enabled: dashWin.activeTab === 3
+                            enabled: dashWin.activeTab === 1
                             spacing: 10
 
                             Behavior on opacity {
-                                enabled: dashWin.activeTab === 3
+                                enabled: dashWin.activeTab === 1
                                 NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
                             }
 
