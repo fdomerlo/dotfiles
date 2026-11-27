@@ -42,11 +42,31 @@ Item {
     property string cpuModel: ""
     readonly property string userName: Quickshell.env("USER") || "usuario"
 
+    // Clima (sonda periódica vía hypr/scripts/weather.sh)
+    property bool weatherReady: false
+    property bool weatherLoading: false
+    property bool weatherStale: false
+    property int weatherTempC: 0
+    property int weatherFeelsLikeC: 0
+    property int weatherMinC: 0
+    property int weatherMaxC: 0
+    property int weatherHumidity: 0
+    property int weatherWindKmh: 0
+    property string weatherCondition: ""
+    property string weatherGlyph: "󰖐"
+    property bool weatherIsDay: true
+    property string weatherCity: ""
+    property string weatherError: ""
+    property string _weatherConfigSig: ""
+    readonly property string weatherScriptPath: (Quickshell.env("HOME") || "") + "/.config/hypr/scripts/weather.sh"
+
     // Overrides locales opcionales (~/.config/quickshell/local.json)
     property int barHeight: 40
     property bool showTelemetry: true
     property bool showMedia: true
     property string barStyle: "bar" // "bar" | "islands" | "auto"
+    property string aiBackend: "opencode" // "opencode" | "agy"
+    property string aiAgyModel: "flash"
 
     property real _prevCpuTotal: 0
     property real _prevCpuIdle: 0
@@ -106,21 +126,50 @@ Item {
                 sys.showMedia = cfg.showMedia;
             if (cfg.barStyle === "bar" || cfg.barStyle === "islands" || cfg.barStyle === "auto")
                 sys.barStyle = cfg.barStyle;
+            if (cfg.aiBackend === "opencode" || cfg.aiBackend === "agy")
+                sys.aiBackend = cfg.aiBackend;
+            if (typeof cfg.aiAgyModel === "string" && cfg.aiAgyModel.trim().length > 0)
+                sys.aiAgyModel = cfg.aiAgyModel.trim();
+            const weatherSig = JSON.stringify([cfg.weatherLocation || "", cfg.weatherLat, cfg.weatherLon, cfg.weatherCity || ""]);
+            if (sys._weatherConfigSig === "") {
+                sys._weatherConfigSig = weatherSig;
+            } else if (sys._weatherConfigSig !== weatherSig) {
+                sys._weatherConfigSig = weatherSig;
+                sys.refreshWeather(true);
+            }
         } catch (e) {
             // Ignorar JSON inválido en override local
         }
+    }
+
+    function updateLocalConfigKey(key, value) {
+        Quickshell.execDetached([
+            "python3", "-c",
+            "import json, os, sys; p, k, v = sys.argv[1], sys.argv[2], sys.argv[3]; os.makedirs(os.path.dirname(p), exist_ok=True)\ntry:\n with open(p, encoding='utf-8') as f: d = json.load(f)\n if not isinstance(d, dict): d = {}\nexcept Exception: d = {}\nd[k] = v\ntmp = p + '.tmp'\nwith open(tmp, 'w', encoding='utf-8') as f: json.dump(d, f, indent=2); f.write('\\n')\nos.replace(tmp, p)\n",
+            sys.localConfigPath,
+            key,
+            value
+        ]);
     }
 
     function setBarStyle(mode) {
         const key = String(mode || "").trim().toLowerCase();
         const norm = (key === "islands" || key === "auto") ? key : "bar";
         sys.barStyle = norm;
-        Quickshell.execDetached([
-            "python3", "-c",
-            "import json, os, sys; p, m = sys.argv[1], sys.argv[2]; os.makedirs(os.path.dirname(p), exist_ok=True)\ntry:\n with open(p, encoding='utf-8') as f: d = json.load(f)\n if not isinstance(d, dict): d = {}\nexcept Exception: d = {}\nd['barStyle'] = m\ntmp = p + '.tmp'\nwith open(tmp, 'w', encoding='utf-8') as f: json.dump(d, f, indent=2); f.write('\\n')\nos.replace(tmp, p)\n",
-            sys.localConfigPath,
-            norm
-        ]);
+        updateLocalConfigKey("barStyle", norm);
+    }
+
+    function setAiBackend(backend) {
+        const key = String(backend || "").trim().toLowerCase();
+        const norm = (key === "agy" || key === "antigravity") ? "agy" : "opencode";
+        sys.aiBackend = norm;
+        updateLocalConfigKey("aiBackend", norm);
+    }
+
+    function setAiAgyModel(modelKey) {
+        const norm = String(modelKey || "").trim() || "flash";
+        sys.aiAgyModel = norm;
+        updateLocalConfigKey("aiAgyModel", norm);
     }
 
     function pushHistory(arr, value) {
@@ -254,6 +303,8 @@ Item {
                         sys.netKind = p[1] || "disconnected";
                         sys.netLabel = p[2] || "";
                         sys.vpnName = p[3] || "";
+                        if (sys.netKind !== "disconnected" && !sys.weatherReady && !sys.weatherLoading)
+                            sys.refreshWeather(false);
                     } else if (p[0] === "DISK" && p.length >= 4) {
                         sys.diskPercent = parseInt(p[1], 10) || 0;
                         sys.diskUsed = p[2] || "0G";
@@ -291,11 +342,69 @@ Item {
         }
     }
 
+    // Sonda de clima (cada 15 min o bajo demanda; usa caché local con TTL)
+    Process {
+        id: weatherProbe
+        onRunningChanged: {
+            if (!running)
+                sys.weatherLoading = false;
+        }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(String(text || "").trim());
+                    if (data && data.ok) {
+                        sys.weatherReady = true;
+                        sys.weatherStale = Boolean(data.stale);
+                        sys.weatherTempC = Number(data.tempC) || 0;
+                        sys.weatherFeelsLikeC = Number(data.feelsLikeC) || 0;
+                        sys.weatherMinC = Number(data.minC) || 0;
+                        sys.weatherMaxC = Number(data.maxC) || 0;
+                        sys.weatherHumidity = Number(data.humidity) || 0;
+                        sys.weatherWindKmh = Number(data.windKmh) || 0;
+                        sys.weatherCondition = String(data.condition || "");
+                        sys.weatherGlyph = String(data.glyph || "󰖐");
+                        sys.weatherIsDay = data.isDay !== false;
+                        sys.weatherCity = String(data.city || "");
+                        sys.weatherError = "";
+                    } else if (!sys.weatherReady) {
+                        sys.weatherError = String((data && data.error) || "Sin conexión");
+                    }
+                } catch (e) {
+                    if (!sys.weatherReady)
+                        sys.weatherError = "Sin conexión";
+                }
+                sys.weatherLoading = false;
+            }
+        }
+    }
+
+    Timer {
+        id: weatherTimer
+        interval: 900000
+        repeat: true
+        running: true
+        triggeredOnStart: true
+        onTriggered: sys.refreshWeather(false)
+    }
+
+    function refreshWeather(force) {
+        if (weatherProbe.running)
+            return;
+        sys.weatherLoading = true;
+        weatherProbe.command = force
+            ? ["bash", sys.weatherScriptPath, "--force"]
+            : ["bash", sys.weatherScriptPath];
+        weatherProbe.running = true;
+    }
+
     function refreshAll() {
         if (!fastProbe.running)
             fastProbe.running = true;
         if (!slowProbe.running)
             slowProbe.running = true;
+        if (!sys.weatherReady && !sys.weatherLoading)
+            sys.refreshWeather(false);
     }
 
     function refreshSlow() {

@@ -1,42 +1,48 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# hypr/scripts/ai.sh - IA integrada en Hyprland mediante OpenCode CLI.
+# hypr/scripts/ai.sh - IA integrada en Hyprland (OpenCode CLI / Antigravity CLI).
 #
 # Acciones rápidas sobre selección, portapapeles, pipes y repo Git activo, sin
-# daemons automáticos ni modelos locales. El proveedor se conecta con `/connect`
-# y el modelo por tarea se puede forzar con AI_MODEL=provider/model (o por
-# categoría con AI_MODEL_TEXT / AI_MODEL_VISION / AI_MODEL_CODE).
+# daemons automáticos ni modelos locales. El motor activo se elige con
+# AI_BACKEND=opencode|agy, `~/.config/quickshell/local.json` (.aiBackend) o
+# `ai.sh backend`.
 #
 # Uso:
 #   ai.sh menu        # menú de acciones (Super+Shift+A)
-#   ai.sh open        # abrir TUI de OpenCode en el repo activo (Super+Shift+I)
+#   ai.sh open        # abrir TUI del motor activo en el repo (Super+Shift+I)
 #   ai.sh explain     # explicar selección primaria o portapapeles (Super+Ctrl+I)
 #   ai.sh ask [texto] # preguntar (interactivo o por CLI/stdin)
 #   ai.sh error|summarize|translate|window|image|diff|commit
-#   ai.sh service start|stop|toggle|status   # servicio de fondo opcional de OpenCode
+#   ai.sh backend [opencode|agy|toggle|status]  # motor activo
+#   ai.sh model [status|flash|flash-low|flash-medium|flash-high|default|<id>]
+#   ai.sh service start|stop|toggle|status      # servicio de fondo opcional de OpenCode
 #   ai.sh __run <mode> <title> <prompt-file> [attach]   # interno
 #
-# Por defecto usa `--standalone` (servidor efímero que muere con el proceso).
-# Solo reutiliza el servicio de fondo (omitiendo `--standalone`) si ya está
-# activo; nunca lo inicia automáticamente.
+# En OpenCode usa `--standalone` por defecto y reutiliza el servicio de fondo
+# solo si ya está activo. En Antigravity (`agy`) usa por defecto los modelos
+# Flash (`gemini-3.8-flash-low` / `gemini-3.8-flash-medium`) y
+# `--disable-slash-commands` (con fallback a OpenCode para imágenes).
 # ==============================================================================
 set -euo pipefail
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 DOTFILES="${DOTFILES_DIR:-$HOME/.dotfiles}"
+LOCAL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/local.json"
 export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.local/share/fnm:/usr/local/bin:$PATH"
 
 _CLEANUP_FILES=()
 register_cleanup() {
     local f
     for f in "$@"; do
-        [ -n "$f" ] && _CLEANUP_FILES+=("$f")
+        if [ -n "$f" ]; then
+            _CLEANUP_FILES+=("$f")
+        fi
     done
 }
 
 cleanup_tmp() {
     if [ "${#_CLEANUP_FILES[@]}" -gt 0 ]; then
-        rm -f "${_CLEANUP_FILES[@]}" 2>/dev/null || true
+        rm -rf "${_CLEANUP_FILES[@]}" 2>/dev/null || true
     fi
 }
 trap cleanup_tmp EXIT HUP INT TERM
@@ -57,6 +63,11 @@ require_foot() {
 require_opencode() {
     command -v opencode >/dev/null 2>&1 ||
         die "OpenCode no está instalado (ejecutá 'make devai')."
+}
+
+require_agy() {
+    command -v agy >/dev/null 2>&1 ||
+        die "Antigravity CLI (agy) no está instalado (ejecutá 'make devai')."
 }
 
 read_stdin() {
@@ -115,9 +126,14 @@ active_git_repo() {
     return 1
 }
 
-# Servicio de fondo de OpenCode: `start` lo enciende, `stop` lo apaga,
-# `toggle` alterna y `status` imprime la URL activa o "detenido".
+# Servicio de fondo de OpenCode: `service_running` detecta por proceso sin
+# levantar el binario; `service_url` consulta la URL solo si está corriendo.
+service_running() {
+    pgrep -u "${USER:-$(id -un)}" -f '(^|/)opencode[[:space:]]+serve[[:space:]]+--service([[:space:]]|$)' >/dev/null 2>&1
+}
+
 service_url() {
+    service_running || return 1
     command -v opencode >/dev/null 2>&1 || return 1
     local status
     status="$(opencode service status 2>/dev/null | head -n1 | tr -d '\r' || true)"
@@ -127,6 +143,114 @@ service_url() {
 
 signal_waybar_ai() {
     command -v qs >/dev/null 2>&1 && qs ipc call system refresh >/dev/null 2>&1 || true
+}
+
+normalize_backend() {
+    local b="${1:-}"
+    b="${b,,}"
+    case "$b" in
+        agy|antigravity) printf 'agy\n' ;;
+        *) printf 'opencode\n' ;;
+    esac
+}
+
+read_local_config_key() {
+    local key="$1"
+    [ -f "$LOCAL_CONFIG" ] || return 0
+    if command -v jq >/dev/null 2>&1; then
+        jq -r --arg k "$key" '.[$k] // empty' "$LOCAL_CONFIG" 2>/dev/null || true
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print(d.get(sys.argv[2],""))' "$LOCAL_CONFIG" "$key" 2>/dev/null || true
+    fi
+}
+
+write_local_config_key() {
+    local key="$1" val="$2"
+    python3 - "$LOCAL_CONFIG" "$key" "$val" <<'PY'
+import json, os, sys
+p, k, v = sys.argv[1], sys.argv[2], sys.argv[3]
+os.makedirs(os.path.dirname(p), exist_ok=True)
+try:
+    with open(p, encoding="utf-8") as f:
+        d = json.load(f)
+    if not isinstance(d, dict):
+        d = {}
+except Exception:
+    d = {}
+d[k] = v
+tmp = p + ".tmp"
+with open(tmp, "w", encoding="utf-8") as f:
+    json.dump(d, f, indent=2)
+    f.write("\n")
+os.replace(tmp, p)
+PY
+}
+
+resolve_backend() {
+    if [ -n "${AI_BACKEND:-}" ]; then
+        normalize_backend "$AI_BACKEND"
+        return 0
+    fi
+    normalize_backend "$(read_local_config_key aiBackend)"
+}
+
+AGY_MODEL_FLASH_LOW="gemini-3.8-flash-low"
+AGY_MODEL_FLASH_MEDIUM="gemini-3.8-flash-medium"
+AGY_MODEL_FLASH_HIGH="gemini-3.8-flash-high"
+
+normalize_agy_model_pref() {
+    local pref="${1:-}" lower
+    lower="${pref,,}"
+    case "$lower" in
+        ""|auto|flash) printf 'flash\n' ;;
+        flash-low|low) printf 'flash-low\n' ;;
+        flash-medium|flash-med|medium|med) printf 'flash-medium\n' ;;
+        flash-high|high) printf 'flash-high\n' ;;
+        default|pro) printf 'default\n' ;;
+        *) printf '%s\n' "$pref" ;;
+    esac
+}
+
+resolve_agy_model_pref() {
+    if [ -n "${AI_AGY_MODEL:-}" ]; then
+        printf '%s\n' "$AI_AGY_MODEL"
+        return 0
+    fi
+    if [ -n "${AI_MODEL:-}" ] && [[ "$AI_MODEL" != opencode/* ]]; then
+        printf '%s\n' "$AI_MODEL"
+        return 0
+    fi
+    local val
+    val="$(read_local_config_key aiAgyModel)"
+    printf '%s\n' "${val:-flash}"
+}
+
+agy_model_for_mode() {
+    local mode="$1" pref
+    pref="$(normalize_agy_model_pref "$(resolve_agy_model_pref)")"
+    case "$pref" in
+        default)
+            printf '\n'
+            ;;
+        flash-low)
+            printf '%s\n' "$AGY_MODEL_FLASH_LOW"
+            ;;
+        flash-medium)
+            printf '%s\n' "$AGY_MODEL_FLASH_MEDIUM"
+            ;;
+        flash-high)
+            printf '%s\n' "$AGY_MODEL_FLASH_HIGH"
+            ;;
+        flash)
+            case "$mode" in
+                error|diff) printf '%s\n' "$AGY_MODEL_FLASH_MEDIUM" ;;
+                ask|explain|summarize|translate|commit|*) printf '%s\n' "$AGY_MODEL_FLASH_LOW" ;;
+            esac
+            ;;
+        *)
+            printf '%s\n' "$pref"
+            ;;
+    esac
 }
 
 model_for_mode() {
@@ -157,7 +281,7 @@ prepare_opencode_run_args() {
     OPENCODE_ARGS=(run --archived)
     OPENCODE_MODEL="$(model_for_mode "$mode")"
 
-    if service_url >/dev/null 2>&1; then
+    if service_running; then
         # En OpenCode v2.3.0, omitir --standalone conecta al servicio activo
         # usando sus credenciales gestionadas (evita pedir OPENCODE_PASSWORD).
         OPENCODE_TRANSPORT="servicio cálido"
@@ -170,6 +294,70 @@ prepare_opencode_run_args() {
     if [ -n "$attach" ] && [ -f "$attach" ]; then
         OPENCODE_ARGS+=(--file "$attach")
     fi
+}
+
+BACKEND_USED=""
+BACKEND_LABEL=""
+BACKEND_WORK_DIR=""
+BACKEND_CMD=()
+
+prepare_backend_cmd() {
+    local mode="$1" attach="${2:-}" requested effort model
+    requested="$(resolve_backend)"
+    BACKEND_CMD=()
+    BACKEND_WORK_DIR=""
+
+    if [ "$requested" = "agy" ]; then
+        if [ -n "$attach" ] && [ -f "$attach" ]; then
+            if command -v opencode >/dev/null 2>&1; then
+                prepare_opencode_run_args "$mode" "$attach"
+                BACKEND_USED="opencode"
+                BACKEND_LABEL="opencode · $OPENCODE_MODEL (fallback visión)"
+                BACKEND_CMD=(opencode "${OPENCODE_ARGS[@]}")
+                return 0
+            fi
+            notify "IA" "El análisis de imágenes requiere OpenCode (ejecutá 'make devai')."
+            echo "El análisis de imágenes requiere OpenCode (ejecutá 'make devai')." >&2
+            return 1
+        fi
+
+        if ! command -v agy >/dev/null 2>&1; then
+            notify "IA" "Antigravity CLI (agy) no está instalado (ejecutá 'make devai')."
+            echo "Antigravity CLI (agy) no está instalado (ejecutá 'make devai')." >&2
+            return 1
+        fi
+
+        model="$(agy_model_for_mode "$mode")"
+        BACKEND_USED="agy"
+        BACKEND_CMD=(agy --output-format text --disable-slash-commands)
+        if [ -n "$model" ]; then
+            BACKEND_CMD+=(--model "$model")
+            if [ -n "${AI_AGY_EFFORT:-}" ]; then
+                BACKEND_CMD+=(--effort "$AI_AGY_EFFORT")
+            fi
+            BACKEND_LABEL="agy · $model${AI_AGY_EFFORT:+, effort=$AI_AGY_EFFORT}"
+        else
+            effort="${AI_AGY_EFFORT:-low}"
+            BACKEND_CMD+=(--effort "$effort")
+            BACKEND_LABEL="agy · default (effort=$effort)"
+        fi
+        BACKEND_CMD+=(-p)
+        BACKEND_WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ai-agy-wd.XXXXXX")"
+        register_cleanup "$BACKEND_WORK_DIR"
+        return 0
+    fi
+
+    if ! command -v opencode >/dev/null 2>&1; then
+        notify "IA" "OpenCode no está instalado (ejecutá 'make devai')."
+        echo "OpenCode no está instalado (ejecutá 'make devai')." >&2
+        return 1
+    fi
+
+    prepare_opencode_run_args "$mode" "$attach"
+    BACKEND_USED="opencode"
+    BACKEND_LABEL="$OPENCODE_MODEL ($OPENCODE_TRANSPORT)"
+    BACKEND_CMD=(opencode "${OPENCODE_ARGS[@]}")
+    return 0
 }
 
 monitor_window_size() {
@@ -199,7 +387,9 @@ launch_ai_terminal() {
     local size
     size="$(monitor_window_size "$pct_w" "$pct_h" || true)"
     local -a common_args=(--app-id=ai-float --title="$title")
-    [ -n "$size" ] && common_args+=(--window-size-pixels="$size")
+    if [ -n "$size" ]; then
+        common_args+=(--window-size-pixels="$size")
+    fi
 
     local foot_sock="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/foot-${WAYLAND_DISPLAY:-wayland-1}.sock"
     if command -v footclient >/dev/null 2>&1 && [ -S "$foot_sock" ]; then
@@ -229,26 +419,100 @@ render_markdown() {
     fi
 }
 
+run_backend_streaming() {
+    local output_file="$1" err_file="$2" metrics_file="$3" work_dir="$4" stream_flag="$5"
+    shift 5
+    [ "${1:-}" = "--" ] && shift
+
+    python3 - "$output_file" "$err_file" "$metrics_file" "$work_dir" "$stream_flag" "$@" <<'PY'
+import os
+import subprocess
+import sys
+import time
+
+output_file, err_file, metrics_file, work_dir, stream_flag = sys.argv[1:6]
+cmd = sys.argv[6:]
+stream = stream_flag == "1"
+
+t0 = time.monotonic()
+ttft = None
+first_chunk = False
+ends_nl = True
+
+with open(output_file, "wb") as out_f, open(err_file, "wb") as err_f:
+    proc = subprocess.Popen(
+        cmd,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=err_f,
+        cwd=work_dir or None,
+    )
+    fd = proc.stdout.fileno()
+    is_tty = sys.stdout.isatty()
+    while True:
+        chunk = os.read(fd, 1024)
+        if not chunk:
+            break
+        if not first_chunk:
+            ttft = time.monotonic() - t0
+            first_chunk = True
+            if stream and is_tty:
+                sys.stdout.buffer.write(b"\033[1A\033[K")
+                sys.stdout.buffer.flush()
+        out_f.write(chunk)
+        out_f.flush()
+        if stream:
+            sys.stdout.buffer.write(chunk)
+            sys.stdout.buffer.flush()
+        ends_nl = chunk.endswith(b"\n")
+    proc.stdout.close()
+    rc = proc.wait()
+
+total = time.monotonic() - t0
+if ttft is None:
+    ttft = total
+
+if stream:
+    if first_chunk and not ends_nl:
+        sys.stdout.buffer.write(b"\n")
+        sys.stdout.buffer.flush()
+    elif not first_chunk and is_tty:
+        sys.stdout.buffer.write(b"\033[1A\033[K")
+        sys.stdout.buffer.flush()
+
+with open(metrics_file, "w", encoding="utf-8") as mf:
+    mf.write(f"{ttft:.2f}|{total:.2f}|{1 if first_chunk else 0}\n")
+
+sys.exit(rc)
+PY
+}
+
 run_inline() {
     local mode="$1" prompt="$2"
-    require_opencode
+    prepare_backend_cmd "$mode" "" || return 1
 
-    local output err_output rc=0
+    local output err_output metrics_file rc=0 stream_flag=0
+    local ttft="0.00" total="0.00" streamed="0"
     output="$(mktemp "${TMPDIR:-/tmp}/ai-out.XXXXXX")"
     err_output="$(mktemp "${TMPDIR:-/tmp}/ai-err.XXXXXX")"
-    register_cleanup "$output" "$err_output"
+    metrics_file="$(mktemp "${TMPDIR:-/tmp}/ai-metrics.XXXXXX")"
+    register_cleanup "$output" "$err_output" "$metrics_file"
 
-    prepare_opencode_run_args "$mode"
-    opencode "${OPENCODE_ARGS[@]}" "$prompt" >"$output" 2>"$err_output" || rc=$?
+    [ -t 1 ] && stream_flag=1
+    run_backend_streaming "$output" "$err_output" "$metrics_file" "$BACKEND_WORK_DIR" "$stream_flag" -- "${BACKEND_CMD[@]}" "$prompt" || rc=$?
+    IFS='|' read -r ttft total streamed <"$metrics_file" || true
 
     if [ "$rc" -ne 0 ]; then
-        [ -s "$output" ] && cat "$output" >&2
-        [ -s "$err_output" ] && cat "$err_output" >&2
+        if [ "${streamed:-0}" != "1" ] && [ -s "$output" ]; then
+            cat "$output" >&2
+        fi
+        if [ -s "$err_output" ]; then
+            cat "$err_output" >&2
+        fi
         return "$rc"
     fi
 
-    if [ -t 1 ]; then
-        render_markdown "$output"
+    if [ "$stream_flag" -eq 1 ]; then
         case "$mode" in
             commit|translate)
                 if [ -s "$output" ] && command -v wl-copy >/dev/null 2>&1; then
@@ -256,6 +520,7 @@ run_inline() {
                 fi
                 ;;
         esac
+        printf '\n\033[2m⏱ %ss primer token · %ss total · %s\033[0m\n' "${ttft:-0.00}" "${total:-0.00}" "$BACKEND_LABEL" >&2
     else
         cat "$output"
         if [ -s "$output" ] && [ "$(tail -c1 "$output" | wc -l)" -eq 0 ]; then
@@ -264,7 +529,7 @@ run_inline() {
     fi
 }
 
-# Ejecuta OpenCode en una terminal flotante (`ai-float`) y mantiene el resultado en pantalla.
+# Ejecuta el motor activo en una terminal flotante (`ai-float`) y mantiene el resultado en pantalla.
 run_in_terminal() {
     local mode="$1" title="$2" prompt="$3" attach="${4:-}"
     local prompt_file
@@ -273,7 +538,9 @@ run_in_terminal() {
 
     if ! launch_ai_terminal "$title" 72 72 "$SCRIPT_PATH" __run "$mode" "$title" "$prompt_file" "$attach"; then
         rm -f "$prompt_file"
-        [ -n "$attach" ] && rm -f "$attach"
+        if [ -n "$attach" ]; then
+            rm -f "$attach"
+        fi
         exit 1
     fi
 }
@@ -282,40 +549,42 @@ __run() {
     local mode="$1" title="$2" prompt_file="$3" attach="${4:-}"
     register_cleanup "$prompt_file" "$attach"
 
-    local prompt output err_output rc=0
+    local prompt output err_output metrics_file rc=0
+    local ttft="0.00" total="0.00" streamed="0"
     prompt="$(cat "$prompt_file")"
     rm -f "$prompt_file"
     output="$(mktemp "${TMPDIR:-/tmp}/ai-out.XXXXXX")"
     err_output="$(mktemp "${TMPDIR:-/tmp}/ai-err.XXXXXX")"
-    register_cleanup "$output" "$err_output"
+    metrics_file="$(mktemp "${TMPDIR:-/tmp}/ai-metrics.XXXXXX")"
+    register_cleanup "$output" "$err_output" "$metrics_file"
 
-    command -v opencode >/dev/null 2>&1 || {
-        printf 'OpenCode no está instalado (ejecutá "make devai").\n'
+    if ! prepare_backend_cmd "$mode" "$attach"; then
         printf '\n[Enter para cerrar]'
         read -r _ || true
         exit 1
-    }
-
-    prepare_opencode_run_args "$mode" "$attach"
-
-    printf '\033[1;36m%s\033[0m\n' "$title"
-    printf '\033[2mConsultando %s (%s)...\033[0m\n' "$OPENCODE_MODEL" "$OPENCODE_TRANSPORT"
-
-    opencode "${OPENCODE_ARGS[@]}" "$prompt" >"$output" 2>"$err_output" || rc=$?
-
-    if [ -t 1 ]; then
-        printf '\033[1A\033[K\n'
-    else
-        printf '\n'
     fi
 
+    printf '\033[1;36m%s\033[0m\n' "$title"
+    printf '\033[2mConsultando %s...\033[0m\n' "$BACKEND_LABEL"
+
+    run_backend_streaming "$output" "$err_output" "$metrics_file" "$BACKEND_WORK_DIR" 1 -- "${BACKEND_CMD[@]}" "$prompt" || rc=$?
+    IFS='|' read -r ttft total streamed <"$metrics_file" || true
+
     if [ "$rc" -ne 0 ]; then
-        [ -s "$output" ] && cat "$output"
-        [ -s "$err_output" ] && cat "$err_output" >&2
-        printf '\n\033[1;31m[OpenCode terminó con estado %s]\033[0m\n' "$rc"
-        printf 'Verificá la conexión del proveedor con "/connect" dentro de OpenCode.\n'
+        if [ "${streamed:-0}" != "1" ] && [ -s "$output" ]; then
+            cat "$output"
+        fi
+        if [ -s "$err_output" ]; then
+            cat "$err_output" >&2
+        fi
+        if [ "$BACKEND_USED" = "agy" ]; then
+            printf '\n\033[1;31m[Antigravity CLI terminó con estado %s]\033[0m\n' "$rc"
+            printf 'Verificá tu sesión ejecutando "agy" en una terminal.\n'
+        else
+            printf '\n\033[1;31m[OpenCode terminó con estado %s]\033[0m\n' "$rc"
+            printf 'Verificá la conexión del proveedor con "/connect" dentro de OpenCode.\n'
+        fi
     else
-        render_markdown "$output"
         case "$mode" in
             commit|translate)
                 if [ -s "$output" ] && command -v wl-copy >/dev/null 2>&1; then
@@ -323,6 +592,7 @@ __run() {
                 fi
                 ;;
         esac
+        printf '\n\033[2m⏱ %ss primer token · %ss total · %s\033[0m\n' "${ttft:-0.00}" "${total:-0.00}" "$BACKEND_LABEL"
     fi
 
     if [ "$rc" -eq 0 ] && [ -s "$output" ] && command -v wl-copy >/dev/null 2>&1; then
@@ -373,11 +643,16 @@ $stdin_text"
 
     if ! launch_ai_terminal "IA · Preguntar" 72 72 bash -c '
         trap '\''rm -f "$1"'\'' EXIT HUP INT TERM
-        printf "Pregunta para la IA (Enter para enviar, vacío para cancelar):\n> "
-        IFS= read -r question || exit 0
-        [ -n "$question" ] || exit 0
+        printf "Pregunta para la IA (Enter para enviar, vacío para cancelar):\n"
+        IFS= read -r -e -p "> " question || exit 0
+        [ -n "${question//[[:space:]]/}" ] || exit 0
         printf "%s" "$question" > "$1"
-        exec "$2" __run ask "IA · Preguntar" "$1"
+        "$2" __run ask "IA · Preguntar" "$1" || {
+            rc=$?
+            printf "\n\033[1;31m[Error al ejecutar la consulta (estado %s)]\033[0m\n[Enter para cerrar]" "$rc"
+            read -r _ || true
+            exit "$rc"
+        }
     ' _ "$prompt_file" "$SCRIPT_PATH"; then
         rm -f "$prompt_file"
         exit 1
@@ -523,19 +798,83 @@ $diff"
 }
 
 action_open() {
-    require_opencode
-    local start_dir
+    local start_dir backend
     start_dir="$(active_git_repo || true)"
     if [ -z "$start_dir" ] || [ ! -d "$start_dir" ]; then
         start_dir="${XDG_PROJECTS_DIR:-$HOME/Proyectos}"
         [ -d "$start_dir" ] || start_dir="$HOME"
     fi
 
-    if service_url >/dev/null 2>&1; then
+    backend="$(resolve_backend)"
+    if [ "$backend" = "agy" ]; then
+        require_agy
+        launch_ai_terminal "Antigravity" 85 85 bash -c 'cd "$1" && exec agy' _ "$start_dir"
+        return 0
+    fi
+
+    require_opencode
+    if service_running; then
         launch_ai_terminal "OpenCode" 85 85 opencode "$start_dir"
     else
         launch_ai_terminal "OpenCode" 85 85 opencode --standalone "$start_dir"
     fi
+}
+
+action_backend() {
+    local action="${1:-status}" current next label
+    current="$(resolve_backend)"
+    case "$action" in
+        status)
+            if [ "$current" = "agy" ]; then
+                printf 'Motor activo: agy (Antigravity CLI)\n'
+            else
+                printf 'Motor activo: opencode (OpenCode CLI)\n'
+            fi
+            return 0
+            ;;
+        toggle)
+            if [ "$current" = "agy" ]; then
+                next="opencode"
+            else
+                next="agy"
+            fi
+            ;;
+        opencode|agy|antigravity)
+            next="$(normalize_backend "$action")"
+            ;;
+        *)
+            echo "Uso: $(basename "$0") backend {opencode|agy|toggle|status}" >&2
+            return 2
+            ;;
+    esac
+
+    write_local_config_key aiBackend "$next"
+    signal_waybar_ai
+    if [ "$next" = "agy" ]; then
+        label="Antigravity (agy)"
+    else
+        label="OpenCode (opencode)"
+    fi
+    notify "IA" "Motor activo: $label"
+    printf 'Motor activo: %s\n' "$next"
+}
+
+action_model() {
+    local arg="${1:-status}" pref ask_m err_m next
+    if [ "$arg" = "status" ]; then
+        pref="$(normalize_agy_model_pref "$(resolve_agy_model_pref)")"
+        ask_m="$(agy_model_for_mode ask)"
+        err_m="$(agy_model_for_mode error)"
+        printf 'Modelo Antigravity: %s (ask=%s, error=%s)\n' \
+            "$pref" "${ask_m:-default}" "${err_m:-default}"
+        return 0
+    fi
+
+    next="$(normalize_agy_model_pref "$arg")"
+    write_local_config_key aiAgyModel "$next"
+    signal_waybar_ai
+    notify "IA" "Modelo Antigravity: $next"
+    printf 'Modelo Antigravity: %s\n' "$next"
 }
 
 action_service() {
@@ -600,9 +939,17 @@ menu() {
         return 0
     fi
     command -v fuzzel >/dev/null 2>&1 || die "No se encontró fuzzel."
+    local backend open_label
+    backend="$(resolve_backend)"
+    if [ "$backend" = "agy" ]; then
+        open_label="󰆍  Abrir Antigravity"
+    else
+        open_label="󰆍  Abrir OpenCode"
+    fi
     local -a opts=(
         "󰚩  Preguntar a la IA"
-        "󰆍  Abrir OpenCode"
+        "$open_label"
+        "󰔡  Cambiar motor IA (actual: $backend)"
         "󰐊  Encender servicio OpenCode"
         "󰐥  Apagar servicio OpenCode"
         "󰒓  Estado del servicio OpenCode"
@@ -624,6 +971,7 @@ menu() {
     case "$choice" in
         "󰚩 "*) action_ask ;;
         "󰆍 "*) action_open ;;
+        "󰔡 "*) action_backend toggle ;;
         "󰐊 "*) action_service start ;;
         "󰐥 "*) action_service stop ;;
         "󰒓 "*) show_service_status ;;
@@ -651,10 +999,12 @@ case "${1:-menu}" in
     diff) action_diff ;;
     commit) action_commit ;;
     open) action_open ;;
+    backend) shift; action_backend "${1:-status}" ;;
+    model) shift; action_model "${1:-status}" ;;
     service) shift; action_service "${1:-status}" ;;
     __run) shift; __run "$@" ;;
     *)
-        echo "Uso: $(basename "$0") {menu|ask|explain|error|summarize|translate|window|image|diff|commit|open|service}" >&2
+        echo "Uso: $(basename "$0") {menu|ask|explain|error|summarize|translate|window|image|diff|commit|open|backend|model|service}" >&2
         exit 2
         ;;
 esac

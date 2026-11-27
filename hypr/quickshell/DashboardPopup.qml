@@ -186,7 +186,7 @@ PanelWindow {
     // Acciones IA unificadas
     readonly property var aiQuickActions: [
         { cmd: "ask", glyph: "󰚩", title: "Preguntar", subtitle: "Consulta rápida", delay: false },
-        { cmd: "open", glyph: "󰆍", title: "Abrir OpenCode", subtitle: "Super+Shift+I", delay: false },
+        { cmd: "open", glyph: "󰆍", title: (sysState && sysState.aiBackend === "agy") ? "Abrir Antigravity" : "Abrir OpenCode", subtitle: "Super+Shift+I", delay: false },
         { cmd: "explain", glyph: "󰆧", title: "Explicar texto", subtitle: "Selección o clip", delay: false },
         { cmd: "error", glyph: "󰀪", title: "Explicar error", subtitle: "Desde portapapeles", delay: false }
     ]
@@ -352,7 +352,9 @@ PanelWindow {
     function focusableDescriptors() {
         const out = [];
         if (activeTab === 1) {
-            out.push({ item: aiSvcM, id: "aiService" });
+            out.push({ item: aiBackendToggle, id: "aiBackend" });
+            out.push({ item: aiAgyModelBtn, id: "aiAgyModel" });
+            out.push({ item: aiSvcBtn, id: "aiService" });
             for (let i = 0; i < aiQuickRepeater.count; i++)
                 out.push({ repeater: aiQuickRepeater, index: i, id: "aiQuick", data: aiQuickActions[i] });
             for (let i = 0; i < aiContextRepeater.count; i++)
@@ -377,7 +379,7 @@ PanelWindow {
             if (!isViewingCurrentMonth)
                 out.push({ item: todayChipM, id: "calToday" });
             out.push({ item: cNextM, id: "calNext" });
-            out.push({ item: dashPerfSummaryCard, id: "perf" });
+            out.push({ item: dashWeatherCard, id: "weather" });
         } else if (activeTab === 3) {
             for (let i = 0; i < playerPillRepeater.count; i++)
                 out.push({ repeater: playerPillRepeater, index: i, id: "player", data: i });
@@ -555,8 +557,9 @@ PanelWindow {
         case "powerprofile":
             cyclePowerProfile();
             break;
-        case "perf":
-            tabSelected(4);
+        case "weather":
+            if (sysState)
+                sysState.refreshWeather(true);
             break;
         case "vol":
         case "outVol":
@@ -605,6 +608,14 @@ PanelWindow {
             break;
         case "capture":
             actionActivated(fd.data);
+            break;
+        case "aiBackend":
+            if (sysState)
+                sysState.setAiBackend(sysState.aiBackend === "agy" ? "opencode" : "agy");
+            break;
+        case "aiAgyModel":
+            if (sysState)
+                sysState.setAiAgyModel(tabDevAi.nextAgyModelKey(tabDevAi.agyModelKey));
             break;
         case "aiService":
             runScript("ai.sh", ["service", "toggle"]);
@@ -1264,40 +1275,33 @@ PanelWindow {
                                     Layout.fillWidth: true
                                     spacing: 10
 
-                                    // Tarjeta Resumen de Rendimiento (CPU / RAM / Temp · clic abre Tab 2)
+                                    // Tarjeta Estado del Tiempo (clic refresca el clima)
                                     Rectangle {
-                                        id: dashPerfSummaryCard
-                                        readonly property int cpuPct: dashWin.sysState ? dashWin.sysState.cpuUsage : 0
-                                        readonly property int memPct: (dashWin.sysState && dashWin.sysState.memTotalGiB > 0)
-                                            ? Math.round((dashWin.sysState.memUsedGiB * 100) / dashWin.sysState.memTotalGiB)
-                                            : 0
-                                        readonly property int tempC: dashWin.sysState ? dashWin.sysState.cpuTempC : -1
-                                        Layout.preferredWidth: 216
+                                        id: dashWeatherCard
+                                        readonly property bool ready: Boolean(dashWin.sysState && dashWin.sysState.weatherReady)
+                                        readonly property bool loading: Boolean(dashWin.sysState && dashWin.sysState.weatherLoading)
+                                        readonly property bool stale: Boolean(dashWin.sysState && dashWin.sysState.weatherStale)
+                                        Layout.preferredWidth: 224
                                         Layout.preferredHeight: 112
                                         radius: Theme.radiusMedium
-                                        color: perfSumM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
+                                        color: weatherM.containsMouse ? Theme.surfaceContainerHigh : Theme.surfaceContainer
                                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                                         ColumnLayout {
                                             anchors.fill: parent
                                             anchors.margins: 12
-                                            spacing: 8
+                                            spacing: 4
 
                                             RowLayout {
                                                 Layout.fillWidth: true
                                                 spacing: 6
 
                                                 Text {
-                                                    text: "󰓅"
+                                                    text: (dashWeatherCard.ready && dashWin.sysState.weatherCity)
+                                                        ? dashWin.sysState.weatherCity
+                                                        : "Clima"
                                                     font.family: Theme.fontFamily
-                                                    font.pixelSize: 15
-                                                    color: Theme.primary
-                                                }
-
-                                                Text {
-                                                    text: "Rendimiento"
-                                                    font.family: Theme.fontFamily
-                                                    font.pixelSize: 13
+                                                    font.pixelSize: 12
                                                     font.weight: Font.Bold
                                                     color: Theme.fg
                                                     Layout.fillWidth: true
@@ -1305,115 +1309,160 @@ PanelWindow {
                                                 }
 
                                                 Rectangle {
-                                                    visible: dashPerfSummaryCard.tempC >= 0
+                                                    readonly property bool showRefresh: dashWeatherCard.loading || weatherM.containsMouse
+                                                    visible: showRefresh || dashWeatherCard.ready
                                                     height: 20
-                                                    width: tempChipTxt.implicitWidth + 10
+                                                    width: weatherChipTxt.implicitWidth + 10
                                                     radius: Theme.radiusFull
-                                                    color: dashPerfSummaryCard.tempC >= 80 ? Theme.errorContainer : Theme.surfaceContainerHighest
+                                                    color: Theme.surfaceContainerHighest
 
                                                     Text {
-                                                        id: tempChipTxt
+                                                        id: weatherChipTxt
                                                         anchors.centerIn: parent
-                                                        text: dashPerfSummaryCard.tempC + "°C"
-                                                        font.family: Theme.monoFontFamily
+                                                        text: parent.showRefresh
+                                                            ? "󰑐"
+                                                            : (dashWin.sysState.weatherMinC + "°/" + dashWin.sysState.weatherMaxC + "°")
+                                                        font.family: parent.showRefresh ? Theme.fontFamily : Theme.monoFontFamily
                                                         font.pixelSize: 11
                                                         font.weight: Font.Bold
-                                                        color: dashPerfSummaryCard.tempC >= 80 ? Theme.fgOnErrorContainer : Theme.fgMuted
+                                                        color: Theme.fgMuted
                                                     }
                                                 }
                                             }
 
-                                            // Barra compacta CPU
-                                            RowLayout {
+                                            // Estado con datos
+                                            ColumnLayout {
+                                                visible: dashWeatherCard.ready
                                                 Layout.fillWidth: true
-                                                spacing: 8
+                                                Layout.fillHeight: true
+                                                spacing: 4
 
-                                                Text {
-                                                    Layout.preferredWidth: 32
-                                                    text: "CPU"
-                                                    font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 11
-                                                    font.weight: Font.Bold
-                                                    color: Theme.fgSubtle
-                                                }
-
-                                                Rectangle {
+                                                RowLayout {
                                                     Layout.fillWidth: true
-                                                    height: 7
-                                                    radius: 4
-                                                    color: Theme.surfaceContainerHighest
+                                                    spacing: 8
 
-                                                    Rectangle {
-                                                        anchors.left: parent.left
-                                                        anchors.top: parent.top
-                                                        anchors.bottom: parent.bottom
-                                                        width: Math.max(dashPerfSummaryCard.cpuPct > 0 ? 7 : 0, parent.width * Math.min(1.0, dashPerfSummaryCard.cpuPct / 100.0))
-                                                        radius: 4
-                                                        color: dashPerfSummaryCard.cpuPct >= 85 ? Theme.error : Theme.primary
-                                                        Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                                    Text {
+                                                        text: dashWin.sysState ? dashWin.sysState.weatherGlyph : "󰖐"
+                                                        font.family: Theme.fontFamily
+                                                        font.pixelSize: 26
+                                                        color: Theme.primary
+                                                    }
+
+                                                    Text {
+                                                        text: (dashWin.sysState ? dashWin.sysState.weatherTempC : 0) + "°"
+                                                        font.family: Theme.monoFontFamily
+                                                        font.pixelSize: 24
+                                                        font.weight: Font.Bold
+                                                        color: Theme.fg
+                                                    }
+
+                                                    ColumnLayout {
+                                                        Layout.fillWidth: true
+                                                        spacing: 1
+
+                                                        Text {
+                                                            text: dashWin.sysState ? dashWin.sysState.weatherCondition : ""
+                                                            font.family: Theme.fontFamily
+                                                            font.pixelSize: 12
+                                                            font.weight: Font.DemiBold
+                                                            color: Theme.fg
+                                                            Layout.fillWidth: true
+                                                            elide: Text.ElideRight
+                                                        }
+
+                                                        Text {
+                                                            text: "ST " + (dashWin.sysState ? dashWin.sysState.weatherFeelsLikeC : 0) + "°"
+                                                            font.family: Theme.fontFamily
+                                                            font.pixelSize: 11
+                                                            color: Theme.fgSubtle
+                                                            Layout.fillWidth: true
+                                                            elide: Text.ElideRight
+                                                        }
                                                     }
                                                 }
 
-                                                Text {
-                                                    Layout.preferredWidth: 36
-                                                    horizontalAlignment: Text.AlignRight
-                                                    text: dashPerfSummaryCard.cpuPct + "%"
-                                                    font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 12
-                                                    font.weight: Font.Bold
-                                                    color: dashPerfSummaryCard.cpuPct >= 85 ? Theme.error : Theme.fg
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    opacity: dashWeatherCard.stale ? 0.72 : 1.0
+
+                                                    Text {
+                                                        text: "󰖎 " + (dashWin.sysState ? dashWin.sysState.weatherHumidity : 0) + "%"
+                                                        font.family: Theme.monoFontFamily
+                                                        font.pixelSize: 11
+                                                        color: Theme.fgSubtle
+                                                    }
+
+                                                    Text {
+                                                        text: "󰖝 " + (dashWin.sysState ? dashWin.sysState.weatherWindKmh : 0) + " km/h"
+                                                        font.family: Theme.monoFontFamily
+                                                        font.pixelSize: 11
+                                                        color: Theme.fgSubtle
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
+                                                    }
+
+                                                    Text {
+                                                        visible: dashWeatherCard.stale
+                                                        text: "caché"
+                                                        font.family: Theme.fontFamily
+                                                        font.pixelSize: 10
+                                                        color: Theme.fgSubtle
+                                                    }
                                                 }
                                             }
 
-                                            // Barra compacta RAM
+                                            // Estado inicial o sin conexión
                                             RowLayout {
+                                                visible: !dashWeatherCard.ready
                                                 Layout.fillWidth: true
-                                                spacing: 8
+                                                Layout.fillHeight: true
+                                                spacing: 10
 
                                                 Text {
-                                                    Layout.preferredWidth: 32
-                                                    text: "RAM"
-                                                    font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 11
-                                                    font.weight: Font.Bold
+                                                    text: "󰖐"
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: 24
                                                     color: Theme.fgSubtle
                                                 }
 
-                                                Rectangle {
+                                                ColumnLayout {
                                                     Layout.fillWidth: true
-                                                    height: 7
-                                                    radius: 4
-                                                    color: Theme.surfaceContainerHighest
+                                                    spacing: 2
 
-                                                    Rectangle {
-                                                        anchors.left: parent.left
-                                                        anchors.top: parent.top
-                                                        anchors.bottom: parent.bottom
-                                                        width: Math.max(dashPerfSummaryCard.memPct > 0 ? 7 : 0, parent.width * Math.min(1.0, dashPerfSummaryCard.memPct / 100.0))
-                                                        radius: 4
-                                                        color: dashPerfSummaryCard.memPct >= 90 ? Theme.error : Theme.secondary
-                                                        Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                                    Text {
+                                                        text: dashWeatherCard.loading
+                                                            ? "Consultando clima..."
+                                                            : ((dashWin.sysState && dashWin.sysState.weatherError) ? dashWin.sysState.weatherError : "Sin conexión")
+                                                        font.family: Theme.fontFamily
+                                                        font.pixelSize: 12
+                                                        font.weight: Font.DemiBold
+                                                        color: Theme.fgMuted
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
                                                     }
-                                                }
 
-                                                Text {
-                                                    Layout.preferredWidth: 36
-                                                    horizontalAlignment: Text.AlignRight
-                                                    text: dashPerfSummaryCard.memPct + "%"
-                                                    font.family: Theme.monoFontFamily
-                                                    font.pixelSize: 12
-                                                    font.weight: Font.Bold
-                                                    color: dashPerfSummaryCard.memPct >= 90 ? Theme.error : Theme.fg
+                                                    Text {
+                                                        text: dashWeatherCard.loading ? "Obteniendo datos locales" : "Clic para reintentar"
+                                                        font.family: Theme.fontFamily
+                                                        font.pixelSize: 11
+                                                        color: Theme.fgSubtle
+                                                        Layout.fillWidth: true
+                                                        elide: Text.ElideRight
+                                                    }
                                                 }
                                             }
                                         }
 
                                         MouseArea {
-                                            id: perfSumM
+                                            id: weatherM
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: dashWin.tabSelected(4)
+                                            onClicked: {
+                                                if (dashWin.sysState)
+                                                    dashWin.sysState.refreshWeather(true);
+                                            }
                                         }
                                     }
 
@@ -3627,10 +3676,41 @@ PanelWindow {
                                 NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
                             }
 
+                            readonly property string aiBackend: (dashWin.sysState && dashWin.sysState.aiBackend === "agy") ? "agy" : "opencode"
+                            readonly property bool isAgy: aiBackend === "agy"
+                            readonly property string agyModelKey: (dashWin.sysState && dashWin.sysState.aiAgyModel) ? dashWin.sysState.aiAgyModel : "flash"
                             readonly property bool aiOn: Boolean(dashWin.sysState && dashWin.sysState.aiActive)
                             readonly property string aiDet: dashWin.sysState ? String(dashWin.sysState.aiDetail || "") : ""
 
-                            // Barra de servicio OpenCode
+                            function agyModelLabel(key) {
+                                const k = String(key || "flash").toLowerCase();
+                                if (k === "flash" || k === "auto")
+                                    return "Flash (auto)";
+                                if (k === "flash-low" || k === "low" || k === "gemini-3.8-flash-low")
+                                    return "Flash 3.8 Low";
+                                if (k === "flash-medium" || k === "flash-med" || k === "medium" || k === "med" || k === "gemini-3.8-flash-medium")
+                                    return "Flash 3.8 Med";
+                                if (k === "flash-high" || k === "high" || k === "gemini-3.8-flash-high")
+                                    return "Flash 3.8 High";
+                                if (k === "default" || k === "pro")
+                                    return "Default (Pro)";
+                                return String(key);
+                            }
+
+                            function nextAgyModelKey(key) {
+                                const k = String(key || "flash").toLowerCase();
+                                if (k === "flash" || k === "auto")
+                                    return "flash-low";
+                                if (k === "flash-low" || k === "low" || k === "gemini-3.8-flash-low")
+                                    return "flash-medium";
+                                if (k === "flash-medium" || k === "flash-med" || k === "medium" || k === "med" || k === "gemini-3.8-flash-medium")
+                                    return "flash-high";
+                                if (k === "flash-high" || k === "high" || k === "gemini-3.8-flash-high")
+                                    return "default";
+                                return "flash";
+                            }
+
+                            // Barra de motor y servicio IA
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 10
@@ -3639,7 +3719,7 @@ PanelWindow {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 40
                                     radius: Theme.radiusFull
-                                    color: tabDevAi.aiOn ? Theme.tertiaryContainer : Theme.surfaceContainer
+                                    color: (tabDevAi.isAgy || tabDevAi.aiOn) ? Theme.tertiaryContainer : Theme.surfaceContainer
                                     Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
                                     RowLayout {
@@ -3652,28 +3732,156 @@ PanelWindow {
                                             text: "󰚩"
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 16
-                                            color: tabDevAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.tertiary
+                                            color: (tabDevAi.isAgy || tabDevAi.aiOn) ? Theme.fgOnTertiaryContainer : Theme.tertiary
                                         }
                                         Text {
-                                            text: "OpenCode · Asistente IA"
+                                            text: tabDevAi.isAgy ? "Antigravity · Asistente IA" : "OpenCode · Asistente IA"
                                             font.family: Theme.fontFamily
                                             font.pixelSize: 13
                                             font.weight: Font.Bold
-                                            color: tabDevAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fg
+                                            color: (tabDevAi.isAgy || tabDevAi.aiOn) ? Theme.fgOnTertiaryContainer : Theme.fg
                                         }
                                         Item { Layout.fillWidth: true }
                                         Text {
-                                            text: tabDevAi.aiOn
-                                                ? (tabDevAi.aiDet ? ("Servicio activo · " + tabDevAi.aiDet) : "Servicio activo")
-                                                : "Modo independiente"
+                                            text: tabDevAi.isAgy
+                                                ? tabDevAi.agyModelLabel(tabDevAi.agyModelKey)
+                                                : (tabDevAi.aiOn
+                                                    ? (tabDevAi.aiDet ? ("Servicio activo · " + tabDevAi.aiDet) : "Servicio activo")
+                                                    : "Modo independiente")
                                             font.family: Theme.monoFontFamily
                                             font.pixelSize: 12
-                                            color: tabDevAi.aiOn ? Theme.fgOnTertiaryContainer : Theme.fgSubtle
+                                            color: (tabDevAi.isAgy || tabDevAi.aiOn) ? Theme.fgOnTertiaryContainer : Theme.fgSubtle
+                                        }
+                                    }
+                                }
+
+                                // Selector de motor (OpenCode | Antigravity)
+                                Rectangle {
+                                    id: aiBackendToggle
+                                    Layout.preferredHeight: 40
+                                    Layout.preferredWidth: aiBackendRow.implicitWidth + 8
+                                    radius: Theme.radiusFull
+                                    color: Theme.surfaceContainer
+
+                                    Row {
+                                        id: aiBackendRow
+                                        anchors.centerIn: parent
+                                        spacing: 4
+
+                                        Rectangle {
+                                            readonly property bool selected: !tabDevAi.isAgy
+                                            height: 32
+                                            width: ocOptTxt.implicitWidth + 20
+                                            radius: Theme.radiusFull
+                                            color: selected
+                                                ? Theme.primary
+                                                : (ocOptM.containsMouse ? Theme.surfaceContainerHigh : "transparent")
+                                            Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                            Text {
+                                                id: ocOptTxt
+                                                anchors.centerIn: parent
+                                                text: "OpenCode"
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: 12
+                                                font.weight: parent.selected ? Font.Bold : Font.Medium
+                                                color: parent.selected ? Theme.fgOnPrimary : Theme.fgMuted
+                                            }
+
+                                            MouseArea {
+                                                id: ocOptM
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    if (dashWin.sysState)
+                                                        dashWin.sysState.setAiBackend("opencode");
+                                                }
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            readonly property bool selected: tabDevAi.isAgy
+                                            height: 32
+                                            width: agyOptTxt.implicitWidth + 20
+                                            radius: Theme.radiusFull
+                                            color: selected
+                                                ? Theme.primary
+                                                : (agyOptM.containsMouse ? Theme.surfaceContainerHigh : "transparent")
+                                            Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                            Text {
+                                                id: agyOptTxt
+                                                anchors.centerIn: parent
+                                                text: "Antigravity"
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: 12
+                                                font.weight: parent.selected ? Font.Bold : Font.Medium
+                                                color: parent.selected ? Theme.fgOnPrimary : Theme.fgMuted
+                                            }
+
+                                            MouseArea {
+                                                id: agyOptM
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    if (dashWin.sysState)
+                                                        dashWin.sysState.setAiBackend("agy");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Selector rápido de modelo Flash / Default para Antigravity
+                                Rectangle {
+                                    id: aiAgyModelBtn
+                                    visible: tabDevAi.isAgy
+                                    Layout.preferredHeight: 40
+                                    Layout.preferredWidth: aiAgyModelRow.implicitWidth + 22
+                                    radius: Theme.radiusFull
+                                    color: aiAgyModelM.containsMouse ? Theme.tertiaryContainer : Theme.surfaceContainer
+                                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                    Row {
+                                        id: aiAgyModelRow
+                                        anchors.centerIn: parent
+                                        spacing: 6
+
+                                        Text {
+                                            text: "󰓅"
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 14
+                                            color: aiAgyModelM.containsMouse ? Theme.fgOnTertiaryContainer : Theme.tertiary
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        Text {
+                                            text: tabDevAi.agyModelLabel(tabDevAi.agyModelKey)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 12
+                                            font.weight: Font.DemiBold
+                                            color: aiAgyModelM.containsMouse ? Theme.fgOnTertiaryContainer : Theme.fg
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: aiAgyModelM
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (dashWin.sysState)
+                                                dashWin.sysState.setAiAgyModel(tabDevAi.nextAgyModelKey(tabDevAi.agyModelKey));
                                         }
                                     }
                                 }
 
                                 Rectangle {
+                                    id: aiSvcBtn
+                                    visible: !tabDevAi.isAgy || tabDevAi.aiOn
                                     Layout.preferredHeight: 40
                                     Layout.preferredWidth: aiSvcRow.implicitWidth + 24
                                     radius: Theme.radiusFull
