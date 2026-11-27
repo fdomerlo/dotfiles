@@ -8,9 +8,9 @@
 
 Aprovisionamiento idempotente para estaciones de trabajo de desarrollo, DevOps e IA sobre **Debian Stable** (`trixie`). Incluye **Hyprland como escritorio principal** (con **GNOME estándar** como fallback limpio en GDM), contenedores **Podman Rootless**, shell productiva y runtimes aislados en user-space.
 
-![Tiling en Hyprland con Zed, btop y Bruno](assets/hyprland-tiling.png)
+![Dashboard de Quickshell sobre Hyprland](assets/hyprland-dashboard.png)
 
-*Tema `cyber-teal` en Hyprland con Waybar, Zed, `btop` y Bruno en tiling.*
+*Hyprland con Quickshell: barra superior multi-monitor y Dashboard unificado (rendimiento, calendario, audio, red y energía) sobre el tema `dark`.*
 
 ---
 
@@ -27,7 +27,7 @@ cd ~/.dotfiles
 make install
 
 # Otras variantes:
-make full-install    # Estación completa + Hyprland + snapshots Timeshift
+make full-install    # Estación completa + Hyprland + Quickemu + snapshots Timeshift
 make base-install    # Solo estación base + GNOME estándar (sin Hyprland)
 ```
 
@@ -66,13 +66,20 @@ Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza an
 | Comando | Uso |
 | :--- | :--- |
 | `make install` | Aprovisionamiento completo con Hyprland y GNOME estándar como fallback |
-| `make full-install` | Igual que `make install` más configuración de snapshots Timeshift |
+| `make full-install` | Igual que `make install` más Quickemu y configuración de snapshots Timeshift |
 | `make base-install` | Estación base sin Hyprland (solo GNOME estándar + CLI/Tooling/Podman) |
+| `make host` | Configura APT (Backports), CLI moderna, AppImage, Flatpak y Podman |
+| `make podman` | Configura Podman rootless con `crun` + `pasta` (systemd de usuario) |
+| `make shell` | Configura Zsh + Oh My Zsh y enlaza los dotfiles de `shell/` |
+| `make devtools` | Instala `gh`, `uv`, `fnm`, `sdkman`, `yazi`, `lazydocker` y sincroniza SSH de GitHub |
+| `make tooling` | Instala navegadores, editores y suite sysadmin/productividad (incluye Flatpaks) |
+| `make devai` | Instala OpenCode, Antigravity y las skills globales de la estación |
+| `make virt` | (Opcional) Instala Quickemu + QEMU/KVM para VMs sin daemon ni autostart |
+| `make desktop` | Mantiene GNOME Shell estándar (sin extensiones) y los directorios de trabajo |
+| `make timeshift` | (Opcional) Instala y configura Timeshift sin snapshots automáticos iniciales |
 | `make hyprland` | Instala o re-aplica solo el stack y la configuración de Hyprland |
 | `make hypr-desktop` / `make hypr-laptop` | Aplica plantilla local de desktop o notebook en `~/.config/hypr/conf/local.conf` |
 | `make refresh` | Re-enlaza configs/scripts de Hyprland y recarga la sesión activa tras un `git pull` |
-| `make devai` | Instala OpenCode, Antigravity y la skill de contexto de la estación |
-| `make virt` | (Opcional) Instala Quickemu + QEMU/KVM para VMs sin daemon ni autostart |
 | `make update` / `devctl update` | Actualiza paquetes APT (`packages/`), herramientas user-space y Flatpaks |
 | `make verify` / `devctl doctor` | Verifica salud del entorno, enlaces, Podman y Hyprland |
 | `make clean` / `make clean-deep` | Limpieza estándar o profunda (`rc`, huérfanos, cachés y logs) |
@@ -94,7 +101,7 @@ atajos, menús y una skill con el contexto del repo.
 | Explicar selección o portapapeles | `Super+Ctrl+I` |
 | Continuar sesión / TUI mínima | `cc` / `cm` (`opencode mini --standalone`) |
 | Pipes en Zsh | `git diff \| ai commit` o `cmd \| ai explain` |
-| Encender/apagar servicio de fondo | `oc-on`, `oc-off`, `oc-st` (o clic derecho en el indicador IA de Waybar / `Dev & IA`) |
+| Encender/apagar servicio de fondo | `oc-on`, `oc-off`, `oc-st` (o `ai.sh service toggle`) |
 | Forzar un modelo puntual | `AI_MODEL=provider/modelo ai ...` |
 
 `hypr/scripts/ai.sh` permite preguntar, explicar selección primaria o
@@ -107,12 +114,13 @@ con el proceso); solo reutiliza `opencode service` cuando ya está encendido, si
 auto-iniciarlo, y rutea el modelo por tarea salvo override con `AI_MODEL`.
 
 Así, el servicio de fondo de OpenCode queda **apagado** por defecto. El
-indicador `󰚩 IA` de Waybar está siempre visible: atenuado cuando el servicio
-está apagado y en verde cuando corre. El clic derecho alterna encendido/apagado
-(`ai.sh service toggle`) y el clic izquierdo abre el menú IA; también se
-enciende bajo demanda con `oc-on`, `ai.sh service start` o desde `Dev & IA`.
-`oc-off` lo apaga. Los alias `c`, `cc` y `cm` pasan `--standalone` para no
-levantar el servicio accidentalmente.
+indicador `󰚩 IA` de la barra de Quickshell está siempre visible: atenuado cuando
+el servicio está apagado y en verde cuando corre. El clic izquierdo abre la
+pestaña `Dev & IA` del Centro Unificado, el clic derecho lanza una pregunta
+rápida (`ai.sh ask`) y el clic medio abre la TUI de OpenCode. El servicio se
+enciende bajo demanda con `oc-on` o `ai.sh service start`, y se apaga con
+`oc-off` (`oc-st` muestra su estado). Los alias `c`, `cc` y `cm` pasan
+`--standalone` para no levantar el servicio accidentalmente.
 
 `make devai` enlaza `ai/opencode/opencode.json` en `~/.config/opencode/opencode.json`
 para fijar la configuración base entre estaciones, junto con cada skill en
@@ -169,18 +177,24 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 | `Super+A` | **Actividades / Overview** (workspaces + previews en vivo + búsqueda de ventanas abiertas) |
 | `Super+F1` | **Cheatsheet interactivo** con todos los atajos activos (teclado + mouse) |
 | `Super+Return` / `Super+Shift+Return` | Terminal (`foot`) / terminal con sesión `tmux` persistente |
-| `Super+B` / `Super+E` / `Super+Y` | Navegador predeterminado (`firefox`) / archivos (`nautilus`) / `yazi` TUI |
+| `Super+B` / `Super+Shift+B` / `Super+E` / `Super+Y` | Navegador predeterminado (`firefox`) / segundo atajo del navegador / archivos (`nautilus`) / `yazi` TUI |
 | `Super+C` | Editor de código predeterminado (`zed`, con respaldo `code` y `nvim` en Foot) |
 | `Super+Shift+S` / `Super+Ctrl+S` | Mostrar/ocultar terminal flotante (scratchpad) / enviar ventana al scratchpad |
 | `Super+Q` / `Super+F` / `Super+M` / `Super+S` | Cerrar / pantalla completa / maximizar / alternar flotante |
+| `Super+Ctrl+Q` / `Super+Shift+Q` | Matar ventana por clic (`hyprctl kill`) / salir de la sesión |
+| `Super+G` / `Super+Tab` / `Super+Shift+G` | Agrupar ventanas en tabs / cambiar de tab / sacar ventana del grupo |
+| `Super+I` | Abrir/cerrar el **Dashboard** (panel central de indicadores) |
 | `Super+Shift+C` / `Super+Ctrl+Tab` | Calculadora / alternar con la última ventana |
+| `Super+Escape` | Recargar la configuración de Hyprland |
 | `Super+1..0` / `Super+Shift+1..0` | Cambiar de workspace / mover ventana (`1–6` monitor 1, `7–0` monitor 2; `11–12` con `Av.Pág` o Actividades) |
 | `Super+Av.Pág` / `Super+Re.Pág` | Ciclar workspaces cubriendo todos los monitores |
 | `Super+V` / `Super+Shift+T` / `Super+W` | Historial portapapeles / cambiar tema / siguiente wallpaper |
 | `Print` / `Ctrl+Print` / `Shift+Print` | Captura + `swappy` / captura directa al portapapeles / pantalla completa |
 | `Super+Shift+R` / `Super+Shift+P` / `Super+Ctrl+O` | Grabar pantalla / selector color HEX / OCR de región |
 | `Super+Shift+A` / `Super+Shift+I` / `Super+Ctrl+I` | Menú del asistente IA / abrir TUI de OpenCode / explicar selección o portapapeles |
-| `Super+L` / `Super+N` / `Super+Ctrl+N` | Bloquear pantalla / notificaciones / luz nocturna (`4000K`) |
+| `Super+X` | Menú de energía (apagar, reiniciar, suspender, cerrar sesión) |
+| `Super+L` / `Super+N` / `Super+Shift+N` | Bloquear pantalla / panel de notificaciones / alternar No molestar (DND) |
+| `Super+Ctrl+N` | Luz nocturna (`4000K`) |
 | **Touchpad (3 dedos)** | Horizontal: workspaces · Arriba: Centro Unificado · Abajo: Actividades |
 
 ### Tema único (Cyber-Teal Material 3 · Oscuro / Claro) y wallpapers
@@ -191,9 +205,9 @@ Tras ejecutar `make install` (o `make hyprland`), elige **Hyprland** en GDM. **G
 ```
 
 - **Diseño unificado:** geometría, animaciones Material 3, tipografía (`Inter` + `JetBrains Mono`) y barra superior con popouts acoplados mediante esquinas cóncavas (`QtQuick.Shapes`) viven en una sola base (`hypr/conf/appearance.conf` + `hypr/quickshell/Theme.qml`). Al alternar entre `dark` y `light`, Quickshell transiciona en caliente (`ColorAnimation` por IPC, sin reinicio) y acompaña GTK/libadwaita (`teal`), Qt6CT, Foot, Fuzzel, Hyprlock y los bordes de Hyprland.
-- **`dark` (por defecto):** superficies grafito/pizarra tonales + acento cyan-teal (`#22d3ee`) y wallpaper [`northern-lights.jpg`](hypr/themes/dark/wallpapers/northern-lights.jpg).
-- **`light`:** superficies hielo/niebla tonales + acento petrol-teal (`#006d80`) y wallpaper [`glacier-mist.jpg`](hypr/themes/light/wallpapers/glacier-mist.jpg).
-- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés separarlas por polaridad, en `~/.config/hypr/wallpapers/dark/` o `light/`. Ambas carpetas se suman al pool de rotación; rota con `Super+W`.
+- **`dark` (por defecto):** superficies grafito/pizarra tonales + acento cyan-teal (`#22d3ee`) y wallpaper [`1330479.png`](hypr/themes/dark/wallpapers/1330479.png).
+- **`light`:** superficies hielo/niebla tonales + acento petrol-teal (`#006d80`) y wallpaper [`a_tree_in_the_snow.jpg`](hypr/themes/light/wallpapers/a_tree_in_the_snow.jpg).
+- **Wallpapers propios:** coloca imágenes en `~/.config/hypr/wallpapers/` y, si querés separarlas por polaridad, en `~/.config/hypr/wallpapers/dark/` o `light/`. Esas carpetas y las de `hypr/themes/<modo>/wallpapers/` se suman al pool de rotación; rota con `Super+W` (`wallpaper.sh --next`).
 
 ### Personalización local (sin ensuciar Git)
 
