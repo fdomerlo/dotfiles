@@ -84,20 +84,36 @@ PanelWindow {
         const todayY = currentDate.getFullYear();
         const todayM = currentDate.getMonth();
         const todayD = currentDate.getDate();
+        const prevDate = new Date(y, m - 1, 1);
+        const nextDate = new Date(y, m + 1, 1);
 
         const cells = [];
         for (let i = startOffset - 1; i >= 0; i--)
-            cells.push({ day: prevMonthDays - i, inMonth: false, isToday: false });
+            cells.push({
+                day: prevMonthDays - i,
+                inMonth: false,
+                isToday: false,
+                year: prevDate.getFullYear(),
+                month: prevDate.getMonth()
+            });
         for (let d = 1; d <= daysInMonth; d++) {
             cells.push({
                 day: d,
                 inMonth: true,
-                isToday: (y === todayY && m === todayM && d === todayD)
+                isToday: (y === todayY && m === todayM && d === todayD),
+                year: y,
+                month: m
             });
         }
         let nextDay = 1;
         while (cells.length % 7 !== 0 || cells.length < 42)
-            cells.push({ day: nextDay++, inMonth: false, isToday: false });
+            cells.push({
+                day: nextDay++,
+                inMonth: false,
+                isToday: false,
+                year: nextDate.getFullYear(),
+                month: nextDate.getMonth()
+            });
         return cells;
     }
 
@@ -226,6 +242,24 @@ PanelWindow {
     function resetToToday() {
         displayYear = currentDate.getFullYear();
         displayMonth = currentDate.getMonth();
+    }
+
+    // Abre GNOME Calendar en la fecha indicada. --date usa el formato de fecha
+    // corto del locale, así que se toma de `locale -k d_fmt` y se fuerza año
+    // de 4 dígitos (en es_AR, por ejemplo, d_fmt es %d/%m/%y).
+    function openSystemCalendar(year, month, day) {
+        const pad = n => String(n).padStart(2, "0");
+        const iso = year + "-" + pad(month + 1) + "-" + pad(day);
+        dashWin.closeRequested();
+        Quickshell.execDetached([
+            "sh", "-c",
+            "if ! command -v gnome-calendar >/dev/null 2>&1; then " +
+            "notify-send -a Dashboard 'Calendario' 'GNOME Calendar no está instalado'; exit 0; fi; " +
+            "fmt=$(locale -k d_fmt 2>/dev/null | sed -n 's/^d_fmt=\"\\(.*\\)\"$/\\1/p'); " +
+            "fmt=$(printf '%s' \"${fmt:-%Y-%m-%d}\" | sed 's/%y/%Y/g'); " +
+            "exec gnome-calendar --date \"$(date -d \"$1\" +\"$fmt\")\"",
+            "_", iso
+        ]);
     }
 
     function runScript(relPath, args) {
@@ -1617,11 +1651,26 @@ PanelWindow {
                                                 Repeater {
                                                     model: dashWin.calendarCells
                                                     Rectangle {
+                                                        id: calCell
                                                         required property var modelData
                                                         Layout.fillWidth: true
                                                         Layout.preferredHeight: 32
                                                         radius: 16
-                                                        color: modelData.isToday ? Theme.primary : "transparent"
+                                                        color: modelData.isToday
+                                                            ? Theme.primary
+                                                            : (calCellM.containsMouse ? Theme.surfaceContainerHighest : "transparent")
+                                                        Behavior on color { ColorAnimation { duration: Theme.animFast } }
+
+                                                        MouseArea {
+                                                            id: calCellM
+                                                            anchors.fill: parent
+                                                            hoverEnabled: true
+                                                            cursorShape: Qt.PointingHandCursor
+                                                            onClicked: dashWin.openSystemCalendar(
+                                                                calCell.modelData.year,
+                                                                calCell.modelData.month,
+                                                                calCell.modelData.day)
+                                                        }
 
                                                         Text {
                                                             anchors.centerIn: parent
