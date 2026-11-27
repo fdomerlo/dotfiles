@@ -41,11 +41,13 @@ make github-auth     # Autenticación SSH + GitHub CLI (opcional)
 make verify          # Chequeo integral de estado del sistema
 ```
 
-### 3. Instalación desatendida desde cero (opcional: `preseed.cfg`)
+### 3. Instalación desatendida desde cero (opcional: `preseed.cfg` / `preseed-backup.cfg`)
 
-Para aprovisionar un equipo nuevo con [`preseed.cfg`](preseed.cfg), reemplaza antes en una copia local los placeholders:
+Para aprovisionar una estación nueva con [`preseed.cfg`](preseed.cfg), reemplaza antes en una copia local los placeholders:
 - `<WIFI_SSID>` y `<WIFI_PASSWORD>`
 - `<PASSWORD_HASH_SHA512>` (generado con `openssl passwd -6`)
+
+Para aprovisionar un servidor Debian minimal de **pull-backup desde Proxmox sobre SSH**, usa [`preseed-backup.cfg`](preseed-backup.cfg) (registrado en [`ventoy/ventoy.json`](ventoy/ventoy.json); toma IP inicial por DHCP en la VLAN para luego fijarla) y reemplaza en una copia local `<ADMIN_SUBNET>`, `<PASSWORD_HASH_SHA512>`, `<ADMIN_SSH_PUBKEY>`, `<PROXMOX_HOST>`, `<PROXMOX_USER>` y `<PROXMOX_DUMP_DIR>`.
 
 ---
 
@@ -232,7 +234,8 @@ find ~/.config/hypr ~/.config/fuzzel ~/.config/foot ~/.config/quickshell ~/.conf
 ```text
 ~/.dotfiles/
 ├── Makefile          # Orquestador de instalación, actualización y perfiles
-├── preseed.cfg       # Instalador desatendido de Debian Stable
+├── preseed.cfg       # Instalador desatendido de Debian Stable (workstation)
+├── preseed-backup.cfg # Instalador desatendido de Debian Server (pull-backup Proxmox)
 ├── packages/         # Listas declarativas de paquetes (apt, backports, flatpak, externos)
 ├── host/             # Configuración del sistema base y Podman Rootless
 ├── scripts/          # Instaladores modulares, actualización (update.sh) y salud (verify.sh)
