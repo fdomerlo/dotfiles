@@ -14,14 +14,15 @@
 #   ai.sh ask [texto] # preguntar (interactivo o por CLI/stdin)
 #   ai.sh error|summarize|translate|window|image|diff|commit
 #   ai.sh backend [opencode|agy|toggle|status]  # motor activo
-#   ai.sh model [status|flash|flash-low|flash-medium|flash-high|default|<id>]
+#   ai.sh model [status|hydrogen|hydrogen-low|hydrogen-medium|hydrogen-high|default|<id>]
 #   ai.sh service start|stop|toggle|status      # servicio de fondo opcional de OpenCode
 #   ai.sh __run <mode> <title> <prompt-file> [attach]   # interno
 #
 # En OpenCode usa `--standalone` por defecto y reutiliza el servicio de fondo
 # solo si ya está activo. En Antigravity (`agy`) usa por defecto los modelos
-# Flash (`gemini-3.8-flash-low` / `gemini-3.8-flash-medium`) y
+# Hydrogen (`gemini-4-hydrogen-low` / `gemini-4-hydrogen-medium`) y
 # `--disable-slash-commands` (con fallback a OpenCode para imágenes).
+# Los nombres `flash*` se aceptan como alias heredados de `hydrogen*`.
 # ==============================================================================
 set -euo pipefail
 
@@ -194,18 +195,18 @@ resolve_backend() {
     normalize_backend "$(read_local_config_key aiBackend)"
 }
 
-AGY_MODEL_FLASH_LOW="gemini-3.8-flash-low"
-AGY_MODEL_FLASH_MEDIUM="gemini-3.8-flash-medium"
-AGY_MODEL_FLASH_HIGH="gemini-3.8-flash-high"
+AGY_MODEL_HYDROGEN_LOW="gemini-4-hydrogen-low"
+AGY_MODEL_HYDROGEN_MEDIUM="gemini-4-hydrogen-medium"
+AGY_MODEL_HYDROGEN_HIGH="gemini-4-hydrogen-high"
 
 normalize_agy_model_pref() {
     local pref="${1:-}" lower
     lower="${pref,,}"
     case "$lower" in
-        ""|auto|flash) printf 'flash\n' ;;
-        flash-low|low) printf 'flash-low\n' ;;
-        flash-medium|flash-med|medium|med) printf 'flash-medium\n' ;;
-        flash-high|high) printf 'flash-high\n' ;;
+        ""|auto|hydrogen|flash) printf 'hydrogen\n' ;;
+        hydrogen-low|low|flash-low) printf 'hydrogen-low\n' ;;
+        hydrogen-medium|hydrogen-med|medium|med|flash-medium|flash-med) printf 'hydrogen-medium\n' ;;
+        hydrogen-high|high|flash-high) printf 'hydrogen-high\n' ;;
         default|pro) printf 'default\n' ;;
         *) printf '%s\n' "$pref" ;;
     esac
@@ -222,7 +223,7 @@ resolve_agy_model_pref() {
     fi
     local val
     val="$(read_local_config_key aiAgyModel)"
-    printf '%s\n' "${val:-flash}"
+    printf '%s\n' "${val:-hydrogen}"
 }
 
 agy_model_for_mode() {
@@ -232,19 +233,19 @@ agy_model_for_mode() {
         default)
             printf '\n'
             ;;
-        flash-low)
-            printf '%s\n' "$AGY_MODEL_FLASH_LOW"
+        hydrogen-low)
+            printf '%s\n' "$AGY_MODEL_HYDROGEN_LOW"
             ;;
-        flash-medium)
-            printf '%s\n' "$AGY_MODEL_FLASH_MEDIUM"
+        hydrogen-medium)
+            printf '%s\n' "$AGY_MODEL_HYDROGEN_MEDIUM"
             ;;
-        flash-high)
-            printf '%s\n' "$AGY_MODEL_FLASH_HIGH"
+        hydrogen-high)
+            printf '%s\n' "$AGY_MODEL_HYDROGEN_HIGH"
             ;;
-        flash)
+        hydrogen)
             case "$mode" in
-                error|diff) printf '%s\n' "$AGY_MODEL_FLASH_MEDIUM" ;;
-                ask|explain|summarize|translate|commit|*) printf '%s\n' "$AGY_MODEL_FLASH_LOW" ;;
+                error|diff) printf '%s\n' "$AGY_MODEL_HYDROGEN_MEDIUM" ;;
+                ask|explain|summarize|translate|commit|*) printf '%s\n' "$AGY_MODEL_HYDROGEN_LOW" ;;
             esac
             ;;
         *)
@@ -253,21 +254,37 @@ agy_model_for_mode() {
     esac
 }
 
+# Modelo configurado en OpenCode (~/.config/opencode/opencode.json).
+# Se usa como default para texto y código, de modo que cambiar el modelo en la
+# configuración no quede pisado por un id hardcodeado en este script.
+opencode_config_model() {
+    local cfg="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/opencode.json"
+    [ -f "$cfg" ] || cfg="$DOTFILES/ai/opencode/opencode.json"
+    [ -f "$cfg" ] || return 0
+    if command -v jq >/dev/null 2>&1; then
+        jq -r '.model // empty' "$cfg" 2>/dev/null || true
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("model", ""))' \
+            "$cfg" 2>/dev/null || true
+    fi
+}
+
 model_for_mode() {
-    local mode="$1"
+    local mode="$1" cfg_model=""
     if [ -n "${AI_MODEL:-}" ]; then
         printf '%s\n' "$AI_MODEL"
         return 0
     fi
+    cfg_model="$(opencode_config_model)"
     case "$mode" in
         window|image)
             printf '%s\n' "${AI_MODEL_VISION:-opencode/nemotron-3.5-super-vl-free}"
             ;;
         diff|commit|error)
-            printf '%s\n' "${AI_MODEL_CODE:-opencode/deepseek-v4.1-flash-free}"
+            printf '%s\n' "${AI_MODEL_CODE:-${cfg_model:-opencode/deepseek-v4.1-flash-free}}"
             ;;
         ask|explain|summarize|translate|*)
-            printf '%s\n' "${AI_MODEL_TEXT:-opencode/beam-free}"
+            printf '%s\n' "${AI_MODEL_TEXT:-${cfg_model:-opencode/deepseek-v4.1-flash-free}}"
             ;;
     esac
 }
