@@ -13,7 +13,7 @@ PanelWindow {
     required property bool dndEnabled
     required property real nowMs
     property int barHeight: 40
-    property bool floatingMode: false
+    property bool notchMode: false
     property var barHitTester: null
 
     signal closeRequested()
@@ -195,7 +195,7 @@ PanelWindow {
 
         // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
-            visible: !centerWin.floatingMode
+            visible: !centerWin.notchMode
             anchors.left: parent.left
             anchors.right: drawerDock.left
             anchors.rightMargin: drawerDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
@@ -213,7 +213,7 @@ PanelWindow {
         }
 
         Rectangle {
-            visible: !centerWin.floatingMode
+            visible: !centerWin.notchMode
             anchors.left: drawerDock.right
             anchors.leftMargin: drawerDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
             anchors.right: parent.right
@@ -230,19 +230,18 @@ PanelWindow {
             }
         }
 
-        // Desplegable derecho acoplado a la barra superior (o tarjeta flotante a 8px en modo islas)
+        // Desplegable de notificaciones acoplado a la barra superior (o tarjeta centrada flotante a 8px en modo notch)
         Item {
             id: drawerDock
-            readonly property int availHeight: Math.max(440, (centerWin.height > 0 ? centerWin.height : (centerWin.screen ? centerWin.screen.height : 1080)) - centerWin.barHeight - (centerWin.floatingMode ? 16 : 0))
+            readonly property int availHeight: Math.max(440, (centerWin.height > 0 ? centerWin.height : (centerWin.screen ? centerWin.screen.height : 1080)) - centerWin.barHeight - (centerWin.notchMode ? 16 : 0))
             readonly property int maxDrawerHeight: Math.round(availHeight * 0.80)
             readonly property int targetDrawerHeight: centerWin.notifications.length === 0
                 ? 380
                 : Math.min(maxDrawerHeight, Math.max(380, notifListCol.implicitHeight + 118))
 
             anchors.top: parent.top
-            anchors.topMargin: centerWin.floatingMode ? (centerWin.barHeight + 8) : centerWin.barHeight
-            anchors.right: parent.right
-            anchors.rightMargin: centerWin.floatingMode ? 12 : 18
+            anchors.topMargin: centerWin.notchMode ? (centerWin.barHeight + 8) : centerWin.barHeight
+            x: centerWin.notchMode ? Math.round((parent.width - width) / 2) : Math.max(0, parent.width - width - 18)
             width: 424
             height: centerWin.revealed ? targetDrawerHeight : 0
             opacity: centerWin.revealed ? 1.0 : 0.0
@@ -270,7 +269,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: drawerSurface.left
-                visible: !centerWin.floatingMode && drawerDock.height >= Theme.concaveRadius
+                visible: !centerWin.notchMode && drawerDock.height >= Theme.concaveRadius
             }
 
             ConcaveCorner {
@@ -281,7 +280,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: drawerSurface.right
-                visible: !centerWin.floatingMode && drawerDock.height >= Theme.concaveRadius
+                visible: !centerWin.notchMode && drawerDock.height >= Theme.concaveRadius
             }
 
             Item {
@@ -297,10 +296,10 @@ PanelWindow {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: centerWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
+                    height: centerWin.notchMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
-                    border.width: centerWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.width: centerWin.notchMode ? Theme.popoutBorderWidth : 0
                     border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
@@ -309,7 +308,7 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: !centerWin.floatingMode && drawerDock.height >= Theme.concaveRadius && drawerSurface.height >= Theme.concaveRadius + 4
+                    visible: !centerWin.notchMode && drawerDock.height >= Theme.concaveRadius && drawerSurface.height >= Theme.concaveRadius + 4
 
                     ShapePath {
                         strokeWidth: Theme.popoutBorderWidth

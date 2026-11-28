@@ -10,7 +10,8 @@ PanelWindow {
 
     required property bool panelOpen
     required property var sysState
-    property bool floatingMode: false
+    property int barHeight: 40
+    property bool notchMode: false
     property var barHitTester: null
 
     signal closeRequested()
@@ -18,7 +19,7 @@ PanelWindow {
     signal barMenuClicked(var scr, string target, int button)
     signal barWorkspaceClicked(int wsId)
 
-    readonly property int barH: sysState ? sysState.barHeight : 40
+    readonly property int barH: barHeight > 0 ? barHeight : (sysState ? sysState.barHeight : 40)
     property bool revealed: false
     property int selectedIndex: -1
     property string pendingConfirmId: ""
@@ -247,7 +248,7 @@ PanelWindow {
 
         // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
-            visible: !pwrWin.floatingMode
+            visible: !pwrWin.notchMode
             anchors.left: parent.left
             anchors.right: pwrDock.left
             anchors.rightMargin: pwrDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
@@ -265,7 +266,7 @@ PanelWindow {
         }
 
         Rectangle {
-            visible: !pwrWin.floatingMode
+            visible: !pwrWin.notchMode
             anchors.left: pwrDock.right
             anchors.leftMargin: pwrDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
             anchors.right: parent.right
@@ -282,13 +283,12 @@ PanelWindow {
             }
         }
 
-        // Contenedor acoplado a la barra superior (o flotante a 8px en modo islas)
+        // Contenedor acoplado a la barra superior (o centrado flotante a 8px en modo notch)
         Item {
             id: pwrDock
             anchors.top: parent.top
-            anchors.topMargin: pwrWin.floatingMode ? (pwrWin.barH + 8) : pwrWin.barH
-            anchors.right: parent.right
-            anchors.rightMargin: pwrWin.floatingMode ? 12 : 18
+            anchors.topMargin: pwrWin.notchMode ? (pwrWin.barH + 8) : pwrWin.barH
+            x: pwrWin.notchMode ? Math.round((parent.width - width) / 2) : Math.max(0, parent.width - width - 18)
             width: 436
             height: pwrWin.revealed ? (pwrBody.implicitHeight + 28) : 0
             opacity: pwrWin.revealed ? 1.0 : 0.0
@@ -315,7 +315,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: pwrSurface.left
-                visible: !pwrWin.floatingMode && pwrDock.height >= Theme.concaveRadius
+                visible: !pwrWin.notchMode && pwrDock.height >= Theme.concaveRadius
             }
 
             ConcaveCorner {
@@ -326,7 +326,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: pwrSurface.right
-                visible: !pwrWin.floatingMode && pwrDock.height >= Theme.concaveRadius
+                visible: !pwrWin.notchMode && pwrDock.height >= Theme.concaveRadius
             }
 
             Item {
@@ -341,10 +341,10 @@ PanelWindow {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: pwrWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
+                    height: pwrWin.notchMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
-                    border.width: pwrWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.width: pwrWin.notchMode ? Theme.popoutBorderWidth : 0
                     border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
@@ -353,7 +353,7 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: !pwrWin.floatingMode && pwrDock.height >= Theme.concaveRadius
+                    visible: !pwrWin.notchMode && pwrDock.height >= Theme.concaveRadius
 
                     ShapePath {
                         strokeWidth: Theme.popoutBorderWidth

@@ -73,7 +73,7 @@ link_file() {
 link_file "$HYPR_SRC/hyprland.conf" "$CONFIG_HOME/hypr/hyprland.conf"
 for f in "$HYPR_SRC"/conf/*.conf; do
     base_f="$(basename "$f")"
-    [ "$base_f" = "local.conf" ] || [ "$base_f" = "webapps.conf" ] && continue
+    [ "$base_f" = "local.conf" ] || [ "$base_f" = "webapps.conf" ] || [ "$base_f" = "smart-gaps.conf" ] && continue
     link_file "$f" "$CONFIG_HOME/hypr/conf/$base_f"
 done
 
@@ -104,6 +104,11 @@ if [ ! -e "$WEBAPPS_CONF" ] && [ ! -L "$WEBAPPS_CONF" ]; then
 # ==============================================================================
 EOF
     ok "$WEBAPPS_CONF (semilla vacía)"
+fi
+
+if [ -f "$HYPR_SRC/scripts/smart-gaps-sync.sh" ]; then
+    bash "$HYPR_SRC/scripts/smart-gaps-sync.sh" --no-reload
+    ok "$CONFIG_HOME/hypr/conf/smart-gaps.conf"
 fi
 
 link_file "$HYPR_SRC/hypridle.conf" "$CONFIG_HOME/hypr/hypridle.conf"

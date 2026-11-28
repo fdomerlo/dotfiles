@@ -12,7 +12,7 @@ PanelWindow {
 
     required property bool panelOpen
     property int barHeight: 40
-    property bool floatingMode: false
+    property bool notchMode: false
     property var barHitTester: null
 
     signal closeRequested()
@@ -312,7 +312,7 @@ PanelWindow {
 
         // Borde sutil inferior de la barra superior a ambos lados del panel
         Rectangle {
-            visible: !clipWin.floatingMode
+            visible: !clipWin.notchMode
             anchors.left: parent.left
             anchors.right: clipDock.left
             anchors.rightMargin: clipDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
@@ -330,7 +330,7 @@ PanelWindow {
         }
 
         Rectangle {
-            visible: !clipWin.floatingMode
+            visible: !clipWin.notchMode
             anchors.left: clipDock.right
             anchors.leftMargin: clipDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
             anchors.right: parent.right
@@ -347,11 +347,11 @@ PanelWindow {
             }
         }
 
-        // Panel superior-central de Portapapeles acoplado (o flotante a 8px en modo islas)
+        // Panel superior-central de Portapapeles acoplado (o flotante a 8px en modo notch)
         Item {
             id: clipDock
             anchors.top: parent.top
-            anchors.topMargin: clipWin.floatingMode ? (clipWin.barHeight + 8) : clipWin.barHeight
+            anchors.topMargin: clipWin.notchMode ? (clipWin.barHeight + 8) : clipWin.barHeight
             anchors.horizontalCenter: parent.horizontalCenter
             width: clipWin.panelWidth
             height: clipWin.revealed ? clipWin.panelHeight : 0
@@ -379,7 +379,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: clipSurface.left
-                visible: !clipWin.floatingMode && clipDock.height >= Theme.concaveRadius
+                visible: !clipWin.notchMode && clipDock.height >= Theme.concaveRadius
                 z: 2
             }
 
@@ -391,7 +391,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: clipSurface.right
-                visible: !clipWin.floatingMode && clipDock.height >= Theme.concaveRadius
+                visible: !clipWin.notchMode && clipDock.height >= Theme.concaveRadius
                 z: 2
             }
 
@@ -407,10 +407,10 @@ PanelWindow {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: clipWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
+                    height: clipWin.notchMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
-                    border.width: clipWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.width: clipWin.notchMode ? Theme.popoutBorderWidth : 0
                     border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
@@ -419,7 +419,7 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: !clipWin.floatingMode && clipDock.height >= Theme.concaveRadius
+                    visible: !clipWin.notchMode && clipDock.height >= Theme.concaveRadius
                     z: 2
 
                     ShapePath {

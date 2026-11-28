@@ -64,9 +64,9 @@ Item {
     property int barHeight: 40
     property bool showTelemetry: true
     property bool showMedia: true
-    property string barStyle: "bar" // "bar" | "islands" | "auto"
+    property string barStyle: "bar" // "bar" | "notch" | "auto"
     property string aiBackend: "opencode" // "opencode" | "agy"
-    property string aiAgyModel: "flash"
+    property string aiAgyModel: "hydrogen"
 
     property real _prevCpuTotal: 0
     property real _prevCpuIdle: 0
@@ -124,7 +124,9 @@ Item {
                 sys.showTelemetry = cfg.showTelemetry;
             if (typeof cfg.showMedia === "boolean")
                 sys.showMedia = cfg.showMedia;
-            if (cfg.barStyle === "bar" || cfg.barStyle === "islands" || cfg.barStyle === "auto")
+            if (cfg.barStyle === "notch" || cfg.barStyle === "islands")
+                sys.barStyle = "notch";
+            else if (cfg.barStyle === "bar" || cfg.barStyle === "auto")
                 sys.barStyle = cfg.barStyle;
             if (cfg.aiBackend === "opencode" || cfg.aiBackend === "agy")
                 sys.aiBackend = cfg.aiBackend;
@@ -140,6 +142,14 @@ Item {
         } catch (e) {
             // Ignorar JSON inválido en override local
         }
+        syncSmartGaps(sys.barStyle);
+    }
+
+    function syncSmartGaps(mode) {
+        const home = Quickshell.env("HOME") || "";
+        if (!home)
+            return;
+        Quickshell.execDetached([home + "/.config/hypr/scripts/smart-gaps-sync.sh", String(mode || "bar")]);
     }
 
     function updateLocalConfigKey(key, value) {
@@ -154,9 +164,14 @@ Item {
 
     function setBarStyle(mode) {
         const key = String(mode || "").trim().toLowerCase();
-        const norm = (key === "islands" || key === "auto") ? key : "bar";
+        let norm = "bar";
+        if (key === "notch" || key === "islands")
+            norm = "notch";
+        else if (key === "auto")
+            norm = "auto";
         sys.barStyle = norm;
         updateLocalConfigKey("barStyle", norm);
+        syncSmartGaps(norm);
     }
 
     function setAiBackend(backend) {
@@ -167,7 +182,7 @@ Item {
     }
 
     function setAiAgyModel(modelKey) {
-        const norm = String(modelKey || "").trim() || "flash";
+        const norm = String(modelKey || "").trim() || "hydrogen";
         sys.aiAgyModel = norm;
         updateLocalConfigKey("aiAgyModel", norm);
     }

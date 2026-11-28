@@ -10,7 +10,7 @@ PanelWindow {
 
     required property bool active
     property int barHeight: 40
-    property bool floatingMode: false
+    property bool notchMode: false
 
     anchors {
         top: true
@@ -32,7 +32,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        anchors.topMargin: backdropWin.floatingMode ? 0 : backdropWin.barHeight
+        anchors.topMargin: backdropWin.notchMode ? 0 : backdropWin.barHeight
         color: Theme.dimAround
         opacity: backdropWin.active ? 1.0 : 0.0
         visible: opacity > 0.001

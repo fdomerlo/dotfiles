@@ -22,7 +22,8 @@ PanelWindow {
     required property bool idleInhibited
     property string activeTheme: "dark"
     property string searchQuery: ""
-    property bool floatingMode: false
+    property int barHeight: 40
+    property bool notchMode: false
     property var barHitTester: null
 
     signal closeRequested()
@@ -37,7 +38,7 @@ PanelWindow {
     signal barMenuClicked(var scr, string target, int button)
     signal barWorkspaceClicked(int wsId)
 
-    readonly property int barH: sysState ? sysState.barHeight : 40
+    readonly property int barH: barHeight > 0 ? barHeight : (sysState ? sysState.barHeight : 40)
     readonly property int panelWidth: Math.min(860, Math.max(680, (dashWin.screen ? dashWin.screen.width : 1280) - 64))
     readonly property int cornerSize: Theme.concaveRadius
     property bool revealed: false
@@ -858,7 +859,7 @@ PanelWindow {
 
         // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
-            visible: !dashWin.floatingMode
+            visible: !dashWin.notchMode
             anchors.left: parent.left
             anchors.right: dashDock.left
             anchors.rightMargin: dashDock.height >= dashWin.cornerSize ? dashWin.cornerSize : 0
@@ -876,7 +877,7 @@ PanelWindow {
         }
 
         Rectangle {
-            visible: !dashWin.floatingMode
+            visible: !dashWin.notchMode
             anchors.left: dashDock.right
             anchors.leftMargin: dashDock.height >= dashWin.cornerSize ? dashWin.cornerSize : 0
             anchors.right: parent.right
@@ -893,11 +894,11 @@ PanelWindow {
             }
         }
 
-        // Popout central grande acoplado a la barra superior (o flotante a 8px en modo islas)
+        // Popout central grande acoplado a la barra superior (o flotante a 8px en modo notch)
         Item {
             id: dashDock
             anchors.top: parent.top
-            anchors.topMargin: dashWin.floatingMode ? (dashWin.barH + 8) : dashWin.barH
+            anchors.topMargin: dashWin.notchMode ? (dashWin.barH + 8) : dashWin.barH
             anchors.horizontalCenter: parent.horizontalCenter
             width: dashWin.panelWidth
             height: dashWin.revealed ? (dashBody.implicitHeight + 32) : 0
@@ -925,7 +926,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: dashSurface.left
-                visible: !dashWin.floatingMode && dashDock.height >= dashWin.cornerSize
+                visible: !dashWin.notchMode && dashDock.height >= dashWin.cornerSize
             }
 
             ConcaveCorner {
@@ -936,7 +937,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: dashSurface.right
-                visible: !dashWin.floatingMode && dashDock.height >= dashWin.cornerSize
+                visible: !dashWin.notchMode && dashDock.height >= dashWin.cornerSize
             }
 
             Item {
@@ -951,10 +952,10 @@ PanelWindow {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: dashWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
+                    height: dashWin.notchMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
-                    border.width: dashWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.width: dashWin.notchMode ? Theme.popoutBorderWidth : 0
                     border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
@@ -963,7 +964,7 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: !dashWin.floatingMode && dashDock.height >= Theme.concaveRadius
+                    visible: !dashWin.notchMode && dashDock.height >= Theme.concaveRadius
 
                     ShapePath {
                         strokeWidth: Theme.popoutBorderWidth
@@ -3678,36 +3679,36 @@ PanelWindow {
 
                             readonly property string aiBackend: (dashWin.sysState && dashWin.sysState.aiBackend === "agy") ? "agy" : "opencode"
                             readonly property bool isAgy: aiBackend === "agy"
-                            readonly property string agyModelKey: (dashWin.sysState && dashWin.sysState.aiAgyModel) ? dashWin.sysState.aiAgyModel : "flash"
+                            readonly property string agyModelKey: (dashWin.sysState && dashWin.sysState.aiAgyModel) ? dashWin.sysState.aiAgyModel : "hydrogen"
                             readonly property bool aiOn: Boolean(dashWin.sysState && dashWin.sysState.aiActive)
                             readonly property string aiDet: dashWin.sysState ? String(dashWin.sysState.aiDetail || "") : ""
 
                             function agyModelLabel(key) {
-                                const k = String(key || "flash").toLowerCase();
-                                if (k === "flash" || k === "auto")
-                                    return "Flash (auto)";
-                                if (k === "flash-low" || k === "low" || k === "gemini-3.8-flash-low")
-                                    return "Flash 3.8 Low";
-                                if (k === "flash-medium" || k === "flash-med" || k === "medium" || k === "med" || k === "gemini-3.8-flash-medium")
-                                    return "Flash 3.8 Med";
-                                if (k === "flash-high" || k === "high" || k === "gemini-3.8-flash-high")
-                                    return "Flash 3.8 High";
+                                const k = String(key || "hydrogen").toLowerCase();
+                                if (k === "hydrogen" || k === "auto" || k === "flash")
+                                    return "Hydrogen (auto)";
+                                if (k === "hydrogen-low" || k === "low" || k === "flash-low" || k === "gemini-4-hydrogen-low")
+                                    return "Hydrogen Low";
+                                if (k === "hydrogen-medium" || k === "hydrogen-med" || k === "medium" || k === "med" || k === "flash-medium" || k === "flash-med" || k === "gemini-4-hydrogen-medium")
+                                    return "Hydrogen Med";
+                                if (k === "hydrogen-high" || k === "high" || k === "flash-high" || k === "gemini-4-hydrogen-high")
+                                    return "Hydrogen High";
                                 if (k === "default" || k === "pro")
                                     return "Default (Pro)";
                                 return String(key);
                             }
 
                             function nextAgyModelKey(key) {
-                                const k = String(key || "flash").toLowerCase();
-                                if (k === "flash" || k === "auto")
-                                    return "flash-low";
-                                if (k === "flash-low" || k === "low" || k === "gemini-3.8-flash-low")
-                                    return "flash-medium";
-                                if (k === "flash-medium" || k === "flash-med" || k === "medium" || k === "med" || k === "gemini-3.8-flash-medium")
-                                    return "flash-high";
-                                if (k === "flash-high" || k === "high" || k === "gemini-3.8-flash-high")
+                                const k = String(key || "hydrogen").toLowerCase();
+                                if (k === "hydrogen" || k === "auto" || k === "flash")
+                                    return "hydrogen-low";
+                                if (k === "hydrogen-low" || k === "low" || k === "flash-low" || k === "gemini-4-hydrogen-low")
+                                    return "hydrogen-medium";
+                                if (k === "hydrogen-medium" || k === "hydrogen-med" || k === "medium" || k === "med" || k === "flash-medium" || k === "flash-med" || k === "gemini-4-hydrogen-medium")
+                                    return "hydrogen-high";
+                                if (k === "hydrogen-high" || k === "high" || k === "flash-high" || k === "gemini-4-hydrogen-high")
                                     return "default";
-                                return "flash";
+                                return "hydrogen";
                             }
 
                             // Barra de motor y servicio IA
@@ -3834,7 +3835,7 @@ PanelWindow {
                                     }
                                 }
 
-                                // Selector rápido de modelo Flash / Default para Antigravity
+                                // Selector rápido de modelo Hydrogen / Default para Antigravity
                                 Rectangle {
                                     id: aiAgyModelBtn
                                     visible: tabDevAi.isAgy

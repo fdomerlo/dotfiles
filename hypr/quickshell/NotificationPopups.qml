@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -11,7 +12,7 @@ PanelWindow {
     required property var popups
     required property real nowMs
     property int barHeight: 40
-    property bool floatingMode: false
+    property bool notchMode: false
 
     signal dismissRequested(int uid)
     signal popupCloseRequested(int uid)
@@ -66,11 +67,11 @@ PanelWindow {
 
     anchors {
         top: true
-        right: true
+        right: !popupWin.notchMode
     }
     margins {
-        top: floatingMode ? (barHeight + 8) : barHeight
-        right: (floatingMode ? 12 : 18) - cornerSize
+        top: popupWin.notchMode ? (popupWin.barHeight + 8) : popupWin.barHeight
+        right: popupWin.notchMode ? 0 : (18 - cornerSize)
     }
 
     implicitWidth: cardWidth + cornerSize * 2
@@ -120,9 +121,11 @@ PanelWindow {
             position: "top-right"
             size: popupWin.cornerSize
             color: Theme.surface
+            borderWidth: Theme.popoutBorderWidth
+            borderColor: Theme.popoutBorder
             anchors.top: parent.top
             anchors.right: dockBody.left
-            visible: !popupWin.floatingMode && dockContainer.height >= popupWin.cornerSize
+            visible: !popupWin.notchMode && dockContainer.height >= popupWin.cornerSize
         }
 
         // Esquina cóncava derecha fundida con la barra superior
@@ -130,15 +133,20 @@ PanelWindow {
             position: "top-left"
             size: popupWin.cornerSize
             color: Theme.surface
+            borderWidth: Theme.popoutBorderWidth
+            borderColor: Theme.popoutBorder
             anchors.top: parent.top
             anchors.left: dockBody.right
-            visible: !popupWin.floatingMode && dockContainer.height >= popupWin.cornerSize
+            visible: !popupWin.notchMode && dockContainer.height >= popupWin.cornerSize
         }
 
         Item {
             id: dockBody
             anchors.fill: parent
             clip: true
+
+            readonly property real cornerR: Math.max(2, Math.min(Theme.radiusLarge, height - popupWin.cornerSize))
+            readonly property real halfB: Theme.popoutBorderWidth / 2.0
 
             HoverHandler {
                 id: dockHover
@@ -148,12 +156,55 @@ PanelWindow {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                height: popupWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
+                height: popupWin.notchMode ? parent.height : (parent.height + Theme.radiusLarge)
                 radius: Theme.radiusLarge
                 color: Theme.surface
-                border.width: popupWin.floatingMode ? Theme.popoutBorderWidth : 0
+                border.width: popupWin.notchMode ? Theme.popoutBorderWidth : 0
                 border.color: Theme.popoutBorder
                 Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
+            }
+
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+                antialiasing: true
+                visible: !popupWin.notchMode && dockContainer.height >= popupWin.cornerSize && dockBody.height >= popupWin.cornerSize + 4
+
+                ShapePath {
+                    strokeWidth: Theme.popoutBorderWidth
+                    strokeColor: Theme.popoutBorder
+                    fillColor: "transparent"
+                    capStyle: ShapePath.FlatCap
+                    startX: dockBody.halfB
+                    startY: popupWin.cornerSize
+
+                    PathLine {
+                        x: dockBody.halfB
+                        y: dockBody.height - dockBody.cornerR
+                    }
+                    PathArc {
+                        x: dockBody.cornerR
+                        y: dockBody.height - dockBody.halfB
+                        radiusX: dockBody.cornerR - dockBody.halfB
+                        radiusY: dockBody.cornerR - dockBody.halfB
+                        direction: PathArc.Counterclockwise
+                    }
+                    PathLine {
+                        x: dockBody.width - dockBody.cornerR
+                        y: dockBody.height - dockBody.halfB
+                    }
+                    PathArc {
+                        x: dockBody.width - dockBody.halfB
+                        y: dockBody.height - dockBody.cornerR
+                        radiusX: dockBody.cornerR - dockBody.halfB
+                        radiusY: dockBody.cornerR - dockBody.halfB
+                        direction: PathArc.Counterclockwise
+                    }
+                    PathLine {
+                        x: dockBody.width - dockBody.halfB
+                        y: popupWin.cornerSize
+                    }
+                }
             }
 
             ColumnLayout {

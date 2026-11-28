@@ -997,13 +997,20 @@ ShellRoot {
         return tiledCount === 1 || hasMaximized;
     }
 
-    function isScreenFloatingBar(scr) {
+    function isScreenNotchBar(scr) {
         const style = systemState ? systemState.barStyle : "bar";
-        if (style === "islands")
+        if (style !== "notch" && style !== "islands" && style !== "auto")
+            return false;
+        if (scr && scr.width > 0 && scr.width < 1150)
+            return false;
+        if (style === "notch" || style === "islands")
             return true;
-        if (style === "auto")
-            return !isScreenSmartGaps(scr);
-        return false;
+        return !isScreenSmartGaps(scr);
+    }
+
+    function effectiveBarHeight(scr) {
+        const baseH = systemState ? systemState.barHeight : 40;
+        return isScreenNotchBar(scr) ? (baseH + 6) : baseH;
     }
 
     function resolvePrimaryScreen() {
@@ -1494,8 +1501,8 @@ ShellRoot {
             required property var modelData
             screen: modelData
             active: root.anyModalOpen && (!root.activeModalScreen || root.activeModalScreen === modelData)
-            barHeight: systemState.barHeight
-            floatingMode: root.isScreenFloatingBar(modelData)
+            barHeight: root.effectiveBarHeight(modelData)
+            notchMode: root.isScreenNotchBar(modelData)
         }
     }
 
@@ -1518,7 +1525,8 @@ ShellRoot {
             appearanceOpen: root.appearanceOpen
             clipboardOpen: root.clipboardOpen
             powerOpen: root.powerOpen
-            floatingMode: root.isScreenFloatingBar(modelData)
+            notchMode: root.isScreenNotchBar(modelData)
+            barStyle: systemState.barStyle
             popupsVisible: root.popupsMounted
             dashboardScreen: root.dashboardScreen
             notifCenterScreen: root.notifCenterScreen
@@ -1558,7 +1566,7 @@ ShellRoot {
                 searchQuery: root.searchQuery
                 selectedWorkspaceId: root.selectedWorkspaceId
                 tabNavigated: root.tabNavigated
-                barHeight: systemState.barHeight
+                barHeight: root.effectiveBarHeight(modelData)
                 isFocusedOverviewScreen: (modelData === root.overviewFocusedScreen)
                 onSearchUpdated: text => {
                     root.searchQuery = text;
@@ -1578,8 +1586,8 @@ ShellRoot {
         AppearancePopup {
             screen: root.appearanceScreen || root.resolveFocusedScreen()
             panelOpen: root.appearanceOpen
-            barHeight: systemState.barHeight
-            floatingMode: root.isScreenFloatingBar(root.appearanceScreen || root.resolveFocusedScreen())
+            barHeight: root.effectiveBarHeight(root.appearanceScreen || root.resolveFocusedScreen())
+            notchMode: root.isScreenNotchBar(root.appearanceScreen || root.resolveFocusedScreen())
             barStyle: systemState.barStyle
             barHitTester: root.hitTestBar
             onBarStyleSelected: mode => systemState.setBarStyle(mode)
@@ -1596,8 +1604,8 @@ ShellRoot {
         ClipboardPopup {
             screen: root.clipboardScreen || root.resolveFocusedScreen()
             panelOpen: root.clipboardOpen
-            barHeight: systemState.barHeight
-            floatingMode: root.isScreenFloatingBar(root.clipboardScreen || root.resolveFocusedScreen())
+            barHeight: root.effectiveBarHeight(root.clipboardScreen || root.resolveFocusedScreen())
+            notchMode: root.isScreenNotchBar(root.clipboardScreen || root.resolveFocusedScreen())
             barHitTester: root.hitTestBar
             onCloseRequested: root.closeClipboard()
             onBarMenuHovered: (scr, target) => root.handleMenuHover(scr, target)
@@ -1630,8 +1638,8 @@ ShellRoot {
             screen: root.popupsScreen || root.resolveFocusedScreen()
             popups: root.activePopups
             nowMs: root.notifNowMs
-            barHeight: systemState.barHeight
-            floatingMode: root.isScreenFloatingBar(root.popupsScreen || root.resolveFocusedScreen())
+            barHeight: root.effectiveBarHeight(root.popupsScreen || root.resolveFocusedScreen())
+            notchMode: root.isScreenNotchBar(root.popupsScreen || root.resolveFocusedScreen())
             onDismissRequested: uid => root.dismissNotif(uid)
             onPopupCloseRequested: uid => root.hidePopup(uid)
             onCloseAllPopupsRequested: root.closeAllPopups()
@@ -1649,8 +1657,8 @@ ShellRoot {
             notifications: root.notifEntries
             dndEnabled: root.dndEnabled
             nowMs: root.notifNowMs
-            barHeight: systemState.barHeight
-            floatingMode: root.isScreenFloatingBar(root.notifCenterScreen || root.resolveFocusedScreen())
+            barHeight: root.effectiveBarHeight(root.notifCenterScreen || root.resolveFocusedScreen())
+            notchMode: root.isScreenNotchBar(root.notifCenterScreen || root.resolveFocusedScreen())
             barHitTester: root.hitTestBar
             onCloseRequested: root.closeNotifCenter()
             onToggleDndRequested: root.toggleDnd()
@@ -1676,7 +1684,8 @@ ShellRoot {
             dndEnabled: root.dndEnabled
             idleInhibited: root.idleInhibited
             activeTheme: root.activeThemeName
-            floatingMode: root.isScreenFloatingBar(root.dashboardScreen || root.resolveFocusedScreen())
+            barHeight: root.effectiveBarHeight(root.dashboardScreen || root.resolveFocusedScreen())
+            notchMode: root.isScreenNotchBar(root.dashboardScreen || root.resolveFocusedScreen())
             barHitTester: root.hitTestBar
             onCloseRequested: root.closeDashboard()
             onTabSelected: tabIdx => { root.dashboardTab = tabIdx; }
@@ -1699,7 +1708,8 @@ ShellRoot {
             screen: root.powerScreen || root.resolveFocusedScreen()
             panelOpen: root.powerOpen
             sysState: systemState
-            floatingMode: root.isScreenFloatingBar(root.powerScreen || root.resolveFocusedScreen())
+            barHeight: root.effectiveBarHeight(root.powerScreen || root.resolveFocusedScreen())
+            notchMode: root.isScreenNotchBar(root.powerScreen || root.resolveFocusedScreen())
             barHitTester: root.hitTestBar
             onCloseRequested: root.closePower()
             onBarMenuHovered: (scr, target) => root.handleMenuHover(scr, target)

@@ -11,7 +11,7 @@ PanelWindow {
 
     required property bool panelOpen
     property int barHeight: 40
-    property bool floatingMode: false
+    property bool notchMode: false
     property string barStyle: "bar"
     property var barHitTester: null
 
@@ -208,7 +208,7 @@ PanelWindow {
 
         // Borde sutil inferior de la barra superior a ambos lados del desplegable
         Rectangle {
-            visible: !appWin.floatingMode
+            visible: !appWin.notchMode
             anchors.left: parent.left
             anchors.right: appDock.left
             anchors.rightMargin: appDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
@@ -226,7 +226,7 @@ PanelWindow {
         }
 
         Rectangle {
-            visible: !appWin.floatingMode
+            visible: !appWin.notchMode
             anchors.left: appDock.right
             anchors.leftMargin: appDock.height >= Theme.concaveRadius ? Theme.concaveRadius : 0
             anchors.right: parent.right
@@ -243,13 +243,12 @@ PanelWindow {
             }
         }
 
-        // Popout compacto de Apariencia acoplado arriba-derecha (o flotante a 8px en modo islas)
+        // Popout compacto de Apariencia acoplado arriba-derecha (o centrado flotante a 8px en modo notch)
         Item {
             id: appDock
             anchors.top: parent.top
-            anchors.topMargin: appWin.floatingMode ? (appWin.barHeight + 8) : appWin.barHeight
-            anchors.right: parent.right
-            anchors.rightMargin: appWin.floatingMode ? 12 : 18
+            anchors.topMargin: appWin.notchMode ? (appWin.barHeight + 8) : appWin.barHeight
+            x: appWin.notchMode ? Math.round((parent.width - width) / 2) : Math.max(0, parent.width - width - 18)
             width: 376
             height: appWin.revealed ? (appBody.implicitHeight + 28) : 0
             opacity: appWin.revealed ? 1.0 : 0.0
@@ -276,7 +275,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.right: appSurface.left
-                visible: !appWin.floatingMode && appDock.height >= Theme.concaveRadius
+                visible: !appWin.notchMode && appDock.height >= Theme.concaveRadius
             }
 
             ConcaveCorner {
@@ -287,7 +286,7 @@ PanelWindow {
                 borderColor: Theme.popoutBorder
                 anchors.top: parent.top
                 anchors.left: appSurface.right
-                visible: !appWin.floatingMode && appDock.height >= Theme.concaveRadius
+                visible: !appWin.notchMode && appDock.height >= Theme.concaveRadius
             }
 
             Item {
@@ -302,10 +301,10 @@ PanelWindow {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: appWin.floatingMode ? parent.height : (parent.height + Theme.radiusLarge)
+                    height: appWin.notchMode ? parent.height : (parent.height + Theme.radiusLarge)
                     radius: Theme.radiusLarge
                     color: Theme.surface
-                    border.width: appWin.floatingMode ? Theme.popoutBorderWidth : 0
+                    border.width: appWin.notchMode ? Theme.popoutBorderWidth : 0
                     border.color: Theme.popoutBorder
                     Behavior on color { ColorAnimation { duration: Theme.animNormal; easing.type: Easing.OutCubic } }
                 }
@@ -314,7 +313,7 @@ PanelWindow {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
                     antialiasing: true
-                    visible: !appWin.floatingMode && appDock.height >= Theme.concaveRadius
+                    visible: !appWin.notchMode && appDock.height >= Theme.concaveRadius
 
                     ShapePath {
                         strokeWidth: Theme.popoutBorderWidth
@@ -591,8 +590,8 @@ PanelWindow {
                                 Text {
                                     id: barStylePillTxt
                                     anchors.centerIn: parent
-                                    text: appWin.barStyle === "islands"
-                                        ? "Islas"
+                                    text: (appWin.barStyle === "notch" || appWin.barStyle === "islands")
+                                        ? "Notch"
                                         : (appWin.barStyle === "auto" ? "Auto" : "Barra")
                                     font.family: Theme.monoFontFamily
                                     font.pixelSize: 11
@@ -608,13 +607,14 @@ PanelWindow {
                             Repeater {
                                 model: [
                                     { id: "bar", label: "Barra" },
-                                    { id: "islands", label: "Islas" },
+                                    { id: "notch", label: "Notch" },
                                     { id: "auto", label: "Auto" }
                                 ]
 
                                 delegate: Rectangle {
                                     required property var modelData
                                     readonly property bool selected: appWin.barStyle === modelData.id
+                                        || (modelData.id === "notch" && appWin.barStyle === "islands")
 
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 38

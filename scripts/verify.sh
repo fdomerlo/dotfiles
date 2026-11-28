@@ -467,6 +467,8 @@ else
              "$HOME/.config/hypr/conf/plugins.conf" \
              "$HOME/.config/hypr/conf/local.conf" \
              "$HOME/.config/hypr/conf/webapps.conf" \
+             "$HOME/.config/hypr/conf/smart-gaps.conf" \
+             "$HOME/.config/hypr/scripts/smart-gaps-sync.sh" \
              "$HOME/.config/fontconfig/conf.d/10-hyprland-fonts.conf" \
              "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf" \
              "$HOME/.config/fuzzel/fuzzel.ini" \
